@@ -149,18 +149,19 @@ namespace shammath {
 
     template<class Tvec>
     inline constexpr ConsState<Tvec> hydro_flux_x(
-        const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma) {
+        const PrimState<Tvec> prim, typename PrimState<Tvec>::Tscal gamma) {
         ConsState<Tvec> flux;
 
-        const PrimState<Tvec> prim = cons_to_prim(cons, gamma);
+        const auto rhoeint = prim.press / (gamma - 1.0);
+        const auto rhoe    = rhoeint + rhoekin(prim.rho, prim.vel);
 
-        flux.rho = cons.rhovel[0];
+        flux.rho = prim.rho * prim.vel[0];
 
-        flux.rhoe = (cons.rhoe + prim.press) * prim.vel[0];
+        flux.rhoe = (rhoe + prim.press) * prim.vel[0];
 
-        flux.rhovel[0] = cons.rho * prim.vel[0] * prim.vel[0] + prim.press;
-        flux.rhovel[1] = cons.rho * prim.vel[0] * prim.vel[1];
-        flux.rhovel[2] = cons.rho * prim.vel[0] * prim.vel[2];
+        flux.rhovel[0] = prim.rho * prim.vel[0] * prim.vel[0] + prim.press;
+        flux.rhovel[1] = prim.rho * prim.vel[0] * prim.vel[1];
+        flux.rhovel[2] = prim.rho * prim.vel[0] * prim.vel[2];
 
         return flux;
     }
@@ -224,6 +225,43 @@ namespace shammath {
         cprime.rhovel[1] = -c.rhovel[1];
         cprime.rhovel[2] = -c.rhovel[2];
         return cprime;
+    }
+
+    // Axis-transform helpers for PrimState, mirroring y_to_x/z_to_x/invert_axis above.
+    // Riemann solvers take primitive states directly (see riemann_hll.hpp etc.), so these
+    // are applied to the inputs; the flux they return is a ConsState and is rotated back
+    // with the untransformed x_to_y/x_to_z/invert_axis.
+    template<class Tprim>
+    inline constexpr Tprim prim_y_to_x(const Tprim p) {
+        Tprim pprime;
+        pprime.rho    = p.rho;
+        pprime.press  = p.press;
+        pprime.vel[0] = p.vel[1];
+        pprime.vel[1] = -p.vel[0];
+        pprime.vel[2] = p.vel[2];
+        return pprime;
+    }
+
+    template<class Tprim>
+    inline constexpr Tprim prim_z_to_x(const Tprim p) {
+        Tprim pprime;
+        pprime.rho    = p.rho;
+        pprime.press  = p.press;
+        pprime.vel[0] = p.vel[2];
+        pprime.vel[1] = p.vel[1];
+        pprime.vel[2] = -p.vel[0];
+        return pprime;
+    }
+
+    template<class Tprim>
+    inline constexpr Tprim prim_invert_axis(const Tprim p) {
+        Tprim pprime;
+        pprime.rho    = p.rho;
+        pprime.press  = p.press;
+        pprime.vel[0] = -p.vel[0];
+        pprime.vel[1] = -p.vel[1];
+        pprime.vel[2] = -p.vel[2];
+        return pprime;
     }
 
     template<class Tvec_>
@@ -317,12 +355,11 @@ namespace shammath {
     }
 
     template<class Tvec>
-    inline constexpr DustConsState<Tvec> d_hydro_flux_x(const DustConsState<Tvec> d_cons) {
+    inline constexpr DustConsState<Tvec> d_hydro_flux_x(const DustPrimState<Tvec> d_prim) {
         DustConsState<Tvec> d_flux;
-        const DustPrimState<Tvec> d_prim = d_cons_to_prim<Tvec>(d_cons);
-        const typename DustConsState<Tvec>::Tscal x_vel{d_prim.vel[0]};
-        d_flux.rho    = d_cons.rhovel[0];
-        d_flux.rhovel = d_prim.vel * (d_cons.rho * x_vel);
+        const typename DustPrimState<Tvec>::Tscal x_vel{d_prim.vel[0]};
+        d_flux.rho    = d_prim.rho * x_vel;
+        d_flux.rhovel = d_prim.vel * (d_prim.rho * x_vel);
         return d_flux;
     }
 
@@ -373,6 +410,38 @@ namespace shammath {
         d_cst.rho    = c.rho;
         d_cst.rhovel = -(c.rhovel);
         return d_cst;
+    }
+
+    // Axis-transform helpers for DustPrimState, mirroring d_y_to_x/d_z_to_x/d_invert_axis
+    // above. Dust Riemann solvers take primitive states directly, so these are applied to
+    // the inputs; the flux they return is a DustConsState and is rotated back with the
+    // untransformed d_x_to_y/d_x_to_z/d_invert_axis.
+    template<class Tprim>
+    inline constexpr Tprim d_prim_y_to_x(const Tprim p) {
+        Tprim pprime;
+        pprime.rho    = p.rho;
+        pprime.vel[0] = p.vel[1];
+        pprime.vel[1] = -p.vel[0];
+        pprime.vel[2] = p.vel[2];
+        return pprime;
+    }
+
+    template<class Tprim>
+    inline constexpr Tprim d_prim_z_to_x(const Tprim p) {
+        Tprim pprime;
+        pprime.rho    = p.rho;
+        pprime.vel[0] = p.vel[2];
+        pprime.vel[1] = p.vel[1];
+        pprime.vel[2] = -p.vel[0];
+        return pprime;
+    }
+
+    template<class Tprim>
+    inline constexpr Tprim d_prim_invert_axis(const Tprim p) {
+        Tprim pprime;
+        pprime.rho = p.rho;
+        pprime.vel = -(p.vel);
+        return pprime;
     }
 
 } // namespace shammath

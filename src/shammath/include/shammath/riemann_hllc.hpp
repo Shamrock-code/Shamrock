@@ -27,28 +27,29 @@ namespace shammath {
      *         The wave speeds estimates are based on Bernd Einfeldt (SIAM, 1988), On Godunov-Type
      *          Methods for Gas Dynamics, using the pressure in the star region estimated through
      *          the primitive variable solver (valid for an adiabatic equation of state).
-     * @tparam Tcons
-     * @param cL left  conservative state
-     * @param cR right conservative state
+     * @tparam Tprim
+     * @param primL left  primitive state
+     * @param primR right primitive state
      * @param gamma adiabatic index
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_adiab_toro_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        Tcons flux;
-        using Tscal = typename Tcons::Tscal;
-        using Tvec  = typename Tcons::Tvec;
+    template<class Tprim>
+    inline constexpr auto hllc_adiab_toro_flux_x(
+        Tprim primL, Tprim primR, typename Tprim::Tscal gamma) {
+        using Tscal = typename Tprim::Tscal;
+        using Tvec  = typename Tprim::Tvec;
+        using Tcons = ConsState<Tvec>;
 
-        // const to prim
-        const auto primL = cons_to_prim(cL, gamma);
-        const auto primR = cons_to_prim(cR, gamma);
+        // Conservative form is only needed for the star-state algebra below.
+        const Tcons cL = prim_to_cons(primL, gamma);
+        const Tcons cR = prim_to_cons(primR, gamma);
 
         // sound speeds
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
 
         // Left and right state fluxes
-        const auto FL = hydro_flux_x(cL, gamma);
-        const auto FR = hydro_flux_x(cR, gamma);
+        const auto FL = hydro_flux_x(primL, gamma);
+        const auto FR = hydro_flux_x(primR, gamma);
 
         // Left variables
         const auto rhoL   = primL.rho;
@@ -148,44 +149,44 @@ namespace shammath {
     /**
      * @brief HLLC flux in the +y direction (adiabatic p* wave speed estimate)
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_adiab_toro_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_y(hllc_adiab_toro_flux_x(y_to_x(cL), y_to_x(cR), gamma));
+    template<class Tprim>
+    inline constexpr auto hllc_adiab_toro_flux_y(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
+        return x_to_y(hllc_adiab_toro_flux_x(prim_y_to_x(pL), prim_y_to_x(pR), gamma));
     }
 
     /**
      * @brief HLLC flux in the +z direction (adiabatic p* wave speed estimate)
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_adiab_toro_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_z(hllc_adiab_toro_flux_x(z_to_x(cL), z_to_x(cR), gamma));
+    template<class Tprim>
+    inline constexpr auto hllc_adiab_toro_flux_z(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
+        return x_to_z(hllc_adiab_toro_flux_x(prim_z_to_x(pL), prim_z_to_x(pR), gamma));
     }
 
     /**
      * @brief HLLC flux in the -x direction (adiabatic p* wave speed estimate)
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_adiab_toro_flux_mx(
-        Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_adiab_toro_flux_x(invert_axis(cL), invert_axis(cR), gamma));
+    template<class Tprim>
+    inline constexpr auto hllc_adiab_toro_flux_mx(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
+        return invert_axis(
+            hllc_adiab_toro_flux_x(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
     }
 
     /**
      * @brief HLLC flux in the -y direction (adiabatic p* wave speed estimate)
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_adiab_toro_flux_my(
-        Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_adiab_toro_flux_y(invert_axis(cL), invert_axis(cR), gamma));
+    template<class Tprim>
+    inline constexpr auto hllc_adiab_toro_flux_my(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
+        return invert_axis(
+            hllc_adiab_toro_flux_y(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
     }
 
     /**
      * @brief HLLC flux in the -z direction (adiabatic p* wave speed estimate)
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_adiab_toro_flux_mz(
-        Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_adiab_toro_flux_z(invert_axis(cL), invert_axis(cR), gamma));
+    template<class Tprim>
+    inline constexpr auto hllc_adiab_toro_flux_mz(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
+        return invert_axis(
+            hllc_adiab_toro_flux_z(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
     }
 
     /**
@@ -195,28 +196,28 @@ namespace shammath {
      *          SR = max(velxL + csL, velxR + csR)
      *        This estimate does not rely on an adiabatic equation of state for the pressure in
      *        the star region and can therefore be used for other equations of state.
-     * @tparam Tcons
-     * @param cL left  conservative state
-     * @param cR right conservative state
+     * @tparam Tprim
+     * @param primL left  primitive state
+     * @param primR right primitive state
      * @param gamma adiabatic index
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_davis_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        Tcons flux;
-        using Tscal = typename Tcons::Tscal;
-        using Tvec  = typename Tcons::Tvec;
+    template<class Tprim>
+    inline constexpr auto hllc_davis_flux_x(Tprim primL, Tprim primR, typename Tprim::Tscal gamma) {
+        using Tscal = typename Tprim::Tscal;
+        using Tvec  = typename Tprim::Tvec;
+        using Tcons = ConsState<Tvec>;
 
-        // const to prim
-        const auto primL = cons_to_prim(cL, gamma);
-        const auto primR = cons_to_prim(cR, gamma);
+        // Conservative form is only needed for the star-state algebra below.
+        const Tcons cL = prim_to_cons(primL, gamma);
+        const Tcons cR = prim_to_cons(primR, gamma);
 
         // sound speeds
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
 
         // Left and right state fluxes
-        const auto FL = hydro_flux_x(cL, gamma);
-        const auto FR = hydro_flux_x(cR, gamma);
+        const auto FL = hydro_flux_x(primL, gamma);
+        const auto FR = hydro_flux_x(primR, gamma);
 
         // Left variables
         const auto rhoL   = primL.rho;
@@ -280,41 +281,41 @@ namespace shammath {
     /**
      * @brief HLLC flux in the +y direction (Davis wave speed estimate)
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_davis_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_y(hllc_davis_flux_x(y_to_x(cL), y_to_x(cR), gamma));
+    template<class Tprim>
+    inline constexpr auto hllc_davis_flux_y(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
+        return x_to_y(hllc_davis_flux_x(prim_y_to_x(pL), prim_y_to_x(pR), gamma));
     }
 
     /**
      * @brief HLLC flux in the +z direction (Davis wave speed estimate)
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_davis_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_z(hllc_davis_flux_x(z_to_x(cL), z_to_x(cR), gamma));
+    template<class Tprim>
+    inline constexpr auto hllc_davis_flux_z(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
+        return x_to_z(hllc_davis_flux_x(prim_z_to_x(pL), prim_z_to_x(pR), gamma));
     }
 
     /**
      * @brief HLLC flux in the -x direction (Davis wave speed estimate)
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_davis_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_davis_flux_x(invert_axis(cL), invert_axis(cR), gamma));
+    template<class Tprim>
+    inline constexpr auto hllc_davis_flux_mx(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
+        return invert_axis(hllc_davis_flux_x(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
     }
 
     /**
      * @brief HLLC flux in the -y direction (Davis wave speed estimate)
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_davis_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_davis_flux_y(invert_axis(cL), invert_axis(cR), gamma));
+    template<class Tprim>
+    inline constexpr auto hllc_davis_flux_my(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
+        return invert_axis(hllc_davis_flux_y(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
     }
 
     /**
      * @brief HLLC flux in the -z direction (Davis wave speed estimate)
      */
-    template<class Tcons>
-    inline constexpr Tcons hllc_davis_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_davis_flux_z(invert_axis(cL), invert_axis(cR), gamma));
+    template<class Tprim>
+    inline constexpr auto hllc_davis_flux_mz(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
+        return invert_axis(hllc_davis_flux_z(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
     }
 
 } // namespace shammath

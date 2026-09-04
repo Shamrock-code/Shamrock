@@ -38,68 +38,65 @@ namespace shammodels::basegodunov::modules {
         using Tscal = typename Tcons::Tscal;
 
         inline static constexpr Tcons flux(Tprim pL, Tprim pR, typename Tcons::Tscal gamma) {
-            Tcons cL = shammath::prim_to_cons(pL, gamma);
-            Tcons cR = shammath::prim_to_cons(pR, gamma);
-
             if constexpr (mode == RiemannSolverMode::Rusanov) {
                 if constexpr (dir == Direction::xp) {
-                    return shammath::rusanov_flux_x(cL, cR, gamma);
+                    return shammath::rusanov_flux_x(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::yp) {
-                    return shammath::rusanov_flux_y(cL, cR, gamma);
+                    return shammath::rusanov_flux_y(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::zp) {
-                    return shammath::rusanov_flux_z(cL, cR, gamma);
+                    return shammath::rusanov_flux_z(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::xm) {
-                    return shammath::rusanov_flux_mx(cL, cR, gamma);
+                    return shammath::rusanov_flux_mx(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::ym) {
-                    return shammath::rusanov_flux_my(cL, cR, gamma);
+                    return shammath::rusanov_flux_my(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::zm) {
-                    return shammath::rusanov_flux_mz(cL, cR, gamma);
+                    return shammath::rusanov_flux_mz(pL, pR, gamma);
                 }
             }
             if constexpr (mode == RiemannSolverMode::HLL) {
                 if constexpr (dir == Direction::xp) {
-                    return shammath::hll_flux_x(cL, cR, gamma);
+                    return shammath::hll_flux_x(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::yp) {
-                    return shammath::hll_flux_y(cL, cR, gamma);
+                    return shammath::hll_flux_y(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::zp) {
-                    return shammath::hll_flux_z(cL, cR, gamma);
+                    return shammath::hll_flux_z(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::xm) {
-                    return shammath::hll_flux_mx(cL, cR, gamma);
+                    return shammath::hll_flux_mx(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::ym) {
-                    return shammath::hll_flux_my(cL, cR, gamma);
+                    return shammath::hll_flux_my(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::zm) {
-                    return shammath::hll_flux_mz(cL, cR, gamma);
+                    return shammath::hll_flux_mz(pL, pR, gamma);
                 }
             }
 
             if constexpr (mode == RiemannSolverMode::HLLC) {
                 if constexpr (dir == Direction::xp) {
-                    return shammath::hllc_adiab_toro_flux_x(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_x(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::yp) {
-                    return shammath::hllc_adiab_toro_flux_y(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_y(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::zp) {
-                    return shammath::hllc_adiab_toro_flux_z(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_z(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::xm) {
-                    return shammath::hllc_adiab_toro_flux_mx(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_mx(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::ym) {
-                    return shammath::hllc_adiab_toro_flux_my(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_my(pL, pR, gamma);
                 }
                 if constexpr (dir == Direction::zm) {
-                    return shammath::hllc_adiab_toro_flux_mz(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_mz(pL, pR, gamma);
                 }
             }
         }
@@ -114,49 +111,46 @@ namespace shammodels::basegodunov::modules {
 
         inline static constexpr Tcons dustflux(Tprim pL, Tprim pR) {
 
-            Tcons cL = shammath::d_prim_to_cons(pL);
-            Tcons cR = shammath::d_prim_to_cons(pR);
-
             if constexpr (mode == DustRiemannSolverMode::HB) {
                 if constexpr (dir == Direction::xp) {
-                    return shammath::huang_bai_flux_x(cL, cR);
+                    return shammath::huang_bai_flux_x(pL, pR);
                 }
                 if constexpr (dir == Direction::yp) {
-                    return shammath::huang_bai_flux_y(cL, cR);
+                    return shammath::huang_bai_flux_y(pL, pR);
                 }
                 if constexpr (dir == Direction::zp) {
-                    return shammath::huang_bai_flux_z(cL, cR);
+                    return shammath::huang_bai_flux_z(pL, pR);
                 }
 
                 if constexpr (dir == Direction::xm) {
-                    return shammath::huang_bai_flux_mx(cL, cR);
+                    return shammath::huang_bai_flux_mx(pL, pR);
                 }
                 if constexpr (dir == Direction::ym) {
-                    return shammath::huang_bai_flux_my(cL, cR);
+                    return shammath::huang_bai_flux_my(pL, pR);
                 }
                 if constexpr (dir == Direction::zm) {
-                    return shammath::huang_bai_flux_mz(cL, cR);
+                    return shammath::huang_bai_flux_mz(pL, pR);
                 }
             }
             if constexpr (mode == DustRiemannSolverMode::DHLL) {
                 if constexpr (dir == Direction::xp) {
-                    return shammath::d_hll_flux_x(cL, cR);
+                    return shammath::d_hll_flux_x(pL, pR);
                 }
                 if constexpr (dir == Direction::yp) {
-                    return shammath::d_hll_flux_y(cL, cR);
+                    return shammath::d_hll_flux_y(pL, pR);
                 }
                 if constexpr (dir == Direction::zp) {
-                    return shammath::d_hll_flux_z(cL, cR);
+                    return shammath::d_hll_flux_z(pL, pR);
                 }
 
                 if constexpr (dir == Direction::xm) {
-                    return shammath::d_hll_flux_mx(cL, cR);
+                    return shammath::d_hll_flux_mx(pL, pR);
                 }
                 if constexpr (dir == Direction::ym) {
-                    return shammath::d_hll_flux_my(cL, cR);
+                    return shammath::d_hll_flux_my(pL, pR);
                 }
                 if constexpr (dir == Direction::zm) {
-                    return shammath::d_hll_flux_mz(cL, cR);
+                    return shammath::d_hll_flux_mz(pL, pR);
                 }
             }
         }

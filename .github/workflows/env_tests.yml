@@ -141,15 +141,6 @@ jobs:
             },
             {
               "machine": "macos-generic.acpp",
-              "runson": "[\"macos-15-intel\"]",
-              "imagename": "MacOS-15 (intel)",
-              "runtest": true,
-              "runtest_rscript": true,
-              "mpiargs": "--oversubscribe",
-              "ccache-key-extra": "macos15-intel"
-            },
-            {
-              "machine": "macos-generic.acpp",
               "runson": "[\"macos-26\"]",
               "imagename": "MacOS-26",
               "runtest": true,

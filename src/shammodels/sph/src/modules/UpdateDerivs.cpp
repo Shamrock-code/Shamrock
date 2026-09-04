@@ -1228,6 +1228,69 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
     }
     node->evaluate();
 
+    if (DustEvolCoalaCoag<Tscal> *cfg_evol
+        = std::get_if<DustEvolCoalaCoag<Tscal>>(&cfg.dust_evol_config)) {
+
+        auto massgrid  = shamrock::solvergraph::IDataEdge<std::vector<Tscal>>::make_shared("", "");
+        massgrid->data = cfg_evol->massgrid;
+
+        auto tabflux_coag
+            = shamrock::solvergraph::IDataEdge<std::vector<Tscal>>::make_shared("", "");
+        tabflux_coag->data = cfg_evol->tabflux_coag;
+
+        auto rhodust_eps  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+        rhodust_eps->data = cfg_evol->rhodust_eps;
+
+        auto dv_max  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+        dv_max->data = cfg_evol->dv_max;
+
+        auto dt_hydro_edge  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+        dt_hydro_edge->data = dt_hydro;
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_P_on_rho
+            = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad P/rho", "grad P/rho");
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> delta_v
+            = std::make_shared<shamrock::solvergraph::Field<Tvec>>(ndust, "Delta v", "Delta v");
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> S_coag
+            = std::make_shared<shamrock::solvergraph::Field<Tscal>>(ndust, "S_coag", "S_coag");
+
+        auto press_grad_node      = std::make_shared<NodeComputePressureGrad<Tvec, SPHKernel>>();
+        auto delta_v_node         = std::make_shared<MonoFluidTVADeltav<Tvec, SPHKernel>>(ndust);
+        auto node                 = std::make_shared<NodeEvolveDustCOALASourceTerm<Tvec>>(ndust);
+        auto node_add_source_term = std::make_shared<NodeMonofluidTVAAddSourceTerm<Tvec>>(ndust);
+
+        press_grad_node->set_edges(
+            gpart_mass,
+            part_counts,
+            part_counts_with_ghost,
+            xyz_refs,
+            hpart_refs,
+            omega_refs,
+            pressure_field,
+            storage.neigh_cache,
+            grad_P_on_rho);
+
+        delta_v_node->set_edges(
+            gpart_mass, part_counts, hpart_refs, grad_P_on_rho, s_j_refs, t_j_field, delta_v);
+
+        node->set_edges(
+            rhodust_eps, dv_max, massgrid, tabflux_coag, part_counts, s_j_refs, delta_v, S_coag);
+
+        node_add_source_term->set_edges(
+            part_counts, rhodust_eps, dt_hydro_edge, S_coag, s_j_refs, ds_j_dt_refs);
+
+        press_grad_node->evaluate();
+        delta_v_node->evaluate();
+        node->evaluate();
+
+        // here we could compute the sum of S_coag to see if we are fucking up the dust mass
+        // conservation
+
+        node_add_source_term->evaluate();
+    }
+
     MonofluidTVA &cfg_monofluid_tva
         = shambase::get_check_ref((std::get_if<MonofluidTVA>(&cfg.current_mode)));
 

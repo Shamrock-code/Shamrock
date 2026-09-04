@@ -19,6 +19,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/overloaded.hpp"
 #include "config/AVConfig.hpp"
 #include "config/BCConfig.hpp"
 #include "shambackends/math.hpp"
@@ -100,6 +101,14 @@ namespace shammodels::sph {
         inline void add_kill_sphere(const Tvec &center, Tscal radius) {
             kill_list.push_back(Sphere{center, radius});
         }
+    };
+
+    template<class Tscal>
+    struct DustEvolCoalaCoag {
+        Tscal rhodust_eps;
+        Tscal dv_max;
+        std::vector<Tscal> massgrid;
+        std::vector<Tscal> tabflux_coag;
     };
 
     template<class Tscal>
@@ -313,6 +322,42 @@ namespace shammodels::sph {
 
         inline void set_drag_epstein(EpsteinDrag in) { dust_drag_mode = std::move(in); }
 
+        std::variant<None, DustEvolCoalaCoag<Tscal>> dust_evol_config = None{};
+
+        inline void evol_mode_to_json(nlohmann::json &j) const {
+            std::visit(
+                shambase::overloaded{
+                    [&](const None &) {
+                        j = {{"type", "none"}};
+                    },
+                    [&](const DustEvolCoalaCoag<Tscal> &cfg) {
+                        j
+                            = {{"type", "coala_coag"},
+                               {"rhodust_eps", cfg.rhodust_eps},
+                               {"dv_max", cfg.dv_max},
+                               {"massgrid", cfg.massgrid},
+                               {"tabflux_coag", cfg.tabflux_coag}};
+                    },
+                },
+                dust_evol_config);
+        }
+
+        inline void evol_mode_from_json(const nlohmann::json &j) {
+            if (j.at("type").get<std::string>() == "none") {
+                dust_evol_config = None{};
+            } else if (j.at("type").get<std::string>() == "coala_coag") {
+                dust_evol_config = DustEvolCoalaCoag<Tscal>{
+                    .rhodust_eps  = j.at("rhodust_eps").get<Tscal>(),
+                    .dv_max       = j.at("dv_max").get<Tscal>(),
+                    .massgrid     = j.at("massgrid").get<std::vector<Tscal>>(),
+                    .tabflux_coag = j.at("tabflux_coag").get<std::vector<Tscal>>()};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void set_dust_evol_coala(DustEvolCoalaCoag<Tscal> cfg) { dust_evol_config = cfg; }
+
         inline void check_config() {
             bool is_not_none = !is_none();
             if (is_not_none) {
@@ -348,6 +393,49 @@ namespace shammodels::sph {
                             "grains_sizes size does not match the number of dust bins");
                     }
                 }
+            }
+
+            if (!std::holds_alternative<None>(dust_evol_config) && is_not_none) {
+
+                if (DustEvolCoalaCoag<Tscal> *cfg
+                    = std::get_if<DustEvolCoalaCoag<Tscal>>(&dust_evol_config)) {
+
+                    u32 ndust = get_dust_nvar();
+
+                    if (cfg->massgrid.size() - 1 != ndust) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "massgrid must have ndust + 1 = " + std::to_string(ndust + 1)
+                            + " entries for ndust = " + std::to_string(ndust) + ", got "
+                            + std::to_string(cfg->massgrid.size()));
+                    }
+
+                    if (cfg->tabflux_coag.size() != ndust * ndust * ndust) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "tabflux_coag must have ndust^3 = "
+                            + std::to_string(ndust * ndust * ndust)
+                            + " entries for ndust = " + std::to_string(ndust) + ", got "
+                            + std::to_string(cfg->tabflux_coag.size()));
+                    }
+
+                    if (cfg->rhodust_eps <= 0) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "rhodust_eps must be positive, got "
+                            + std::to_string(cfg->rhodust_eps));
+                    }
+
+                    if (cfg->dv_max <= 0) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "dv_max must be positive, got " + std::to_string(cfg->dv_max));
+                    }
+
+                } else {
+                    shambase::throw_unimplemented();
+                }
+
+            } else if (!std::holds_alternative<None>(dust_evol_config) && is_none()) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "cannot enable dust evolution because the dust mode is 'none', call "
+                    "set_dust_mode_* before set_dust_evol_coala");
             }
         }
     };
@@ -1256,6 +1344,7 @@ namespace shammodels::sph {
 
         p.mode_to_json(j["mode"]);
         p.drag_mode_to_json(j["drag_mode"]);
+        p.evol_mode_to_json(j["evol_mode"]);
         j["ballabio_ts_limiter"] = p.ballabio_ts_limiter;
     }
 
@@ -1263,6 +1352,9 @@ namespace shammodels::sph {
     inline void from_json(const nlohmann::json &j, DustConfig<Tvec> &p) {
         p.mode_from_json(j.at("mode"));
         p.drag_mode_from_json(j.at("drag_mode"));
+        if (j.contains("evol_mode")) {
+            p.evol_mode_from_json(j.at("evol_mode"));
+        }
         p.ballabio_ts_limiter = j.value("ballabio_ts_limiter", false);
     }
 

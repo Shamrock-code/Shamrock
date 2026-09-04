@@ -40,6 +40,7 @@
 #include "shammodels/sph/sink_edges_helper.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include <experimental/mdspan>
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pytypes.h>
@@ -325,6 +326,64 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("gamma"),
             py::arg("grain_sizes"),
             py::arg("grain_densities"))
+        .def(
+            "set_dust_evol_coala_coag",
+            [](TConfig &self,
+               Tscal rhodust_eps,
+               Tscal dv_max,
+               std::vector<Tscal> massgrid,
+               py::array_t<Tscal> tabflux_coag) {
+                if (massgrid.size() == 0) {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "massgrid must not be empty");
+                }
+
+                u32 nbins = massgrid.size() - 1;
+
+                // tabflux_coag is a 3D array of shape (nbins ** 3)
+
+                // assert rank is 3
+                if (tabflux_coag.ndim() != 3) {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "tabflux_coag must be a 3D array, got ndim="
+                        + std::to_string(tabflux_coag.ndim()));
+                }
+
+                // assert shape is (nbins, nbins, nbins)
+                if (tabflux_coag.shape(0) != nbins || tabflux_coag.shape(1) != nbins
+                    || tabflux_coag.shape(2) != nbins) {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "tabflux_coag must be a 3D array of shape (nbins, nbins, nbins) with "
+                        "nbins="
+                        + std::to_string(nbins) + " (massgrid.size() - 1), got shape ("
+                        + std::to_string(tabflux_coag.shape(0)) + ", "
+                        + std::to_string(tabflux_coag.shape(1)) + ", "
+                        + std::to_string(tabflux_coag.shape(2)) + ")");
+                }
+
+                std::vector<Tscal> tabflux_coag_vec(nbins * nbins * nbins);
+
+                using mdspan_rank_3 = std::mdspan<Tscal, std::dextents<u32, 3>>;
+                mdspan_rank_3 tabflux_coag_mdspan(tabflux_coag_vec.data(), nbins, nbins, nbins);
+
+                for (u32 i = 0; i < nbins; i++) {
+                    for (u32 j = 0; j < nbins; j++) {
+                        for (u32 k = 0; k < nbins; k++) {
+                            tabflux_coag_mdspan(i, j, k) = tabflux_coag.mutable_at(i, j, k);
+                        }
+                    }
+                }
+
+                self.dust_config.set_dust_evol_coala(
+                    {.rhodust_eps  = rhodust_eps,
+                     .dv_max       = dv_max,
+                     .massgrid     = massgrid,
+                     .tabflux_coag = tabflux_coag_vec});
+            },
+            py::arg("rhodust_eps"),
+            py::arg("dv_max"),
+            py::arg("massgrid"),
+            py::arg("tabflux_coag"))
         .def(
             "set_dust_ballabio_ts_limiter",
             [](TConfig &self, bool enabled) {

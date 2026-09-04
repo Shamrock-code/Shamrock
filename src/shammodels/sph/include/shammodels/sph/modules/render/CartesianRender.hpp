@@ -22,6 +22,7 @@
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/solvergraph/Field.hpp"
 #include <pybind11/numpy.h>
 #include <pybind11/pytypes.h>
 
@@ -59,6 +60,17 @@ namespace shammodels::sph::modules {
             const sham::DeviceBuffer<shammath::RingRay<Tvec>> &ring_rays);
 
         sham::DeviceBuffer<Tfield> compute_slice(
+            shamrock::solvergraph::Field<Tfield> &field, const sham::DeviceBuffer<Tvec> &positions);
+
+        sham::DeviceBuffer<Tfield> compute_column_integ(
+            shamrock::solvergraph::Field<Tfield> &field,
+            const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays);
+
+        sham::DeviceBuffer<Tfield> compute_azymuthal_integ(
+            shamrock::solvergraph::Field<Tfield> &field,
+            const sham::DeviceBuffer<shammath::RingRay<Tvec>> &ring_rays);
+
+        sham::DeviceBuffer<Tfield> compute_slice(
             std::string field_name,
             const sham::DeviceBuffer<Tvec> &positions,
             std::optional<std::function<pybind11::array_t<Tfield>(size_t, pybind11::dict &)>>
@@ -86,6 +98,22 @@ namespace shammodels::sph::modules {
 
         sham::DeviceBuffer<Tfield> compute_column_integ(
             std::function<field_getter_t> field_getter,
+            Tvec center,
+            Tvec delta_x,
+            Tvec delta_y,
+            u32 nx,
+            u32 ny);
+
+        sham::DeviceBuffer<Tfield> compute_slice(
+            shamrock::solvergraph::Field<Tfield> &field,
+            Tvec center,
+            Tvec delta_x,
+            Tvec delta_y,
+            u32 nx,
+            u32 ny);
+
+        sham::DeviceBuffer<Tfield> compute_column_integ(
+            shamrock::solvergraph::Field<Tfield> &field,
             Tvec center,
             Tvec delta_x,
             Tvec delta_y,
@@ -143,6 +171,32 @@ namespace shammodels::sph::modules {
                 ring_rays.size(), shamsys::instance::get_compute_scheduler_ptr()};
             ring_rays_buf.copy_from_stdvec(ring_rays);
             return compute_azymuthal_integ(field_name, ring_rays_buf, custom_getter);
+        }
+
+        inline sham::DeviceBuffer<Tfield> compute_slice(
+            shamrock::solvergraph::Field<Tfield> &field, const std::vector<Tvec> &positions) {
+            sham::DeviceBuffer<Tvec> positions_buf{
+                positions.size(), shamsys::instance::get_compute_scheduler_ptr()};
+            positions_buf.copy_from_stdvec(positions);
+            return compute_slice(field, positions_buf);
+        }
+
+        inline sham::DeviceBuffer<Tfield> compute_column_integ(
+            shamrock::solvergraph::Field<Tfield> &field,
+            const std::vector<shammath::Ray<Tvec>> &rays) {
+            sham::DeviceBuffer<shammath::Ray<Tvec>> rays_buf{
+                rays.size(), shamsys::instance::get_compute_scheduler_ptr()};
+            rays_buf.copy_from_stdvec(rays);
+            return compute_column_integ(field, rays_buf);
+        }
+
+        inline sham::DeviceBuffer<Tfield> compute_azymuthal_integ(
+            shamrock::solvergraph::Field<Tfield> &field,
+            const std::vector<shammath::RingRay<Tvec>> &ring_rays) {
+            sham::DeviceBuffer<shammath::RingRay<Tvec>> ring_rays_buf{
+                ring_rays.size(), shamsys::instance::get_compute_scheduler_ptr()};
+            ring_rays_buf.copy_from_stdvec(ring_rays);
+            return compute_azymuthal_integ(field, ring_rays_buf);
         }
 
         private:

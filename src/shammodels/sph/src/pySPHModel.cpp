@@ -1107,6 +1107,28 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("positions"),
             py::arg("custom_getter") = std::nullopt)
         .def(
+            "render_slice",
+            [](T &self,
+               shamrock::solvergraph::Field<f64> &field,
+               const std::vector<Tvec> &positions) -> std::vector<f64> {
+                modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_slice(field, positions).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("positions"))
+        .def(
+            "render_slice",
+            [](T &self,
+               shamrock::solvergraph::Field<f64_3> &field,
+               const std::vector<Tvec> &positions) -> std::vector<f64_3> {
+                modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_slice(field, positions).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("positions"))
+        .def(
             "render_column_integ",
             [](T &self,
                const std::string &name,
@@ -1139,6 +1161,28 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("field_type"),
             py::arg("rays"),
             py::arg("custom_getter") = std::nullopt)
+        .def(
+            "render_column_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64> &field,
+               const std::vector<shammath::Ray<Tvec>> &rays) -> std::vector<f64> {
+                modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_column_integ(field, rays).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("rays"))
+        .def(
+            "render_column_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64_3> &field,
+               const std::vector<shammath::Ray<Tvec>> &rays) -> std::vector<f64_3> {
+                modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_column_integ(field, rays).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("rays"))
         .def(
             "compute_field",
             [](T &self,
@@ -1207,6 +1251,28 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("field_type"),
             py::arg("ring_rays"),
             py::arg("custom_getter") = std::nullopt)
+        .def(
+            "render_azymuthal_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64> &field,
+               const std::vector<shammath::RingRay<Tvec>> &ring_rays) -> std::vector<f64> {
+                modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_azymuthal_integ(field, ring_rays).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("ring_rays"))
+        .def(
+            "render_azymuthal_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64_3> &field,
+               const std::vector<shammath::RingRay<Tvec>> &ring_rays) -> std::vector<f64_3> {
+                modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_azymuthal_integ(field, ring_rays).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("ring_rays"))
         .def(
             "render_cartesian_slice",
             [](T &self,
@@ -1278,6 +1344,72 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("nx"),
             py::arg("ny"),
             py::arg("custom_getter") = std::nullopt)
+        .def(
+            "render_cartesian_slice",
+            [](T &self,
+               shamrock::solvergraph::Field<f64> &field,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny) -> py::array_t<Tscal> {
+                py::array_t<Tscal> ret({ny, nx});
+
+                modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+
+                std::vector<f64> slice
+                    = render.compute_slice(field, center, delta_x, delta_y, nx, ny)
+                          .copy_to_stdvec();
+
+                for (u32 iy = 0; iy < ny; iy++) {
+                    for (u32 ix = 0; ix < nx; ix++) {
+                        ret.mutable_at(iy, ix) = slice[ix + nx * iy];
+                    }
+                }
+
+                return ret;
+            },
+            py::arg("field"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"))
+        .def(
+            "render_cartesian_slice",
+            [](T &self,
+               shamrock::solvergraph::Field<f64_3> &field,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny) -> py::array_t<Tscal> {
+                py::array_t<Tscal> ret({ny, nx, 3_u32});
+
+                modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+
+                std::vector<f64_3> slice
+                    = render.compute_slice(field, center, delta_x, delta_y, nx, ny)
+                          .copy_to_stdvec();
+
+                for (u32 iy = 0; iy < ny; iy++) {
+                    for (u32 ix = 0; ix < nx; ix++) {
+                        ret.mutable_at(iy, ix, 0) = slice[ix + nx * iy][0];
+                        ret.mutable_at(iy, ix, 1) = slice[ix + nx * iy][1];
+                        ret.mutable_at(iy, ix, 2) = slice[ix + nx * iy][2];
+                    }
+                }
+
+                return ret;
+            },
+            py::arg("field"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"))
         .def(
             "render_cartesian_column_integ",
             [](T &self,
@@ -1352,6 +1484,72 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("nx"),
             py::arg("ny"),
             py::arg("custom_getter") = std::nullopt)
+        .def(
+            "render_cartesian_column_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64> &field,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny) -> py::array_t<Tscal> {
+                py::array_t<Tscal> ret({ny, nx});
+
+                modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+
+                std::vector<f64> slice
+                    = render.compute_column_integ(field, center, delta_x, delta_y, nx, ny)
+                          .copy_to_stdvec();
+
+                for (u32 iy = 0; iy < ny; iy++) {
+                    for (u32 ix = 0; ix < nx; ix++) {
+                        ret.mutable_at(iy, ix) = slice[ix + nx * iy];
+                    }
+                }
+
+                return ret;
+            },
+            py::arg("field"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"))
+        .def(
+            "render_cartesian_column_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64_3> &field,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny) -> py::array_t<Tscal> {
+                py::array_t<Tscal> ret({ny, nx, 3_u32});
+
+                modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+
+                std::vector<f64_3> slice
+                    = render.compute_column_integ(field, center, delta_x, delta_y, nx, ny)
+                          .copy_to_stdvec();
+
+                for (u32 iy = 0; iy < ny; iy++) {
+                    for (u32 ix = 0; ix < nx; ix++) {
+                        ret.mutable_at(iy, ix, 0) = slice[ix + nx * iy][0];
+                        ret.mutable_at(iy, ix, 1) = slice[ix + nx * iy][1];
+                        ret.mutable_at(iy, ix, 2) = slice[ix + nx * iy][2];
+                    }
+                }
+
+                return ret;
+            },
+            py::arg("field"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"))
         .def(
             "gen_config_from_phantom_dump",
             [](T &self, PhantomDump &dump, bool bypass_error) {

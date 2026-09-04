@@ -267,6 +267,7 @@ jobs:
       # if macos container
       - name : Install macos dependencies
         if: matrix.machine == 'macos-generic.acpp'
+        timeout-minutes: 10
         run: |
           set +e
 

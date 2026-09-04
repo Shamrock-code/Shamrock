@@ -69,6 +69,7 @@
 #include "shammodels/sph/modules/MonoFluidTVADeltav.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shammodels/sph/modules/NodeComputePressureGrad.hpp"
+#include "shammodels/sph/modules/NodeMonofluidTVADustDensityClamp.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeConstant.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeEpstein.hpp"
@@ -491,6 +492,28 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                             solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
                             solver_graph.get_edge_ptr<FieldRefs<Tscal>>("s_j"));
                     half_step_sequence.push_back(half_step_s_j);
+                }
+
+                if (cfg.should_clamp_dust_density()) {
+                    auto hfactd_edge  = IDataEdge<Tscal>::make_shared("hfactd", "hfactd");
+                    hfactd_edge->data = Kernel::hfactd;
+
+                    auto clamp_frac_edge
+                        = IDataEdge<Tscal>::make_shared("clamp_frac", "clamp_frac");
+                    clamp_frac_edge->data = cfg.get_clamp_dust_frac();
+
+                    auto half_step_s_j_density_clamp = solver_graph.register_node(
+                        prefix + "_s_j_density_clamp",
+                        shammodels::sph::modules::NodeMonofluidTVADustDensityClamp<Tvec>(ndust));
+                    shambase::get_check_ref(half_step_s_j_density_clamp)
+                        .set_edges(
+                            solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                            solver_graph.get_edge_ptr<IDataEdge<Tscal>>("gpart_mass"),
+                            hfactd_edge,
+                            clamp_frac_edge,
+                            solver_graph.get_edge_ptr<FieldRefs<Tscal>>("hpart"),
+                            solver_graph.get_edge_ptr<FieldRefs<Tscal>>("s_j"));
+                    half_step_sequence.push_back(half_step_s_j_density_clamp);
                 }
             }
 
@@ -2683,6 +2706,33 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             } else {
                 utility.fields_leapfrog_corrector<Tscal>(
                     is_j, ids_j_dt, storage.old_ds_j_dt.get(), s_j_s_j_sq, dt / 2);
+            }
+
+            auto &monofluid_tva_cfg = solver_config.dust_config.get_monofluid_tva();
+            if (monofluid_tva_cfg.should_clamp_dust_density()) {
+                auto hfactd_edge
+                    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("hfactd", "hfactd");
+                hfactd_edge->data = Kernel::hfactd;
+
+                auto clamp_frac_edge = shamrock::solvergraph::IDataEdge<Tscal>::make_shared(
+                    "clamp_frac", "clamp_frac");
+                clamp_frac_edge->data = monofluid_tva_cfg.get_clamp_dust_frac();
+
+                shammodels::sph::modules::NodeMonofluidTVADustDensityClamp<Tvec> density_clamp(
+                    solver_config.dust_config.get_dust_nvar());
+                density_clamp.set_edges(
+                    storage.solver_graph.template get_edge_ptr<shamrock::solvergraph::Indexes<u32>>(
+                        "part_counts"),
+                    storage.solver_graph
+                        .template get_edge_ptr<shamrock::solvergraph::IDataEdge<Tscal>>(
+                            "gpart_mass"),
+                    hfactd_edge,
+                    clamp_frac_edge,
+                    storage.solver_graph
+                        .template get_edge_ptr<shamrock::solvergraph::FieldRefs<Tscal>>("hpart"),
+                    storage.solver_graph
+                        .template get_edge_ptr<shamrock::solvergraph::FieldRefs<Tscal>>("s_j"));
+                density_clamp.evaluate();
             }
         }
 

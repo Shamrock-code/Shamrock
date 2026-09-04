@@ -39,6 +39,7 @@
 #include <fmt/ranges.h>
 #include <nlohmann/json.hpp>
 #include <string_view>
+#include <concepts>
 #include <optional>
 #include <string>
 #include <utility>
@@ -84,7 +85,46 @@ namespace shamalgs {
         static inline Alt from_json(const nlohmann::json &) { return Alt{}; }
     };
 
+    /**
+     * @brief Detects whether Alt opts into exposing more than one default instance of itself
+     * (e.g. the same alternative with different tunable field values) via a static
+     * `variant_custom_defaults()` method, for example:
+     *
+     * @code{.cpp}
+     * struct GpuTeamFetching {
+     *     static constexpr std::string_view variant_type_name = "gpu_team_fetching";
+     *     u32 group_size = 128;
+     *
+     *     static std::vector<GpuTeamFetching> variant_custom_defaults() {
+     *         return {GpuTeamFetching{128}, GpuTeamFetching{256}};
+     *     }
+     * };
+     * @endcode
+     *
+     * Alternatives that do not define it (the common case) keep exposing exactly one,
+     * default-constructed instance.
+     */
+    template<class Alt>
+    concept HasCustomDefaults = requires {
+        { Alt::variant_custom_defaults() } -> std::convertible_to<std::vector<Alt>>;
+    };
+
+    // Forward declaration: defined below, needed by impl_variant_alts::default_config_list()
+    template<class Variant>
+    inline std::string variant_to_config_string(const Variant &v);
+
     namespace details {
+        /// The instances of Alt to expose as "available implementations": a single
+        /// default-constructed one, unless Alt opts into HasCustomDefaults.
+        template<class Alt>
+        inline std::vector<Alt> alt_default_list() {
+            if constexpr (HasCustomDefaults<Alt>) {
+                return Alt::variant_custom_defaults();
+            } else {
+                return {Alt{}};
+            }
+        }
+
         /// Partial specialization target: extracts the Alts... pack out of std::variant<Alts...>
         template<class Variant>
         struct impl_variant_alts;
@@ -93,6 +133,22 @@ namespace shamalgs {
         struct impl_variant_alts<std::variant<Alts...>> {
             static inline std::vector<std::string> default_type_names() {
                 return {std::string(Alts::variant_type_name)...};
+            }
+
+            /// List the available implementations as config json strings. Most alternatives
+            /// contribute exactly one entry; alternatives with HasCustomDefaults contribute one
+            /// entry per instance in their variant_custom_defaults() list.
+            static inline std::vector<std::string> default_config_list() {
+                std::vector<std::string> out;
+                auto add_alt = [&]<class Alt>() {
+                    for (auto &alt : alt_default_list<Alt>()) {
+                        out.push_back(
+                            variant_to_config_string<std::variant<Alts...>>(
+                                std::variant<Alts...>{std::move(alt)}));
+                    }
+                };
+                (add_alt.template operator()<Alts>(), ...);
+                return out;
             }
 
             static inline std::variant<Alts...> from_config_string(std::string_view s) {
@@ -205,9 +261,11 @@ namespace shamalgs {
             return variant_to_config_string(get());
         }
 
-        /// List the available implementations as config json strings, one per alternative
+        /// List the available implementations as config json strings. Most alternatives
+        /// contribute exactly one entry; alternatives opting into HasCustomDefaults
+        /// contribute one entry per instance in their variant_custom_defaults() list.
         inline std::vector<std::string> get_default_config_list() const override {
-            return {variant_to_config_string<Variant>(Variant{Alts{}})...};
+            return details::impl_variant_alts<Variant>::default_config_list();
         }
 
         /// Directly select an alternative (e.g. to seed a default at the call site)

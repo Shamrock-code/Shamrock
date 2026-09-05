@@ -119,7 +119,8 @@ namespace shammodels::basegodunov {
 
         mode config = None{};
 
-        bool old_amr = true;
+        bool old_amr         = true;
+        bool do_enabled_2to1 = true;
 
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
@@ -175,8 +176,7 @@ struct shammodels::basegodunov::SolverConfig {
     RiemannSolverMode riemann_config  = HLL;
     SlopeMode slope_config            = VanLeer_sym;
     bool face_half_time_interpolation = true;
-
-    AMRInterpMode amr_interp_mode = FIRST_ORDER;
+    AMRInterpMode amr_interp_mode     = FIRST_ORDER;
 
     inline bool should_compute_rho_mean() { return is_gravity_on() && is_boundary_periodic(); }
 

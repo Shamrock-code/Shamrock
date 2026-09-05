@@ -183,12 +183,13 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         // External forces
         .def(
             "add_ext_force_point_mass",
-            [](TConfig &self, Tscal central_mass, Tscal Racc) {
-                self.add_ext_force_point_mass(central_mass, Racc);
+            [](TConfig &self, Tscal central_mass, Tscal Racc, Tvec central_pos) {
+                self.add_ext_force_point_mass(central_mass, Racc, central_pos);
             },
             py::kw_only(),
             py::arg("central_mass"),
-            py::arg("Racc"))
+            py::arg("Racc"),
+            py::arg("central_pos") = Tvec{0, 0, 0})
         // Units
         .def("set_units", &TConfig::set_units)
         // CFL

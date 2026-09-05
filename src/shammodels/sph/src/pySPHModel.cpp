@@ -390,18 +390,33 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 self.dust_config.ballabio_ts_limiter = enabled;
             },
             py::arg("enabled"))
-        .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
+        .def(
+            "add_ext_force_point_mass",
+            [](TConfig &self, Tscal central_mass, Tscal Racc, Tvec central_pos) {
+                self.add_ext_force_point_mass(central_mass, Racc, central_pos);
+            },
+            py::kw_only(),
+            py::arg("central_mass"),
+            py::arg("Racc"),
+            py::arg("central_pos") = Tvec{0, 0, 0})
         .def("add_ext_force_paczynski_wiita", &TConfig::add_ext_force_paczynski_wiita)
         .def(
             "add_ext_force_lense_thirring",
-            [](TConfig &self, Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
-                self.add_ext_force_lense_thirring(central_mass, Racc, a_spin, dir_spin);
+            [](TConfig &self,
+               Tscal central_mass,
+               Tscal Racc,
+               Tscal a_spin,
+               Tvec dir_spin,
+               Tvec central_pos) {
+                self.add_ext_force_lense_thirring(
+                    central_mass, Racc, a_spin, dir_spin, central_pos);
             },
             py::kw_only(),
             py::arg("central_mass"),
             py::arg("Racc"),
             py::arg("a_spin"),
-            py::arg("dir_spin"))
+            py::arg("dir_spin"),
+            py::arg("central_pos") = Tvec{0, 0, 0})
         .def(
             "add_ext_force_shearing_box",
             [](TConfig &self, Tscal Omega_0, Tscal eta, Tscal q) {

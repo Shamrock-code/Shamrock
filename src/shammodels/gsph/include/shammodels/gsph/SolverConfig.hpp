@@ -43,7 +43,7 @@
 #include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
-#include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shamrock/scheduler/PatchSchedulerConfig.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"

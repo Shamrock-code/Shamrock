@@ -17,6 +17,7 @@
 
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/modules/ForwardEulerHost.hpp"
 #include "shammodels/sph/sink_edges_helper.hpp"
 #include <vector>
 
@@ -37,13 +38,33 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::predictor_s
 
     compute_ext_forces();
 
+    std::vector<Tvec> acc(pos.size());
     for (size_t i = 0; i < pos.size(); i++) {
-        vel[i] += (dt / 2) * (acc_sph[i] + acc_ext[i]);
+        acc[i] = acc_sph[i] + acc_ext[i];
     }
 
-    for (size_t i = 0; i < pos.size(); i++) {
-        pos[i] += dt * vel[i];
-    }
+    using namespace shamrock::solvergraph;
+    using FEHost = shammodels::common::modules::ForwardEulerHost<Tvec>;
+
+    auto pos_edge
+        = sync.template get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_pos");
+    auto vel_edge
+        = sync.template get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_vel");
+
+    auto acc_edge      = IDataEdge<std::vector<Tvec>>::make_shared("sink_acc_predictor", "a");
+    acc_edge->data     = std::move(acc);
+    auto dt_half_edge  = IDataEdge<Tscal>::make_shared("dt_half", "dt/2");
+    dt_half_edge->data = dt / 2;
+    auto dt_edge       = IDataEdge<Tscal>::make_shared("dt", "dt");
+    dt_edge->data      = dt;
+
+    FEHost half_kick{};
+    half_kick.set_edges(dt_half_edge, acc_edge, vel_edge);
+    half_kick.evaluate();
+
+    FEHost drift{};
+    drift.set_edges(dt_edge, vel_edge, pos_edge);
+    drift.evaluate();
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -60,9 +81,25 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::corrector_s
     auto &acc_sph = get_sink_acc_sph<Tvec>(sync);
     auto &acc_ext = get_sink_acc_ext<Tvec>(sync);
 
+    std::vector<Tvec> acc(vel.size());
     for (size_t i = 0; i < vel.size(); i++) {
-        vel[i] += (dt / 2) * (acc_sph[i] + acc_ext[i]);
+        acc[i] = acc_sph[i] + acc_ext[i];
     }
+
+    using namespace shamrock::solvergraph;
+    using FEHost = shammodels::common::modules::ForwardEulerHost<Tvec>;
+
+    auto vel_edge
+        = sync.template get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_vel");
+
+    auto acc_edge      = IDataEdge<std::vector<Tvec>>::make_shared("sink_acc_corrector", "a");
+    acc_edge->data     = std::move(acc);
+    auto dt_half_edge  = IDataEdge<Tscal>::make_shared("dt_half", "dt/2");
+    dt_half_edge->data = dt / 2;
+
+    FEHost half_kick{};
+    half_kick.set_edges(dt_half_edge, acc_edge, vel_edge);
+    half_kick.evaluate();
 }
 
 template<class Tvec, template<class> class SPHKernel>

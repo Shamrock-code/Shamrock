@@ -180,14 +180,15 @@ upstream `main` on that repo.
 
 ### Commit authorship
 
-Commit-msg hooks can rewrite the author and inject `Co-authored-by` (often)
+Commit-msg hooks can rewrite the author and inject `Co-authored-by` (often
 with a model name). After every `git commit`, amend with `--no-verify`
 before pushing (a plain amend re-runs the hook):
 
 - **Author** = the human who initiated the work. Use `--author`; do not
   change gitconfig.
 - Trailer = `Assisted-by: <agent>` only. No model names. No
-  `Co-authored-by` (`Co-authored-by` is for extra human authors only).
+  `Co-authored-by` (`Co-authored-by` is for extra human authors only). Also
+  no session url.
 
 Check `git log -1 --format='Author: %an <%ae>%n%B'` before push.
 

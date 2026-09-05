@@ -1,5 +1,15 @@
 @AGENTS.md
 
+## Claude Code: commit and PR attribution
+
+Claude Code sessions (including on the web) may default to appending a
+`Claude-Session:` trailer or a `claude.ai/code/session_...` URL to commit
+messages and PR descriptions. **Never include that link** in either —
+strip it during the `--no-verify` amend described in AGENTS.md's "Commit
+authorship" section, alongside any injected `Co-authored-by`/model-name
+lines. Session links belong in the Claude Code UI, not in permanent git
+history or PR bodies.
+
 ## Claude Code on the web: container setup
 
 This container has no GPU, so AdaptiveCpp is built from source targeting

@@ -40,7 +40,9 @@
 #include "shammodels/gsph/SolverConfig.hpp"
 #include "shammodels/gsph/config/FieldNames.hpp"
 #include "shammodels/gsph/modules/ComputeLoadBalanceValue.hpp"
+#include "shammodels/gsph/modules/ExternalForces.hpp"
 #include "shammodels/gsph/modules/GSPHUtilities.hpp"
+#include "shammodels/gsph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/gsph/modules/UpdateDerivs.hpp"
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
 #include "shammodels/sph/modules/ComputeOmega.hpp"
@@ -48,6 +50,8 @@
 #include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
 #include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
+#include "shamphys/eos.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
@@ -1204,12 +1208,15 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    // GSPH EOS: Following reference implementation (g_pre_interaction.cpp)
-    // P = (\gamma - 1) * \rho * u  where \rho is from SPH summation
-    // c = sqrt(\gamma * (\gamma - 1) * u)  -- from internal energy, not from P/\rho
+    using SolverConfigEOS                   = typename Config::EOSConfig;
+    using SolverEOS_Isothermal              = typename SolverConfigEOS::Isothermal;
+    using SolverEOS_Adiabatic               = typename SolverConfigEOS::Adiabatic;
+    using SolverEOS_LocallyIsothermal       = typename SolverConfigEOS::LocallyIsothermal;
+    using SolverEOS_LocallyIsothermalFA2014 = typename SolverConfigEOS::LocallyIsothermalFA2014;
 
     auto dev_sched      = shamsys::instance::get_compute_scheduler_ptr();
     const Tscal gamma   = solver_config.get_eos_gamma();
+    const Tscal cs0     = solver_config.get_eos_cs0();
     const bool has_uint = solver_config.has_field_uint();
 
     // Get ghost layout field indices
@@ -1218,6 +1225,9 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
     u32 idensity_interf = ghost_layout.get_field_idx<Tscal>(gsph::names::newtonian::density);
     u32 iuint_interf
         = has_uint ? ghost_layout.get_field_idx<Tscal>(gsph::names::newtonian::uint) : 0;
+
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
+    const u32 ixyz            = pdl.get_field_idx<Tvec>(gsph::names::common::xyz);
 
     shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
     shamrock::solvergraph::Field<Tscal> &soundspeed_field
@@ -1242,6 +1252,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
         auto &pressure_buf                     = pressure_field.get_field(id).get_buf();
         auto &soundspeed_buf                   = soundspeed_field.get_field(id).get_buf();
 
+        PatchDataField<Tvec> &xyz = mpdat.get_field<Tvec>(ixyz);
+
         sham::DeviceQueue &q = dev_sched->get_queue();
         sham::EventList depends_list;
 
@@ -1249,20 +1261,37 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
         auto pressure   = pressure_buf.get_write_access(depends_list);
         auto soundspeed = soundspeed_buf.get_write_access(depends_list);
 
+        auto &sink_pos  = sph::get_sink_pos<Tvec>(scheduler().synchronized_data);
+        auto &sink_mass = sph::get_sink_mass<Tvec>(scheduler().synchronized_data);
+        u32 sink_cnt    = shambase::narrow_or_throw<u32>(sink_pos.size());
+
+        sham::DeviceBuffer<Tvec> sink_pos_buf(sink_pos.size(), dev_sched);
+        sham::DeviceBuffer<Tscal> sink_mass_buf(sink_mass.size(), dev_sched);
+
+        sink_pos_buf.copy_from_stdvec(sink_pos);
+        sink_mass_buf.copy_from_stdvec(sink_mass);
+
         const Tscal *uint_ptr = nullptr;
         if (has_uint) {
             uint_ptr = mpdat.get_field_buf_ref<Tscal>(iuint_interf).get_read_access(depends_list);
         }
 
+        auto xyz_acc       = xyz.get_buf().get_read_access(depends_list);
+        auto sink_pos_acc  = sink_pos_buf.get_read_access(depends_list);
+        auto sink_mass_acc = sink_mass_buf.get_read_access(depends_list);
+
+        using SolverConfigEOS = typename Config::EOSConfig;
+
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, total_elements, "compute_eos_gsph", [=](u64 gid) {
+            shambase::parallel_for(cgh, total_elements, "compute_eos_gsph", [&](u64 gid) {
                 u32 i = (u32) gid;
 
                 // Use SPH-summation density (from compute_omega, communicated to ghosts)
                 Tscal rho = density[i];
-                rho       = sycl::max(rho, Tscal(1e-30));
+                Tvec pos  = xyz_acc[i];
 
-                if (has_uint && uint_ptr != nullptr) {
+                if (SolverEOS_Adiabatic *eos_config
+                    = std::get_if<SolverEOS_Adiabatic>(&solver_config.eos_config.config)) {
                     // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
                     // P = (\gamma - 1) * \rho * u
                     Tscal u = uint_ptr[i];
@@ -1273,23 +1302,55 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
                     // c = sqrt(\gamma * (\gamma - 1) * u)
                     Tscal cs = sycl::sqrt(gamma * (gamma - Tscal(1.0)) * u);
 
-                    // Clamp to reasonable values
-                    P  = sycl::clamp(P, Tscal(1e-30), Tscal(1e30));
-                    cs = sycl::clamp(cs, Tscal(1e-10), Tscal(1e10));
-
                     pressure[i]   = P;
                     soundspeed[i] = cs;
-                } else {
+                } else if (
+                    SolverEOS_Isothermal *eos_config
+                    = std::get_if<SolverEOS_Isothermal>(&solver_config.eos_config.config)) {
                     // Isothermal case
-                    Tscal cs = Tscal(1.0);
+                    Tscal cs = cs0;
                     Tscal P  = cs * cs * rho;
 
                     pressure[i]   = P;
                     soundspeed[i] = cs;
+                } else if (
+                    SolverEOS_LocallyIsothermalFA2014 *eos_config
+                    = std::get_if<SolverEOS_LocallyIsothermalFA2014>(
+                        &solver_config.eos_config.config)) {
+                    Tscal G        = solver_config.get_constant_G();
+                    Tscal pmass_   = solver_config.gpart_mass;
+                    Tscal hfactd_  = Kernel::hfactd;
+                    Tscal h_over_r = eos_config->h_over_r;
+
+                    Tscal R = sycl::length(pos);
+
+                    using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
+
+                    if (sink_cnt == 0) {
+                        throw shambase::make_except_with_loc<std::runtime_error>(
+                            "No sinks found for the equation of state");
+                    }
+
+                    Tscal mpotential = 0;
+                    for (u32 i = 0; i < sink_cnt; i++) {
+
+                        Tvec s_r      = sink_pos[i] - R;
+                        Tscal s_m     = sink_mass[i];
+                        Tscal s_r_abs = sycl::length(s_r);
+                        mpotential += G * s_m / s_r_abs;
+                    }
+
+                    Tscal cs_out = h_over_r * sycl::sqrt(mpotential);
+                    Tscal P_a    = EOS::pressure_from_cs(cs_out * cs_out, rho);
+
+                    pressure[i]   = P_a;
+                    soundspeed[i] = cs_out;
+
+                } else {
+                    throw std::runtime_error("Unknown EOS type in SolverConfig");
                 }
             });
         });
-
         // Complete all buffer event states
         buf_density.complete_event_state(e);
         if (has_uint) {
@@ -1418,8 +1479,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
 
     // Compute gradients following reference implementation (g_pre_interaction.cpp)
     // grad_d = \sigma_j m_j \nabla W_ij
-    // grad_p = (grad_d * u_i + du) * (\gamma - 1)  where du = \sigma_j m_j (u_j - u_i) \nabla W_ij
-    // grad_v = \sigma_j m_j (v_j - v_i) \nabla W_ij / \rho_i
+    // grad_p = (grad_d * u_i + du) * (\gamma - 1)  where du = \sigma_j m_j (u_j - u_i) \nabla
+    // W_ij grad_v = \sigma_j m_j (v_j - v_i) \nabla W_ij / \rho_i
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         u32 cnt = pdat.get_obj_cnt();
         if (cnt == 0)
@@ -1619,7 +1680,11 @@ template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::update_derivs() {
     StackEntry stack_loc{};
     // GSPH derivative update using Riemann solver
-    gsph::modules::UpdateDerivs<Tvec, Kern>(context, solver_config, storage).update_derivs();
+    gsph::modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
+    derivs.update_derivs();
+
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+    ext_forces.add_ext_forces();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1727,6 +1792,55 @@ typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tv
 }
 
 template<class Tvec, template<class> class Kern>
+typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tvec, Kern>::
+    compute_sink_cfl() {
+    StackEntry stack_loc{};
+
+    Tscal C_force = solver_config.cfl_config.cfl_force;
+    Tscal eta_phi = solver_config.cfl_config.eta_sink;
+
+    Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
+
+    Tscal G = solver_config.get_constant_G();
+
+    std::vector<sph::SinkParticle<Tvec>> &sink_parts = storage.sinks.get();
+
+    if (storage.sinks.is_empty()) {
+        return sink_sink_cfl;
+    }
+
+    for (u32 i = 0; i < sink_parts.size(); i++) {
+        sph::SinkParticle<Tvec> &s_i = sink_parts[i];
+        Tscal sink_sink_cfl_i        = shambase::get_infty<Tscal>();
+
+        Tvec f_i = s_i.ext_acceleration;
+
+        Tscal grad_phi_i_sq = sham::dot(f_i, f_i); // m^2.s^-4
+
+        if (grad_phi_i_sq == 0) {
+            continue;
+        }
+
+        for (u32 j = 0; j < sink_parts.size(); j++) {
+            sph::SinkParticle<Tvec> &s_j = sink_parts[j];
+            if (i == j) {
+                continue;
+            }
+            Tvec rij        = s_i.pos - s_j.pos;
+            Tscal rij_scal  = sycl::length(rij);
+            Tscal phi_ij    = G * s_j.mass / rij_scal;                 // J / kg = m^2.s^-2
+            Tscal term_ij   = sham::abs(phi_ij) / grad_phi_i_sq;       // s^2
+            Tscal dt_ij     = C_force * eta_phi * sycl::sqrt(term_ij); // s
+            sink_sink_cfl_i = sham::min(sink_sink_cfl_i, dt_ij);
+        }
+
+        sink_sink_cfl = sham::min(sink_sink_cfl, sink_sink_cfl_i);
+    }
+
+    return sink_sink_cfl;
+}
+
+template<class Tvec, template<class> class Kern>
 bool shammodels::gsph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
     StackEntry stack_loc{};
 
@@ -1803,7 +1917,6 @@ void shammodels::gsph::Solver<Tvec, Kern>::update_sync_load_values() {
 
 template<class Tvec, template<class> class Kern>
 shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once() {
-
     // Validate configuration before running
     solver_config.check_config_runtime();
 
@@ -1854,6 +1967,20 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // 7. CFL: compute next timestep
     // =========================================================================
 
+    shamrock::SchedulerUtility utility(scheduler());
+
+    modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+
+    // STEP 0: SINK PARTICLES
+    sink_update.accrete_particles(dt);
+    ext_forces.point_mass_accrete_particles();
+
+    sink_update.predictor_step(dt);
+
+    sink_update.compute_ext_forces();
+    ext_forces.compute_ext_forces_indep_v();
+
     // STEP 1: PREDICTOR - move particles using OLD accelerations
     // (On first iteration, accelerations are zero, so this is just position drift)
     do_predictor_leapfrog(dt);
@@ -1897,14 +2024,13 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
 
     // STEP 6: CORRECTOR - refine velocities
     apply_corrector(dt, Npart_all);
+    sink_update.corrector_step(dt);
 
     // STEP 7: CFL - compute next timestep
     Tscal dt_next = compute_dt_cfl();
+    Tscal dt_sink = compute_sink_cfl();
 
-    // Ensure dt doesn't grow too fast (max 2x per step), but allow any value if dt was 0
-    if (dt > Tscal(0)) {
-        dt_next = sham::min(dt_next, Tscal(2) * dt);
-    }
+    dt_next = sycl::min(dt_sink, dt_next);
 
     // Copy EOS fields to patchdata for persistence and VTKDump access
     copy_eos_to_patchdata();

@@ -224,9 +224,16 @@ namespace shammodels::gsph {
          * - Courant condition: dt_cour = C_cour * h / vsig
          * - Force condition: dt_force = C_force * sqrt(h / |a|)
          *
-         * @return Minimum CFL timestep across all particles
+         * @return Minimum CFL timestep across all sinks
          */
         Tscal compute_dt_cfl();
+
+        /**
+         * @brief Compute sink timestep constraint
+         *
+         * @return Minimum CFL timestep across all particles
+         */
+        Tscal compute_sink_cfl();
 
         bool apply_corrector(Tscal dt, u64 Npart_all);
 

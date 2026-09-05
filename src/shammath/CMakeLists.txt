@@ -23,6 +23,8 @@ add_library(shammath::shammath ALIAS shammath)
 
 target_link_libraries(shammath PUBLIC shambackends)
 
+sham_pch_reuse(shammath)
+
 target_include_directories(
     shammath PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
                     "$<INSTALL_INTERFACE:include>"

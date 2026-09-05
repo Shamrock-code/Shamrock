@@ -36,6 +36,8 @@ target_link_libraries(shammodels_common PUBLIC shamphys)
 target_link_libraries(shammodels_common PUBLIC shamsys)
 target_link_libraries(shammodels_common PUBLIC nlohmann_json::nlohmann_json)
 
+sham_pch_reuse(shammodels_common)
+
 target_include_directories(
     shammodels_common PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
                              "$<INSTALL_INTERFACE:include>"

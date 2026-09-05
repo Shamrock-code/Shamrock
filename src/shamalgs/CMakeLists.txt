@@ -59,6 +59,8 @@ add_library(shamalgs::shamalgs ALIAS shamalgs)
 
 target_link_libraries(shamalgs PUBLIC shambackends)
 
+sham_pch_reuse(shamalgs)
+
 target_include_directories(
     shamalgs PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
                     "$<INSTALL_INTERFACE:include>"

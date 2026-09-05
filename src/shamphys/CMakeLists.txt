@@ -25,6 +25,8 @@ target_link_libraries(shamphys PUBLIC shammath)
 target_link_libraries(shamphys PUBLIC shamunits)
 target_link_libraries(shamphys PUBLIC shambindings)
 
+sham_pch_reuse(shamphys)
+
 target_include_directories(
     shamphys PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
                     "$<INSTALL_INTERFACE:include>"

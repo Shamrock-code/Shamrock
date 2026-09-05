@@ -734,7 +734,15 @@ def analyse_and_plot(j):
         label="reference",
     )
 
-    ax_rho.legend(handles=[gas_handle, dust_handle, analytic_handle], loc="upper right", fontsize=8)
+    shamrock.matplotlib.add_cmap_legend_entry(
+        ax_rho,
+        dust_cmap,
+        label="dust species",
+        extra_handles=[gas_handle, dust_handle, analytic_handle],
+        extra_labels=["gas", "dust sum", "reference"],
+        loc="upper right",
+        fontsize=8,
+    )
 
     dust_sm = cm.ScalarMappable(cmap=dust_cmap, norm=dust_norm)
     dust_sm.set_array([])

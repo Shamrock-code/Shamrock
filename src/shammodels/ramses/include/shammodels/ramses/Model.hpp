@@ -21,12 +21,16 @@
 #include "shambase/memory.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/ramses/Solver.hpp"
+#include "shampylib/PatchDataSetup.hpp"
+#include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
+#include <pybind11/functional.h>
+#include <functional>
 
 namespace shammodels::basegodunov {
 
@@ -101,6 +105,53 @@ namespace shammodels::basegodunov {
                 }
 
                 f.get_buf().copy_from_stdvec(acc);
+            });
+        }
+
+        /**
+         * @brief Call a Python callback once per owned patch to get/set float64 fields.
+         *
+         * Registers all f64 / f64_3 layout fields plus a virtual "cell_center" getter.
+         */
+        inline void update_fields(const std::function<void(shamrock::PatchDataSetup &)> &updater) {
+            StackEntry stack_loc{};
+
+            using Block = typename Solver::Config::AMRBlock;
+
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            sched.patch_data.for_each_patchdata([&](u64 /*patch_id*/,
+                                                    shamrock::patch::PatchDataLayer &pdat) {
+                shamrock::PatchDataSetup setup;
+                shamrock::register_f64_layout_fields(setup, pdat);
+
+                sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
+                sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
+
+                Tscal scale_factor = solver.solver_config.grid_coord_to_pos_fact;
+
+                setup.register_getter("cell_center", [&]() -> py::array_t<f64> {
+                    auto cell_min = buf_cell_min.copy_to_stdvec();
+                    auto cell_max = buf_cell_max.copy_to_stdvec();
+
+                    u32 ncell = pdat.get_obj_cnt() * Block::block_size;
+                    std::vector<Tvec> centers(ncell);
+
+                    for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
+                        Tvec block_min  = cell_min[i].template convert<Tscal>() * scale_factor;
+                        Tvec block_max  = cell_max[i].template convert<Tscal>() * scale_factor;
+                        Tvec delta_cell = (block_max - block_min) / Block::side_size;
+
+                        Block::for_each_cell_in_block(delta_cell, [&](u32 lid, Tvec delta) {
+                            Tvec bmin                            = block_min + delta;
+                            Tvec bmax                            = bmin + delta_cell;
+                            centers[i * Block::block_size + lid] = (bmin + bmax) * Tscal{0.5};
+                        });
+                    }
+
+                    return shamrock::VecToNumpy<Tvec>::convert(centers);
+                });
+
+                updater(setup);
             });
         }
 

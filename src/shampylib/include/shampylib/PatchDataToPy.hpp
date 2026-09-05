@@ -15,8 +15,11 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
+#include "shampylib/PatchDataSetup.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -247,5 +250,90 @@ namespace shamrock {
         }
 
         return dic_out;
+    }
+
+    template<class T>
+    class NumpyToVec;
+
+    template<>
+    class NumpyToVec<f64> {
+        public:
+        static std::vector<f64> convert(py::array_t<f64> arr) {
+            if (arr.ndim() != 1) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    shambase::format("expected 1D array for f64 field, got ndim={}", arr.ndim()));
+            }
+
+            auto r = arr.unchecked<1>();
+            std::vector<f64> vec(static_cast<size_t>(r.shape(0)));
+            for (py::ssize_t i = 0; i < r.shape(0); i++) {
+                vec[static_cast<size_t>(i)] = r(i);
+            }
+            return vec;
+        }
+    };
+
+    template<>
+    class NumpyToVec<f64_3> {
+        public:
+        static std::vector<f64_3> convert(py::array_t<f64> arr) {
+            if (arr.ndim() != 2 || arr.shape(1) != 3) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "expected (N, 3) array for f64_3 field");
+            }
+
+            auto r = arr.unchecked<2>();
+            std::vector<f64_3> vec(static_cast<size_t>(r.shape(0)));
+            for (py::ssize_t i = 0; i < r.shape(0); i++) {
+                vec[static_cast<size_t>(i)] = f64_3{r(i, 0), r(i, 1), r(i, 2)};
+            }
+            return vec;
+        }
+    };
+
+    inline void register_field_io_f64(PatchDataSetup &setup, PatchDataField<f64> &field) {
+        std::string name = field.get_name();
+        setup.register_getter(name, [&field]() -> py::array_t<f64> {
+            return VecToNumpy<f64>::convert(field.get_buf().copy_to_stdvec());
+        });
+        setup.register_setter(name, [&field](py::array_t<f64> arr) {
+            auto vec = NumpyToVec<f64>::convert(arr);
+            if (vec.size() != field.get_val_cnt()) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                    "field \"{}\": array size {} does not match field val_cnt {}",
+                    field.get_name(),
+                    vec.size(),
+                    field.get_val_cnt()));
+            }
+            field.get_buf().copy_from_stdvec(vec);
+        });
+    }
+
+    inline void register_field_io_f64_3(PatchDataSetup &setup, PatchDataField<f64_3> &field) {
+        std::string name = field.get_name();
+        setup.register_getter(name, [&field]() -> py::array_t<f64> {
+            return VecToNumpy<f64_3>::convert(field.get_buf().copy_to_stdvec());
+        });
+        setup.register_setter(name, [&field](py::array_t<f64> arr) {
+            auto vec = NumpyToVec<f64_3>::convert(arr);
+            if (vec.size() != field.get_val_cnt()) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                    "field \"{}\": array size {} does not match field val_cnt {}",
+                    field.get_name(),
+                    vec.size(),
+                    field.get_val_cnt()));
+            }
+            field.get_buf().copy_from_stdvec(vec);
+        });
+    }
+
+    inline void register_f64_layout_fields(
+        PatchDataSetup &setup, shamrock::patch::PatchDataLayer &pdat) {
+        pdat.for_each_field<f64>([&](auto &field) {
+            register_field_io_f64(setup, field);
+        });
+        pdat.for_each_field<f64_3>([&](auto &field) {
+            register_field_io_f64_3(setup, field);
+        });
     }
 } // namespace shamrock

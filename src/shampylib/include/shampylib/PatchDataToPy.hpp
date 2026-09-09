@@ -20,6 +20,7 @@
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <optional>
 
 namespace shamrock {
     template<class T>
@@ -248,4 +249,67 @@ namespace shamrock {
 
         return dic_out;
     }
+
+    namespace details {
+        template<class T>
+        inline bool try_get_field_as_np(
+            shamrock::patch::PatchDataLayer &pdat,
+            const std::string &key,
+            std::optional<py::object> &ret) {
+
+            pdat.for_each_field<T>([&](auto &field) {
+                if (ret.has_value() || field.get_name() != key) {
+                    return;
+                }
+                ret = VecToNumpy<T>::convert(field.get_buf().copy_to_stdvec());
+            });
+
+            return ret.has_value();
+        }
+    } // namespace details
+
+    /**
+     * @brief Lazily fetches a single named field of a patch as a numpy array, on demand.
+     *
+     * Unlike pdat_to_dic (which eagerly copies every field of a patch to a python dict),
+     * this only pays the device->host copy cost for the fields actually queried via
+     * operator[]/__getitem__, so a getter that only touches a handful of fields does not
+     * force a copy of every field in the patch.
+     */
+    class PatchDataLazyGetter {
+        public:
+        shamrock::patch::PatchDataLayer &pdat;
+
+        explicit PatchDataLazyGetter(shamrock::patch::PatchDataLayer &pdat) : pdat(pdat) {}
+
+        py::object get_item(const std::string &key) const {
+            std::optional<py::object> ret;
+
+            // clang-format off
+            details::try_get_field_as_np<f32>(pdat, key, ret)
+                || details::try_get_field_as_np<f32_2>(pdat, key, ret)
+                || details::try_get_field_as_np<f32_3>(pdat, key, ret)
+                || details::try_get_field_as_np<f32_4>(pdat, key, ret)
+                || details::try_get_field_as_np<f32_8>(pdat, key, ret)
+                || details::try_get_field_as_np<f32_16>(pdat, key, ret)
+                || details::try_get_field_as_np<f64>(pdat, key, ret)
+                || details::try_get_field_as_np<f64_2>(pdat, key, ret)
+                || details::try_get_field_as_np<f64_3>(pdat, key, ret)
+                || details::try_get_field_as_np<f64_4>(pdat, key, ret)
+                || details::try_get_field_as_np<f64_8>(pdat, key, ret)
+                || details::try_get_field_as_np<f64_16>(pdat, key, ret)
+                || details::try_get_field_as_np<u32>(pdat, key, ret)
+                || details::try_get_field_as_np<u64>(pdat, key, ret)
+                || details::try_get_field_as_np<u32_3>(pdat, key, ret)
+                || details::try_get_field_as_np<u64_3>(pdat, key, ret)
+                || details::try_get_field_as_np<i64_3>(pdat, key, ret);
+            // clang-format on
+
+            if (!ret.has_value()) {
+                throw py::key_error(key);
+            }
+
+            return *ret;
+        }
+    };
 } // namespace shamrock

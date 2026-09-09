@@ -52,13 +52,15 @@ namespace shammodels::sph::modules {
 
         shamrock::solvergraph::Field<Tfield> build_field(
             std::string field_name,
-            std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>>
+            std::optional<
+                std::function<py::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
                 custom_getter = std::nullopt);
 
         sham::DeviceBuffer<Tfield> runner_function(
             std::string field_name,
             lamda_runner lambda,
-            std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>>
+            std::optional<
+                std::function<py::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
                 custom_getter = std::nullopt);
 
         private:

@@ -21,6 +21,7 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
+#include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include <pybind11/numpy.h>
@@ -73,19 +74,22 @@ namespace shammodels::sph::modules {
         sham::DeviceBuffer<Tfield> compute_slice(
             std::string field_name,
             const sham::DeviceBuffer<Tvec> &positions,
-            std::optional<std::function<pybind11::array_t<Tfield>(size_t, pybind11::dict &)>>
+            std::optional<
+                std::function<pybind11::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
                 custom_getter);
 
         sham::DeviceBuffer<Tfield> compute_column_integ(
             std::string field_name,
             const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays,
-            std::optional<std::function<pybind11::array_t<Tfield>(size_t, pybind11::dict &)>>
+            std::optional<
+                std::function<pybind11::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
                 custom_getter);
 
         sham::DeviceBuffer<Tfield> compute_azymuthal_integ(
             std::string field_name,
             const sham::DeviceBuffer<shammath::RingRay<Tvec>> &ring_rays,
-            std::optional<std::function<pybind11::array_t<Tfield>(size_t, pybind11::dict &)>>
+            std::optional<
+                std::function<pybind11::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
                 custom_getter);
 
         sham::DeviceBuffer<Tfield> compute_slice(
@@ -127,7 +131,8 @@ namespace shammodels::sph::modules {
             Tvec delta_y,
             u32 nx,
             u32 ny,
-            std::optional<std::function<pybind11::array_t<Tfield>(size_t, pybind11::dict &)>>
+            std::optional<
+                std::function<pybind11::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
                 custom_getter);
 
         sham::DeviceBuffer<Tfield> compute_column_integ(
@@ -137,13 +142,15 @@ namespace shammodels::sph::modules {
             Tvec delta_y,
             u32 nx,
             u32 ny,
-            std::optional<std::function<pybind11::array_t<Tfield>(size_t, pybind11::dict &)>>
+            std::optional<
+                std::function<pybind11::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
                 custom_getter);
 
         inline sham::DeviceBuffer<Tfield> compute_slice(
             std::string field_name,
             const std::vector<Tvec> &positions,
-            std::optional<std::function<pybind11::array_t<Tfield>(size_t, pybind11::dict &)>>
+            std::optional<
+                std::function<pybind11::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
                 custom_getter) {
             sham::DeviceBuffer<Tvec> positions_buf{
                 positions.size(), shamsys::instance::get_compute_scheduler_ptr()};
@@ -154,7 +161,8 @@ namespace shammodels::sph::modules {
         inline sham::DeviceBuffer<Tfield> compute_column_integ(
             std::string field_name,
             const std::vector<shammath::Ray<Tvec>> &rays,
-            std::optional<std::function<pybind11::array_t<Tfield>(size_t, pybind11::dict &)>>
+            std::optional<
+                std::function<pybind11::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
                 custom_getter) {
             sham::DeviceBuffer<shammath::Ray<Tvec>> rays_buf{
                 rays.size(), shamsys::instance::get_compute_scheduler_ptr()};
@@ -165,7 +173,8 @@ namespace shammodels::sph::modules {
         inline sham::DeviceBuffer<Tfield> compute_azymuthal_integ(
             std::string field_name,
             const std::vector<shammath::RingRay<Tvec>> &ring_rays,
-            std::optional<std::function<pybind11::array_t<Tfield>(size_t, pybind11::dict &)>>
+            std::optional<
+                std::function<pybind11::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
                 custom_getter) {
             sham::DeviceBuffer<shammath::RingRay<Tvec>> ring_rays_buf{
                 ring_rays.size(), shamsys::instance::get_compute_scheduler_ptr()};

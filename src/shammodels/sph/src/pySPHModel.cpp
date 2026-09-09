@@ -39,6 +39,7 @@
 #include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shammodels/sph/sink_edges_helper.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <experimental/mdspan>
 #include <pybind11/cast.h>
@@ -62,7 +63,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
 
-    using custom_getter_t = std::function<pybind11::array_t<f64>(size_t, pybind11::dict &)>;
+    using custom_getter_t
+        = std::function<pybind11::array_t<f64>(size_t, shamrock::PatchDataLazyGetter &)>;
 
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
@@ -1948,6 +1950,9 @@ ON_PYTHON_INIT {
     auto &m = root_module;
 
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
+
+    py::class_<shamrock::PatchDataLazyGetter>(m, "PatchDataLazyGetter")
+        .def("__getitem__", &shamrock::PatchDataLazyGetter::get_item);
 
     py::class_<EvolveUntilResults>(m, "EvolveUntilResults")
         .def_readwrite("reach_target_time", &EvolveUntilResults::reach_target_time)

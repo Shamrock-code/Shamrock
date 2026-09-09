@@ -21,7 +21,7 @@ jobs:
           git config --global --add safe.directory '*'
           git config --global --list
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: 'Download metric artifacts'
         uses: actions/github-script@v9

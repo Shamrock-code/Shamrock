@@ -132,18 +132,14 @@ namespace shammath {
         Tcons FR_star = FR + SR * (cR_star - cR);
 
         // HLLC flux
-        auto hllc_flux = [=]() {
-            if (SL >= 0) {
-                return FL;
-            } else if (S_star >= 0) {
-                return FL_star;
-            } else if (SR >= 0) {
-                return FR_star;
-            } else
-                return FR;
-        };
-
-        return hllc_flux();
+        if (SL >= 0) {
+            return FL;
+        } else if (S_star >= 0) {
+            return FL_star;
+        } else if (SR >= 0) {
+            return FR_star;
+        } else
+            return FR;
     }
 
     /**
@@ -264,18 +260,14 @@ namespace shammath {
         Tcons FR_star = FR + SR * (cR_star - cR);
 
         // HLLC flux
-        auto hllc_flux = [=]() {
-            if (SL >= 0) {
-                return FL;
-            } else if (S_star >= 0) {
-                return FL_star;
-            } else if (SR >= 0) {
-                return FR_star;
-            } else
-                return FR;
-        };
-
-        return hllc_flux();
+        if (SL >= 0) {
+            return FL;
+        } else if (S_star >= 0) {
+            return FL_star;
+        } else if (SR >= 0) {
+            return FR_star;
+        } else
+            return FR;
     }
 
     /**

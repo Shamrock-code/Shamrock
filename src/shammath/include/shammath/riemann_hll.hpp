@@ -40,29 +40,25 @@ namespace shammath {
         const auto fluxR = hydro_flux_x(primR, gamma);
 
         // Equation (10.26) from Toro 3rd Edition , Springer 2009
-        auto hll_flux = [=]() {
-            // const auto S_L_upwind = sham::min(S_L, 0.0);
-            // const auto S_R_upwind = sham::max(S_R, 0.0);
-            // const auto S_norm     = 1.0 / (S_R_upwind - S_L_upwind);
-            // return (fluxL * S_R_upwind - fluxR * S_L_upwind
-            //         + (consR - consL) * S_R_upwind * S_L_upwind)
-            //        * S_norm;
+        // const auto S_L_upwind = sham::min(S_L, 0.0);
+        // const auto S_R_upwind = sham::max(S_R, 0.0);
+        // const auto S_norm     = 1.0 / (S_R_upwind - S_L_upwind);
+        // return (fluxL * S_R_upwind - fluxR * S_L_upwind
+        //         + (consR - consL) * S_R_upwind * S_L_upwind)
+        //        * S_norm;
 
-            if (S_L >= 0)
-                return fluxL;
-            else if (S_R <= 0)
-                return fluxR;
-            else {
-                // Only the intermediate (star) state needs the conservative form, so it is
-                // formed here rather than at the call site (which only has primitives).
-                const auto consL  = prim_to_cons(primL, gamma);
-                const auto consR  = prim_to_cons(primR, gamma);
-                const auto S_norm = 1.0 / (S_R - S_L);
-                return (fluxL * S_R - fluxR * S_L + (consR - consL) * S_R * S_L) * S_norm;
-            }
-        };
-
-        return hll_flux();
+        if (S_L >= 0)
+            return fluxL;
+        else if (S_R <= 0)
+            return fluxR;
+        else {
+            // Only the intermediate (star) state needs the conservative form, so it is
+            // formed here rather than at the call site (which only has primitives).
+            const auto consL  = prim_to_cons(primL, gamma);
+            const auto consR  = prim_to_cons(primR, gamma);
+            const auto S_norm = 1.0 / (S_R - S_L);
+            return (fluxL * S_R - fluxR * S_L + (consR - consL) * S_R * S_L) * S_norm;
+        }
     }
 
     template<class Tprim>

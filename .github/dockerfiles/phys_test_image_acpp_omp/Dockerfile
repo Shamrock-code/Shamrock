@@ -9,12 +9,18 @@ ARG CLANGVERSION=18
 # ----------------------------
 # apt.llvm.org is served via Fastly, which advertises IPv6 addresses that
 # GitHub-hosted runners often can't route reliably, causing intermittent
-# "Network is unreachable" failures in apt/wget (including GPG key fetch).
-# Force IPv4 for apt and wget, and retry llvm.sh to absorb transient
-# Fastly edge failures. (Claude generated comment)
+# "Network is unreachable" failures in apt/wget (including GPG key fetch),
+# and DNS lookups for apt.llvm.org itself can transiently fail ("Name or
+# service not known") before any connection is even attempted. Force IPv4
+# for apt and wget, and retry both the initial download and llvm.sh to
+# absorb transient Fastly edge / DNS failures. (Claude generated comment)
 RUN sudo sh -c 'echo "Acquire::ForceIPv4 \"true\";" > /etc/apt/apt.conf.d/99force-ipv4' && \
     sudo apt update && \
-    wget -4 https://apt.llvm.org/llvm.sh && \
+    for i in 1 2 3 4 5; do \
+        wget -4 https://apt.llvm.org/llvm.sh && break; \
+        echo "wget llvm.sh failed (attempt $i), retrying..."; \
+        sleep 15; \
+    done && \
     chmod +x llvm.sh && \
     for i in 1 2 3 4 5; do \
         sudo ./llvm.sh ${CLANGVERSION} && break; \

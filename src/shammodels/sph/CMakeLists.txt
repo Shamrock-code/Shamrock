@@ -14,7 +14,6 @@ set(Sources
     src/Model.cpp
     src/Solver.cpp
     src/SPHUtilities.cpp
-    src/SolverLog.cpp
     src/io/PhantomDump.cpp
     src/io/Phantom2Shamrock.cpp
     src/io/PhantomDumpEOSUtils.cpp

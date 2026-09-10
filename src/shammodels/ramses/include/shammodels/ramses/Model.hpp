@@ -57,6 +57,12 @@ namespace shammodels::basegodunov {
             init();
         }
 
+        inline f64 solver_logs_last_rate() { return solver.solve_logs.get_last_rate(); }
+        inline u64 solver_logs_last_obj_count() { return solver.solve_logs.get_last_obj_count(); }
+        inline shamsys::SystemMetrics solver_logs_last_system_metrics() {
+            return solver.solve_logs.get_last_system_metrics();
+        }
+
         void make_base_grid(TgridVec bmin, TgridVec cell_size, u32_3 cell_count);
 
         void dump_vtk(std::string filename);

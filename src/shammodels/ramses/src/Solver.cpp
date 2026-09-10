@@ -1531,6 +1531,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
     f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
+    for (auto &callbacks : timestep_callbacks) {
+        if (callbacks.step_begin_callback) {
+            shambase::get_check_ref(callbacks.step_begin_callback)();
+        }
+    }
+
     Tscal t_current = get_time();
     Tscal dt_input  = get_dt();
 
@@ -1705,6 +1711,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     shambase::get_check_ref(storage.ghost_layers_candidates_edge).free_alloc();
 
     tstep.stop();
+
+    for (auto it = timestep_callbacks.rbegin(); it != timestep_callbacks.rend(); ++it) {
+        if (it->step_end_callback) {
+            shambase::get_check_ref(it->step_end_callback)();
+        }
+    }
 
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
 

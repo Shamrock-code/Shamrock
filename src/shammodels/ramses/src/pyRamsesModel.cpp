@@ -373,6 +373,17 @@ namespace shammodels::basegodunov {
                         x_max);
                 })
             .def(
+                "add_timestep_callback",
+                [](T &self,
+                   std::optional<std::function<void(void)>> step_begin_callback,
+                   std::optional<std::function<void(void)>> step_end_callback) {
+                    self.solver.timestep_callbacks.push_back(
+                        {std::move(step_begin_callback), std::move(step_end_callback)});
+                },
+                py::kw_only(),
+                py::arg("step_begin") = std::nullopt,
+                py::arg("step_end")   = std::nullopt)
+            .def(
                 "get_solver_tex",
                 [](T &self) {
                     return shambase::get_check_ref(self.solver.storage.solver_sequence).get_tex();

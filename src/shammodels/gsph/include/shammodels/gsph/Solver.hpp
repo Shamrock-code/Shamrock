@@ -12,6 +12,7 @@
 /**
  * @file Solver.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief GSPH Solver class

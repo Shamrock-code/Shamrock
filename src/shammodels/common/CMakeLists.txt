@@ -17,6 +17,7 @@ set(Sources
     src/modules/AddForcePaczynskiWiita.cpp
     src/modules/AddForceCentralGravPotential.cpp
     src/timestep_report.cpp
+    src/SolverLog.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

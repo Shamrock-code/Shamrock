@@ -286,6 +286,28 @@ namespace shammodels::basegodunov {
                 py::kw_only(),
                 py::arg("niter_max") = -1)
             .def("timestep", &T::timestep)
+            .def("solver_logs_last_rate", &T::solver_logs_last_rate)
+            .def("solver_logs_last_obj_count", &T::solver_logs_last_obj_count)
+            .def(
+                "solver_logs_last_system_metrics",
+                [](T &self) {
+                    auto system_metrics = self.solver.solve_logs.get_last_system_metrics();
+                    py::dict ret;
+                    ret["duration"] = system_metrics.wall_time;
+                    if (system_metrics.rank_energy_consummed.has_value()) {
+                        ret["rank_energy_consummed"] = system_metrics.rank_energy_consummed.value();
+                    }
+                    if (system_metrics.gpu_energy_consummed.has_value()) {
+                        ret["gpu_energy_consummed"] = system_metrics.gpu_energy_consummed.value();
+                    }
+                    if (system_metrics.cpu_energy_consummed.has_value()) {
+                        ret["cpu_energy_consummed"] = system_metrics.cpu_energy_consummed.value();
+                    }
+                    if (system_metrics.dram_energy_consummed.has_value()) {
+                        ret["dram_energy_consummed"] = system_metrics.dram_energy_consummed.value();
+                    }
+                    return ret;
+                })
             .def(
                 "set_field_value_lambda_f64",
                 [](T &self,

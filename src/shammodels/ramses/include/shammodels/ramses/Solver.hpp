@@ -21,6 +21,7 @@
 
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
+#include "shammodels/common/SolverLog.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/SolverStorage.hpp"
@@ -48,6 +49,7 @@ namespace shammodels::basegodunov {
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
         Config solver_config;
+        SolverLog solve_logs;
 
         SolverStorage<Tvec, TgridVec, u_morton> storage{};
 

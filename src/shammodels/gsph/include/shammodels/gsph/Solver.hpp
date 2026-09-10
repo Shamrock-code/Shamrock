@@ -28,9 +28,9 @@
 #include "shambase/exception.hpp"
 #include "SolverConfig.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/common/SolverLog.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include "shammodels/gsph/modules/SolverStorage.hpp"
-#include "shammodels/sph/SolverLog.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
@@ -85,7 +85,7 @@ namespace shammodels::gsph {
         SolverStorage<Tvec, u_morton> storage{};
 
         Config solver_config;
-        sph::SolverLog solve_logs;
+        SolverLog solve_logs;
 
         /// Access synchronized simulation time (scheduler edge "time")
         inline Tscal &time_edge_value() {

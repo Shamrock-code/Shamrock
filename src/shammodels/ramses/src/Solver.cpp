@@ -1525,6 +1525,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     StackEntry stack_loc{};
 
+    // has to be first since there is a barrier that may mess the other timers
+    shamsys::SystemMetrics system_metrics_start = shamsys::get_system_metrics();
+
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
     f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
@@ -1705,6 +1708,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
 
+    shamsys::SystemMetrics system_metrics_end   = shamsys::get_system_metrics();
+    shamsys::SystemMetrics system_metrics_delta = system_metrics_end - system_metrics_start;
+
     f64 delta_mpi_timer = shamcomm::mpi::get_timer("total") - mpi_timer_start;
     f64 t_dev_alloc
         = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)
@@ -1726,7 +1732,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         t_dev_alloc,
         t_host_alloc,
         mem_perf_infos_end.max_allocated_byte_device,
-        mem_perf_infos_end.max_allocated_byte_host);
+        mem_perf_infos_end.max_allocated_byte_host,
+        system_metrics_delta,
+        shamsys::has_reporter());
 
     if (shamcomm::world_rank() == 0) {
         logger::info_ln("amr::RAMSES", log_step);
@@ -1736,6 +1744,16 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
             dt_input * (3600 / tstep.elapsed_sec()),
             "(tsim/hr)");
     }
+
+    solve_logs.register_log(
+        {t_current,              // f64 solver_t;
+         dt_input,               // f64 solver_dt;
+         shamcomm::world_rank(), // i32 world_rank;
+         rank_count,             // u64 rank_count;
+         rate,                   // f64 rate;
+         tstep.elapsed_sec(),    // f64 elapsed_sec;
+         shambase::details::get_wtime(),
+         system_metrics_delta});
 
     storage.timings_details.reset();
 }

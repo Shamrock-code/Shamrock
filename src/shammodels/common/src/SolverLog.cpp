@@ -16,10 +16,10 @@
 
 #include "shambase/exception.hpp"
 #include "shamalgs/collective/reduction.hpp"
-#include "shammodels/sph/SolverLog.hpp"
+#include "shammodels/common/SolverLog.hpp"
 #include <stdexcept>
 
-f64 shammodels::sph::SolverLog::get_last_rate() {
+f64 shammodels::SolverLog::get_last_rate() {
 
     if (step_logs.size() == 0) {
         throw shambase::make_except_with_loc<std::runtime_error>("");
@@ -36,7 +36,7 @@ f64 shammodels::sph::SolverLog::get_last_rate() {
     return f64(obj_total) / max_t;
 }
 
-u64 shammodels::sph::SolverLog::get_last_obj_count() {
+u64 shammodels::SolverLog::get_last_obj_count() {
 
     if (step_logs.size() == 0) {
         throw shambase::make_except_with_loc<std::runtime_error>("");
@@ -51,7 +51,7 @@ u64 shammodels::sph::SolverLog::get_last_obj_count() {
     return cnt_tot;
 }
 
-shamsys::SystemMetrics shammodels::sph::SolverLog::get_last_system_metrics() {
+shamsys::SystemMetrics shammodels::SolverLog::get_last_system_metrics() {
 
     if (step_logs.size() == 0) {
         throw shambase::make_except_with_loc<std::runtime_error>("");

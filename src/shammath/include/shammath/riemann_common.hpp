@@ -147,23 +147,44 @@ namespace shammath {
         return prim;
     }
 
+    /**
+     * @brief Euler flux across a face of normal n, given a precomputed normal velocity
+     *        vn = dot(prim.vel, n)
+     *
+     * n is expected to be a unit vector, and vn is expected to be dot(prim.vel, n)
+     */
     template<class Tvec>
-    inline constexpr ConsState<Tvec> hydro_flux_x(
-        const PrimState<Tvec> prim, typename PrimState<Tvec>::Tscal gamma) {
+    inline constexpr ConsState<Tvec> hydro_flux_n(
+        const PrimState<Tvec> prim,
+        Tvec n,
+        typename PrimState<Tvec>::Tscal vn,
+        typename PrimState<Tvec>::Tscal gamma) {
         ConsState<Tvec> flux;
 
         const auto rhoeint = prim.press / (gamma - 1.0);
         const auto rhoe    = rhoeint + rhoekin(prim.rho, prim.vel);
 
-        flux.rho = prim.rho * prim.vel[0];
+        flux.rho = prim.rho * vn;
 
-        flux.rhoe = (rhoe + prim.press) * prim.vel[0];
+        flux.rhoe = (rhoe + prim.press) * vn;
 
-        flux.rhovel[0] = prim.rho * prim.vel[0] * prim.vel[0] + prim.press;
-        flux.rhovel[1] = prim.rho * prim.vel[0] * prim.vel[1];
-        flux.rhovel[2] = prim.rho * prim.vel[0] * prim.vel[2];
+        flux.rhovel[0] = prim.rho * vn * prim.vel[0] + prim.press * n[0];
+        flux.rhovel[1] = prim.rho * vn * prim.vel[1] + prim.press * n[1];
+        flux.rhovel[2] = prim.rho * vn * prim.vel[2] + prim.press * n[2];
 
         return flux;
+    }
+
+    /**
+     * @brief Euler flux across a face of normal n
+     *
+     * n is expected to be a unit vector.
+     */
+    template<class Tvec>
+    inline constexpr ConsState<Tvec> hydro_flux_n(
+        const PrimState<Tvec> prim, Tvec n, typename PrimState<Tvec>::Tscal gamma) {
+        const auto vn = n[0] * prim.vel[0] + n[1] * prim.vel[1] + n[2] * prim.vel[2];
+        return hydro_flux_n(prim, n, vn, gamma);
     }
 
     template<class Tvec>
@@ -354,13 +375,30 @@ namespace shammath {
         return d_prim;
     }
 
+    /**
+     * @brief Pressureless (dust) flux across a face of normal n, given a precomputed
+     *        normal velocity vn = dot(d_prim.vel, n)
+     *
+     * n is expected to be a unit vector, and vn is expected to be dot(d_prim.vel, n)
+     */
     template<class Tvec>
-    inline constexpr DustConsState<Tvec> d_hydro_flux_x(const DustPrimState<Tvec> d_prim) {
+    inline constexpr DustConsState<Tvec> d_hydro_flux_n(
+        const DustPrimState<Tvec> d_prim, Tvec n, typename DustPrimState<Tvec>::Tscal vn) {
         DustConsState<Tvec> d_flux;
-        const typename DustPrimState<Tvec>::Tscal x_vel{d_prim.vel[0]};
-        d_flux.rho    = d_prim.rho * x_vel;
-        d_flux.rhovel = d_prim.vel * (d_prim.rho * x_vel);
+        d_flux.rho    = d_prim.rho * vn;
+        d_flux.rhovel = d_prim.vel * (d_prim.rho * vn);
         return d_flux;
+    }
+
+    /**
+     * @brief Pressureless (dust) flux across a face of normal n
+     *
+     * n is expected to be a unit vector.
+     */
+    template<class Tvec>
+    inline constexpr DustConsState<Tvec> d_hydro_flux_n(const DustPrimState<Tvec> d_prim, Tvec n) {
+        const auto vn = n[0] * d_prim.vel[0] + n[1] * d_prim.vel[1] + n[2] * d_prim.vel[2];
+        return d_hydro_flux_n(d_prim, n, vn);
     }
 
     template<class Tcons>

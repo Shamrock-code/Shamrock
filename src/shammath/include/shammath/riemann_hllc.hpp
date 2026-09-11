@@ -27,14 +27,16 @@ namespace shammath {
      *         The wave speeds estimates are based on Bernd Einfeldt (SIAM, 1988), On Godunov-Type
      *          Methods for Gas Dynamics, using the pressure in the star region estimated through
      *          the primitive variable solver (valid for an adiabatic equation of state).
+     *        Computes the flux across a face with unit normal n.
      * @tparam Tprim
      * @param primL left  primitive state
      * @param primR right primitive state
      * @param gamma adiabatic index
+     * @param n face unit normal
      */
     template<class Tprim>
-    inline constexpr auto hllc_adiab_toro_flux_x(
-        Tprim primL, Tprim primR, typename Tprim::Tscal gamma) {
+    inline constexpr auto hllc_adiab_toro_flux(
+        Tprim primL, Tprim primR, typename Tprim::Tscal gamma, typename Tprim::Tvec n) {
         using Tscal = typename Tprim::Tscal;
         using Tvec  = typename Tprim::Tvec;
         using Tcons = ConsState<Tvec>;
@@ -47,19 +49,19 @@ namespace shammath {
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
 
-        // Left and right state fluxes
-        const auto FL = hydro_flux_x(primL, gamma);
-        const auto FR = hydro_flux_x(primR, gamma);
-
         // Left variables
         const auto rhoL   = primL.rho;
         const auto pressL = primL.press;
-        const auto velxL  = primL.vel[0];
+        const auto velxL  = n[0] * primL.vel[0] + n[1] * primL.vel[1] + n[2] * primL.vel[2];
 
         // Right variables
         const auto rhoR   = primR.rho;
         const auto pressR = primR.press;
-        const auto velxR  = primR.vel[0];
+        const auto velxR  = n[0] * primR.vel[0] + n[1] * primR.vel[1] + n[2] * primR.vel[2];
+
+        // Left and right state fluxes
+        const auto FL = hydro_flux_n(primL, n, velxL, gamma);
+        const auto FR = hydro_flux_n(primR, n, velxR, gamma);
 
         /////////////////// Pressure based wave speed estimation //////////////
         // First compute the pressure estimation in the star region using the primitive variable
@@ -113,8 +115,7 @@ namespace shammath {
         // Equation (10.42) from Toro 3rd Edition , Springer 2009
         const Tscal press_LR
             = 0.5 * (pressL + pressR + var_L * (S_star - velxL) + var_R * (S_star - velxR));
-        Tvec D{1, 0, 0};
-        Tcons D_star{0, S_star, D};
+        Tcons D_star{0, S_star, n};
 
         // Equation (10.40) from Toro 3rd Edition , Springer 2009
         // Left intermediate conservative state in the star region
@@ -143,62 +144,22 @@ namespace shammath {
     }
 
     /**
-     * @brief HLLC flux in the +y direction (adiabatic p* wave speed estimate)
-     */
-    template<class Tprim>
-    inline constexpr auto hllc_adiab_toro_flux_y(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return x_to_y(hllc_adiab_toro_flux_x(prim_y_to_x(pL), prim_y_to_x(pR), gamma));
-    }
-
-    /**
-     * @brief HLLC flux in the +z direction (adiabatic p* wave speed estimate)
-     */
-    template<class Tprim>
-    inline constexpr auto hllc_adiab_toro_flux_z(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return x_to_z(hllc_adiab_toro_flux_x(prim_z_to_x(pL), prim_z_to_x(pR), gamma));
-    }
-
-    /**
-     * @brief HLLC flux in the -x direction (adiabatic p* wave speed estimate)
-     */
-    template<class Tprim>
-    inline constexpr auto hllc_adiab_toro_flux_mx(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return invert_axis(
-            hllc_adiab_toro_flux_x(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
-    }
-
-    /**
-     * @brief HLLC flux in the -y direction (adiabatic p* wave speed estimate)
-     */
-    template<class Tprim>
-    inline constexpr auto hllc_adiab_toro_flux_my(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return invert_axis(
-            hllc_adiab_toro_flux_y(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
-    }
-
-    /**
-     * @brief HLLC flux in the -z direction (adiabatic p* wave speed estimate)
-     */
-    template<class Tprim>
-    inline constexpr auto hllc_adiab_toro_flux_mz(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return invert_axis(
-            hllc_adiab_toro_flux_z(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
-    }
-
-    /**
      * @brief HLLC solver based on section 10.4 from Toro 3rd Edition , Springer 2009, using the
      *        Davis (1988) wave speed estimate instead of the pressure based (p*) estimate, i.e.
      *          SL = min(velxL - csL, velxR - csR)
      *          SR = max(velxL + csL, velxR + csR)
      *        This estimate does not rely on an adiabatic equation of state for the pressure in
      *        the star region and can therefore be used for other equations of state.
+     *        Computes the flux across a face with unit normal n.
      * @tparam Tprim
      * @param primL left  primitive state
      * @param primR right primitive state
      * @param gamma adiabatic index
+     * @param n face unit normal
      */
     template<class Tprim>
-    inline constexpr auto hllc_davis_flux_x(Tprim primL, Tprim primR, typename Tprim::Tscal gamma) {
+    inline constexpr auto hllc_davis_flux(
+        Tprim primL, Tprim primR, typename Tprim::Tscal gamma, typename Tprim::Tvec n) {
         using Tscal = typename Tprim::Tscal;
         using Tvec  = typename Tprim::Tvec;
         using Tcons = ConsState<Tvec>;
@@ -211,19 +172,19 @@ namespace shammath {
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
 
-        // Left and right state fluxes
-        const auto FL = hydro_flux_x(primL, gamma);
-        const auto FR = hydro_flux_x(primR, gamma);
-
         // Left variables
         const auto rhoL   = primL.rho;
         const auto pressL = primL.press;
-        const auto velxL  = primL.vel[0];
+        const auto velxL  = n[0] * primL.vel[0] + n[1] * primL.vel[1] + n[2] * primL.vel[2];
 
         // Right variables
         const auto rhoR   = primR.rho;
         const auto pressR = primR.press;
-        const auto velxR  = primR.vel[0];
+        const auto velxR  = n[0] * primR.vel[0] + n[1] * primR.vel[1] + n[2] * primR.vel[2];
+
+        // Left and right state fluxes
+        const auto FL = hydro_flux_n(primL, n, velxL, gamma);
+        const auto FR = hydro_flux_n(primR, n, velxR, gamma);
 
         // Davis estimate, but we'll see later
         Tscal SL = sham::min(velxL - csL, velxR - csR);
@@ -243,8 +204,7 @@ namespace shammath {
         // Equation (10.42) from Toro 3rd Edition , Springer 2009
         const Tscal press_LR
             = 0.5 * (pressL + pressR + var_L * (S_star - velxL) + var_R * (S_star - velxR));
-        Tvec D{1, 0, 0};
-        Tcons D_star{0, S_star, D};
+        Tcons D_star{0, S_star, n};
 
         // Equation (10.40) from Toro 3rd Edition , Springer 2009
         // Left intermediate conservative state in the star region
@@ -268,46 +228,6 @@ namespace shammath {
             return FR_star;
         } else
             return FR;
-    }
-
-    /**
-     * @brief HLLC flux in the +y direction (Davis wave speed estimate)
-     */
-    template<class Tprim>
-    inline constexpr auto hllc_davis_flux_y(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return x_to_y(hllc_davis_flux_x(prim_y_to_x(pL), prim_y_to_x(pR), gamma));
-    }
-
-    /**
-     * @brief HLLC flux in the +z direction (Davis wave speed estimate)
-     */
-    template<class Tprim>
-    inline constexpr auto hllc_davis_flux_z(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return x_to_z(hllc_davis_flux_x(prim_z_to_x(pL), prim_z_to_x(pR), gamma));
-    }
-
-    /**
-     * @brief HLLC flux in the -x direction (Davis wave speed estimate)
-     */
-    template<class Tprim>
-    inline constexpr auto hllc_davis_flux_mx(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return invert_axis(hllc_davis_flux_x(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
-    }
-
-    /**
-     * @brief HLLC flux in the -y direction (Davis wave speed estimate)
-     */
-    template<class Tprim>
-    inline constexpr auto hllc_davis_flux_my(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return invert_axis(hllc_davis_flux_y(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
-    }
-
-    /**
-     * @brief HLLC flux in the -z direction (Davis wave speed estimate)
-     */
-    template<class Tprim>
-    inline constexpr auto hllc_davis_flux_mz(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return invert_axis(hllc_davis_flux_z(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
     }
 
 } // namespace shammath

@@ -22,22 +22,31 @@
 
 namespace shammath {
 
+    /**
+     * @brief HLL flux across a face with unit normal n
+     */
     template<class Tprim>
-    inline constexpr auto hll_flux_x(
-        const Tprim primL, const Tprim primR, const typename Tprim::Tscal gamma) {
+    inline constexpr auto hll_flux(
+        const Tprim primL,
+        const Tprim primR,
+        const typename Tprim::Tscal gamma,
+        const typename Tprim::Tvec n) {
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
 
+        const auto vnL = n[0] * primL.vel[0] + n[1] * primL.vel[1] + n[2] * primL.vel[2];
+        const auto vnR = n[0] * primR.vel[0] + n[1] * primR.vel[1] + n[2] * primR.vel[2];
+
         // Teyssier form
-        // const auto S_L = sham::min(primL.vel[0], primR.vel[0]) - sham::max(csL, csR);
-        // const auto S_R = sham::max(primL.vel[0], primR.vel[0]) + sham::max(csL, csR);
+        // const auto S_L = sham::min(vnL, vnR) - sham::max(csL, csR);
+        // const auto S_R = sham::max(vnL, vnR) + sham::max(csL, csR);
 
         // Toro form Equation (10.48)
-        const auto S_L = sham::min(primL.vel[0] - csL, primR.vel[0] - csR);
-        const auto S_R = sham::max(primL.vel[0] + csL, primR.vel[0] + csR);
+        const auto S_L = sham::min(vnL - csL, vnR - csR);
+        const auto S_R = sham::max(vnL + csL, vnR + csR);
 
-        const auto fluxL = hydro_flux_x(primL, gamma);
-        const auto fluxR = hydro_flux_x(primR, gamma);
+        const auto fluxL = hydro_flux_n(primL, n, vnL, gamma);
+        const auto fluxR = hydro_flux_n(primR, n, vnR, gamma);
 
         // Equation (10.26) from Toro 3rd Edition , Springer 2009
         // const auto S_L_upwind = sham::min(S_L, 0.0);
@@ -59,31 +68,6 @@ namespace shammath {
             const auto S_norm = 1.0 / (S_R - S_L);
             return (fluxL * S_R - fluxR * S_L + (consR - consL) * S_R * S_L) * S_norm;
         }
-    }
-
-    template<class Tprim>
-    inline constexpr auto hll_flux_y(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return x_to_y(hll_flux_x(prim_y_to_x(pL), prim_y_to_x(pR), gamma));
-    }
-
-    template<class Tprim>
-    inline constexpr auto hll_flux_z(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return x_to_z(hll_flux_x(prim_z_to_x(pL), prim_z_to_x(pR), gamma));
-    }
-
-    template<class Tprim>
-    inline constexpr auto hll_flux_mx(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return invert_axis(hll_flux_x(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
-    }
-
-    template<class Tprim>
-    inline constexpr auto hll_flux_my(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return invert_axis(hll_flux_y(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
-    }
-
-    template<class Tprim>
-    inline constexpr auto hll_flux_mz(Tprim pL, Tprim pR, typename Tprim::Tscal gamma) {
-        return invert_axis(hll_flux_z(prim_invert_axis(pL), prim_invert_axis(pR), gamma));
     }
 
 } // namespace shammath

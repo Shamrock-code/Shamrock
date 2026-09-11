@@ -19,6 +19,7 @@ dev_doc/solvergraph_edges.md
 dev_doc/kernel_call.md
 dev_doc/distributed_data_kernel_call.md
 dev_doc/implementation_selection.md
+dev_doc/riemann_solver.md
 dev_doc/profiling.md
 dev_doc/build-profiling.md
 dev_doc/release_process.md

@@ -30,6 +30,29 @@ namespace shammodels::basegodunov::modules {
     using DustRiemannSolverMode = shammodels::basegodunov::DustRiemannSolverMode;
     using Direction             = shammodels::basegodunov::modules::Direction;
 
+    /**
+     * @brief Unit normal vector of a face pointing in the given direction
+     */
+    template<class Tvec, Direction dir>
+    inline constexpr Tvec dir_normal() {
+        if constexpr (dir == Direction::xp) {
+            return Tvec{1, 0, 0};
+        } else if constexpr (dir == Direction::xm) {
+            return Tvec{-1, 0, 0};
+        } else if constexpr (dir == Direction::yp) {
+            return Tvec{0, 1, 0};
+        } else if constexpr (dir == Direction::ym) {
+            return Tvec{0, -1, 0};
+        } else if constexpr (dir == Direction::zp) {
+            return Tvec{0, 0, 1};
+        } else if constexpr (dir == Direction::zm) {
+            return Tvec{0, 0, -1};
+        } else {
+            static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
+        }
+        return Tvec{};
+    }
+
     template<class Tvec, RiemannSolverMode mode, Direction dir>
     class FluxCompute {
         public:
@@ -38,66 +61,16 @@ namespace shammodels::basegodunov::modules {
         using Tscal = typename Tcons::Tscal;
 
         inline static constexpr Tcons flux(Tprim pL, Tprim pR, typename Tcons::Tscal gamma) {
+            const Tvec n = dir_normal<Tvec, dir>();
+
             if constexpr (mode == RiemannSolverMode::Rusanov) {
-                if constexpr (dir == Direction::xp) {
-                    return shammath::rusanov_flux_x(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::yp) {
-                    return shammath::rusanov_flux_y(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::zp) {
-                    return shammath::rusanov_flux_z(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::xm) {
-                    return shammath::rusanov_flux_mx(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::ym) {
-                    return shammath::rusanov_flux_my(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::zm) {
-                    return shammath::rusanov_flux_mz(pL, pR, gamma);
-                }
+                return shammath::rusanov_flux(pL, pR, gamma, n);
             }
             if constexpr (mode == RiemannSolverMode::HLL) {
-                if constexpr (dir == Direction::xp) {
-                    return shammath::hll_flux_x(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::yp) {
-                    return shammath::hll_flux_y(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::zp) {
-                    return shammath::hll_flux_z(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::xm) {
-                    return shammath::hll_flux_mx(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::ym) {
-                    return shammath::hll_flux_my(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::zm) {
-                    return shammath::hll_flux_mz(pL, pR, gamma);
-                }
+                return shammath::hll_flux(pL, pR, gamma, n);
             }
-
             if constexpr (mode == RiemannSolverMode::HLLC) {
-                if constexpr (dir == Direction::xp) {
-                    return shammath::hllc_adiab_toro_flux_x(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::yp) {
-                    return shammath::hllc_adiab_toro_flux_y(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::zp) {
-                    return shammath::hllc_adiab_toro_flux_z(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::xm) {
-                    return shammath::hllc_adiab_toro_flux_mx(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::ym) {
-                    return shammath::hllc_adiab_toro_flux_my(pL, pR, gamma);
-                }
-                if constexpr (dir == Direction::zm) {
-                    return shammath::hllc_adiab_toro_flux_mz(pL, pR, gamma);
-                }
+                return shammath::hllc_adiab_toro_flux(pL, pR, gamma, n);
             }
         }
     };
@@ -110,48 +83,13 @@ namespace shammodels::basegodunov::modules {
         using Tscal = typename Tcons::Tscal;
 
         inline static constexpr Tcons dustflux(Tprim pL, Tprim pR) {
+            const Tvec n = dir_normal<Tvec, dir>();
 
             if constexpr (mode == DustRiemannSolverMode::HB) {
-                if constexpr (dir == Direction::xp) {
-                    return shammath::huang_bai_flux_x(pL, pR);
-                }
-                if constexpr (dir == Direction::yp) {
-                    return shammath::huang_bai_flux_y(pL, pR);
-                }
-                if constexpr (dir == Direction::zp) {
-                    return shammath::huang_bai_flux_z(pL, pR);
-                }
-
-                if constexpr (dir == Direction::xm) {
-                    return shammath::huang_bai_flux_mx(pL, pR);
-                }
-                if constexpr (dir == Direction::ym) {
-                    return shammath::huang_bai_flux_my(pL, pR);
-                }
-                if constexpr (dir == Direction::zm) {
-                    return shammath::huang_bai_flux_mz(pL, pR);
-                }
+                return shammath::huang_bai_flux(pL, pR, n);
             }
             if constexpr (mode == DustRiemannSolverMode::DHLL) {
-                if constexpr (dir == Direction::xp) {
-                    return shammath::d_hll_flux_x(pL, pR);
-                }
-                if constexpr (dir == Direction::yp) {
-                    return shammath::d_hll_flux_y(pL, pR);
-                }
-                if constexpr (dir == Direction::zp) {
-                    return shammath::d_hll_flux_z(pL, pR);
-                }
-
-                if constexpr (dir == Direction::xm) {
-                    return shammath::d_hll_flux_mx(pL, pR);
-                }
-                if constexpr (dir == Direction::ym) {
-                    return shammath::d_hll_flux_my(pL, pR);
-                }
-                if constexpr (dir == Direction::zm) {
-                    return shammath::d_hll_flux_mz(pL, pR);
-                }
+                return shammath::d_hll_flux(pL, pR, n);
             }
         }
     };

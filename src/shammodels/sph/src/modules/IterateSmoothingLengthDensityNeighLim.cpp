@@ -59,7 +59,8 @@ void IterateSmoothingLengthDensityNeighLim<Tvec, SPHKernel>::_impl_evaluate_inte
         [gpart_mass        = this->gpart_mass,
          h_evol_max        = this->h_evol_max,
          h_evol_iter_max   = this->h_evol_iter_max,
-         trigger_threshold = this->trigger_threshold](
+         trigger_threshold = this->trigger_threshold,
+         epsilon_h         = this->epsilon_h](
             u32 id_a,
             auto ploop_ptrs,
             const Tvec *__restrict r,
@@ -75,8 +76,7 @@ void IterateSmoothingLengthDensityNeighLim<Tvec, SPHKernel>::_impl_evaluate_inte
             Tscal h_max_evol_p       = h_evol_iter_max;
             Tscal h_max_evol_m       = 1 / h_evol_iter_max;
 
-            // TODO: make this tolerance configurable
-            if (eps[id_a] > 1e-6) {
+            if (eps[id_a] > epsilon_h) {
 
                 Tvec xyz_a = r[id_a]; // could be recovered from lambda
 

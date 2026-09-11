@@ -33,14 +33,19 @@ namespace shammodels::sph::modules {
         Tscal gpart_mass;
         Tscal h_evol_max;
         Tscal h_evol_iter_max;
+        Tscal epsilon_h;
 
         u32 trigger_threshold;
 
         public:
         IterateSmoothingLengthDensityNeighLim(
-            Tscal gpart_mass, Tscal h_evol_max, Tscal h_evol_iter_max, u32 trigger_threshold)
+            Tscal gpart_mass,
+            Tscal h_evol_max,
+            Tscal h_evol_iter_max,
+            u32 trigger_threshold,
+            Tscal epsilon_h)
             : gpart_mass(gpart_mass), h_evol_max(h_evol_max), h_evol_iter_max(h_evol_iter_max),
-              trigger_threshold(trigger_threshold) {}
+              epsilon_h(epsilon_h), trigger_threshold(trigger_threshold) {}
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;

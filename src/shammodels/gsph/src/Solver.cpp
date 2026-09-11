@@ -733,7 +733,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::gsph_prestep(Tscal time_val, Tscal dt
                     shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>(
                     solver_config.gpart_mass,
                     solver_config.htol_up_coarse_cycle,
-                    solver_config.htol_up_fine_cycle);
+                    solver_config.htol_up_fine_cycle,
+                    solver_config.epsilon_h);
             smth_h_iter->set_edges(sizes, neigh_cache, pos_merged, hold, hnew, eps_h);
             smth_h_iter_ptr = smth_h_iter;
         } else if (
@@ -746,7 +747,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::gsph_prestep(Tscal time_val, Tscal dt
                     solver_config.gpart_mass,
                     solver_config.htol_up_coarse_cycle,
                     solver_config.htol_up_fine_cycle,
-                    conf->max_neigh_count);
+                    conf->max_neigh_count,
+                    solver_config.epsilon_h);
             smth_h_iter_neigh_lim->set_edges(
                 sizes, neigh_cache, pos_merged, hold, hnew, eps_h, should_set_omega_mask);
             smth_h_iter_ptr = smth_h_iter_neigh_lim;

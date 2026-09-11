@@ -74,6 +74,7 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec>
     void NodeConsToPrimGas<Tvec>::_impl_evaluate_internal() {
+        __shamrock_stack_entry();
         auto edges = get_edges();
 
         edges.spans_rho.check_sizes(edges.sizes.indexes);

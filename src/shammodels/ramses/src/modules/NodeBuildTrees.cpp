@@ -158,6 +158,7 @@ namespace shammodels::basegodunov::modules {
 
     template<class Umorton, class TgridVec>
     void NodeBuildTrees<Umorton, TgridVec>::_impl_evaluate_internal() {
+        __shamrock_stack_entry();
         auto edges = get_edges();
 
         auto &block_min = edges.block_min;

@@ -1120,7 +1120,7 @@ template class shammodels::basegodunov::modules::InterpolateToFacePress<f64_3, i
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>::
     _impl_evaluate_internal() {
-    StackEntry stack_loc{};
+    __shamrock_stack_entry();
 
     using OrientedAMRGraph = OrientedAMRGraph<Tvec, TgridVec>;
 

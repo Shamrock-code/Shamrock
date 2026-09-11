@@ -27,7 +27,7 @@ using Direction             = shammodels::basegodunov::modules::Direction;
 template<class Tvec, class TgridVec, RiemannSolverMode mode, Direction dir>
 void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, dir>::
     _impl_evaluate_internal() {
-    StackEntry stack_loc{};
+    __shamrock_stack_entry();
 
     auto edges = get_edges();
 

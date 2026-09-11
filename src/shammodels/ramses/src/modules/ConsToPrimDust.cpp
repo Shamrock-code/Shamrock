@@ -66,6 +66,7 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec>
     void NodeConsToPrimDust<Tvec>::_impl_evaluate_internal() {
+        __shamrock_stack_entry();
         auto edges = get_edges();
 
         edges.spans_rho_dust.check_sizes(edges.sizes.indexes);

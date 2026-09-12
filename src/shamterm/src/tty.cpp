@@ -81,4 +81,10 @@ namespace sham::term {
     int get_tty_columns() { return get_tty_dim().second; }
     int get_tty_lines() { return get_tty_dim().first; }
 
+    /// Whether the current terminal/locale supports UTF-8 output, as set by set_support_utf8.
+    bool utf8_supported = false;
+
+    void set_support_utf8(bool support) { utf8_supported = support; }
+    bool support_utf8() { return utf8_supported; }
+
 } // namespace sham::term

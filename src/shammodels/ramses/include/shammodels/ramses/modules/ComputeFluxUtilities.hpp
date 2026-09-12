@@ -17,12 +17,12 @@
  *
  */
 
+#include "shambackends/kernel_call.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammath/riemann.hpp"
 #include "shammath/riemann_dust.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include <array>
-#include <string>
 
 namespace shammodels::basegodunov::modules {
 
@@ -106,47 +106,21 @@ namespace shammodels::basegodunov::modules {
         sham::DeviceBuffer<Tscal> &flux_rhoe_face_dir,
         Tscal gamma) {
 
-        using Flux            = FluxCompute<Tvec, mode, dir>;
-        std::string flux_name = " ";
-        if (mode == RiemannSolverMode::HLL)
-            flux_name = "hll flux";
-        else if (mode == RiemannSolverMode::HLLC)
-            flux_name = "hllc flux ";
-        else if (mode == RiemannSolverMode::Rusanov)
-            flux_name = "rusanov flux ";
-        auto get_dir_name = [&]() {
-            if constexpr (dir == Direction::xp) {
-                return "xp";
-            } else if constexpr (dir == Direction::xm) {
-                return "xm";
-            } else if constexpr (dir == Direction::yp) {
-                return "yp";
-            } else if constexpr (dir == Direction::ym) {
-                return "ym";
-            } else if constexpr (dir == Direction::zp) {
-                return "zp";
-            } else if constexpr (dir == Direction::zm) {
-                return "zm";
-            } else {
-                static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
-            }
-            return "";
-        };
-        std::string cur_direction = get_dir_name();
-        std::string kernel_name   = (std::string) "compute " + flux_name + cur_direction;
-        const char *_kernel_name  = kernel_name.c_str();
+        using Flux = FluxCompute<Tvec, mode, dir>;
 
-        sham::EventList depends_list;
-        auto rho   = rho_face_dir.get_read_access(depends_list);
-        auto vel   = vel_face_dir.get_read_access(depends_list);
-        auto press = press_face_dir.get_read_access(depends_list);
-
-        auto flux_rho  = flux_rho_face_dir.get_write_access(depends_list);
-        auto flux_rhov = flux_rhov_face_dir.get_write_access(depends_list);
-        auto flux_rhoe = flux_rhoe_face_dir.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&, gamma](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, link_count, _kernel_name, [=](u32 id_a) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{rho_face_dir, vel_face_dir, press_face_dir},
+            sham::MultiRef{flux_rho_face_dir, flux_rhov_face_dir, flux_rhoe_face_dir},
+            link_count,
+            [gamma](
+                u32 id_a,
+                const std::array<Tscal, 2> *__restrict rho,
+                const std::array<Tvec, 2> *__restrict vel,
+                const std::array<Tscal, 2> *__restrict press,
+                Tscal *__restrict flux_rho,
+                Tvec *__restrict flux_rhov,
+                Tscal *__restrict flux_rhoe) {
                 auto rho_ij   = rho[id_a];
                 auto vel_ij   = vel[id_a];
                 auto press_ij = press[id_a];
@@ -161,15 +135,6 @@ namespace shammodels::basegodunov::modules {
                 flux_rhov[id_a] = flux_dir.rhovel;
                 flux_rhoe[id_a] = flux_dir.rhoe;
             });
-        });
-
-        rho_face_dir.complete_event_state(e);
-        vel_face_dir.complete_event_state(e);
-        press_face_dir.complete_event_state(e);
-
-        flux_rho_face_dir.complete_event_state(e);
-        flux_rhov_face_dir.complete_event_state(e);
-        flux_rhoe_face_dir.complete_event_state(e);
     }
 
     template<DustRiemannSolverMode mode, class Tvec, class Tscal, Direction dir>
@@ -183,41 +148,17 @@ namespace shammodels::basegodunov::modules {
         u32 nvar) {
 
         using d_Flux = DustFluxCompute<Tvec, mode, dir>;
-        std::string flux_name
-            = (mode == DustRiemannSolverMode::DHLL) ? "dust hll flux " : "dust huang-bai flux ";
-        auto get_dir_name = [&]() {
-            if constexpr (dir == Direction::xp) {
-                return "xp";
-            } else if constexpr (dir == Direction::xm) {
-                return "xm";
-            } else if constexpr (dir == Direction::yp) {
-                return "yp";
-            } else if constexpr (dir == Direction::ym) {
-                return "ym";
-            } else if constexpr (dir == Direction::zp) {
-                return "zp";
-            } else if constexpr (dir == Direction::zm) {
-                return "zm";
-            } else {
-                static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
-            }
-            return "";
-        };
-        std::string cur_direction = get_dir_name();
-        std::string kernel_name   = (std::string) "compute " + flux_name + cur_direction;
-        const char *_kernel_name  = kernel_name.c_str();
 
-        sham::EventList depends_list;
-
-        auto rho_dust = rho_dust_dir.get_read_access(depends_list);
-        auto vel_dust = vel_dust_dir.get_read_access(depends_list);
-
-        auto flux_rho_dust  = flux_rho_dust_dir.get_write_access(depends_list);
-        auto flux_rhov_dust = flux_rhov_dust_dir.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            u32 ndust = nvar;
-            shambase::parallel_for(cgh, link_count * nvar, _kernel_name, [=](u32 id_var_a) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{rho_dust_dir, vel_dust_dir},
+            sham::MultiRef{flux_rho_dust_dir, flux_rhov_dust_dir},
+            link_count * nvar,
+            [](u32 id_var_a,
+               const std::array<Tscal, 2> *__restrict rho_dust,
+               const std::array<Tvec, 2> *__restrict vel_dust,
+               Tscal *__restrict flux_rho_dust,
+               Tvec *__restrict flux_rhov_dust) {
                 auto rho_ij = rho_dust[id_var_a];
                 auto vel_ij = vel_dust[id_var_a];
 
@@ -228,13 +169,6 @@ namespace shammodels::basegodunov::modules {
                 flux_rho_dust[id_var_a]  = flux_dust_dir.rho;
                 flux_rhov_dust[id_var_a] = flux_dust_dir.rhovel;
             });
-        });
-
-        rho_dust_dir.complete_event_state(e);
-        vel_dust_dir.complete_event_state(e);
-
-        flux_rho_dust_dir.complete_event_state(e);
-        flux_rhov_dust_dir.complete_event_state(e);
     }
 
 } // namespace shammodels::basegodunov::modules

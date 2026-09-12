@@ -25,27 +25,39 @@ namespace shammath {
      *
      * Huang & Bai, 2022, A Multifluid Dust Module in Athena++: Algorithms and Numerical
      * Tests, Equation (32)
+     * @tparam FSpec
+     * @param fspec dust state spec (flux/vn operations, no equation of state)
+     * @param primL left  primitive state
+     * @param primR right primitive state
+     * @param n face unit normal
      */
-    template<class Tprim>
-    inline constexpr auto huang_bai_flux(Tprim d_primL, Tprim d_primR, typename Tprim::Tvec n) {
-        const auto vnL = n[0] * d_primL.vel[0] + n[1] * d_primL.vel[1] + n[2] * d_primL.vel[2];
-        const auto vnR = n[0] * d_primR.vel[0] + n[1] * d_primR.vel[1] + n[2] * d_primR.vel[2];
+    template<DustFluidStateSpec FSpec>
+    inline constexpr typename FSpec::Tcons huang_bai_flux(
+        const FSpec &fspec,
+        const typename FSpec::Tprim &primL,
+        const typename FSpec::Tprim &primR,
+        const typename FSpec::Tvec &n) {
+        using Tscal = typename FSpec::Tscal;
+        using Tcons = typename FSpec::Tcons;
 
-        const auto fL = d_hydro_flux_n(d_primL, n, vnL);
-        const auto fR = d_hydro_flux_n(d_primR, n, vnR);
+        const Tscal vnL = fspec.vn(primL, n);
+        const Tscal vnR = fspec.vn(primR, n);
 
-        DustConsState<typename Tprim::Tvec> d_flux{};
+        const Tcons fL = fspec.flux(primL, n, vnL);
+        const Tcons fR = fspec.flux(primR, n, vnR);
+
+        Tcons flux{};
 
         if (vnL > 0 && vnR > 0)
-            d_flux = fL;
+            flux = fL;
         else if (vnL < 0 && vnR < 0)
-            d_flux = fR;
+            flux = fR;
         else if (vnL < 0 && vnR > 0)
-            d_flux *= 0;
+            flux *= 0;
         else if (vnL > 0 && vnR < 0)
-            d_flux = (fL + fR);
+            flux = (fL + fR);
 
-        return d_flux;
+        return flux;
     }
 
 } // namespace shammath

@@ -25,17 +25,17 @@ namespace shammath {
     /**
      * @brief HLL flux across a face with unit normal n
      */
-    template<class Tprim>
-    inline constexpr auto hll_flux(
-        const Tprim primL,
-        const Tprim primR,
-        const typename Tprim::Tscal gamma,
-        const typename Tprim::Tvec n) {
-        const auto csL = sound_speed(primL, gamma);
-        const auto csR = sound_speed(primR, gamma);
+    template<FluidStateSpec FSpec>
+    inline constexpr typename FSpec::Tcons hll_flux(
+        const FSpec &fspec,
+        const typename FSpec::Tprim &primL,
+        const typename FSpec::Tprim &primR,
+        const typename FSpec::Tvec &n) {
+        const auto csL = fspec.sound_speed(primL);
+        const auto csR = fspec.sound_speed(primR);
 
-        const auto vnL = n[0] * primL.vel[0] + n[1] * primL.vel[1] + n[2] * primL.vel[2];
-        const auto vnR = n[0] * primR.vel[0] + n[1] * primR.vel[1] + n[2] * primR.vel[2];
+        const auto vnL = fspec.vn(primL, n);
+        const auto vnR = fspec.vn(primR, n);
 
         // Teyssier form
         // const auto S_L = sham::min(vnL, vnR) - sham::max(csL, csR);
@@ -45,8 +45,8 @@ namespace shammath {
         const auto S_L = sham::min(vnL - csL, vnR - csR);
         const auto S_R = sham::max(vnL + csL, vnR + csR);
 
-        const auto fluxL = hydro_flux_n(primL, n, vnL, gamma);
-        const auto fluxR = hydro_flux_n(primR, n, vnR, gamma);
+        const auto fluxL = fspec.flux(primL, n, vnL);
+        const auto fluxR = fspec.flux(primR, n, vnR);
 
         // Equation (10.26) from Toro 3rd Edition , Springer 2009
         // const auto S_L_upwind = sham::min(S_L, 0.0);
@@ -63,8 +63,8 @@ namespace shammath {
         else {
             // Only the intermediate (star) state needs the conservative form, so it is
             // formed here rather than at the call site (which only has primitives).
-            const auto consL  = prim_to_cons(primL, gamma);
-            const auto consR  = prim_to_cons(primR, gamma);
+            const auto consL  = fspec.prim_to_cons(primL);
+            const auto consR  = fspec.prim_to_cons(primR);
             const auto S_norm = 1.0 / (S_R - S_L);
             return (fluxL * S_R - fluxR * S_L + (consR - consL) * S_R * S_L) * S_norm;
         }

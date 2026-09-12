@@ -17,12 +17,10 @@
  *
  */
 
-#include "shambackends/kernel_call.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammath/riemann.hpp"
 #include "shammath/riemann_dust.hpp"
 #include "shammodels/ramses/Solver.hpp"
-#include <array>
 
 namespace shammodels::basegodunov::modules {
 
@@ -53,122 +51,47 @@ namespace shammodels::basegodunov::modules {
         return Tvec{};
     }
 
-    template<class Tvec, RiemannSolverMode mode, Direction dir>
-    class FluxCompute {
-        public:
-        using Tcons = shammath::ConsState<Tvec>;
-        using Tprim = shammath::PrimState<Tvec>;
-        using Tscal = typename Tcons::Tscal;
+    /**
+     * @brief Dispatch to the gas Riemann solver selected by `mode`, for a face with unit
+     *        normal along `dir`. The fluid state spec is supplied by the caller (see
+     *        NodeComputeFlux.cpp) rather than constructed here.
+     */
+    template<shammath::FluidStateAdiabaticSpec FSpec, RiemannSolverMode mode, Direction dir>
+    inline constexpr typename FSpec::Tcons riemann_flux(
+        const FSpec &fspec,
+        const typename FSpec::Tprim &primL,
+        const typename FSpec::Tprim &primR) {
+        const typename FSpec::Tvec n = dir_normal<typename FSpec::Tvec, dir>();
 
-        inline static constexpr Tcons flux(Tprim pL, Tprim pR, typename Tcons::Tscal gamma) {
-            const Tvec n = dir_normal<Tvec, dir>();
-
-            if constexpr (mode == RiemannSolverMode::Rusanov) {
-                return shammath::rusanov_flux(pL, pR, gamma, n);
-            }
-            if constexpr (mode == RiemannSolverMode::HLL) {
-                return shammath::hll_flux(pL, pR, gamma, n);
-            }
-            if constexpr (mode == RiemannSolverMode::HLLC) {
-                return shammath::hllc_adiab_toro_flux(pL, pR, gamma, n);
-            }
+        if constexpr (mode == RiemannSolverMode::Rusanov) {
+            return shammath::rusanov_flux(fspec, primL, primR, n);
         }
-    };
-
-    template<class Tvec, DustRiemannSolverMode mode, Direction dir>
-    class DustFluxCompute {
-        public:
-        using Tcons = shammath::DustConsState<Tvec>;
-        using Tprim = shammath::DustPrimState<Tvec>;
-        using Tscal = typename Tcons::Tscal;
-
-        inline static constexpr Tcons dustflux(Tprim pL, Tprim pR) {
-            const Tvec n = dir_normal<Tvec, dir>();
-
-            if constexpr (mode == DustRiemannSolverMode::HB) {
-                return shammath::huang_bai_flux(pL, pR, n);
-            }
-            if constexpr (mode == DustRiemannSolverMode::DHLL) {
-                return shammath::d_hll_flux(pL, pR, n);
-            }
+        if constexpr (mode == RiemannSolverMode::HLL) {
+            return shammath::hll_flux(fspec, primL, primR, n);
         }
-    };
-
-    template<RiemannSolverMode mode, class Tvec, class Tscal, Direction dir>
-    void compute_fluxes_dir(
-        sham::DeviceQueue &q,
-        u32 link_count,
-        sham::DeviceBuffer<std::array<Tscal, 2>> &rho_face_dir,
-        sham::DeviceBuffer<std::array<Tvec, 2>> &vel_face_dir,
-        sham::DeviceBuffer<std::array<Tscal, 2>> &press_face_dir,
-        sham::DeviceBuffer<Tscal> &flux_rho_face_dir,
-        sham::DeviceBuffer<Tvec> &flux_rhov_face_dir,
-        sham::DeviceBuffer<Tscal> &flux_rhoe_face_dir,
-        Tscal gamma) {
-
-        using Flux = FluxCompute<Tvec, mode, dir>;
-
-        sham::kernel_call(
-            q,
-            sham::MultiRef{rho_face_dir, vel_face_dir, press_face_dir},
-            sham::MultiRef{flux_rho_face_dir, flux_rhov_face_dir, flux_rhoe_face_dir},
-            link_count,
-            [gamma](
-                u32 id_a,
-                const std::array<Tscal, 2> *__restrict rho,
-                const std::array<Tvec, 2> *__restrict vel,
-                const std::array<Tscal, 2> *__restrict press,
-                Tscal *__restrict flux_rho,
-                Tvec *__restrict flux_rhov,
-                Tscal *__restrict flux_rhoe) {
-                auto rho_ij   = rho[id_a];
-                auto vel_ij   = vel[id_a];
-                auto press_ij = press[id_a];
-
-                using Tprim   = shammath::PrimState<Tvec>;
-                auto flux_dir = Flux::flux(
-                    Tprim{rho_ij[0], press_ij[0], vel_ij[0]},
-                    Tprim{rho_ij[1], press_ij[1], vel_ij[1]},
-                    gamma);
-
-                flux_rho[id_a]  = flux_dir.rho;
-                flux_rhov[id_a] = flux_dir.rhovel;
-                flux_rhoe[id_a] = flux_dir.rhoe;
-            });
+        if constexpr (mode == RiemannSolverMode::HLLC) {
+            return shammath::hllc_adiab_toro_flux(fspec, primL, primR, n);
+        }
     }
 
-    template<DustRiemannSolverMode mode, class Tvec, class Tscal, Direction dir>
-    void dust_compute_fluxes_dir(
-        sham::DeviceQueue &q,
-        u32 link_count,
-        sham::DeviceBuffer<std::array<Tscal, 2>> &rho_dust_dir,
-        sham::DeviceBuffer<std::array<Tvec, 2>> &vel_dust_dir,
-        sham::DeviceBuffer<Tscal> &flux_rho_dust_dir,
-        sham::DeviceBuffer<Tvec> &flux_rhov_dust_dir,
-        u32 nvar) {
+    /**
+     * @brief Dispatch to the dust Riemann solver selected by `mode`, for a face with unit
+     *        normal along `dir`. The dust fluid state spec is supplied by the caller (see
+     *        NodeComputeFlux.cpp) rather than constructed here.
+     */
+    template<shammath::DustFluidStateSpec FSpec, DustRiemannSolverMode mode, Direction dir>
+    inline constexpr typename FSpec::Tcons riemann_dust_flux(
+        const FSpec &fspec,
+        const typename FSpec::Tprim &primL,
+        const typename FSpec::Tprim &primR) {
+        const typename FSpec::Tvec n = dir_normal<typename FSpec::Tvec, dir>();
 
-        using d_Flux = DustFluxCompute<Tvec, mode, dir>;
-
-        sham::kernel_call(
-            q,
-            sham::MultiRef{rho_dust_dir, vel_dust_dir},
-            sham::MultiRef{flux_rho_dust_dir, flux_rhov_dust_dir},
-            link_count * nvar,
-            [](u32 id_var_a,
-               const std::array<Tscal, 2> *__restrict rho_dust,
-               const std::array<Tvec, 2> *__restrict vel_dust,
-               Tscal *__restrict flux_rho_dust,
-               Tvec *__restrict flux_rhov_dust) {
-                auto rho_ij = rho_dust[id_var_a];
-                auto vel_ij = vel_dust[id_var_a];
-
-                using Tprim = shammath::DustPrimState<Tvec>;
-                auto flux_dust_dir
-                    = d_Flux::dustflux(Tprim{rho_ij[0], vel_ij[0]}, Tprim{rho_ij[1], vel_ij[1]});
-
-                flux_rho_dust[id_var_a]  = flux_dust_dir.rho;
-                flux_rhov_dust[id_var_a] = flux_dust_dir.rhovel;
-            });
+        if constexpr (mode == DustRiemannSolverMode::HB) {
+            return shammath::huang_bai_flux(fspec, primL, primR, n);
+        }
+        if constexpr (mode == DustRiemannSolverMode::DHLL) {
+            return shammath::d_hll_flux(fspec, primL, primR, n);
+        }
     }
 
 } // namespace shammodels::basegodunov::modules

@@ -22,6 +22,8 @@ NEW_TEST(Unittest, "shammath/flux_symmetry", 1) {
 
     constexpr f64 gamma = 1.6666;
 
+    shammath::FluidStateAdiabatic<f64_3> adiab_fluid{.m_gamma = gamma};
+
     // Riemann solvers now take primitive states directly (see riemann_hll.hpp,
     // riemann_hllc.hpp, riemann_rusanov.hpp), so the reference states below are converted
     // from conservative once, up front.
@@ -31,24 +33,24 @@ NEW_TEST(Unittest, "shammath/flux_symmetry", 1) {
     Tprim state2 = shammath::cons_to_prim(cons2, gamma);
 
     {
-        Tcons f1 = shammath::rusanov_flux(state1, state2, gamma, f64_3{1, 0, 0});
-        Tcons f2 = shammath::rusanov_flux(state2, state1, gamma, f64_3{-1, 0, 0});
+        Tcons f1 = shammath::rusanov_flux(adiab_fluid, state1, state2, f64_3{1, 0, 0});
+        Tcons f2 = shammath::rusanov_flux(adiab_fluid, state2, state1, f64_3{-1, 0, 0});
         REQUIRE_EQUAL_CUSTOM_COMP(f1.rho, -f2.rho, sham::equals);
         REQUIRE_EQUAL_CUSTOM_COMP(f1.rhovel, -f2.rhovel, sham::equals);
         REQUIRE_EQUAL_CUSTOM_COMP(f1.rhoe, -f2.rhoe, sham::equals);
     }
 
     {
-        Tcons f1 = shammath::rusanov_flux(state1, state2, gamma, f64_3{0, 1, 0});
-        Tcons f2 = shammath::rusanov_flux(state2, state1, gamma, f64_3{0, -1, 0});
+        Tcons f1 = shammath::rusanov_flux(adiab_fluid, state1, state2, f64_3{0, 1, 0});
+        Tcons f2 = shammath::rusanov_flux(adiab_fluid, state2, state1, f64_3{0, -1, 0});
         REQUIRE_EQUAL_CUSTOM_COMP(f1.rho, -f2.rho, sham::equals);
         REQUIRE_EQUAL_CUSTOM_COMP(f1.rhovel, -f2.rhovel, sham::equals);
         REQUIRE_EQUAL_CUSTOM_COMP(f1.rhoe, -f2.rhoe, sham::equals);
     }
 
     {
-        Tcons f1 = shammath::rusanov_flux(state1, state2, gamma, f64_3{0, 0, 1});
-        Tcons f2 = shammath::rusanov_flux(state2, state1, gamma, f64_3{0, 0, -1});
+        Tcons f1 = shammath::rusanov_flux(adiab_fluid, state1, state2, f64_3{0, 0, 1});
+        Tcons f2 = shammath::rusanov_flux(adiab_fluid, state2, state1, f64_3{0, 0, -1});
         REQUIRE_EQUAL_CUSTOM_COMP(f1.rho, -f2.rho, sham::equals);
         REQUIRE_EQUAL_CUSTOM_COMP(f1.rhovel, -f2.rhovel, sham::equals);
         REQUIRE_EQUAL_CUSTOM_COMP(f1.rhoe, -f2.rhoe, sham::equals);
@@ -66,17 +68,17 @@ NEW_TEST(Unittest, "shammath/flux_symmetry", 1) {
     Tprim state_ym = to_prim({.rho = 1._f64, .rhoe = 1._f64, .rhovel = f64_3{1, 0, 0}});
     Tprim state_zm = to_prim({.rho = 1._f64, .rhoe = 1._f64, .rhovel = f64_3{1, 0, 0}});
     {
-        Tcons fx = shammath::rusanov_flux(state_i, state_xp, gamma, f64_3{1, 0, 0});
+        Tcons fx = shammath::rusanov_flux(adiab_fluid, state_i, state_xp, f64_3{1, 0, 0});
         shamlog_debug_ln("Riemann Solver", fx.rho, fx.rhovel, fx.rhoe);
-        Tcons fy = shammath::rusanov_flux(state_i, state_yp, gamma, f64_3{0, 1, 0});
+        Tcons fy = shammath::rusanov_flux(adiab_fluid, state_i, state_yp, f64_3{0, 1, 0});
         shamlog_debug_ln("Riemann Solver", fy.rho, fy.rhovel, fy.rhoe);
-        Tcons fz = shammath::rusanov_flux(state_i, state_zp, gamma, f64_3{0, 0, 1});
+        Tcons fz = shammath::rusanov_flux(adiab_fluid, state_i, state_zp, f64_3{0, 0, 1});
         shamlog_debug_ln("Riemann Solver", fz.rho, fz.rhovel, fz.rhoe);
-        Tcons fmx = shammath::rusanov_flux(state_i, state_xm, gamma, f64_3{-1, 0, 0});
+        Tcons fmx = shammath::rusanov_flux(adiab_fluid, state_i, state_xm, f64_3{-1, 0, 0});
         shamlog_debug_ln("Riemann Solver", fmx.rho, fmx.rhovel, fmx.rhoe);
-        Tcons fmy = shammath::rusanov_flux(state_i, state_ym, gamma, f64_3{0, -1, 0});
+        Tcons fmy = shammath::rusanov_flux(adiab_fluid, state_i, state_ym, f64_3{0, -1, 0});
         shamlog_debug_ln("Riemann Solver", fmy.rho, fmy.rhovel, fmy.rhoe);
-        Tcons fmz = shammath::rusanov_flux(state_i, state_zm, gamma, f64_3{0, 0, -1});
+        Tcons fmz = shammath::rusanov_flux(adiab_fluid, state_i, state_zm, f64_3{0, 0, -1});
         shamlog_debug_ln("Riemann Solver", fmz.rho, fmz.rhovel, fmz.rhoe);
         Tcons sum = fx + fy + fz + fmx + fmy + fmz;
         shamlog_debug_ln("Riemann Solver", "sum=", sum.rho, sum.rhovel, sum.rhoe);
@@ -261,26 +263,32 @@ NEW_TEST(Unittest, "shammath/flux_n_matches_directional", 1) {
     };
 
     check_gas_solver([](Tprim a, Tprim b, f64 g, Tvec n) {
-        return shammath::rusanov_flux(a, b, g, n);
+        shammath::FluidStateAdiabatic<Tvec> fspec{.m_gamma = g};
+        return shammath::rusanov_flux(fspec, a, b, n);
     });
 
     check_gas_solver([](Tprim a, Tprim b, f64 g, Tvec n) {
-        return shammath::hll_flux(a, b, g, n);
+        shammath::FluidStateAdiabatic<Tvec> fspec{.m_gamma = g};
+        return shammath::hll_flux(fspec, a, b, n);
     });
 
     check_gas_solver([](Tprim a, Tprim b, f64 g, Tvec n) {
-        return shammath::hllc_adiab_toro_flux(a, b, g, n);
+        shammath::FluidStateAdiabatic<Tvec> fspec{.m_gamma = g};
+        return shammath::hllc_adiab_toro_flux(fspec, a, b, n);
     });
 
     check_gas_solver([](Tprim a, Tprim b, f64 g, Tvec n) {
-        return shammath::hllc_davis_flux(a, b, g, n);
+        shammath::FluidStateAdiabatic<Tvec> fspec{.m_gamma = g};
+        return shammath::hllc_davis_flux(fspec, a, b, n);
     });
 
     check_dust_solver([](DTprim a, DTprim b, Tvec n) {
-        return shammath::d_hll_flux(a, b, n);
+        shammath::FluidStateDust<Tvec> fspec{};
+        return shammath::d_hll_flux(fspec, a, b, n);
     });
 
     check_dust_solver([](DTprim a, DTprim b, Tvec n) {
-        return shammath::huang_bai_flux(a, b, n);
+        shammath::FluidStateDust<Tvec> fspec{};
+        return shammath::huang_bai_flux(fspec, a, b, n);
     });
 }

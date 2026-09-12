@@ -25,8 +25,103 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <concepts>
 #include <iostream>
+#include <utility>
 namespace shammath {
+
+    /**
+     * @brief An equation of state paired with the flux/wave-speed operations a Riemann solver
+     *        needs, so that solvers (see riemann_rusanov.hpp, riemann_hll.hpp) can be written
+     *        once and instantiated for any fluid state satisfying this interface.
+     */
+    template<class T>
+    concept FluidStateSpec = requires(
+        const T &self,
+        typename T::Tcons cons,
+        typename T::Tprim prim,
+        typename T::Tvec n,
+        typename T::Tscal vn) {
+        typename T::Tvec;
+        typename T::Tscal;
+        typename T::Tprim;
+        typename T::Tcons;
+        { self.cons_to_prim(cons) } -> std::convertible_to<typename T::Tprim>;
+        { self.prim_to_cons(prim) } -> std::convertible_to<typename T::Tcons>;
+        { self.sound_speed(prim) } -> std::convertible_to<typename T::Tscal>;
+        { self.vn(prim, n) } -> std::convertible_to<typename T::Tscal>;
+        { self.flux(prim, n) } -> std::convertible_to<typename T::Tcons>;
+        { self.flux(prim, n, vn) } -> std::convertible_to<typename T::Tcons>;
+    };
+
+    /**
+     * @brief The flux operations a dust (pressureless) Riemann solver needs, so that solvers
+     *        (see riemann_dust_hll.hpp, riemann_dust_huang_bai.hpp) can be written once and
+     *        instantiated for any dust state satisfying this interface. Analogous to
+     *        FluidStateSpec but without an equation of state, hence no sound_speed().
+     */
+    template<class T>
+    concept DustFluidStateSpec = requires(
+        const T &self,
+        typename T::Tcons cons,
+        typename T::Tprim prim,
+        typename T::Tvec n,
+        typename T::Tscal vn) {
+        typename T::Tvec;
+        typename T::Tscal;
+        typename T::Tprim;
+        typename T::Tcons;
+        { self.cons_to_prim(cons) } -> std::convertible_to<typename T::Tprim>;
+        { self.prim_to_cons(prim) } -> std::convertible_to<typename T::Tcons>;
+        { self.vn(prim, n) } -> std::convertible_to<typename T::Tscal>;
+        { self.flux(prim, n) } -> std::convertible_to<typename T::Tcons>;
+        { self.flux(prim, n, vn) } -> std::convertible_to<typename T::Tcons>;
+    };
+
+    namespace details {
+        /// True if T exposes a single, state-independent adiabatic index via gamma()
+        template<class T>
+        concept HasGlobalGamma = requires(const T &self) {
+            { self.gamma() } -> std::convertible_to<typename T::Tscal>;
+        };
+
+        /// True if T exposes a per-primitive-state adiabatic index via gamma(prim)
+        template<class T>
+        concept HasPerStateGamma = requires(const T &self, typename T::Tprim prim) {
+            { self.gamma(prim) } -> std::convertible_to<typename T::Tscal>;
+        };
+    } // namespace details
+
+    /**
+     * @brief A FluidStateSpec that also exposes the adiabatic index, for solvers (e.g. HLLC)
+     *        that need gamma directly rather than only through cons_to_prim/prim_to_cons/flux.
+     *        Satisfied by a state-independent gamma() (a single constant adiabatic index) or a
+     *        per-state gamma(prim) (e.g. a spatially/species-varying index); see
+     *        get_adiabatic_index_lr() for how solvers should read it.
+     */
+    template<class T>
+    concept FluidStateAdiabaticSpec
+        = FluidStateSpec<T> && (details::HasGlobalGamma<T> || details::HasPerStateGamma<T>);
+
+    /**
+     * @brief Read the left/right adiabatic indices a HLLC-style solver should use for a given
+     *        L/R pair.
+     *
+     * If fspec exposes a single state-independent gamma() it is returned for both sides;
+     * otherwise fspec is assumed to expose a per-state gamma(prim) and each side reads its own.
+     */
+    template<FluidStateAdiabaticSpec FSpec>
+    inline constexpr std::pair<typename FSpec::Tscal, typename FSpec::Tscal> get_adiabatic_index_lr(
+        const FSpec &fspec,
+        const typename FSpec::Tprim &primL,
+        const typename FSpec::Tprim &primR) {
+        if constexpr (details::HasGlobalGamma<FSpec>) {
+            const typename FSpec::Tscal gamma = fspec.gamma();
+            return {gamma, gamma};
+        } else {
+            return {fspec.gamma(primL), fspec.gamma(primR)};
+        }
+    }
 
     template<class Tvec_>
     struct ConsState {
@@ -481,5 +576,53 @@ namespace shammath {
         pprime.vel = -(p.vel);
         return pprime;
     }
+
+    /**
+     * @brief FluidStateSpec implementation for an ideal (adiabatic) gas equation of state
+     */
+    template<class Tvec_>
+    struct FluidStateAdiabatic {
+        using Tvec  = Tvec_;
+        using Tscal = shambase::VecComponent<Tvec>;
+        using Tprim = PrimState<Tvec>;
+        using Tcons = ConsState<Tvec>;
+
+        Tscal m_gamma; // need a different name than the methods below
+
+        Tprim cons_to_prim(Tcons c) const { return shammath::cons_to_prim(c, m_gamma); }
+        Tcons prim_to_cons(Tprim p) const { return shammath::prim_to_cons(p, m_gamma); }
+        Tscal sound_speed(Tprim p) const { return shammath::sound_speed(p, m_gamma); }
+        Tscal vn(Tprim p, Tvec n) const { return sham::dot(p.vel, n); }
+        Tcons flux(Tprim p, Tvec n, Tscal vn) const {
+            return shammath::hydro_flux_n(p, n, vn, m_gamma);
+        }
+        Tcons flux(Tprim p, Tvec n) const { return shammath::hydro_flux_n(p, n, m_gamma); }
+        Tscal gamma() const { return m_gamma; }
+    };
+
+    static_assert(FluidStateSpec<FluidStateAdiabatic<f64_3>>);
+    static_assert(FluidStateAdiabaticSpec<FluidStateAdiabatic<f64_3>>);
+
+    /**
+     * @brief cons_to_prim/prim_to_cons/vn/flux wrapper for a pressureless (dust) fluid.
+     *        Unlike FluidStateAdiabatic there is no equation of state, so sound_speed() and
+     *        gamma() are not defined here; this type satisfies DustFluidStateSpec rather than
+     *        FluidStateSpec.
+     */
+    template<class Tvec_>
+    struct FluidStateDust {
+        using Tvec  = Tvec_;
+        using Tscal = shambase::VecComponent<Tvec>;
+        using Tprim = DustPrimState<Tvec>;
+        using Tcons = DustConsState<Tvec>;
+
+        Tprim cons_to_prim(Tcons c) const { return shammath::d_cons_to_prim(c); }
+        Tcons prim_to_cons(Tprim p) const { return shammath::d_prim_to_cons(p); }
+        Tscal vn(Tprim p, Tvec n) const { return sham::dot(p.vel, n); }
+        Tcons flux(Tprim p, Tvec n, Tscal vn) const { return shammath::d_hydro_flux_n(p, n, vn); }
+        Tcons flux(Tprim p, Tvec n) const { return shammath::d_hydro_flux_n(p, n); }
+    };
+
+    static_assert(DustFluidStateSpec<FluidStateDust<f64_3>>);
 
 } // namespace shammath

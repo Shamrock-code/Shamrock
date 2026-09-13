@@ -37,8 +37,12 @@ namespace shammath {
         const auto vn_l = fspec.vn(prim_l, n);
         const auto vn_r = fspec.vn(prim_r, n);
 
+        // NOLINTBEGIN(readability-identifier-naming)
+
         // Equation (10.56) from Toro 3rd Edition , Springer 2009
-        const auto s = sham::max((sham::abs(vn_l) + cs_l), (sham::abs(vn_r) + cs_r));
+        const auto S = sham::max((sham::abs(vn_l) + cs_l), (sham::abs(vn_r) + cs_r));
+
+        // NOLINTEND(readability-identifier-naming)
 
         const auto f_l = fspec.flux(prim_l, n, vn_l);
         const auto f_r = fspec.flux(prim_r, n, vn_r);
@@ -47,7 +51,7 @@ namespace shammath {
         const auto cons_r = fspec.prim_to_cons(prim_r);
 
         // Equation (10.55) from Toro 3rd Edition , Springer 2009
-        return 0.5 * ((f_l + f_r) - (cons_r - cons_l) * s);
+        return 0.5 * ((f_l + f_r) - (cons_r - cons_l) * S);
     }
 
 } // namespace shammath

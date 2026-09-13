@@ -113,27 +113,31 @@ namespace shammath {
         const Tscal var_l = rho_l * (s_l - velx_l);
         const Tscal var_r = rho_r * (s_r - velx_r);
 
+        // NOLINTBEGIN(readability-identifier-naming)
+
         // S* speed estimate
         // Equation (10.37) from Toro 3rd Edition , Springer 2009
-        const Tscal s_star
+        const Tscal S_star
             = (prim_r.press - prim_l.press + velx_l * var_l - velx_r * var_r) / (var_l - var_r);
 
         // New pressure estimate in the star region as average the pressure estimate at right
-        // and left of s_star in the star region
+        // and left of S_star in the star region
         // Equation (10.42) from Toro 3rd Edition , Springer 2009
         const Tscal press_lr
-            = 0.5 * (press_l + press_r + var_l * (s_star - velx_l) + var_r * (s_star - velx_r));
-        Tcons d_star{0, s_star, n};
+            = 0.5 * (press_l + press_r + var_l * (S_star - velx_l) + var_r * (S_star - velx_r));
+        Tcons D_star{0, S_star, n};
+
+        // NOLINTEND(readability-identifier-naming)
 
         // Equation (10.40) from Toro 3rd Edition , Springer 2009
         // Left intermediate conservative state in the star region
-        // Tcons c_l_star = (s_l * c_l - f_l + press_star * d_star) * (1.0 / (s_l - s_star));
-        Tcons c_l_star = (s_l * c_l - f_l + press_lr * d_star) * (1.0 / (s_l - s_star));
+        // Tcons c_l_star = (s_l * c_l - f_l + press_star * D_star) * (1.0 / (s_l - S_star));
+        Tcons c_l_star = (s_l * c_l - f_l + press_lr * D_star) * (1.0 / (s_l - S_star));
 
         // Equation (10.40) from Toro 3rd Edition , Springer 2009
         // Right intermediate conservative state in the star region
-        // Tcons c_r_star = (s_r * c_r - f_r + press_star * d_star) * (1.0 / (s_r - s_star));
-        Tcons c_r_star = (s_r * c_r - f_r + press_lr * d_star) * (1.0 / (s_r - s_star));
+        // Tcons c_r_star = (s_r * c_r - f_r + press_star * D_star) * (1.0 / (s_r - S_star));
+        Tcons c_r_star = (s_r * c_r - f_r + press_lr * D_star) * (1.0 / (s_r - S_star));
 
         // intemediate Flux in the star region
         // Equation (10.38) from Toro 3rd Edition , Springer 2009
@@ -143,7 +147,7 @@ namespace shammath {
         // HLLC flux
         if (s_l >= 0) {
             return f_l;
-        } else if (s_star >= 0) {
+        } else if (S_star >= 0) {
             return f_l_star;
         } else if (s_r >= 0) {
             return f_r_star;
@@ -205,25 +209,29 @@ namespace shammath {
         const Tscal var_l = rho_l * (s_l - velx_l);
         const Tscal var_r = rho_r * (s_r - velx_r);
 
+        // NOLINTBEGIN(readability-identifier-naming)
+
         // S* speed estimate
         // Equation (10.37) from Toro 3rd Edition , Springer 2009
-        const Tscal s_star
+        const Tscal S_star
             = (prim_r.press - prim_l.press + velx_l * var_l - velx_r * var_r) / (var_l - var_r);
 
         // New pressure estimate in the star region as average the pressure estimate at right
-        // and left of s_star in the star region
+        // and left of S_star in the star region
         // Equation (10.42) from Toro 3rd Edition , Springer 2009
         const Tscal press_lr
-            = 0.5 * (press_l + press_r + var_l * (s_star - velx_l) + var_r * (s_star - velx_r));
-        Tcons d_star{0, s_star, n};
+            = 0.5 * (press_l + press_r + var_l * (S_star - velx_l) + var_r * (S_star - velx_r));
+        Tcons D_star{0, S_star, n};
+
+        // NOLINTEND(readability-identifier-naming)
 
         // Equation (10.40) from Toro 3rd Edition , Springer 2009
         // Left intermediate conservative state in the star region
-        Tcons c_l_star = (s_l * c_l - f_l + press_lr * d_star) * (1.0 / (s_l - s_star));
+        Tcons c_l_star = (s_l * c_l - f_l + press_lr * D_star) * (1.0 / (s_l - S_star));
 
         // Equation (10.40) from Toro 3rd Edition , Springer 2009
         // Right intermediate conservative state in the star region
-        Tcons c_r_star = (s_r * c_r - f_r + press_lr * d_star) * (1.0 / (s_r - s_star));
+        Tcons c_r_star = (s_r * c_r - f_r + press_lr * D_star) * (1.0 / (s_r - S_star));
 
         // intemediate Flux in the star region
         // Equation (10.38) from Toro 3rd Edition , Springer 2009
@@ -233,7 +241,7 @@ namespace shammath {
         // HLLC flux
         if (s_l >= 0) {
             return f_l;
-        } else if (s_star >= 0) {
+        } else if (S_star >= 0) {
             return f_l_star;
         } else if (s_r >= 0) {
             return f_r_star;

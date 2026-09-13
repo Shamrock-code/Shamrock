@@ -42,7 +42,10 @@ namespace shammath {
 
         const Tscal vn_l = fspec.vn(prim_l, n);
         const Tscal vn_r = fspec.vn(prim_r, n);
-        const Tscal s    = sham::max(sham::abs(vn_l), sham::abs(vn_r));
+
+        // NOLINTBEGIN(readability-identifier-naming)
+        const Tscal S = sham::max(sham::abs(vn_l), sham::abs(vn_r));
+        // NOLINTEND(readability-identifier-naming)
 
         const Tcons f_l = fspec.flux(prim_l, n, vn_l);
         const Tcons f_r = fspec.flux(prim_r, n, vn_r);
@@ -50,7 +53,7 @@ namespace shammath {
         const Tcons c_l = fspec.prim_to_cons(prim_l);
         const Tcons c_r = fspec.prim_to_cons(prim_r);
 
-        return 0.5 * ((f_l + f_r) - s * (c_r - c_l));
+        return 0.5 * ((f_l + f_r) - S * (c_r - c_l));
     }
 
 } // namespace shammath

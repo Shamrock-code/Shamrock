@@ -3,6 +3,9 @@ Showcase smoothing length iteration algorithlm
 ==============================================
 """
 
+# sphinx_gallery_thumbnail_number = 2
+# sphinx_gallery_multi_image = "single"
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -208,7 +211,11 @@ pmass = 1.0 / 1000.0
 
 positions = np.array(positions)
 
+# %%
+
 plot_f_df_kernel()
+
+# %%
 
 h_a_test = np.logspace(-3, 2, 1000)
 
@@ -239,6 +246,8 @@ ax_rho.set_yscale("symlog", linthresh=1e-4)
 ax_rho.set_xscale("log")
 ax_rho.set_xlabel("h_a")
 ax_rho.legend()
+
+# %%
 
 # sample 10 equally spaced values in h_a_test indexes
 test_h_values = np.append(

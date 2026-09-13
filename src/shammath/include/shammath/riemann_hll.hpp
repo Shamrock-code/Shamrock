@@ -55,10 +55,10 @@ namespace shammath {
         // Equation (10.26) from Toro 3rd Edition , Springer 2009
         // const auto S_l_upwind = sham::min(S_l, 0.0);
         // const auto S_r_upwind = sham::max(S_r, 0.0);
-        // const auto s_norm     = 1.0 / (S_r_upwind - S_l_upwind);
+        // const auto S_norm     = 1.0 / (S_r_upwind - S_l_upwind);
         // return (flux_l * S_r_upwind - flux_r * S_l_upwind
         //         + (cons_r - cons_l) * S_r_upwind * S_l_upwind)
-        //        * s_norm;
+        //        * S_norm;
 
         if (S_l >= 0)
             return flux_l;
@@ -69,8 +69,9 @@ namespace shammath {
             // formed here rather than at the call site (which only has primitives).
             const auto cons_l = fspec.prim_to_cons(prim_l);
             const auto cons_r = fspec.prim_to_cons(prim_r);
-            const auto s_norm = 1.0 / (S_r - S_l);
-            return (flux_l * S_r - flux_r * S_l + (cons_r - cons_l) * S_r * S_l) * s_norm;
+            // NOLINTNEXTLINE(readability-identifier-naming)
+            const auto S_norm = 1.0 / (S_r - S_l);
+            return (flux_l * S_r - flux_r * S_l + (cons_r - cons_l) * S_r * S_l) * S_norm;
         }
     }
 

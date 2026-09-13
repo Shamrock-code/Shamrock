@@ -63,6 +63,8 @@
 #include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
+#include "shammodels/sph/modules/IterateSmoothingLengthDensityBisectingNR.hpp"
+#include "shammodels/sph/modules/IterateSmoothingLengthDensityBisectingNRNeighLim.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
 #include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
@@ -1301,6 +1303,32 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
         using h_conf_density_based = typename SmoothingLengthConfig::DensityBased;
         using h_conf_neigh_lim     = typename SmoothingLengthConfig::DensityBasedNeighLim;
+        using h_conf_bisect_nr     = typename SmoothingLengthConfig::DensityBasedBisectingNR;
+        using h_conf_bisect_nr_neigh_lim =
+            typename SmoothingLengthConfig::DensityBasedBisectingNRNeighLim;
+
+        auto init_h_bisect_bracket = [&](u32 hstep_cnt) {
+            if (!storage.h_bisect_lo) {
+                storage.h_bisect_lo = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+                    1, "h_bisect_lo", "h_{\\rm lo}");
+            }
+            if (!storage.h_bisect_hi) {
+                storage.h_bisect_hi = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+                    1, "h_bisect_hi", "h_{\\rm hi}");
+            }
+            storage.h_bisect_lo->ensure_sizes(sizes->indexes);
+            storage.h_bisect_hi->ensure_sizes(sizes->indexes);
+
+            if (hstep_cnt == 0) {
+                // fresh bisection bracket for this call to sph_prestep, mirrors the Python
+                // bisect_NR_iterate_new_h init (lo=0, hi=+inf); NOT reset on ghost-rebuild
+                // retries of the hstep_cnt loop.
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                    storage.h_bisect_lo->get(p.id_patch).override(Tscal(0));
+                    storage.h_bisect_hi->get(p.id_patch).override(shambase::get_infty<Tscal>());
+                });
+            }
+        };
 
         if (h_conf_density_based *conf
             = std::get_if<h_conf_density_based>(&solver_config.smoothing_length_config.config)) {
@@ -1328,6 +1356,58 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             smth_h_iter_neigh_lim->set_edges(
                 sizes, neigh_cache, pos_merged, hold, hnew, eps_h, should_set_omega_mask);
             smth_h_iter_ptr = smth_h_iter_neigh_lim;
+        } else if (
+            h_conf_bisect_nr *conf
+            = std::get_if<h_conf_bisect_nr>(&solver_config.smoothing_length_config.config)) {
+
+            init_h_bisect_bracket(hstep_cnt);
+
+            std::shared_ptr<
+                shammodels::sph::modules::IterateSmoothingLengthDensityBisectingNR<Tvec, Kernel>>
+                smth_h_iter_bisect_nr
+                = std::make_shared<shammodels::sph::modules::
+                                       IterateSmoothingLengthDensityBisectingNR<Tvec, Kernel>>(
+                    solver_config.gpart_mass,
+                    solver_config.htol_up_coarse_cycle,
+                    solver_config.htol_up_fine_cycle,
+                    solver_config.epsilon_h);
+            smth_h_iter_bisect_nr->set_edges(
+                sizes,
+                neigh_cache,
+                pos_merged,
+                hold,
+                hnew,
+                eps_h,
+                storage.h_bisect_lo,
+                storage.h_bisect_hi);
+            smth_h_iter_ptr = smth_h_iter_bisect_nr;
+        } else if (
+            h_conf_bisect_nr_neigh_lim *conf = std::get_if<h_conf_bisect_nr_neigh_lim>(
+                &solver_config.smoothing_length_config.config)) {
+
+            init_h_bisect_bracket(hstep_cnt);
+
+            std::shared_ptr<shammodels::sph::modules::
+                                IterateSmoothingLengthDensityBisectingNRNeighLim<Tvec, Kernel>>
+                smth_h_iter_bisect_nr_neigh_lim = std::make_shared<
+                    shammodels::sph::modules::
+                        IterateSmoothingLengthDensityBisectingNRNeighLim<Tvec, Kernel>>(
+                    solver_config.gpart_mass,
+                    solver_config.htol_up_coarse_cycle,
+                    solver_config.htol_up_fine_cycle,
+                    conf->max_neigh_count,
+                    solver_config.epsilon_h);
+            smth_h_iter_bisect_nr_neigh_lim->set_edges(
+                sizes,
+                neigh_cache,
+                pos_merged,
+                hold,
+                hnew,
+                eps_h,
+                storage.h_bisect_lo,
+                storage.h_bisect_hi,
+                should_set_omega_mask);
+            smth_h_iter_ptr = smth_h_iter_bisect_nr_neigh_lim;
         } else {
             shambase::throw_with_loc<std::runtime_error>("Invalid smoothing length configuration");
         }
@@ -1448,7 +1528,8 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         storage.omega);
     compute_omega.evaluate();
 
-    if (solver_config.smoothing_length_config.is_density_based_neigh_lim()) {
+    if (solver_config.smoothing_length_config.is_density_based_neigh_lim()
+        || solver_config.smoothing_length_config.is_density_based_bisecting_nr_neigh_lim()) {
         // if the h limiter is triggered, omega does not hold it's sense of dh/dr anymore
         // so we set it to 1, this effectively is equivalent of disabling the energy correction
         // term corresponding to dh/dr

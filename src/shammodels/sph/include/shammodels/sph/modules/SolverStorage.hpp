@@ -86,6 +86,12 @@ namespace shammodels::sph {
 
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 
+        // Bisection bracket [lo, hi] on h used by IterateSmoothingLengthDensityBisectingNR.
+        // Lazily created (unlike omega/pressure/soundspeed) since they're only needed when that
+        // smoothing length mode is selected.
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> h_bisect_lo;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> h_bisect_hi;
+
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
 

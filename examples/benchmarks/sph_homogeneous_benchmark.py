@@ -30,7 +30,7 @@ print(f"device_properties = {device_properties}")
 N_target_base = min(N_target_base, 2**25)
 
 if device_properties["type"] == "CPU":
-    N_target_base = min(N_target_base, 2**23)
+    N_target_base = min(N_target_base, 2**20)
 
 shamrock.backends.reset_mem_info_max()
 
@@ -81,6 +81,7 @@ cfg.set_artif_viscosity_VaryingCD10(
 )
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
+cfg.set_smoothing_length_density_based_bisecting_nr()
 cfg.print_status()
 model.set_solver_config(cfg)
 model.init_scheduler(scheduler_split_val, scheduler_merge_val)

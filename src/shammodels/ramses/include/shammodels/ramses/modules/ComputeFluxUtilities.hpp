@@ -59,18 +59,18 @@ namespace shammodels::basegodunov::modules {
     template<shammath::FluidStateAdiabaticSpec FSpec, RiemannSolverMode mode, Direction dir>
     inline constexpr typename FSpec::Tcons riemann_flux(
         const FSpec &fspec,
-        const typename FSpec::Tprim &primL,
-        const typename FSpec::Tprim &primR) {
+        const typename FSpec::Tprim &prim_l,
+        const typename FSpec::Tprim &prim_r) {
         const typename FSpec::Tvec n = dir_normal<typename FSpec::Tvec, dir>();
 
         if constexpr (mode == RiemannSolverMode::Rusanov) {
-            return shammath::rusanov_flux(fspec, primL, primR, n);
+            return shammath::rusanov_flux(fspec, prim_l, prim_r, n);
         }
         if constexpr (mode == RiemannSolverMode::HLL) {
-            return shammath::hll_flux(fspec, primL, primR, n);
+            return shammath::hll_flux(fspec, prim_l, prim_r, n);
         }
         if constexpr (mode == RiemannSolverMode::HLLC) {
-            return shammath::hllc_adiab_toro_flux(fspec, primL, primR, n);
+            return shammath::hllc_adiab_toro_flux(fspec, prim_l, prim_r, n);
         }
     }
 
@@ -82,15 +82,15 @@ namespace shammodels::basegodunov::modules {
     template<shammath::DustFluidStateSpec FSpec, DustRiemannSolverMode mode, Direction dir>
     inline constexpr typename FSpec::Tcons riemann_dust_flux(
         const FSpec &fspec,
-        const typename FSpec::Tprim &primL,
-        const typename FSpec::Tprim &primR) {
+        const typename FSpec::Tprim &prim_l,
+        const typename FSpec::Tprim &prim_r) {
         const typename FSpec::Tvec n = dir_normal<typename FSpec::Tvec, dir>();
 
         if constexpr (mode == DustRiemannSolverMode::HB) {
-            return shammath::huang_bai_flux(fspec, primL, primR, n);
+            return shammath::huang_bai_flux(fspec, prim_l, prim_r, n);
         }
         if constexpr (mode == DustRiemannSolverMode::DHLL) {
-            return shammath::d_hll_flux(fspec, primL, primR, n);
+            return shammath::d_hll_flux(fspec, prim_l, prim_r, n);
         }
     }
 

@@ -113,19 +113,19 @@ namespace shammath {
     template<FluidStateAdiabaticSpec FSpec>
     inline constexpr std::pair<typename FSpec::Tscal, typename FSpec::Tscal> get_adiabatic_index_lr(
         const FSpec &fspec,
-        const typename FSpec::Tprim &primL,
-        const typename FSpec::Tprim &primR) {
+        const typename FSpec::Tprim &prim_l,
+        const typename FSpec::Tprim &prim_r) {
         if constexpr (details::HasGlobalGamma<FSpec>) {
             const typename FSpec::Tscal gamma = fspec.gamma();
             return {gamma, gamma};
         } else {
-            return {fspec.gamma(primL), fspec.gamma(primR)};
+            return {fspec.gamma(prim_l), fspec.gamma(prim_r)};
         }
     }
 
-    template<class Tvec_>
+    template<class VecType>
     struct ConsState {
-        using Tvec  = Tvec_;
+        using Tvec  = VecType;
         using Tscal = shambase::VecComponent<Tvec>;
 
         Tscal rho{}, rhoe{};
@@ -136,9 +136,9 @@ namespace shammath {
         const ConsState &operator*=(const Tscal);
     };
 
-    template<class Tvec_>
+    template<class VecType>
     struct PrimState {
-        using Tvec  = Tvec_;
+        using Tvec  = VecType;
         using Tscal = shambase::VecComponent<Tvec>;
 
         Tscal rho{}, press{};
@@ -192,12 +192,12 @@ namespace shammath {
         return ConsState<Tvec>(lhs) *= factor;
     }
 
-    template<class Tvec_>
+    template<class VecType>
     struct Fluxes {
-        using Tvec  = Tvec_;
+        using Tvec  = VecType;
         using Tscal = shambase::VecComponent<Tvec>;
 
-        std::array<ConsState<Tvec>, 3> F;
+        std::array<ConsState<Tvec>, 3> f;
     };
 
     template<class Tvec>
@@ -380,9 +380,9 @@ namespace shammath {
         return pprime;
     }
 
-    template<class Tvec_>
+    template<class VecType>
     struct DustConsState {
-        using Tvec  = Tvec_;
+        using Tvec  = VecType;
         using Tscal = shambase::VecComponent<Tvec>;
 
         Tscal rho{};
@@ -393,9 +393,9 @@ namespace shammath {
         const DustConsState &operator*=(const Tscal);
     };
 
-    template<class Tvec_>
+    template<class VecType>
     struct DustPrimState {
-        using Tvec  = Tvec_;
+        using Tvec  = VecType;
         using Tscal = shambase::VecComponent<Tvec>;
         Tscal rho{};
         Tvec vel{};
@@ -447,11 +447,11 @@ namespace shammath {
         return DustConsState<Tvec>(rhs) *= factor;
     }
 
-    template<class Tvec_>
+    template<class VecType>
     struct DustFluxes {
-        using Tvec  = Tvec_;
+        using Tvec  = VecType;
         using Tscal = shambase::VecComponent<Tvec>;
-        std::array<DustConsState<Tvec>, 3> F;
+        std::array<DustConsState<Tvec>, 3> f;
     };
 
     template<class Tvec>
@@ -580,9 +580,9 @@ namespace shammath {
     /**
      * @brief FluidStateSpec implementation for an ideal (adiabatic) gas equation of state
      */
-    template<class Tvec_>
+    template<class VecType>
     struct FluidStateAdiabatic {
-        using Tvec  = Tvec_;
+        using Tvec  = VecType;
         using Tscal = shambase::VecComponent<Tvec>;
         using Tprim = PrimState<Tvec>;
         using Tcons = ConsState<Tvec>;
@@ -609,9 +609,9 @@ namespace shammath {
      *        gamma() are not defined here; this type satisfies DustFluidStateSpec rather than
      *        FluidStateSpec.
      */
-    template<class Tvec_>
+    template<class VecType>
     struct FluidStateDust {
-        using Tvec  = Tvec_;
+        using Tvec  = VecType;
         using Tscal = shambase::VecComponent<Tvec>;
         using Tprim = DustPrimState<Tvec>;
         using Tcons = DustConsState<Tvec>;

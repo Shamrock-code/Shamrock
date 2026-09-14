@@ -11,6 +11,8 @@ import numpy as np
 
 import shamrock
 
+rng = np.random.default_rng()
+
 
 def compute_sums(pmass, id_a, h_a, W, dhW, positions: np.ndarray):
     rho_sum = 0
@@ -128,6 +130,62 @@ def newton_iterate_new_h(h_a, positions, state_vars: dict):
     return new_h, eps
 
 
+def newton_iterate_new_h_neigh_lim(h_a, positions, state_vars: dict, trigger_threshold=500):
+    """One Newton-Raphson sweep with a neighbor-count safety limiter,
+    reproducing the per-particle branch of IterateSmoothingLengthDensityNeighLim.cpp
+    (src/shammodels/sph/src/modules/IterateSmoothingLengthDensityNeighLim.cpp:59-148).
+
+    On top of newton_iterate_new_h's clamps, this adds two neighbor-count
+    guards evaluated before any clamp is applied:
+      - if h_a already has more than trigger_threshold neighbors, shrink h_a
+        by h_evol_iter_max and report eps=0 (the caller treats eps < epsilon_h
+        as converged, so this freezes the particle at the shrunk h_a for the
+        rest of the subcycle).
+      - if growing h_a up to h_evol_iter_max * h_a would push the neighbor
+        count over trigger_threshold and the raw Newton step wants to grow
+        h_a, leave h_a unchanged and also report eps=0.
+    """
+    ha_0 = state_vars["ha_0"]
+
+    h_max_evol_m = 1.0 / h_evol_iter_max
+    h_max_evol_p = h_evol_iter_max
+
+    count_within = count_neighbors(id_a, h_a, W, positions)
+    count_within_next = count_neighbors(id_a, h_a * h_max_evol_p, W, positions)
+
+    rho_ha = rho_h(pmass, h_a, hfact)
+    rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, W, dhW, positions)
+    f_iter, df_iter = f_df(rho_ha, rho_sum, sumdWdh, h_a)
+    new_h = h_a - f_iter / df_iter
+
+    if count_within > trigger_threshold:
+        return h_max_evol_m * h_a, 0.0
+
+    if count_within_next > trigger_threshold and new_h > h_a:
+        return h_a, 0.0
+
+    # per-iteration clamp (htol_up_fine_cycle), relative to the previous iterate h_a
+    new_h = max(new_h, h_a * h_max_evol_m)
+    new_h = min(new_h, h_a * h_max_evol_p)
+
+    # per-subcycle clamp (htol_up_coarse_cycle), relative to ha_0 (h at subcycle start)
+    if new_h < ha_0 * h_evol_max:
+        eps = abs(new_h - h_a) / ha_0
+    else:
+        new_h = ha_0 * h_evol_max
+        eps = -1.0
+
+    return new_h, eps
+
+
+algs = {
+    "Newton": newton_iterate_new_h,
+    "Newton (neigh lim)": newton_iterate_new_h_neigh_lim,
+    # "Bisection": bisect_iterate_new_h,
+    # "Bisection + NR": bisect_NR_iterate_new_h,
+}
+
+
 def simulate_h_iter(init_h_a, positions: np.ndarray, id_a: int, pmass: float, iterate_new_h):
     """Run the full h iteration (outer ghost-zone subcycles + inner Newton
     sweeps) starting from init_h_a, and return its history.
@@ -214,7 +272,8 @@ def analyse_h_convergence(
             (init_h_a, history_h_a, history_f, history_neigh_count, converged, subcycle_end_indices)
         )
 
-    best_entry = min(histories, key=lambda entry: np.abs(entry[2][-1]))
+    candidates = [entry for entry in histories if entry[1][-1] < 10]
+    best_entry = min(candidates, key=lambda entry: np.abs(entry[2][-1]))
     found_h_a = best_entry[1][-1]
 
     # run one more simulation starting exactly at the found fixed point, and
@@ -240,7 +299,11 @@ def analyse_h_convergence(
 
     final_f_values = [history_f[-1] for _, _, history_f, _, _, _ in histories]
 
-    return histories, found_h_a, iteration_counts, final_f_values
+    final_neigh_counts = [
+        history_neigh_count[-1] for _, _, _, history_neigh_count, _, _ in histories
+    ]
+
+    return histories, found_h_a, iteration_counts, final_f_values, final_neigh_counts
 
 
 def plot_h_convergence(histories, found_h_a, axs):
@@ -318,11 +381,67 @@ def plot_rho_f_df(h_a_test):
     ax_rho.legend()
 
 
-# %%
+def compare_algs_h_convergence(test_h_values, algs):
+    results = {}
+    for name, alg in algs.items():
+        fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+        fig.suptitle(name)
 
-plot_f_df_kernel()
+        histories, found_h_a, iteration_counts, final_f_values, final_neigh_counts = (
+            analyse_h_convergence(positions, id_a, pmass, alg, test_h_values)
+        )
 
-# %%
+        plot_h_convergence(histories, found_h_a, axs)
+
+        # histories may hold one more entry than test_h_values (the extra run
+        # seeded at found_h_a), so derive the x-axis from histories itself
+        init_h_a_values = [entry[0] for entry in histories]
+        results[name] = (init_h_a_values, iteration_counts, final_f_values, final_neigh_counts)
+
+        plt.tight_layout()
+
+    fig, axs = plt.subplots(3, 1, figsize=(10, 12))
+    fig.suptitle("Algorithm comparison")
+
+    bar_width = 0.8 / len(results)
+    for i, (
+        name,
+        (init_h_a_values, iteration_counts, final_f_values, final_neigh_counts),
+    ) in enumerate(results.items()):
+        x = np.arange(len(init_h_a_values)) + i * bar_width
+        axs[0].bar(x, iteration_counts, width=bar_width, label=name)
+        axs[1].bar(x, final_f_values, width=bar_width, label=name)
+        axs[2].bar(x, final_neigh_counts, width=bar_width, label=name)
+
+    first_init_h_a_values = next(iter(results.values()))[0]
+    xticks = np.arange(len(first_init_h_a_values)) + bar_width * (len(results) - 1) / 2
+    xticklabels = [f"{v:.3g}" for v in first_init_h_a_values]
+
+    axs[0].set_yscale("log")
+    axs[0].set_xticks(xticks)
+    axs[0].set_xticklabels(xticklabels)
+    axs[0].set_xlabel("init_h_a")
+    axs[0].set_ylabel("iteration count")
+    axs[0].set_title("Convergence speed")
+    axs[0].legend()
+
+    axs[1].set_yscale("symlog", linthresh=1e-14)
+    axs[1].set_xticks(xticks)
+    axs[1].set_xticklabels(xticklabels)
+    axs[1].set_xlabel("init_h_a")
+    axs[1].set_ylabel(r"$f(h_a)$")
+    axs[1].set_title("Residual at convergence")
+    axs[1].legend()
+
+    axs[2].set_yscale("log")
+    axs[2].set_xticks(xticks)
+    axs[2].set_xticklabels(xticklabels)
+    axs[2].set_xlabel("init_h_a")
+    axs[2].set_ylabel("neighbor count")
+    axs[2].set_title("Neighbor count at convergence")
+    axs[2].legend()
+
+    plt.tight_layout()
 
 
 def generate_cubic_distrib(Nside):
@@ -343,6 +462,48 @@ def generate_cubic_distrib(Nside):
     return positions, id_a
 
 
+def generate_random_distrib(Nside):
+    positions = []
+
+    id_a = 0
+    for ix in range(Nside):
+        for iy in range(Nside):
+            for iz in range(Nside):
+                positions.append(rng.random(3))
+
+                if ix == 10 and iy == 10 and iz == 10:
+                    id_a = len(positions) - 1
+
+    positions = np.array(positions)
+
+    return positions, id_a
+
+
+def generate_random_distrib_giantpart(Nside):
+    positions = []
+
+    id_a = 0
+    for ix in range(Nside):
+        for iy in range(Nside):
+            for iz in range(Nside):
+                positions.append(rng.random(3))
+
+    positions.append((10, 0, 0))
+    id_a = len(positions) - 1
+
+    positions = np.array(positions)
+
+    return positions, id_a
+
+
+# %%
+
+plot_f_df_kernel()
+
+# %%
+# Cubic distrib
+# -------------
+
 positions, id_a = generate_cubic_distrib(Nside=10)
 pmass = 1.0 / 1000.0
 
@@ -356,60 +517,52 @@ plot_rho_f_df(h_a_test)
 
 # sample 10 equally spaced values in h_a_test indexes
 test_h_values = np.logspace(-3, 2, 10)
-algs = {
-    "Newton": newton_iterate_new_h,
-    # "Newton (lim)": newton_iterate_new_h_lim,
-    # "Bisection": bisect_iterate_new_h,
-    # "Bisection + NR": bisect_NR_iterate_new_h,
-}
 
-results = {}
-for name, alg in algs.items():
-    fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
-    fig.suptitle(name)
+compare_algs_h_convergence(test_h_values, algs)
 
-    histories, found_h_a, iteration_counts, final_f_values = analyse_h_convergence(
-        positions, id_a, pmass, alg, test_h_values
-    )
+plt.show()
 
-    plot_h_convergence(histories, found_h_a, axs)
+# %%
+# Random distrib
+# --------------
 
-    # histories may hold one more entry than test_h_values (the extra run
-    # seeded at found_h_a), so derive the x-axis from histories itself
-    init_h_a_values = [entry[0] for entry in histories]
-    results[name] = (init_h_a_values, iteration_counts, final_f_values)
+positions, id_a = generate_random_distrib(Nside=10)
+pmass = 1.0 / 1000.0
 
-    plt.tight_layout()
+# %%
 
-fig, axs = plt.subplots(2, 1, figsize=(10, 8))
-fig.suptitle("Algorithm comparison")
+h_a_test = np.logspace(-3, 2, 1000)
 
-bar_width = 0.8 / len(results)
-for i, (name, (init_h_a_values, iteration_counts, final_f_values)) in enumerate(results.items()):
-    x = np.arange(len(init_h_a_values)) + i * bar_width
-    axs[0].bar(x, iteration_counts, width=bar_width, label=name)
-    axs[1].bar(x, final_f_values, width=bar_width, label=name)
+plot_rho_f_df(h_a_test)
 
-first_init_h_a_values = next(iter(results.values()))[0]
-xticks = np.arange(len(first_init_h_a_values)) + bar_width * (len(results) - 1) / 2
-xticklabels = [f"{v:.3g}" for v in first_init_h_a_values]
+# %%
 
-axs[0].set_yscale("log")
-axs[0].set_xticks(xticks)
-axs[0].set_xticklabels(xticklabels)
-axs[0].set_xlabel("init_h_a")
-axs[0].set_ylabel("iteration count")
-axs[0].set_title("Convergence speed")
-axs[0].legend()
+# sample 10 equally spaced values in h_a_test indexes
+test_h_values = np.logspace(-3, 2, 10)
 
-axs[1].set_yscale("symlog", linthresh=1e-14)
-axs[1].set_xticks(xticks)
-axs[1].set_xticklabels(xticklabels)
-axs[1].set_xlabel("init_h_a")
-axs[1].set_ylabel(r"$f(h_a)$")
-axs[1].set_title("Residual at convergence")
-axs[1].legend()
+compare_algs_h_convergence(test_h_values, algs)
 
-plt.tight_layout()
+plt.show()
+
+
+# %%
+# Random distrib (giant particle)
+# --------------------------------
+
+positions, id_a = generate_random_distrib_giantpart(Nside=10)
+pmass = 1.0 / 1000.0
+
+# %%
+
+h_a_test = np.logspace(-3, 2, 1000)
+
+plot_rho_f_df(h_a_test)
+
+# %%
+
+# sample 10 equally spaced values in h_a_test indexes
+test_h_values = np.logspace(-3, 2, 10)
+
+compare_algs_h_convergence(test_h_values, algs)
 
 plt.show()

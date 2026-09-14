@@ -118,6 +118,17 @@ namespace shammodels::basegodunov {
         /// dust fields gradients (d vdust / d z)
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dz_v_dust;
 
+        /// Euler time derivative of the gas primitive density (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_rho;
+        /// Euler time derivative of the gas primitive velocity (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> euler_dt_vel;
+        /// Euler time derivative of the gas primitive pressure (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_press;
+        /// Euler time derivative of the dust primitive density (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_rho_dust;
+        /// Euler time derivative of the dust primitive velocity (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> euler_dt_vel_dust;
+
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> rho_mean;
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> simulation_volume;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> cell_mass;

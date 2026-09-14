@@ -82,10 +82,7 @@ namespace {
         shamrock::PatchDataFieldSpanPointer<Tvec> grad_rho_cell;
         // For time interpolation
         Tscal dt_interp;
-        shamrock::PatchDataFieldSpanPointer<Tvec> vel_cell;
-        shamrock::PatchDataFieldSpanPointer<Tvec> dx_v_cell;
-        shamrock::PatchDataFieldSpanPointer<Tvec> dy_v_cell;
-        shamrock::PatchDataFieldSpanPointer<Tvec> dz_v_cell;
+        shamrock::PatchDataFieldSpanPointer<Tscal> dt_rho_cell;
 
         class acc {
             public:
@@ -95,10 +92,7 @@ namespace {
             const Tvec *acc_grad_rho_cell;
 
             // For time interpolation
-            const Tvec *acc_vel_cell;
-            const Tvec *acc_dx_v_cell;
-            const Tvec *acc_dy_v_cell;
-            const Tvec *acc_dz_v_cell;
+            const Tscal *acc_dt_rho_cell;
 
             Tscal dt_interp;
 
@@ -108,18 +102,10 @@ namespace {
                 const Tvec *grad_rho_cell,
                 // For time interpolation
                 Tscal dt_interp,
-                const Tvec *vel_cell,
-                const Tvec *dx_v_cell,
-                const Tvec *dy_v_cell,
-                const Tvec *dz_v_cell)
+                const Tscal *dt_rho_cell)
                 : shift_get(aabb_block_lower, aabb_cell_size), acc_rho_cell{rho_cell},
-                  acc_grad_rho_cell{grad_rho_cell}, dt_interp(dt_interp), acc_vel_cell{vel_cell},
-                  acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell} {}
-
-            Tscal get_dt_rho(
-                Tscal rho, Tvec v, Tvec grad_rho, Tvec dx_v, Tvec dy_v, Tvec dz_v) const {
-                return -(sham::dot(v, grad_rho) + rho * (dx_v[0] + dy_v[1] + dz_v[2]));
-            }
+                  acc_grad_rho_cell{grad_rho_cell}, acc_dt_rho_cell{dt_rho_cell},
+                  dt_interp(dt_interp) {}
 
             std::array<Tscal, 2> get_link_field_val(u32 id_a, u32 id_b) const {
 
@@ -130,24 +116,13 @@ namespace {
                 Tscal rho_b     = acc_rho_cell[id_b];
                 Tvec grad_rho_b = acc_grad_rho_cell[id_b];
 
-                Tvec vel_a  = acc_vel_cell[id_a];
-                Tvec dx_v_a = acc_dx_v_cell[id_a];
-                Tvec dy_v_a = acc_dy_v_cell[id_a];
-                Tvec dz_v_a = acc_dz_v_cell[id_a];
-                Tvec vel_b  = acc_vel_cell[id_b];
-                Tvec dx_v_b = acc_dx_v_cell[id_b];
-                Tvec dy_v_b = acc_dy_v_cell[id_b];
-                Tvec dz_v_b = acc_dz_v_cell[id_b];
-
                 // Spatial interpolate
                 Tscal rho_face_a = rho_a + sycl::dot(grad_rho_a, shift_a);
                 Tscal rho_face_b = rho_b + sycl::dot(grad_rho_b, shift_b);
 
                 // Interpolate also to half a timestep
-                rho_face_a
-                    += get_dt_rho(rho_a, vel_a, grad_rho_a, dx_v_a, dy_v_a, dz_v_a) * dt_interp;
-                rho_face_b
-                    += get_dt_rho(rho_b, vel_b, grad_rho_b, dx_v_b, dy_v_b, dz_v_b) * dt_interp;
+                rho_face_a += acc_dt_rho_cell[id_a] * dt_interp;
+                rho_face_b += acc_dt_rho_cell[id_b] * dt_interp;
 
                 return {rho_face_a, rho_face_b};
             }
@@ -161,10 +136,7 @@ namespace {
                 grad_rho_cell.get_read_access(deps),
                 // For time interpolation
                 dt_interp,
-                vel_cell.get_read_access(deps),
-                dx_v_cell.get_read_access(deps),
-                dy_v_cell.get_read_access(deps),
-                dz_v_cell.get_read_access(deps));
+                dt_rho_cell.get_read_access(deps));
         }
 
         inline void complete_event_state(sycl::event e) {
@@ -172,10 +144,7 @@ namespace {
             aabb_cell_size.complete_event_state(e);
             rho_cell.complete_event_state(e);
             grad_rho_cell.complete_event_state(e);
-            vel_cell.complete_event_state(e);
-            dx_v_cell.complete_event_state(e);
-            dy_v_cell.complete_event_state(e);
-            dz_v_cell.complete_event_state(e);
+            dt_rho_cell.complete_event_state(e);
         }
     };
 
@@ -193,8 +162,7 @@ namespace {
         shamrock::PatchDataFieldSpanPointer<Tvec> dz_v_cell;
         // For time interpolation
         Tscal dt_interp;
-        shamrock::PatchDataFieldSpanPointer<Tscal> rho_cell;
-        shamrock::PatchDataFieldSpanPointer<Tvec> grad_P_cell;
+        shamrock::PatchDataFieldSpanPointer<Tvec> dt_vel_cell;
 
         class acc {
             public:
@@ -206,8 +174,7 @@ namespace {
             const Tvec *acc_dz_v_cell;
 
             // For time interpolation
-            const Tscal *acc_rho_cell;
-            const Tvec *acc_grad_P_cell;
+            const Tvec *acc_dt_vel_cell;
 
             Tscal dt_interp;
 
@@ -219,15 +186,10 @@ namespace {
                 const Tvec *dz_v_cell,
                 // For time interpolation
                 Tscal dt_interp,
-                const Tscal *rho_cell,
-                const Tvec *grad_P_cell)
+                const Tvec *dt_vel_cell)
                 : shift_get(aabb_block_lower, aabb_cell_size), acc_vel_cell{vel_cell},
                   acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell},
-                  dt_interp(dt_interp), acc_rho_cell{rho_cell}, acc_grad_P_cell{grad_P_cell} {}
-
-            Tvec get_dt_v(Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal rho, Tvec grad_P) const {
-                return -(v[0] * dx_v + v[1] * dy_v + v[2] * dz_v + grad_P / rho);
-            }
+                  acc_dt_vel_cell{dt_vel_cell}, dt_interp(dt_interp) {}
 
             std::array<Tvec, 2> get_link_field_val(u32 id_a, u32 id_b) const {
 
@@ -243,18 +205,13 @@ namespace {
                 Tvec dy_vel_b = acc_dy_v_cell[id_b];
                 Tvec dz_vel_b = acc_dz_v_cell[id_b];
 
-                Tscal rho_a   = acc_rho_cell[id_a];
-                Tvec grad_P_a = acc_grad_P_cell[id_a];
-                Tscal rho_b   = acc_rho_cell[id_b];
-                Tvec grad_P_b = acc_grad_P_cell[id_b];
-
                 Tvec dx_v_a_dot_shift
                     = shift_a.x() * dx_vel_a + shift_a.y() * dy_vel_a + shift_a.z() * dz_vel_a;
                 Tvec dx_v_b_dot_shift
                     = shift_b.x() * dx_vel_b + shift_b.y() * dy_vel_b + shift_b.z() * dz_vel_b;
 
-                Tvec dt_v_a = get_dt_v(v_a, dx_vel_a, dy_vel_a, dz_vel_a, rho_a, grad_P_a);
-                Tvec dt_v_b = get_dt_v(v_b, dx_vel_b, dy_vel_b, dz_vel_b, rho_b, grad_P_b);
+                Tvec dt_v_a = acc_dt_vel_cell[id_a];
+                Tvec dt_v_b = acc_dt_vel_cell[id_b];
 
                 Tvec vel_face_a = v_a + dx_v_a_dot_shift + dt_v_a * dt_interp;
                 Tvec vel_face_b = v_b + dx_v_b_dot_shift + dt_v_b * dt_interp;
@@ -273,8 +230,7 @@ namespace {
                 dz_v_cell.get_read_access(deps),
                 // For time interpolation
                 dt_interp,
-                rho_cell.get_read_access(deps),
-                grad_P_cell.get_read_access(deps));
+                dt_vel_cell.get_read_access(deps));
         }
 
         inline void complete_event_state(sycl::event e) {
@@ -284,8 +240,7 @@ namespace {
             dx_v_cell.complete_event_state(e);
             dy_v_cell.complete_event_state(e);
             dz_v_cell.complete_event_state(e);
-            rho_cell.complete_event_state(e);
-            grad_P_cell.complete_event_state(e);
+            dt_vel_cell.complete_event_state(e);
         }
     };
 
@@ -300,11 +255,7 @@ namespace {
         shamrock::PatchDataFieldSpanPointer<Tvec> grad_P_cell;
         // For time interpolation
         Tscal dt_interp;
-        Tscal gamma;
-        shamrock::PatchDataFieldSpanPointer<Tvec> vel_cell;
-        shamrock::PatchDataFieldSpanPointer<Tvec> dx_v_cell;
-        shamrock::PatchDataFieldSpanPointer<Tvec> dy_v_cell;
-        shamrock::PatchDataFieldSpanPointer<Tvec> dz_v_cell;
+        shamrock::PatchDataFieldSpanPointer<Tscal> dt_P_cell;
 
         class acc {
             public:
@@ -314,12 +265,8 @@ namespace {
             const Tvec *acc_grad_P_cell;
 
             // For time interpolation
-            const Tvec *acc_vel_cell;
-            const Tvec *acc_dx_v_cell;
-            const Tvec *acc_dy_v_cell;
-            const Tvec *acc_dz_v_cell;
+            const Tscal *acc_dt_P_cell;
 
-            Tscal gamma;
             Tscal dt_interp;
 
             acc(const Tvec *aabb_block_lower,
@@ -328,20 +275,9 @@ namespace {
                 const Tvec *grad_P_cell,
                 // For time interpolation
                 Tscal dt_interp,
-                Tscal gamma,
-                const Tvec *vel_cell,
-                const Tvec *dx_v_cell,
-                const Tvec *dy_v_cell,
-                const Tvec *dz_v_cell)
+                const Tscal *dt_P_cell)
                 : shift_get(aabb_block_lower, aabb_cell_size), acc_P_cell{P_cell},
-                  acc_grad_P_cell{grad_P_cell}, dt_interp(dt_interp), gamma(gamma),
-                  acc_vel_cell{vel_cell}, acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell},
-                  acc_dz_v_cell{dz_v_cell} {}
-
-            Tscal get_dt_P(
-                Tscal P, Tvec grad_P, Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal gamma) const {
-                return -(gamma * P * (dx_v[0] + dy_v[1] + dz_v[2]) + sham::dot(v, grad_P));
-            }
+                  acc_grad_P_cell{grad_P_cell}, acc_dt_P_cell{dt_P_cell}, dt_interp(dt_interp) {}
 
             std::array<Tscal, 2> get_link_field_val(u32 id_a, u32 id_b) const {
 
@@ -352,17 +288,8 @@ namespace {
                 Tscal P_b     = acc_P_cell[id_b];
                 Tvec grad_P_b = acc_grad_P_cell[id_b];
 
-                Tvec v_a    = acc_vel_cell[id_a];
-                Tvec dx_v_a = acc_dx_v_cell[id_a];
-                Tvec dy_v_a = acc_dy_v_cell[id_a];
-                Tvec dz_v_a = acc_dz_v_cell[id_a];
-                Tvec v_b    = acc_vel_cell[id_b];
-                Tvec dx_v_b = acc_dx_v_cell[id_b];
-                Tvec dy_v_b = acc_dy_v_cell[id_b];
-                Tvec dz_v_b = acc_dz_v_cell[id_b];
-
-                Tscal dtP_cell_a = get_dt_P(P_a, grad_P_a, v_a, dx_v_a, dy_v_a, dz_v_a, gamma);
-                Tscal dtP_cell_b = get_dt_P(P_b, grad_P_b, v_b, dx_v_b, dy_v_b, dz_v_b, gamma);
+                Tscal dtP_cell_a = acc_dt_P_cell[id_a];
+                Tscal dtP_cell_b = acc_dt_P_cell[id_b];
 
                 Tscal P_face_a = P_a + sycl::dot(grad_P_a, shift_a) + dtP_cell_a * dt_interp;
                 Tscal P_face_b = P_b + sycl::dot(grad_P_b, shift_b) + dtP_cell_b * dt_interp;
@@ -381,11 +308,7 @@ namespace {
                 P_cell.get_read_access(deps),
                 grad_P_cell.get_read_access(deps),
                 dt_interp,
-                gamma,
-                vel_cell.get_read_access(deps),
-                dx_v_cell.get_read_access(deps),
-                dy_v_cell.get_read_access(deps),
-                dz_v_cell.get_read_access(deps));
+                dt_P_cell.get_read_access(deps));
         }
 
         inline void complete_event_state(sycl::event e) {
@@ -393,10 +316,7 @@ namespace {
             aabb_cell_size.complete_event_state(e);
             P_cell.complete_event_state(e);
             grad_P_cell.complete_event_state(e);
-            vel_cell.complete_event_state(e);
-            dx_v_cell.complete_event_state(e);
-            dy_v_cell.complete_event_state(e);
-            dz_v_cell.complete_event_state(e);
+            dt_P_cell.complete_event_state(e);
         }
     };
 
@@ -412,10 +332,7 @@ namespace {
         shamrock::PatchDataFieldSpanPointer<Tvec> grad_rho_dust_cell;
         // For time interpolation
         Tscal dt_interp;
-        shamrock::PatchDataFieldSpanPointer<Tvec> vel_dust_cell;
-        shamrock::PatchDataFieldSpanPointer<Tvec> dx_v_dust_cell;
-        shamrock::PatchDataFieldSpanPointer<Tvec> dy_v_dust_cell;
-        shamrock::PatchDataFieldSpanPointer<Tvec> dz_v_dust_cell;
+        shamrock::PatchDataFieldSpanPointer<Tscal> dt_rho_dust_cell;
 
         class acc {
             public:
@@ -426,10 +343,7 @@ namespace {
             const Tvec *acc_grad_rho_dust_cell;
 
             // For time interpolation
-            const Tvec *acc_vel_dust_cell;
-            const Tvec *acc_dx_v_dust_cell;
-            const Tvec *acc_dy_v_dust_cell;
-            const Tvec *acc_dz_v_dust_cell;
+            const Tscal *acc_dt_rho_dust_cell;
 
             Tscal dt_interp;
 
@@ -440,27 +354,10 @@ namespace {
                 const Tvec *grad_rho_dust_cell,
                 // For time interpolation
                 Tscal dt_interp,
-                const Tvec *vel_dust_cell,
-                const Tvec *dx_v_dust_cell,
-                const Tvec *dy_v_dust_cell,
-                const Tvec *dz_v_dust_cell)
+                const Tscal *dt_rho_dust_cell)
                 : shift_get(aabb_block_lower, aabb_cell_size), nvar(nvar),
                   acc_rho_dust_cell{rho_dust_cell}, acc_grad_rho_dust_cell{grad_rho_dust_cell},
-                  dt_interp(dt_interp), acc_vel_dust_cell{vel_dust_cell},
-                  acc_dx_v_dust_cell{dx_v_dust_cell}, acc_dy_v_dust_cell{dy_v_dust_cell},
-                  acc_dz_v_dust_cell{dz_v_dust_cell} {}
-
-            Tscal get_dt_rho_dust(
-                Tscal rho_dust,
-                Tvec v_dust,
-                Tvec grad_rho_dust,
-                Tvec dx_v_dust,
-                Tvec dy_v_dust,
-                Tvec dz_v_dust) const {
-                return -(
-                    sham::dot(v_dust, grad_rho_dust)
-                    + rho_dust * (dx_v_dust[0] + dy_v_dust[1] + dz_v_dust[2]));
-            }
+                  acc_dt_rho_dust_cell{dt_rho_dust_cell}, dt_interp(dt_interp) {}
 
             std::array<Tscal, 2> get_link_field_val(u32 id_a, u32 id_b) const {
                 const u32 icell_a = id_a / nvar;
@@ -473,34 +370,11 @@ namespace {
                 Tscal rho_dust_b     = acc_rho_dust_cell[id_b];
                 Tvec grad_rho_dust_b = acc_grad_rho_dust_cell[id_b];
 
-                Tvec vel_dust_a  = acc_vel_dust_cell[id_a];
-                Tvec dx_v_dust_a = acc_dx_v_dust_cell[id_a];
-                Tvec dy_v_dust_a = acc_dy_v_dust_cell[id_a];
-                Tvec dz_v_dust_a = acc_dz_v_dust_cell[id_a];
-                Tvec vel_dust_b  = acc_vel_dust_cell[id_b];
-                Tvec dx_v_dust_b = acc_dx_v_dust_cell[id_b];
-                Tvec dy_v_dust_b = acc_dy_v_dust_cell[id_b];
-                Tvec dz_v_dust_b = acc_dz_v_dust_cell[id_b];
-
                 Tscal rho_dust_face_a = rho_dust_a + sycl::dot(grad_rho_dust_a, shift_a);
                 Tscal rho_dust_face_b = rho_dust_b + sycl::dot(grad_rho_dust_b, shift_b);
 
-                rho_dust_face_a += get_dt_rho_dust(
-                                       rho_dust_a,
-                                       vel_dust_a,
-                                       grad_rho_dust_a,
-                                       dx_v_dust_a,
-                                       dy_v_dust_a,
-                                       dz_v_dust_a)
-                                   * dt_interp;
-                rho_dust_face_b += get_dt_rho_dust(
-                                       rho_dust_b,
-                                       vel_dust_b,
-                                       grad_rho_dust_b,
-                                       dx_v_dust_b,
-                                       dy_v_dust_b,
-                                       dz_v_dust_b)
-                                   * dt_interp;
+                rho_dust_face_a += acc_dt_rho_dust_cell[id_a] * dt_interp;
+                rho_dust_face_b += acc_dt_rho_dust_cell[id_b] * dt_interp;
 
                 return {rho_dust_face_a, rho_dust_face_b};
             }
@@ -515,10 +389,7 @@ namespace {
                 grad_rho_dust_cell.get_read_access(deps),
                 // For time interpolation
                 dt_interp,
-                vel_dust_cell.get_read_access(deps),
-                dx_v_dust_cell.get_read_access(deps),
-                dy_v_dust_cell.get_read_access(deps),
-                dz_v_dust_cell.get_read_access(deps));
+                dt_rho_dust_cell.get_read_access(deps));
         }
 
         inline void complete_event_state(sycl::event e) {
@@ -526,10 +397,7 @@ namespace {
             aabb_cell_size.complete_event_state(e);
             rho_dust_cell.complete_event_state(e);
             grad_rho_dust_cell.complete_event_state(e);
-            vel_dust_cell.complete_event_state(e);
-            dx_v_dust_cell.complete_event_state(e);
-            dy_v_dust_cell.complete_event_state(e);
-            dz_v_dust_cell.complete_event_state(e);
+            dt_rho_dust_cell.complete_event_state(e);
         }
     };
 
@@ -547,7 +415,7 @@ namespace {
         shamrock::PatchDataFieldSpanPointer<Tvec> dz_v_dust_cell;
         // For time interpolation
         Tscal dt_interp;
-        shamrock::PatchDataFieldSpanPointer<Tscal> rho_dust_cell;
+        shamrock::PatchDataFieldSpanPointer<Tvec> dt_vel_dust_cell;
 
         class acc {
             public:
@@ -560,7 +428,7 @@ namespace {
             const Tvec *acc_dz_v_dust_cell;
 
             // For time interpolation
-            const Tscal *acc_rho_dust_cell;
+            const Tvec *acc_dt_vel_dust_cell;
 
             Tscal dt_interp;
 
@@ -573,15 +441,11 @@ namespace {
                 const Tvec *dz_v_dust_cell,
                 // For time interpolation
                 Tscal dt_interp,
-                const Tscal *rho_dust_cell)
+                const Tvec *dt_vel_dust_cell)
                 : shift_get(aabb_block_lower, aabb_cell_size), nvar(nvar),
                   acc_vel_dust_cell{vel_dust_cell}, acc_dx_v_dust_cell{dx_v_dust_cell},
                   acc_dy_v_dust_cell{dy_v_dust_cell}, acc_dz_v_dust_cell{dz_v_dust_cell},
-                  dt_interp(dt_interp), acc_rho_dust_cell{rho_dust_cell} {}
-
-            Tvec get_dt_v_dust(Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal rho) const {
-                return -(v[0] * dx_v + v[1] * dy_v + v[2] * dz_v);
-            }
+                  acc_dt_vel_dust_cell{dt_vel_dust_cell}, dt_interp(dt_interp) {}
 
             std::array<Tvec, 2> get_link_field_val(u32 id_a, u32 id_b) const {
                 const u32 icell_a = id_a / nvar;
@@ -599,9 +463,6 @@ namespace {
                 Tvec dy_vel_dust_b = acc_dy_v_dust_cell[id_b];
                 Tvec dz_vel_dust_b = acc_dz_v_dust_cell[id_b];
 
-                Tscal rho_dust_a = acc_rho_dust_cell[id_a];
-                Tscal rho_dust_b = acc_rho_dust_cell[id_b];
-
                 Tvec dx_v_dust_a_dot_shift = shift_a.x() * dx_vel_dust_a
                                              + shift_a.y() * dy_vel_dust_a
                                              + shift_a.z() * dz_vel_dust_a;
@@ -609,10 +470,8 @@ namespace {
                                              + shift_b.y() * dy_vel_dust_b
                                              + shift_b.z() * dz_vel_dust_b;
 
-                Tvec dt_v_dust_a = get_dt_v_dust(
-                    v_dust_a, dx_vel_dust_a, dy_vel_dust_a, dz_vel_dust_a, rho_dust_a);
-                Tvec dt_v_dust_b = get_dt_v_dust(
-                    v_dust_b, dx_vel_dust_b, dy_vel_dust_b, dz_vel_dust_b, rho_dust_b);
+                Tvec dt_v_dust_a = acc_dt_vel_dust_cell[id_a];
+                Tvec dt_v_dust_b = acc_dt_vel_dust_cell[id_b];
 
                 Tvec vel_dust_face_a = v_dust_a + dx_v_dust_a_dot_shift + dt_v_dust_a * dt_interp;
                 Tvec vel_dust_face_b = v_dust_b + dx_v_dust_b_dot_shift + dt_v_dust_b * dt_interp;
@@ -632,7 +491,7 @@ namespace {
                 dz_v_dust_cell.get_read_access(deps),
                 // For time interpolation
                 dt_interp,
-                rho_dust_cell.get_read_access(deps));
+                dt_vel_dust_cell.get_read_access(deps));
         }
 
         inline void complete_event_state(sycl::event e) {
@@ -642,7 +501,7 @@ namespace {
             dx_v_dust_cell.complete_event_state(e);
             dy_v_dust_cell.complete_event_state(e);
             dz_v_dust_cell.complete_event_state(e);
-            rho_dust_cell.complete_event_state(e);
+            dt_vel_dust_cell.complete_event_state(e);
         }
     };
 
@@ -682,10 +541,7 @@ void shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::
     auto spans_cell0block_aabb_lower = edges.spans_cell0block_aabb_lower.get_spans();
     auto spans_rhos                  = edges.spans_rhos.get_spans();
     auto spans_grad_rho              = edges.spans_grad_rho.get_spans();
-    auto spans_vel                   = edges.spans_vel.get_spans();
-    auto spans_dx_vel                = edges.spans_dx_vel.get_spans();
-    auto spans_dy_vel                = edges.spans_dy_vel.get_spans();
-    auto spans_dz_vel                = edges.spans_dz_vel.get_spans();
+    auto spans_dt_rho                = edges.spans_dt_rho.get_spans();
 
     using Interp = RhoInterpolate<Tvec, TgridVec, AMRBlock>;
     auto interpolators
@@ -696,10 +552,7 @@ void shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::
                   spans_rhos.get(id),
                   spans_grad_rho.get(id),
                   dt_interp,
-                  spans_vel.get(id),
-                  spans_dx_vel.get(id),
-                  spans_dy_vel.get(id),
-                  spans_dz_vel.get(id)};
+                  spans_dt_rho.get(id)};
           });
 
     auto graphs_xp = edges.cell_neigh_graph.get_refs_dir(Direction::xp);
@@ -836,12 +689,11 @@ void shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
 
     auto spans_block_cell_sizes      = edges.spans_block_cell_sizes.get_spans();
     auto spans_cell0block_aabb_lower = edges.spans_cell0block_aabb_lower.get_spans();
-    auto spans_rhos                  = edges.spans_rhos.get_spans();
-    auto spans_grad_P                = edges.spans_grad_P.get_spans();
     auto spans_vel                   = edges.spans_vel.get_spans();
     auto spans_dx_vel                = edges.spans_dx_vel.get_spans();
     auto spans_dy_vel                = edges.spans_dy_vel.get_spans();
     auto spans_dz_vel                = edges.spans_dz_vel.get_spans();
+    auto spans_dt_vel                = edges.spans_dt_vel.get_spans();
 
     using Interp = VelInterpolate<Tvec, TgridVec, AMRBlock>;
     auto interpolators
@@ -854,8 +706,7 @@ void shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
                   spans_dy_vel.get(id),
                   spans_dz_vel.get(id),
                   dt_interp,
-                  spans_rhos.get(id),
-                  spans_grad_P.get(id)};
+                  spans_dt_vel.get(id)};
           });
 
     auto graphs_xp = edges.cell_neigh_graph.get_refs_dir(Direction::xp);
@@ -994,10 +845,7 @@ void shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::
     auto spans_cell0block_aabb_lower = edges.spans_cell0block_aabb_lower.get_spans();
     auto spans_press                 = edges.spans_press.get_spans();
     auto spans_grad_P                = edges.spans_grad_P.get_spans();
-    auto spans_vel                   = edges.spans_vel.get_spans();
-    auto spans_dx_vel                = edges.spans_dx_vel.get_spans();
-    auto spans_dy_vel                = edges.spans_dy_vel.get_spans();
-    auto spans_dz_vel                = edges.spans_dz_vel.get_spans();
+    auto spans_dt_press              = edges.spans_dt_press.get_spans();
 
     using Interp = PressInterpolate<Tvec, TgridVec, AMRBlock>;
     auto interpolators
@@ -1008,11 +856,7 @@ void shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::
                   spans_press.get(id),
                   spans_grad_P.get(id),
                   dt_interp,
-                  gamma,
-                  spans_vel.get(id),
-                  spans_dx_vel.get(id),
-                  spans_dy_vel.get(id),
-                  spans_dz_vel.get(id)};
+                  spans_dt_press.get(id)};
           });
 
     auto graphs_xp = edges.cell_neigh_graph.get_refs_dir(Direction::xp);
@@ -1158,10 +1002,7 @@ void shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>:
     auto spans_cell0block_aabb_lower = edges.spans_cell0block_aabb_lower.get_spans();
     auto spans_rhos_dust             = edges.spans_rhos_dust.get_spans();
     auto spans_grad_rho_dust         = edges.spans_grad_rho_dust.get_spans();
-    auto spans_vel_dust              = edges.spans_vel_dust.get_spans();
-    auto spans_dx_vel_dust           = edges.spans_dx_vel_dust.get_spans();
-    auto spans_dy_vel_dust           = edges.spans_dy_vel_dust.get_spans();
-    auto spans_dz_vel_dust           = edges.spans_dz_vel_dust.get_spans();
+    auto spans_dt_rho_dust           = edges.spans_dt_rho_dust.get_spans();
 
     using Interp = RhoDustInterpolate<Tvec, TgridVec, AMRBlock>;
     auto interpolators
@@ -1173,10 +1014,7 @@ void shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>:
                   spans_rhos_dust.get(id),
                   spans_grad_rho_dust.get(id),
                   dt_interp,
-                  spans_vel_dust.get(id),
-                  spans_dx_vel_dust.get(id),
-                  spans_dy_vel_dust.get(id),
-                  spans_dz_vel_dust.get(id)};
+                  spans_dt_rho_dust.get(id)};
           });
 
     auto graphs_xp = edges.cell_neigh_graph.get_refs_dir(Direction::xp);
@@ -1338,11 +1176,11 @@ void shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>:
 
     auto spans_block_cell_sizes      = edges.spans_block_cell_sizes.get_spans();
     auto spans_cell0block_aabb_lower = edges.spans_cell0block_aabb_lower.get_spans();
-    auto spans_rhos_dust             = edges.spans_rhos_dust.get_spans();
     auto spans_vel_dust              = edges.spans_vel_dust.get_spans();
     auto spans_dx_vel_dust           = edges.spans_dx_vel_dust.get_spans();
     auto spans_dy_vel_dust           = edges.spans_dy_vel_dust.get_spans();
     auto spans_dz_vel_dust           = edges.spans_dz_vel_dust.get_spans();
+    auto spans_dt_vel_dust           = edges.spans_dt_vel_dust.get_spans();
 
     using Interp = VelDustInterpolate<Tvec, TgridVec, AMRBlock>;
     auto interpolators
@@ -1356,7 +1194,7 @@ void shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>:
                   spans_dy_vel_dust.get(id),
                   spans_dz_vel_dust.get(id),
                   dt_interp,
-                  spans_rhos_dust.get(id)};
+                  spans_dt_vel_dust.get(id)};
           });
 
     auto graphs_xp = edges.cell_neigh_graph.get_refs_dir(Direction::xp);

@@ -35,6 +35,8 @@
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGas.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
+#include "shammodels/ramses/modules/EulerTimeDerivativeDust.hpp"
+#include "shammodels/ramses/modules/EulerTimeDerivativeGas.hpp"
 #include "shammodels/ramses/modules/ExtractGhostLayer.hpp"
 #include "shammodels/ramses/modules/FindBlockNeigh.hpp"
 #include "shammodels/ramses/modules/FindGhostLayerIndices.hpp"
@@ -464,6 +466,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     storage.grad_P = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         AMRBlock::block_size, "grad_P", "\\nabla P");
 
+    // will be filled by NodeEulerTimeDerivativeGas
+    storage.euler_dt_rho = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        AMRBlock::block_size, "euler_dt_rho", "\\partial_t \\rho");
+    storage.euler_dt_vel = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        AMRBlock::block_size, "euler_dt_vel", "\\partial_t \\mathbf{v}");
+    storage.euler_dt_press = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        AMRBlock::block_size, "euler_dt_press", "\\partial_t P");
+
     if (solver_config.is_dust_on()) {
         u32 ndust             = solver_config.dust_config.ndust;
         storage.grad_rho_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
@@ -474,6 +484,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             AMRBlock::block_size * ndust, "dy_v_dust", "\\nabla_y \\mathbf{v}_{\\rm dust}");
         storage.dz_v_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
             AMRBlock::block_size * ndust, "dz_v_dust", "\\nabla_z \\mathbf{v}_{\\rm dust}");
+
+        // will be filled by NodeEulerTimeDerivativeDust
+        storage.euler_dt_rho_dust = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size * ndust, "euler_dt_rho_dust", "\\partial_t \\rho_{\\rm dust}");
+        storage.euler_dt_vel_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size * ndust,
+            "euler_dt_vel_dust",
+            "\\partial_t \\mathbf{v}_{\\rm dust}");
     }
 
     {
@@ -1123,6 +1141,52 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
     }
 
+    { // Euler time derivatives of the primitive state
+      // Hoisted out of the face interpolation nodes: they only depend on cell
+      // local quantities, so computing them once per cell here avoids
+      // re-fetching the velocity gradients for every face link.
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> dt_prim_sequence;
+
+        {
+            modules::NodeEulerTimeDerivativeGas<Tvec> node{
+                AMRBlock::block_size, solver_config.eos_gamma};
+            node.set_edges(
+                storage.block_counts_with_ghost,
+                storage.refs_rho,
+                storage.vel,
+                storage.press,
+                storage.grad_rho,
+                storage.dx_v,
+                storage.dy_v,
+                storage.dz_v,
+                storage.grad_P,
+                storage.euler_dt_rho,
+                storage.euler_dt_vel,
+                storage.euler_dt_press);
+            dt_prim_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        }
+
+        if (solver_config.is_dust_on()) {
+            u32 ndust = solver_config.dust_config.ndust;
+            modules::NodeEulerTimeDerivativeDust<Tvec> node{AMRBlock::block_size, ndust};
+            node.set_edges(
+                storage.block_counts_with_ghost,
+                storage.refs_rho_dust,
+                storage.vel_dust,
+                storage.grad_rho_dust,
+                storage.dx_v_dust,
+                storage.dy_v_dust,
+                storage.dz_v_dust,
+                storage.euler_dt_rho_dust,
+                storage.euler_dt_vel_dust);
+            dt_prim_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        }
+
+        shamrock::solvergraph::OperationSequence seq(
+            "Euler time derivatives", std::move(dt_prim_sequence));
+        solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+    }
+
     { // interpolate to face
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> interp_sequence;
         {
@@ -1134,10 +1198,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.cell0block_aabb_lower,
                 storage.refs_rho,
                 storage.grad_rho,
-                storage.vel,
-                storage.dx_v,
-                storage.dy_v,
-                storage.dz_v,
+                storage.euler_dt_rho,
                 storage.rho_face_xp,
                 storage.rho_face_xm,
                 storage.rho_face_yp,
@@ -1154,12 +1215,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.cell_graph_edge,
                 storage.block_cell_sizes,
                 storage.cell0block_aabb_lower,
-                storage.refs_rho,
-                storage.grad_P,
                 storage.vel,
                 storage.dx_v,
                 storage.dy_v,
                 storage.dz_v,
+                storage.euler_dt_vel,
                 storage.vel_face_xp,
                 storage.vel_face_xm,
                 storage.vel_face_yp,
@@ -1170,8 +1230,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         }
 
         {
-            modules::InterpolateToFacePress<Tvec, TgridVec> node{
-                AMRBlock::block_size, solver_config.eos_gamma};
+            modules::InterpolateToFacePress<Tvec, TgridVec> node{AMRBlock::block_size};
             node.set_edges(
                 storage.dt_over2,
                 storage.cell_graph_edge,
@@ -1179,10 +1238,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.cell0block_aabb_lower,
                 storage.press,
                 storage.grad_P,
-                storage.vel,
-                storage.dx_v,
-                storage.dy_v,
-                storage.dz_v,
+                storage.euler_dt_press,
                 storage.press_face_xp,
                 storage.press_face_xm,
                 storage.press_face_yp,
@@ -1202,10 +1258,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.cell0block_aabb_lower,
                 storage.refs_rho_dust,
                 storage.grad_rho_dust,
-                storage.vel_dust,
-                storage.dx_v_dust,
-                storage.dy_v_dust,
-                storage.dz_v_dust,
+                storage.euler_dt_rho_dust,
                 storage.rho_dust_face_xp,
                 storage.rho_dust_face_xm,
                 storage.rho_dust_face_yp,
@@ -1223,11 +1276,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.cell_graph_edge,
                 storage.block_cell_sizes,
                 storage.cell0block_aabb_lower,
-                storage.refs_rho_dust,
                 storage.vel_dust,
                 storage.dx_v_dust,
                 storage.dy_v_dust,
                 storage.dz_v_dust,
+                storage.euler_dt_vel_dust,
                 storage.vel_dust_face_xp,
                 storage.vel_dust_face_xm,
                 storage.vel_dust_face_yp,

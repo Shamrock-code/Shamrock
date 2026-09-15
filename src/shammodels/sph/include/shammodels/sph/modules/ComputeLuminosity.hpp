@@ -17,11 +17,22 @@
  *
  */
 
-#include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
-#include "shammodels/sph/SolverConfig.hpp"
-#include "shammodels/sph/modules/SolverStorage.hpp"
-#include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shammodels/sph/solvergraph/NeighCache.hpp"
+#include "shamrock/solvergraph/IFieldSpan.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/node/INode.hpp"
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
+    X_RO(shamrock::solvergraph::Indexes<u32>, part_counts_with_ghosts)                             \
+    X_RO(shammodels::sph::solvergraph::NeighCache, neigh_cache)                                    \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, xyz)                                             \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, omega)                                          \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, u)                                              \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, pressure)                                       \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, luminosity)
 
 namespace shammodels::sph::modules {
 
@@ -37,41 +48,7 @@ namespace shammodels::sph::modules {
         NodeComputeLuminosity(Tscal part_mass, Tscal alpha_u)
             : part_mass(part_mass), alpha_u(alpha_u) {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &part_counts;
-            const shammodels::sph::solvergraph::NeighCache &neigh_cache;
-            const shamrock::solvergraph::IFieldSpan<Tvec> &xyz;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &hpart;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &omega;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &u;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &pressure;
-            shamrock::solvergraph::IFieldSpan<Tscal> &luminosity;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts,
-            std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> xyz,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> hpart,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> omega,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> u,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> pressure,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> luminosity) {
-            __internal_set_ro_edges({part_counts, neigh_cache, xyz, hpart, omega, u, pressure});
-            __internal_set_rw_edges({luminosity});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shammodels::sph::solvergraph::NeighCache>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(4),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(5),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(6),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0)};
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -81,3 +58,5 @@ namespace shammodels::sph::modules {
     };
 
 } // namespace shammodels::sph::modules
+
+#undef NODE_EDGES

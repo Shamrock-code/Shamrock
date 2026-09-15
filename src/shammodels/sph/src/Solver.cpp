@@ -77,6 +77,7 @@
 #include "shammodels/sph/modules/SinkParticlesEvictAccretedParticles.hpp"
 #include "shammodels/sph/modules/SinkParticlesFlagAccreteHard.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
+#include "shammodels/sph/modules/SinkSelfGravityHost.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shammodels/sph/modules/io/VTKDump.hpp"
@@ -778,6 +779,70 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                     set_has_sinks,
                     if_has_sinks,
                 }));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // sink ext force (pairwise self-gravity between sink particles)
+    ////////////////////////////////////////////////////////////////////////////////////////
+    {
+        solver_graph.register_edge("sink_ext_force_G", IDataEdge<Tscal>("G", "G"));
+        solver_graph.register_edge(
+            "sink_ext_force_epsilon", IDataEdge<Tscal>("epsilon_grav_sink", "\\epsilon"));
+
+        auto set_G = solver_graph.register_node(
+            "set_sink_ext_force_G", NodeSetEdge<IDataEdge<Tscal>>([&](IDataEdge<Tscal> &g_edge) {
+                g_edge.data = solver_config.get_constant_G();
+            }));
+        shambase::get_check_ref(set_G).set_edges(
+            solver_graph.get_edge_ptr<IDataEdge<Tscal>>("sink_ext_force_G"));
+
+        auto set_epsilon = solver_graph.register_node(
+            "set_sink_ext_force_epsilon",
+            NodeSetEdge<IDataEdge<Tscal>>([&](IDataEdge<Tscal> &epsilon_edge) {
+                epsilon_edge.data = 1e-9;
+            }));
+        shambase::get_check_ref(set_epsilon)
+            .set_edges(solver_graph.get_edge_ptr<IDataEdge<Tscal>>("sink_ext_force_epsilon"));
+
+        auto reset_acc_ext = solver_graph.register_node(
+            "reset_sink_acc_ext",
+            NodeSetEdge<IDataEdgeSerializable<std::vector<Tvec>>>(
+                [](IDataEdgeSerializable<std::vector<Tvec>> &acc_ext) {
+                    for (Tvec &a : acc_ext.data) {
+                        a = Tvec{};
+                    }
+                }));
+        shambase::get_check_ref(reset_acc_ext)
+            .set_edges(
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_acc_ext"));
+
+        auto self_gravity
+            = solver_graph.register_node("sink_self_gravity", modules::SinkSelfGravityHost<Tvec>{});
+        shambase::get_check_ref(self_gravity)
+            .set_edges(
+                solver_graph.get_edge_ptr<IDataEdge<Tscal>>("sink_ext_force_G"),
+                solver_graph.get_edge_ptr<IDataEdge<Tscal>>("sink_ext_force_epsilon"),
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_pos"),
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tscal>>>("sink_mass"),
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_acc_ext"));
+
+        auto ext_force_body = solver_graph.register_node(
+            "sink_ext_force_body",
+            OperationSequence(
+                "sink ext force body",
+                {
+                    set_G,
+                    set_epsilon,
+                    reset_acc_ext,
+                    self_gravity,
+                }));
+
+        // register the actual node that will be used, gated on the same "has_sinks" edge
+        // maintained by the "sink accretion" section above
+        auto sink_ext_force = solver_graph.register_node(
+            "sink ext force", OperationIf("sink ext force", ext_force_body));
+        shambase::get_check_ref(sink_ext_force)
+            .set_edges(solver_graph.get_edge_ptr<IDataEdge<bool>>("has_sinks"));
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -2167,7 +2232,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     storage.solver_graph.get_node_ref_base("point mass accretion").evaluate();
 
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
-    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
 
     sink_update.predictor_step(dt);
 
@@ -2185,8 +2249,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         shambase::get_check_ref(storage.solver_sequence).evaluate();
     }
 
-    sink_update.compute_ext_forces();
+    storage.solver_graph.get_node_ref_base("sink ext force").evaluate();
 
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
     ext_forces.compute_ext_forces_indep_v();
 
     gen_serial_patch_tree();

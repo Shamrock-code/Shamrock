@@ -28,6 +28,13 @@
 #include "shamsolvergraph/node/INode.hpp"
 #include <sycl/sycl.hpp>
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, gpart_mass)                                      \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, constant_G)                                      \
+    X_RO(shamrock::solvergraph::FieldRefs<Tvec>, field_xyz)                                        \
+    X_RW(shamrock::solvergraph::FieldRefs<Tvec>, field_axyz_ext)
+
 namespace shammodels::sph::modules {
 
     template<class Tvec, u32 mm_order>
@@ -43,32 +50,7 @@ namespace shammodels::sph::modules {
         explicit SGFMMPlummer(Tscal epsilon, Tscal theta_crit, u32 reduction_level)
             : epsilon(epsilon), theta_crit(theta_crit), reduction_level(reduction_level) {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            const shamrock::solvergraph::IDataEdge<Tscal> &gpart_mass;
-            const shamrock::solvergraph::IDataEdge<Tscal> &constant_G;
-            const shamrock::solvergraph::FieldRefs<Tvec> &field_xyz;
-            shamrock::solvergraph::FieldRefs<Tvec> &field_axyz_ext;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> gpart_mass,
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> constant_G,
-            std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> field_xyz,
-            std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> field_axyz_ext) {
-            __internal_set_ro_edges({sizes, gpart_mass, constant_G, field_xyz});
-            __internal_set_rw_edges({field_axyz_ext});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::IDataEdge<Tscal>>(1),
-                get_ro_edge<shamrock::solvergraph::IDataEdge<Tscal>>(2),
-                get_ro_edge<shamrock::solvergraph::FieldRefs<Tvec>>(3),
-                get_rw_edge<shamrock::solvergraph::FieldRefs<Tvec>>(0)};
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         inline std::string _impl_get_label() const override { return "SGFMMPlummer"; }
         std::string _impl_get_tex() const override { return "TODO"; }
@@ -78,3 +60,5 @@ namespace shammodels::sph::modules {
     };
 
 } // namespace shammodels::sph::modules
+
+#undef NODE_EDGES

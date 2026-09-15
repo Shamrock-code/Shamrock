@@ -87,6 +87,16 @@ namespace shammodels::basegodunov::modules {
         i32 zoff;
     };
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<std::vector<u64>>, ids_to_check)                         \
+    X_RO(shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>, sim_box)                     \
+    X_RO(shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>, patch_tree)                      \
+    X_RO(shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>, patch_boxes)                \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>, ghost_layers_candidates)
+
     template<class TgridVec>
     class FindGhostLayerCandidates : public shamrock::solvergraph::INode {
 
@@ -95,38 +105,7 @@ namespace shammodels::basegodunov::modules {
         public:
         FindGhostLayerCandidates(GhostLayerGenMode mode) : mode(mode) {}
 
-        struct Edges {
-            // inputs
-            const shamrock::solvergraph::IDataEdge<std::vector<u64>> &ids_to_check;
-            const shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>> &sim_box;
-            const shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec> &patch_tree;
-            const shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>> &patch_boxes;
-            // outputs
-            shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>
-                &ghost_layers_candidates;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<std::vector<u64>>> ids_to_check,
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>> sim_box,
-            std::shared_ptr<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>> patch_tree,
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>
-                patch_boxes,
-            std::shared_ptr<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>
-                ghost_layers_candidates) {
-            __internal_set_ro_edges({ids_to_check, sim_box, patch_tree, patch_boxes});
-            __internal_set_rw_edges({ghost_layers_candidates});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::IDataEdge<std::vector<u64>>>(0),
-                get_ro_edge<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>>(1),
-                get_ro_edge<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>>(2),
-                get_ro_edge<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>(3),
-                get_rw_edge<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>(0),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -135,3 +114,5 @@ namespace shammodels::basegodunov::modules {
         virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::basegodunov::modules
+
+#undef NODE_EDGES

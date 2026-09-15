@@ -18,6 +18,7 @@
  *
  */
 
+#include "sham/term/color.hpp"
 #include "sham/term/error_callback.hpp"
 #include <string_view>
 #include <optional>
@@ -41,6 +42,13 @@ namespace sham::term {
         std::optional<std::string_view> NO_UTF8;
         std::optional<std::string_view> FORCE_UTF8;
     };
+
+    /**
+     * @brief Detect the terminal emulator's color support level from TERM/COLORTERM.
+     *
+     * @return the detected color support level
+     */
+    ColorLevel detect_color_level(TermEnvVars vars);
 
     /// @brief Parses terminal environment variables to determine color support and set terminal
     /// size

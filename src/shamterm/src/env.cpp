@@ -40,34 +40,6 @@ namespace {
         "alacritty"};
 
     /**
-     * @brief detect if terminal emulator support colored outputs
-     *
-     * @return true
-     * @return false
-     */
-    bool term_support_color(sham::term::TermEnvVars vars) {
-
-        if (vars.TERM) {
-            for (auto term : color_support_term) {
-                if (*vars.TERM == term) {
-                    return true;
-                }
-            }
-        }
-
-        if (vars.COLORTERM) {
-            if (*vars.COLORTERM == "truecolor") {
-                return true;
-            }
-            if (*vars.COLORTERM == "24bit") {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * @brief Case-insensitive substring search
      *
      * @return true if needle is found in haystack, ignoring case
@@ -127,12 +99,30 @@ namespace {
 
 namespace sham::term {
 
-    void parse_terminal_support(TermEnvVars vars, const term_parse_callback_t &error_callback) {
-        if (term_support_color(vars)) {
-            enable_colors();
-        } else {
-            disable_colors();
+    ColorLevel detect_color_level(TermEnvVars vars) {
+
+        if (vars.COLORTERM) {
+            if (*vars.COLORTERM == "truecolor") {
+                return ColorLevel::Basic;
+            }
+            if (*vars.COLORTERM == "24bit") {
+                return ColorLevel::Basic;
+            }
         }
+
+        if (vars.TERM) {
+            for (auto term : color_support_term) {
+                if (*vars.TERM == term) {
+                    return ColorLevel::Basic;
+                }
+            }
+        }
+
+        return ColorLevel::NoColor;
+    }
+
+    void parse_terminal_support(TermEnvVars vars, const term_parse_callback_t &error_callback) {
+        sham::term::set_color_level(detect_color_level(vars));
 
         bool has_envvar_nocolor = bool(vars.NO_COLOR);
         bool has_envvar_color   = bool(vars.CLICOLOR_FORCE);

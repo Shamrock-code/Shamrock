@@ -29,6 +29,10 @@
 #include "shamsolvergraph/node/INode.hpp"
 #include <memory>
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    X_RO(shamrock::solvergraph::IPatchDataLayerRefs, original)                                     \
+    X_RW(shamrock::solvergraph::IFieldRefs<T>, target)
+
 namespace shamrock::solvergraph {
 
     template<class T>
@@ -48,20 +52,7 @@ namespace shamrock::solvergraph {
             const std::string &field_name)
             : CopyPatchDataFieldFromLayer(shambase::get_check_ref(layout), field_name) {}
 
-        struct Edges {
-            const IPatchDataLayerRefs &original;
-            IFieldRefs<T> &target;
-        };
-
-        void set_edges(
-            std::shared_ptr<IPatchDataLayerRefs> original, std::shared_ptr<IFieldRefs<T>> target) {
-            __internal_set_ro_edges({original});
-            __internal_set_rw_edges({target});
-        }
-
-        Edges get_edges() {
-            return Edges{get_ro_edge<IPatchDataLayerRefs>(0), get_rw_edge<IFieldRefs<T>>(0)};
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         inline void _impl_evaluate_internal() {
 
@@ -95,3 +86,5 @@ namespace shamrock::solvergraph {
     };
 
 } // namespace shamrock::solvergraph
+
+#undef NODE_EDGES

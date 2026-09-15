@@ -18,6 +18,25 @@
 
 namespace sham::term {
 
+    enum class ColorLevel {
+        /// No color support, plain ASCII output only.
+        NoColor = 0,
+        /// ANSI/16 colors (basic SGR codes).
+        Basic = 1,
+    };
+
+    /**
+     * @brief Query the currently detected/forced terminal color support level.
+     */
+    ColorLevel color_level();
+
+    /**
+     * @brief Set the terminal color support level.
+     *
+     * @param level the new color support level
+     */
+    void set_color_level(ColorLevel level);
+
     /**
      * @brief Terminal text styling escape sequences (bold, faint, underline, blink, reset).
      */

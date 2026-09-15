@@ -22,6 +22,12 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
+    X_RO(shammodels::sph::solvergraph::NeighCache, neigh_cache)                                    \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, xyz)                                             \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)
+
 namespace shammodels::sph::modules {
 
     template<class Tvec>
@@ -34,30 +40,7 @@ namespace shammodels::sph::modules {
         public:
         ComputeNeighStats(Tscal kernel_radius) : kernel_radius(kernel_radius) {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &part_counts;
-            const shammodels::sph::solvergraph::NeighCache &neigh_cache;
-            const shamrock::solvergraph::IFieldSpan<Tvec> &xyz;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &hpart;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts,
-            std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> xyz,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> hpart) {
-            __internal_set_ro_edges({part_counts, neigh_cache, xyz, hpart});
-            __internal_set_rw_edges({});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shammodels::sph::solvergraph::NeighCache>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -66,3 +49,5 @@ namespace shammodels::sph::modules {
         virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::sph::modules
+
+#undef NODE_EDGES

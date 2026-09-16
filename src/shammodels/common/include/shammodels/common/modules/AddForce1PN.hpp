@@ -102,7 +102,46 @@ namespace shammodels::common::modules {
 
         inline virtual std::string _impl_get_label() const { return "AddForce1PN"; };
 
-        inline virtual std::string _impl_get_tex() const { return "TODO"; };
+        inline virtual std::string _impl_get_tex() const {
+            auto constant_G   = get_ro_edge_base(0).get_tex_symbol();
+            auto constant_c   = get_ro_edge_base(1).get_tex_symbol();
+            auto central_mass = get_ro_edge_base(2).get_tex_symbol();
+            auto central_pos  = get_ro_edge_base(3).get_tex_symbol();
+            auto central_vel  = get_ro_edge_base(4).get_tex_symbol();
+            auto positions    = get_ro_edge_base(5).get_tex_symbol();
+            auto velocities   = get_ro_edge_base(6).get_tex_symbol();
+            auto axyz_ext     = get_rw_edge_base(0).get_tex_symbol();
+
+            std::string tex = R"tex(
+                Add force (1PN)
+
+                \begin{align}
+                \mathbf{r}_i &= {positions}_i - {central_pos}_i\\
+                \mathbf{v}_i &= {velocities}_i - {central_vel}_i\\
+                r &= \sqrt{\sum_i r_i^2}\\
+                \hat{\mathbf{r}}_i &= \mathbf{r}_i / r\\
+                v^2 &= \sum_i v_i^2\\
+                v_r &= \sum_i v_i \hat{\mathbf{r}}_i\\
+                {axyz_ext}_i &\mathrel{+}= -\frac{{constant_G} {central_mass}}{r^2}
+                \left[
+                \left(\frac{v^2}{{constant_c}^2}
+                - \frac{4 {constant_G} {central_mass}}{r {constant_c}^2}\right)\hat{\mathbf{r}}_i
+                - \frac{4 v_r}{{constant_c}^2}\mathbf{v}_i
+                \right]
+                \end{align}
+            )tex";
+
+            shambase::replace_all(tex, "{constant_G}", constant_G);
+            shambase::replace_all(tex, "{constant_c}", constant_c);
+            shambase::replace_all(tex, "{central_mass}", central_mass);
+            shambase::replace_all(tex, "{central_pos}", central_pos);
+            shambase::replace_all(tex, "{central_vel}", central_vel);
+            shambase::replace_all(tex, "{positions}", positions);
+            shambase::replace_all(tex, "{velocities}", velocities);
+            shambase::replace_all(tex, "{axyz_ext}", axyz_ext);
+
+            return tex;
+        };
     };
 
 } // namespace shammodels::common::modules

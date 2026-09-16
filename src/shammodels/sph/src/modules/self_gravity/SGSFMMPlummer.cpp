@@ -337,7 +337,7 @@ namespace shammodels::sph::modules {
                                 throw shambase::make_except_with_loc<std::runtime_error>(
                                     "Potential race condition detected in part_calls for particle "
                                     + std::to_string(i) + " and cell " + std::to_string(icell)
-                                    + " current set: " + shambase::format("{}", a_acc_by_tid[i]));
+                                    + " current set: " + sham::format("{}", a_acc_by_tid[i]));
                             }
                         });
                     }

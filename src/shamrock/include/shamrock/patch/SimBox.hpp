@@ -16,6 +16,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shammath/CoordRange.hpp"

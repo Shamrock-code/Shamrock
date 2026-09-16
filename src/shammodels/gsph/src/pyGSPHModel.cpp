@@ -11,7 +11,7 @@
  * @file pyGSPHModel.cpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Python bindings for the GSPH (Godunov SPH) model
  *
  * This provides Python interface for GSPH simulations using Riemann solvers.
@@ -88,6 +88,30 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     Fast approximate Riemann solver that captures contact discontinuities.
     Recommended for general use - good balance of accuracy and speed.
 )==")
+        .def(
+            "set_riemann_exact",
+            [](TConfig &self, Tscal tol, u32 max_iter) {
+                self.set_riemann_exact(tol, max_iter);
+            },
+            py::kw_only(),
+            py::arg("tolerance") = Tscal{1e-8},
+            py::arg("max_iter")  = 100,
+            R"==(
+    Set exact Riemann solver (Toro 2009).
+
+    Classifies the wave pattern (shock/rarefaction on each side) from the
+    initial states, then solves the matching closed-form relation via
+    bisection. Most accurate but computationally expensive; unlike the
+    iterative (van Leer) solver, it also remains accurate for strong
+    rarefactions / near-vacuum conditions.
+
+    Parameters
+    ----------
+    tolerance : float
+        Bisection convergence tolerance (default: 1e-8)
+    max_iter : int
+        Maximum number of bisection iterations (default: 100)
+)==")
         // Reconstruction config
         .def(
             "set_reconstruct_piecewise_constant",
@@ -99,6 +123,30 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
 
     Sets all gradients to zero. Most diffusive but most stable.
     Good for very strong shocks or initial testing.
+)==")
+        // Force formulation config
+        .def(
+            "set_force_cha_whitworth",
+            [](TConfig &self) {
+                self.set_force_cha_whitworth();
+            },
+            R"==(
+    Set the Cha & Whitworth (2003) symmetric SPH force formulation (default).
+
+    Uses the standard SPH momentum equation (nabla_W/rho^2/Omega) with the
+    Riemann-solved interface pressure p* substituted for pressure.
+)==")
+        .def(
+            "set_force_inutsuka_v2",
+            [](TConfig &self) {
+                self.set_force_inutsuka_v2();
+            },
+            R"==(
+    Set the Inutsuka (2002) effective volume/face force formulation.
+
+    Uses linear (1st order) interpolation of the volume element between each
+    particle pair to build an effective face (V2_ij, s*), following the
+    original GSPH momentum equation: acc -= m * p* * V2_ij * grad_W_ij.
 )==")
         // EOS config
         .def(

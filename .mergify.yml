@@ -1,0 +1,28 @@
+queue_rules:
+  - name: main queue
+    merge_method: squash
+    commit_message_format:
+      title: pr-title
+      body: pr-body
+      trailers: []
+    merge_conditions:
+      - check-success = all
+    branch_protection_injection_mode: none
+    queue_conditions:
+      - check-success = all_light
+      - check-success = pre-commit.ci - pr
+      - approved-reviews-by >= 1
+    draft_bot_account: mergify[bot]
+    merge_bot_account: mergify[bot]
+    update_bot_account: mergify[bot]
+    batch_size: 5
+    batch_max_wait_time: 10min
+merge_queue:
+  max_parallel_checks: 1
+pull_request_rules:
+  - name: Keep PRs up to date
+    conditions:
+      - label = auto-update
+      - updated-at <= 1 days ago
+    actions:
+      update: null

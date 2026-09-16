@@ -24,6 +24,7 @@
 
 template<class T>
 void shamrock::solvergraph::ExchangeGhostField<T>::_impl_evaluate_internal() {
+    __shamrock_stack_entry();
     auto edges = get_edges();
 
     // outputs

@@ -60,7 +60,7 @@ it = 0
 for a in patch_filelist:
     fil = open(a, "r")
 
-    for l in fil.readlines():
+    for l in fil:
         ll = l.split("|")[:-1]
 
         print(ll)
@@ -89,7 +89,7 @@ for a in patch_filelist:
 
 interfaces_dic = {}
 
-for k in patch_dic.keys():
+for k in patch_dic:
     interfaces_dic[k] = []
 
 interf_filelist = ["interfaces_" + str(iteration) + "_node" + str(n) for n in range(4)]
@@ -97,7 +97,7 @@ it = 0
 for a in interf_filelist:
     fil = open(a, "r")
 
-    for l in fil.readlines():
+    for l in fil:
         ll = l.split("|")[:-1]
 
         psend_id = int(ll[2])
@@ -174,7 +174,7 @@ fig = plt.figure(figsize=(10, 7))
 ax = plt.axes(projection="3d")
 ax.scatter3D([-1, 1], [-1, 1], [-1, 1])
 
-for k in patch_dic.keys():
+for k in patch_dic:
     draw_patch(k)
 
 # for k in patch_dic.keys():

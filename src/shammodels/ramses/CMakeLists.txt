@@ -23,6 +23,8 @@ set(Sources
     src/modules/ComputeCFL.cpp
     src/modules/ConsToPrimGas.cpp
     src/modules/ConsToPrimDust.cpp
+    src/modules/EulerTimeDerivativeGas.cpp
+    src/modules/EulerTimeDerivativeDust.cpp
     src/modules/ComputeCellAABB.cpp
     src/modules/NodeBuildTrees.cpp
     src/modules/FindBlockNeigh.cpp

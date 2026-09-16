@@ -16,6 +16,8 @@
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambindings/pybindaliases.hpp"
+#include "shamrock/io/units_json.hpp"
+#include <nlohmann/json.hpp>
 #include <pybind11/cast.h>
 #include <shamunits/Constants.hpp>
 #include <shamunits/Names.hpp>
@@ -76,7 +78,23 @@ ON_PYTHON_INIT {
             py::arg("power") = 1,
             py::arg("pref")  = "None"
 
-        );
+            )
+        .def(
+            "to_json",
+            [](UnitSystem &self) {
+                auto json_loads  = py::module_::import("json").attr("loads");
+                nlohmann::json j = self;
+                return json_loads(j.dump());
+            },
+            "Converts the unit system to a json like dictionary")
+        .def(
+            "from_json",
+            [](UnitSystem &self, const py::object &json_data) {
+                auto json_dumps = py::module_::import("json").attr("dumps");
+                std::string s   = json_dumps(json_data).cast<std::string>();
+                self            = nlohmann::json::parse(s).get<UnitSystem>();
+            },
+            "Sets the unit system from a json like dictionary");
 
     py::class_<shamunits::Constants<f64>>(m, "Constants")
         .def(py::init([](UnitSystem s) {

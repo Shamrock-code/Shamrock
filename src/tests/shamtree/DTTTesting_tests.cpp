@@ -343,7 +343,7 @@ void dtt_test(
     __shamrock_stack_entry();
 
     logger::raw_ln(
-        shambase::format(
+        sham::format(
             "dtt test --- Npart : {}, reduction_level : {}, theta_crit : {}, ordered_result : {}, "
             "allow_leaf_lowering : {}",
             Npart,
@@ -407,10 +407,14 @@ void dtt_test(
             partpos_buf, bvh, theta_crit, result, ordered_result, m2l_ref, p2p_ref);
     }
 
+    if (!shamtree::impl::is_impl_set_clbvh_dual_tree_traversal()) {
+        shamtree::impl::autoselect_impl_clbvh_dual_tree_traversal();
+    }
     auto current_impl = shamtree::impl::get_current_impl_clbvh_dual_tree_traversal_impl();
 
-    for (auto impl : shamtree::impl::get_default_impl_list_clbvh_dual_tree_traversal()) {
-        shamtree::impl::set_impl_clbvh_dual_tree_traversal(impl.impl_name, impl.params);
+    for (const std::string &impl :
+         shamtree::impl::get_default_impl_list_clbvh_dual_tree_traversal()) {
+        shamtree::impl::set_impl_clbvh_dual_tree_traversal(impl);
 
         shambase::Timer timer;
         timer.start();
@@ -421,7 +425,7 @@ void dtt_test(
             ordered_result,
             allow_leaf_lowering);
         timer.stop();
-        logger::raw_ln(impl.impl_name, " :", timer.get_time_str());
+        logger::raw_ln(impl, " :", timer.get_time_str());
 
         validate_dtt_results(
             partpos_buf, bvh, theta_crit, result, ordered_result, m2l_ref, p2p_ref);
@@ -435,7 +439,7 @@ void dtt_test(
     }
 
     // reset to current impl
-    shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl.impl_name, current_impl.params);
+    shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl);
 }
 
 inline void dtt_test_empty(bool ordered_result, bool allow_leaf_lowering) {
@@ -445,10 +449,14 @@ inline void dtt_test_empty(bool ordered_result, bool allow_leaf_lowering) {
     auto &q        = dev_sched->get_queue();
     auto bvh       = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
 
+    if (!shamtree::impl::is_impl_set_clbvh_dual_tree_traversal()) {
+        shamtree::impl::autoselect_impl_clbvh_dual_tree_traversal();
+    }
     auto current_impl = shamtree::impl::get_current_impl_clbvh_dual_tree_traversal_impl();
 
-    for (auto impl : shamtree::impl::get_default_impl_list_clbvh_dual_tree_traversal()) {
-        shamtree::impl::set_impl_clbvh_dual_tree_traversal(impl.impl_name, impl.params);
+    for (const std::string &impl :
+         shamtree::impl::get_default_impl_list_clbvh_dual_tree_traversal()) {
+        shamtree::impl::set_impl_clbvh_dual_tree_traversal(impl);
 
         auto run_dtt = [&]() {
             shamtree::clbvh_dual_tree_traversal(
@@ -462,7 +470,7 @@ inline void dtt_test_empty(bool ordered_result, bool allow_leaf_lowering) {
         REQUIRE_EXCEPTION_THROW(run_dtt(), std::invalid_argument);
     }
     // reset to current impl
-    shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl.impl_name, current_impl.params);
+    shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl);
 }
 
 inline void dtt_tests(bool ordered_result, bool allow_leaf_lowering) {

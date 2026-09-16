@@ -20,7 +20,7 @@ def get_new_state(state1: str, state2: str):
     }
 
     dic_inv = {}
-    for k in dic.keys():
+    for k in dic:
         dic_inv[dic[k]] = k
 
     st1 = dic[state1]
@@ -74,7 +74,7 @@ def path_to_dict(path):
 
         flag = "//%Impl status : "
 
-        for l in f.readlines():
+        for l in f:
             if l.startswith(flag):
                 d["implstatus"] = l[len(flag) :][:-1]
 

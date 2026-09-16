@@ -137,3 +137,4 @@ void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_position_rang
 
 template class shamtree::CompressedLeafBVH<u32, f64_3, 3>;
 template class shamtree::CompressedLeafBVH<u64, f64_3, 3>;
+template class shamtree::CompressedLeafBVH<u64, i64_3, 3>;

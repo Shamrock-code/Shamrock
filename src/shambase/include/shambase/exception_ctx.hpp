@@ -39,7 +39,7 @@ namespace shambase {
         template<class T>
         args_info(std::string name, const T &value) : name(std::move(name)) {
             try {
-                this->value = shambase::format("{}", value);
+                this->value = sham::format("{}", value);
             } catch (const std::exception &e) {
                 this->value = "format failed : " + std::string(e.what());
             }

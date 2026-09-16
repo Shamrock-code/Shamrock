@@ -39,13 +39,13 @@
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
-#include "shamrock/solvergraph/SolverGraph.hpp"
+#include "shamsolvergraph/SolverGraph.hpp"
+#include "shamsolvergraph/node/OperationSequence.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
@@ -89,9 +89,16 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_rho_dust;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> refs_rhov_dust;
 
+        /* Field to save a snapshot of conservative variables before start refinement if 2nd order
+         * prolongation is required.*/
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> rho_vel_snap;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rho_snap;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rhoe_snap;
+
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> vel;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> press;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> vel_dust;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rho_primitive;
 
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> block_cell_sizes;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> cell0block_aabb_lower;
@@ -110,6 +117,17 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dy_v_dust;
         /// dust fields gradients (d vdust / d z)
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dz_v_dust;
+
+        /// Euler time derivative of the gas primitive density (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_rho;
+        /// Euler time derivative of the gas primitive velocity (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> euler_dt_vel;
+        /// Euler time derivative of the gas primitive pressure (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_press;
+        /// Euler time derivative of the dust primitive density (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_rho_dust;
+        /// Euler time derivative of the dust primitive velocity (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> euler_dt_vel_dust;
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> rho_mean;
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> simulation_volume;

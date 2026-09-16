@@ -334,46 +334,45 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
                 f64 total       = global_timer.nanosec;
                 std::string str = "";
                 str += "Scheduler step timings : ";
-                str += shambase::format(
+                str += sham::format(
                     "\n   metadata sync     : {:<10} ({:2.1f}%)",
                     metadata_sync.get_time_str(),
                     f64(100 * (metadata_sync.nanosec / total)));
                 if (patch_tree_count_reduce) {
-                    str += shambase::format(
+                    str += sham::format(
                         "\n   patch tree reduce : {:<10} ({:2.1f}%)",
                         patch_tree_count_reduce->get_time_str(),
                         100 * (patch_tree_count_reduce->nanosec / total));
                 }
                 if (gen_merge_split_rq) {
-                    str += shambase::format(
+                    str += sham::format(
                         "\n   gen split merge   : {:<10} ({:2.1f}%)",
                         gen_merge_split_rq->get_time_str(),
                         100 * (gen_merge_split_rq->nanosec / total));
                 }
                 if (split_merge_cnt) {
-                    str += shambase::format(
+                    str += sham::format(
                         "\n   split / merge op  : {}/{}",
                         split_merge_cnt->x(),
                         split_merge_cnt->y());
                 }
                 if (apply_splits) {
-                    str += shambase::format(
+                    str += sham::format(
                         "\n   apply split merge : {:<10} ({:2.1f}%)",
                         apply_splits->get_time_str(),
                         100 * (apply_splits->nanosec / total));
                 }
                 if (load_balance_compute) {
-                    str += shambase::format(
+                    str += sham::format(
                         "\n   LB compute        : {:<10} ({:2.1f}%)",
                         load_balance_compute->get_time_str(),
                         100 * (load_balance_compute->nanosec / total));
                 }
                 if (load_balance_move_op_cnt) {
-                    str += shambase::format(
-                        "\n   LB move op cnt    : {}", *load_balance_move_op_cnt);
+                    str += sham::format("\n   LB move op cnt    : {}", *load_balance_move_op_cnt);
                 }
                 if (load_balance_apply) {
-                    str += shambase::format(
+                    str += sham::format(
                         "\n   LB apply          : {:<10} ({:2.1f}%)",
                         load_balance_apply->get_time_str(),
                         100 * (load_balance_apply->nanosec / total));
@@ -597,9 +596,9 @@ std::string PatchScheduler::dump_status() {
            << " [" << p.coord_min[2] << "," << p.coord_max[2] << "] )\n";
     }
 
-    ss << shambase::format(
+    ss << sham::format(
         "patch_list.id_patch_to_global_idx :\n{}\n", patch_list.id_patch_to_global_idx);
-    ss << shambase::format(
+    ss << sham::format(
         "patch_list.id_patch_to_local_idx :\n{}\n", patch_list.id_patch_to_local_idx);
 
     ss << " -> SchedulerPatchData\n";
@@ -622,7 +621,7 @@ std::string PatchScheduler::dump_status() {
     ss << " -> SchedulerPatchTree\n";
 
     for (auto &[k, pnode] : patch_tree.tree) {
-        ss << shambase::format(
+        ss << sham::format(
             "      -> id : {} -> ({}) <=> {} [{}, {}] (cl={} il={} l={} pid={})\n",
             k,
             pnode.tree_node.childs_nid,
@@ -642,16 +641,16 @@ std::string PatchScheduler::format_patch_coord(shamrock::patch::Patch p) {
     std::string ret;
     if (pdl_old().check_main_field_type<f32_3>()) {
         auto [bmin, bmax] = patch_data.sim_box.patch_coord_to_domain<f32_3>(p);
-        ret               = shambase::format("coord = {} {}", bmin, bmax);
+        ret               = sham::format("coord = {} {}", bmin, bmax);
     } else if (pdl_old().check_main_field_type<f64_3>()) {
         auto [bmin, bmax] = patch_data.sim_box.patch_coord_to_domain<f64_3>(p);
-        ret               = shambase::format("coord = {} {}", bmin, bmax);
+        ret               = sham::format("coord = {} {}", bmin, bmax);
     } else if (pdl_old().check_main_field_type<u32_3>()) {
         auto [bmin, bmax] = patch_data.sim_box.patch_coord_to_domain<u32_3>(p);
-        ret               = shambase::format("coord = {} {}", bmin, bmax);
+        ret               = sham::format("coord = {} {}", bmin, bmax);
     } else if (pdl_old().check_main_field_type<u64_3>()) {
         auto [bmin, bmax] = patch_data.sim_box.patch_coord_to_domain<u64_3>(p);
-        ret               = shambase::format("coord = {} {}", bmin, bmax);
+        ret               = sham::format("coord = {} {}", bmin, bmax);
     } else {
         throw shambase::make_except_with_loc<std::runtime_error>(
             "the main field does not match any");
@@ -675,7 +674,7 @@ void check_locality_t(PatchScheduler &sched) {
             },
             bmin_p0,
             bmax_p0,
-            shambase::format("patch id = {}", pid));
+            sham::format("patch id = {}", pid));
     });
 }
 

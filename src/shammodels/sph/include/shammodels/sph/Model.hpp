@@ -31,6 +31,7 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/SPHSetup.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
 #include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -179,21 +180,24 @@ namespace shammodels::sph {
             Tscal q,
             std::mt19937 eng);
 
-        inline void add_sink(
-            Tscal mass,
-            Tvec pos,
-            Tvec velocity,
-            Tscal accretion_radius,
-            Tvec angular_momentum = {}) {
-            if (solver.storage.sinks.is_empty()) {
-                solver.storage.sinks.set({});
+        inline void add_sink(Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius) {
+            if (!ctx.is_scheduler_initialized()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "add_sink() requires that the scheduler has been initialized. "
+                    "Call init_scheduler(...) before add_sink().");
             }
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            if (!sched.synchronized_data.has_edge("sink_pos")) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "add_sink() requires that sink edges are registered. "
+                    "Call init_scheduler(...) before add_sink().");
+            }
+            auto edges = get_sink_edges<Tvec>(sched.synchronized_data);
 
             shamlog_debug_ln(
                 "SPH", "add sink :", mass, pos, velocity, accretion_radius, angular_momentum);
 
-            solver.storage.sinks.get().push_back(
-                {pos, velocity, {}, {}, mass, angular_momentum, accretion_radius});
+            shammodels::sph::add_sink(edges, mass, pos, velocity, accretion_radius);
         }
 
         template<class T>
@@ -214,7 +218,7 @@ namespace shammodels::sph {
 
                     auto f_nvar = f.get_nvar();
                     if (offset >= f_nvar) {
-                        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                        shambase::throw_with_loc<std::invalid_argument>(sham::format(
                             "offset ({}) is out of bounds for field '{}' with nvar {}",
                             offset,
                             field_name,
@@ -251,7 +255,7 @@ namespace shammodels::sph {
 
                     auto f_nvar = f.get_nvar();
                     if (offset >= f_nvar) {
-                        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                        shambase::throw_with_loc<std::invalid_argument>(sham::format(
                             "offset ({}) is out of bounds for field '{}' with nvar {}",
                             offset,
                             field_name,
@@ -261,7 +265,7 @@ namespace shammodels::sph {
                     auto result = field_compute(shamrock::pdat_to_dic(pdat));
 
                     if (result.size() != f.get_obj_cnt()) {
-                        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                        throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
                             "result.size() != f.get_obj_cnt() ({} != {})",
                             result.size(),
                             f.get_obj_cnt()));
@@ -396,7 +400,7 @@ namespace shammodels::sph {
                     vec_cs.push_back(o.cs);
                 }
 
-                log += shambase::format(
+                log += sham::format(
                     "\n    patch id={}, add N={} particles", ptch.id_patch, vec_pos.size());
 
                 PatchDataLayer tmp(sched.get_layout_ptr_old());
@@ -481,7 +485,7 @@ namespace shammodels::sph {
 
             log = "";
             sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
-                log += shambase::format(
+                log += sham::format(
                     "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });
 
@@ -562,7 +566,7 @@ namespace shammodels::sph {
                         vec_u.push_back(U(cs));
                     });
 
-                log += shambase::format(
+                log += sham::format(
                     "\n    patch id={}, add N={} particles", ptch.id_patch, vec_acc.size());
 
                 PatchDataLayer tmp(sched.get_layout_ptr_old());
@@ -637,7 +641,7 @@ namespace shammodels::sph {
 
             log = "";
             sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
-                log += shambase::format(
+                log += sham::format(
                     "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });
 
@@ -676,7 +680,7 @@ namespace shammodels::sph {
                         = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(field_name));
 
                     if (ivar >= f.get_nvar()) {
-                        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                        shambase::throw_with_loc<std::invalid_argument>(sham::format(
                             "You are trying to set value in a box for field ({}) with "
                             "ivar ({}) >= f.get_nvar ({})",
                             field_name,
@@ -800,9 +804,11 @@ namespace shammodels::sph {
             tot_mass = shamalgs::collective::allreduce_sum(tot_mass);
 
             // add the mass of the sinks
-            if (!solver.storage.sinks.is_empty()) {
-                for (auto &s : solver.storage.sinks.get()) {
-                    tot_mass += s.mass;
+            auto &sync = sched.synchronized_data;
+            auto &mass = get_sink_mass<Tvec>(sync);
+            if (!mass.empty()) {
+                for (size_t i = 0; i < mass.size(); i++) {
+                    tot_mass += mass[i];
                 }
             }
 
@@ -811,9 +817,10 @@ namespace shammodels::sph {
                                              : shambase::VectorProperties<Tvec>::get_zero();
 
             // apply the offset velocity to the sinks
-            if (!solver.storage.sinks.is_empty()) {
-                for (auto &s : solver.storage.sinks.get()) {
-                    s.velocity += offset_vel;
+            auto &vel = get_sink_vel<Tvec>(sync);
+            if (!vel.empty()) {
+                for (size_t i = 0; i < vel.size(); i++) {
+                    vel[i] += offset_vel;
                 }
             }
 
@@ -832,9 +839,10 @@ namespace shammodels::sph {
             u32 ixyz = sched.pdl_old().get_field_idx<Tvec>("xyz");
 
             // apply the position offset to the sinks
-            if (!solver.storage.sinks.is_empty()) {
-                for (auto &s : solver.storage.sinks.get()) {
-                    s.pos += offset;
+            auto &pos = get_sink_pos<Tvec>(sched.synchronized_data);
+            if (!pos.empty()) {
+                for (size_t i = 0; i < pos.size(); i++) {
+                    pos[i] += offset;
                 }
             }
 
@@ -876,7 +884,7 @@ namespace shammodels::sph {
 
         inline void change_htolerances(Tscal in_coarse, Tscal in_fine) {
             if (in_coarse < in_fine) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "in_coarse ({}) must be greater than in_fine ({})", in_coarse, in_fine));
             }
             solver.solver_config.htol_up_coarse_cycle = in_coarse;
@@ -910,13 +918,15 @@ namespace shammodels::sph {
             // std::cout << j << std::endl;
             j.at("solver_config").get_to(solver.solver_config);
 
-            if (!j.at("sinks").is_null()) {
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            ensure_sink_edges<Tvec>(sched.synchronized_data);
+            if (j.contains("sinks") && !j.at("sinks").is_null()) {
                 std::vector<SinkParticle<Tvec>> out;
                 j.at("sinks").get_to(out);
-                solver.storage.sinks.set(std::move(out));
+                auto edges = get_sink_edges<Tvec>(sched.synchronized_data);
+                set_sink_particles(edges, out);
             }
-
-            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
             // Migrate old dumps that stored time/dt/cfl in solver_config.time_state
             auto sync_names = sched.synchronized_data.get_edge_names();
@@ -974,12 +984,6 @@ namespace shammodels::sph {
 
             nlohmann::json metadata;
             metadata["solver_config"] = solver.solver_config;
-
-            if (solver.storage.sinks.is_empty()) {
-                metadata["sinks"] = nlohmann::json{};
-            } else {
-                metadata["sinks"] = solver.storage.sinks.get();
-            }
 
             // Dump the state of the SPH model to a file
             /// TODO: replace supplied metadata by solver config json

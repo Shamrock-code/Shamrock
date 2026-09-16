@@ -63,13 +63,13 @@ def build_sink_sph_model(
 
     model.set_solver_config(cfg)
 
+    # Initialise the scheduler before adding sinks
+    model.init_scheduler(int(1e7), 1)
+
     for position, velocity, mass, accretion_radius in zip(
         positions, velocities, masses, accretion_radii
     ):
         model.add_sink(mass, tuple(position), tuple(velocity), accretion_radius)
-
-    # Initialise the scheduler first, then set a simulation box large enough
-    model.init_scheduler(int(1e7), 1)
 
     ext = box_extent
     bmin = (-ext, -ext, -ext)

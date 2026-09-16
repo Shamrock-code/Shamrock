@@ -59,8 +59,8 @@ namespace shammodels::sph::modules {
 
         shambase::replace_all(tex, "{pos}", pos);
         shambase::replace_all(tex, "{part_ids_outside_sphere}", part_ids_outside_sphere);
-        shambase::replace_all(tex, "{center}", shambase::format("{}", sphere_center));
-        shambase::replace_all(tex, "{radius}", shambase::format("{}", sphere_radius));
+        shambase::replace_all(tex, "{center}", sham::format("{}", sphere_center));
+        shambase::replace_all(tex, "{radius}", sham::format("{}", sphere_radius));
 
         return tex;
     }

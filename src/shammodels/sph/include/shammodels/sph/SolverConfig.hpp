@@ -19,6 +19,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/overloaded.hpp"
 #include "config/AVConfig.hpp"
 #include "config/BCConfig.hpp"
 #include "shambackends/math.hpp"
@@ -103,6 +104,14 @@ namespace shammodels::sph {
     };
 
     template<class Tscal>
+    struct DustEvolCoalaCoag {
+        Tscal rhodust_eps;
+        Tscal dv_max;
+        std::vector<Tscal> massgrid;
+        std::vector<Tscal> tabflux_coag;
+    };
+
+    template<class Tscal>
     struct DustConfig {
 
         struct None {};
@@ -112,10 +121,27 @@ namespace shammodels::sph {
             bool pure_diffusion_mode = false;
 
             Tscal C_1_fluid             = 0.1;
-            Tscal C_delta_v             = 1.0;
+            Tscal C_drift               = 1.0;
             Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>();
 
             bool ensure_s_j_positivity = true;
+
+            bool smooth_s_positivity_limiter = false;
+
+            // use the corrected q_AV from Hutchison 2018 & Price Laibe 15
+            bool dust_corrected_av = false;
+
+            // Fraction of rho(h) that the dust density (per-species and summed) is clamped to.
+            // The clamp runs only when this is set.
+            std::optional<Tscal> clamp_dust_frac = std::nullopt;
+
+            static constexpr Tscal default_clamp_dust_frac = 0.99;
+
+            inline bool should_clamp_dust_density() const { return clamp_dust_frac.has_value(); }
+
+            inline Tscal get_clamp_dust_frac() const {
+                return clamp_dust_frac.value_or(default_clamp_dust_frac);
+            }
         };
 
         struct MonofluidComplete {
@@ -130,18 +156,24 @@ namespace shammodels::sph {
         inline void set_none() { current_mode = None{}; }
         inline void set_monofluid_tva(
             u32 nvar,
-            bool pure_diffusion_mode    = false,
-            Tscal C_1_fluid             = 0.1,
-            Tscal C_delta_v             = 1.0,
-            Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>(),
-            bool ensure_s_j_positivity  = true) {
+            bool pure_diffusion_mode             = false,
+            Tscal C_1_fluid                      = 0.1,
+            Tscal C_drift                        = 1.0,
+            Tscal cfl_density_threshold          = shambase::get_epsilon<Tscal>(),
+            bool ensure_s_j_positivity           = true,
+            bool smooth_s_positivity_limiter     = false,
+            bool dust_corrected_av               = false,
+            std::optional<Tscal> clamp_dust_frac = std::nullopt) {
             current_mode = MonofluidTVA{
                 nvar,
                 pure_diffusion_mode,
                 C_1_fluid,
-                C_delta_v,
+                C_drift,
                 cfl_density_threshold,
-                ensure_s_j_positivity};
+                ensure_s_j_positivity,
+                smooth_s_positivity_limiter,
+                dust_corrected_av,
+                clamp_dust_frac};
         }
         inline void set_monofluid_complete(u32 nvar) { current_mode = MonofluidComplete{nvar}; }
 
@@ -164,9 +196,12 @@ namespace shammodels::sph {
                        {"ndust", cfg->ndust},
                        {"pure_diffusion_mode", cfg->pure_diffusion_mode},
                        {"C_1_fluid", cfg->C_1_fluid},
-                       {"C_delta_v", cfg->C_delta_v},
+                       {"C_drift", cfg->C_drift},
                        {"cfl_density_threshold", cfg->cfl_density_threshold},
-                       {"ensure_s_j_positivity", cfg->ensure_s_j_positivity}};
+                       {"ensure_s_j_positivity", cfg->ensure_s_j_positivity},
+                       {"smooth_s_positivity_limiter", cfg->smooth_s_positivity_limiter},
+                       {"dust_corrected_av", cfg->dust_corrected_av},
+                       {"clamp_dust_frac", cfg->clamp_dust_frac}};
             } else if (
                 const MonofluidComplete *cfg = std::get_if<MonofluidComplete>(&current_mode)) {
                 j = {{"type", "monofluid_complete"}, {"ndust", cfg->ndust}};
@@ -184,9 +219,12 @@ namespace shammodels::sph {
                     j.at("ndust").get<u32>(),
                     j.at("pure_diffusion_mode").get<bool>(),
                     j.at("C_1_fluid").get<Tscal>(),
-                    j.at("C_delta_v").get<Tscal>(),
+                    j.at("C_drift").get<Tscal>(),
                     j.at("cfl_density_threshold").get<Tscal>(),
-                    j.at("ensure_s_j_positivity").get<bool>());
+                    j.at("ensure_s_j_positivity").get<bool>(),
+                    j.value("smooth_s_positivity_limiter", false),
+                    j.value("dust_corrected_av", false),
+                    j.value("clamp_dust_frac", std::optional<Tscal>{}));
             } else if (type == "monofluid_complete") {
                 set_monofluid_complete(j.at("ndust").get<u32>());
             } else {
@@ -196,6 +234,13 @@ namespace shammodels::sph {
 
         inline bool has_s_j_field() {
             return is_monofluid_tva(); // S_j = sqrt(\rho \epsilon_j)
+        }
+
+        inline bool should_use_dust_av() {
+            if (!is_monofluid_tva()) {
+                return false;
+            }
+            return get_monofluid_tva().dust_corrected_av;
         }
 
         inline bool has_epsilon_field() {
@@ -233,6 +278,8 @@ namespace shammodels::sph {
         };
 
         std::variant<None, ConstantStoppingTimes, EpsteinDrag> dust_drag_mode = None{};
+
+        bool ballabio_ts_limiter = false;
 
         inline void drag_mode_to_json(nlohmann::json &j) const {
             if (std::holds_alternative<None>(dust_drag_mode)) {
@@ -272,6 +319,42 @@ namespace shammodels::sph {
 
         inline void set_drag_epstein(EpsteinDrag in) { dust_drag_mode = std::move(in); }
 
+        std::variant<None, DustEvolCoalaCoag<Tscal>> dust_evol_config = None{};
+
+        inline void evol_mode_to_json(nlohmann::json &j) const {
+            std::visit(
+                shambase::overloaded{
+                    [&](const None &) {
+                        j = {{"type", "none"}};
+                    },
+                    [&](const DustEvolCoalaCoag<Tscal> &cfg) {
+                        j
+                            = {{"type", "coala_coag"},
+                               {"rhodust_eps", cfg.rhodust_eps},
+                               {"dv_max", cfg.dv_max},
+                               {"massgrid", cfg.massgrid},
+                               {"tabflux_coag", cfg.tabflux_coag}};
+                    },
+                },
+                dust_evol_config);
+        }
+
+        inline void evol_mode_from_json(const nlohmann::json &j) {
+            if (j.at("type").get<std::string>() == "none") {
+                dust_evol_config = None{};
+            } else if (j.at("type").get<std::string>() == "coala_coag") {
+                dust_evol_config = DustEvolCoalaCoag<Tscal>{
+                    .rhodust_eps  = j.at("rhodust_eps").get<Tscal>(),
+                    .dv_max       = j.at("dv_max").get<Tscal>(),
+                    .massgrid     = j.at("massgrid").get<std::vector<Tscal>>(),
+                    .tabflux_coag = j.at("tabflux_coag").get<std::vector<Tscal>>()};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void set_dust_evol_coala(DustEvolCoalaCoag<Tscal> cfg) { dust_evol_config = cfg; }
+
         inline void check_config() {
             bool is_not_none = !is_none();
             if (is_not_none) {
@@ -307,6 +390,49 @@ namespace shammodels::sph {
                             "grains_sizes size does not match the number of dust bins");
                     }
                 }
+            }
+
+            if (!std::holds_alternative<None>(dust_evol_config) && is_not_none) {
+
+                if (DustEvolCoalaCoag<Tscal> *cfg
+                    = std::get_if<DustEvolCoalaCoag<Tscal>>(&dust_evol_config)) {
+
+                    u32 ndust = get_dust_nvar();
+
+                    if (cfg->massgrid.size() - 1 != ndust) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "massgrid must have ndust + 1 = " + std::to_string(ndust + 1)
+                            + " entries for ndust = " + std::to_string(ndust) + ", got "
+                            + std::to_string(cfg->massgrid.size()));
+                    }
+
+                    if (cfg->tabflux_coag.size() != ndust * ndust * ndust) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "tabflux_coag must have ndust^3 = "
+                            + std::to_string(ndust * ndust * ndust)
+                            + " entries for ndust = " + std::to_string(ndust) + ", got "
+                            + std::to_string(cfg->tabflux_coag.size()));
+                    }
+
+                    if (cfg->rhodust_eps <= 0) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "rhodust_eps must be positive, got "
+                            + std::to_string(cfg->rhodust_eps));
+                    }
+
+                    if (cfg->dv_max <= 0) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "dv_max must be positive, got " + std::to_string(cfg->dv_max));
+                    }
+
+                } else {
+                    shambase::throw_unimplemented();
+                }
+
+            } else if (!std::holds_alternative<None>(dust_evol_config) && is_none()) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "cannot enable dust evolution because the dust mode is 'none', call "
+                    "set_dust_mode_* before set_dust_evol_coala");
             }
         }
     };
@@ -1223,12 +1349,18 @@ namespace shammodels::sph {
 
         p.mode_to_json(j["mode"]);
         p.drag_mode_to_json(j["drag_mode"]);
+        p.evol_mode_to_json(j["evol_mode"]);
+        j["ballabio_ts_limiter"] = p.ballabio_ts_limiter;
     }
 
     template<class Tvec>
     inline void from_json(const nlohmann::json &j, DustConfig<Tvec> &p) {
         p.mode_from_json(j.at("mode"));
         p.drag_mode_from_json(j.at("drag_mode"));
+        if (j.contains("evol_mode")) {
+            p.evol_mode_from_json(j.at("evol_mode"));
+        }
+        p.ballabio_ts_limiter = j.value("ballabio_ts_limiter", false);
     }
 
     /**

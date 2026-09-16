@@ -248,7 +248,7 @@ plt.style.use("custom_short_cycler.mplstyle")
 
 
 plt.figure()
-for k in dic.keys():
+for k in dic:
     plt.plot(dic[k]["X"], np.array(dic[k]["rate"]) / np.array(dic[k]["X"]), label=dic[k]["label"])
 # plt.ylim(0,1e6)
 # plt.xlim(1,200)
@@ -261,7 +261,7 @@ plt.savefig("sedov_scalling_div_cpu.svg")
 
 
 plt.figure()
-for k in dic.keys():
+for k in dic:
     plt.plot(
         dic[k]["X"],
         (np.array(dic[k]["rate"]) / np.array(dic[k]["X"]))
@@ -279,7 +279,7 @@ plt.savefig("sedov_scalling_eff_cpu.svg")
 
 
 plt.figure()
-for k in dic.keys():
+for k in dic:
     plt.plot(dic[k]["X"], np.array(dic[k]["rate"]), label=dic[k]["label"])
 # plt.ylim(0,1e6)
 # plt.xlim(1,200)

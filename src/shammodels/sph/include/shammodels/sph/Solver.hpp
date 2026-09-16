@@ -11,6 +11,7 @@
 
 /**
  * @file Solver.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief
@@ -19,16 +20,16 @@
 #include "shambase/exception.hpp"
 #include "SolverConfig.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/common/SolverLog.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
-#include "shammodels/sph/SolverLog.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/solvergraph/IDataEdgeSerializable.hpp"
+#include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
 #include <functional>
@@ -311,7 +312,7 @@ namespace shammodels::sph {
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(
                     "SPH",
-                    shambase::format(
+                    sham::format(
                         "evolve_until (target_time = {:.2f}s, niter_max = {}, max_walltime = "
                         "{:.2f}s)",
                         target_time,
@@ -375,7 +376,7 @@ namespace shammodels::sph {
                         if (shamcomm::world_rank() == 0) {
                             logger::info_ln(
                                 "SPH",
-                                shambase::format(
+                                sham::format(
                                     "stopping evolve until because of "
                                     "max_walltime = {:.2f}s > {:.2f}s",
                                     global_walltime,
@@ -411,7 +412,7 @@ namespace shammodels::sph {
                     if (shamcomm::world_rank() == 0) {
                         logger::info_ln(
                             "SPH",
-                            shambase::format(
+                            sham::format(
                                 "next walltime check in {:.2f}s (niter = {}) global walltime = "
                                 "{:.2f}s (max_walltime = {:.2f}s)",
                                 iters_to_next_check * sec_per_iter,

@@ -26,7 +26,7 @@ for N_target_base in [32e6]:
     compute_multiplier = shamrock.sys.world_size()
     # compute_multiplier = 12
     scheduler_split_val = int(2e7)
-    scheduler_merge_val = int(1)
+    scheduler_merge_val = 1
 
     N_target = N_target_base * compute_multiplier
     xm, ym, zm = bmin

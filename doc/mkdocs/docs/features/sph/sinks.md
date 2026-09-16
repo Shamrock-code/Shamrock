@@ -28,8 +28,8 @@ Sink data can be queried using the function `get_sinks`, which return a list of 
 ```py
 sinks = model.get_sinks()
 
-x1,y1,z1 = sinks[0]["pos"]
-x2,y2,z2 = sinks[1]["pos"]
+x1, y1, z1 = sinks[0]["pos"]
+x2, y2, z2 = sinks[1]["pos"]
 ```
 
 For a more involved example to plot results with sinks data see [On the fly plots in SPH](../../usermanual/plotting.md).

@@ -11,6 +11,16 @@ on:
         description: "Whether to run the light CI"
         required: true
         type: boolean
+      run_build_profile:
+        description: "Run the build profile job even when light CI is enabled"
+        required: false
+        default: false
+        type: boolean
+      is_merge_queue:
+        description: "Whether this run is a Mergify merge-queue CI"
+        required: false
+        default: false
+        type: boolean
     secrets:
       CODECOV_TOKEN:
         description: "Codecov upload token"
@@ -48,7 +58,7 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -70,6 +80,30 @@ jobs:
           name: report_email
           path: ./report_______email.md
 
+  count_loc:
+    name: Lines of code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Reconfigure git
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global --list
+
+      - uses: actions/checkout@v7
+
+      - name: Count lines of code
+        shell: bash
+        run: |
+          python3 tools/count_loc.py metric__loc.json
+          cat metric__loc.json
+
+      - name: Upload lines of code metric
+        uses: actions/upload-artifact@v4
+        with:
+          name: metric__loc.json
+          path: metric__loc.json
+
   src_check:
     name: Linting
     #needs: [detect_changes]
@@ -83,13 +117,17 @@ jobs:
   env_tests:
     name: Tests
     needs: [src_check]
-    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/env_tests.yml
+    with:
+      light_ci: ${{ inputs.light_ci }}
 
-  shamrock_linux_acpp_conda:
+  shamrock_linux_acpp_build_profile:
     name: Tests
     needs: [src_check]
-    uses: ./.github/workflows/shamrock-acpp-conda.yml
+    # Full CI always runs this job. Light CI runs it when the caller requests it
+    # (on PRs: the `profile-build` label).
+    if: ${{ !inputs.light_ci || inputs.run_build_profile }}
+    uses: ./.github/workflows/shamrock-acpp-clang-build-profile.yml
 
   shamrock_linux_acpp_asan:
     name: Tests
@@ -106,8 +144,9 @@ jobs:
   shamrock_linux_acpp_tidy:
     needs: [src_check]
     name: Tests
-    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-acpp-clang-tidy.yml
+    with:
+      run_full: ${{ !inputs.light_ci }}
 
   shamrock_linux_acpp_cov:
     needs: [src_check]
@@ -117,16 +156,9 @@ jobs:
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  shamrock_linux_dpcpp:
-    name: Tests
-    needs: [src_check]
-    uses: ./.github/workflows/shamrock-dpcpp.yml
-    with:
-      light_ci: ${{ inputs.light_ci }}
-
   build_push_docker:
     name: Build dockerfiles
-    needs: [src_check, shamrock_linux_dpcpp]
+    needs: [src_check, env_tests]
     if: ${{ inputs.run_build_push_docker && !inputs.light_ci }}
     uses: ./.github/workflows/build-dockerfiles.yml
 
@@ -135,6 +167,8 @@ jobs:
     needs: [src_check]
     if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-acpp-phys-test.yml
+    with:
+      fail_fast: ${{ inputs.is_merge_queue }}
 
   shamrock_linux_acpp_pylib:
     needs: [src_check]
@@ -152,7 +186,7 @@ jobs:
       image: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: main
@@ -166,13 +200,13 @@ jobs:
           sudo apt update && \
           sudo apt install -y -qq doxygen graphviz
 
-      - name : Modify texlive packages
+      - name : Install bibtex for doxygen citations
         run: |
           sudo apt install -y \
-            texlive-full \
-            dvipng \
-            ghostscript \
-            latexmk
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended
 
       - name : Run doxygen
         run: |
@@ -198,13 +232,13 @@ jobs:
         run:  |
           git config --global --add safe.directory '*'
           git config --global --list
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
         with:
           fetch-depth: 0
           ref: "refs/pull/${{ github.event.number }}/merge"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name != 'pull_request_target'
         with:
           fetch-depth: 0

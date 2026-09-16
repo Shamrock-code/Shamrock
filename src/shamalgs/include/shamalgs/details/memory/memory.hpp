@@ -188,13 +188,13 @@ namespace shamalgs::memory {
 
             if (i % column_count == 0) {
                 if (i == 0) {
-                    accum += shambase::format("{:8} : ", i);
+                    accum += sham::format("{:8} : ", i);
                 } else {
-                    accum += shambase::format("\n{:8} : ", i);
+                    accum += sham::format("\n{:8} : ", i);
                 }
             }
 
-            accum += shambase::vformat(fmt, fmt::make_format_args(acc[i]));
+            accum += sham::vformat(fmt, fmt::make_format_args(acc[i]));
         }
 
         logger::raw_ln(accum);

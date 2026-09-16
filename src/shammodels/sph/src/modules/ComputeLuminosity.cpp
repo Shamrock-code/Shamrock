@@ -16,12 +16,13 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
-#include "shammodels/sph/SPHUtilities.hpp"
+#include "shammath/sphkernels.hpp"
+#include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/modules/ComputeLuminosity.hpp"
-#include "shamrock/scheduler/SchedulerUtility.hpp"
-#include "shamrock/solvergraph/IFieldSpan.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_evaluate_internal() {
@@ -32,7 +33,11 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
+    auto &part_counts_with_ghosts = edges.part_counts_with_ghosts.indexes;
+    auto &part_counts             = edges.part_counts.indexes;
+
     edges.luminosity.ensure_sizes(edges.part_counts.indexes);
+    edges.omega.check_sizes(part_counts_with_ghosts);
 
     sham::distributed_data_kernel_call(
         dev_sched,

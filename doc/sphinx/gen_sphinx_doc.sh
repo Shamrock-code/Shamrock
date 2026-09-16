@@ -10,6 +10,12 @@ if ! python3 -c "import shamrock" &> /dev/null; then
     exit 1
 fi
 
+if ! which dot &> /dev/null; then
+    echo "Warning: the Graphviz 'dot' executable was not found in your PATH."
+    echo "Examples that render dot graphs (shamrock.utils.plot.show_dot_graph) will fail."
+    echo "Install it with your system package manager, e.g. 'apt install graphviz'."
+fi
+
 pip_list=(
     "sphinx"
     "pydata-sphinx-theme"
@@ -23,6 +29,7 @@ pip_list=(
     "numpy"
     "scipy"
     "myst-parser"
+    "graphviz"
     )
 
 for package in "${pip_list[@]}"; do

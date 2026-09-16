@@ -7,12 +7,14 @@ This example benchmarks the is_all_true performance for the different algorithms
 
 # sphinx_gallery_multi_image = "single"
 
+import json
 import random
 import time
 
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colors
+from shamrock.utils.plot import make_std_bench_plot
 
 import shamrock
 
@@ -102,6 +104,9 @@ def run_performance_sweep():
 
 # %%
 # List current implementation
+if not shamrock.algs.is_impl_set_is_all_true():
+    shamrock.algs.autoselect_impl_is_all_true()
+
 current_impl = shamrock.algs.get_current_impl_is_all_true()
 
 print(current_impl)
@@ -115,32 +120,86 @@ print(all_default_impls)
 # %%
 # Run the performance benchmarks for all implementations
 
+dic_bench = {}
 for impl in all_default_impls:
-    shamrock.algs.set_impl_is_all_true(impl.impl_name, impl.params)
+    shamrock.algs.set_impl_is_all_true(impl)
+
+    impl_json = json.loads(impl)
+    impl_name = impl_json["implementation"]
+    impl_params = impl_json.get("parameters", {})
+    if impl_params:
+        # Disambiguate implementations that expose multiple default parameter sets
+        # (e.g. several group sizes) under the same "implementation" name
+        params_str = ", ".join(f"{k}={v}" for k, v in impl_params.items())
+        impl_name = f"{impl_name} ({params_str})"
 
     print(f"Running is_all_true performance benchmarks for {impl}...")
 
     # Run the performance sweep
     particle_counts, results_random, results_ones, results_zeros = run_performance_sweep()
 
-    plt.plot(particle_counts, results_random, "--", label=impl.impl_name + " (random set)")
-    plt.plot(particle_counts, results_ones, "--+", label=impl.impl_name + " (all ones)")
-    plt.plot(particle_counts, results_zeros, "--o", label=impl.impl_name + " (all zeros)")
+    dic_bench[impl_name] = {
+        "particle_counts": particle_counts,
+        "results_random": results_random,
+        "results_ones": results_ones,
+        "results_zeros": results_zeros,
+    }
 
 
-Nobj = np.array(particle_counts)
-Time100M = Nobj / 1e8
-plt.plot(particle_counts, Time100M, color="grey", linestyle="-", alpha=0.7, label="100M obj/sec")
+# %%
+# Plot results
+
+color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+plot_data = {}
+for i, (label, item) in enumerate(dic_bench.items()):
+    color = color_cycle[i % len(color_cycle)]
+    plot_data[label + " (random set)"] = {
+        "x": item["particle_counts"],
+        "y": item["results_random"],
+        "color": color,
+        "label": label + " (random set)",
+        "linestyle": "--",
+        "marker": None,
+    }
+    plot_data[label + " (all ones)"] = {
+        "x": item["particle_counts"],
+        "y": item["results_ones"],
+        "color": color,
+        "label": label + " (all ones)",
+        "linestyle": "--",
+        "marker": "+",
+    }
+    plot_data[label + " (all zeros)"] = {
+        "x": item["particle_counts"],
+        "y": item["results_zeros"],
+        "color": color,
+        "label": label + " (all zeros)",
+        "linestyle": "--",
+        "marker": "o",
+    }
 
 
-plt.xlabel("Number of elements")
-plt.ylabel("Time (s)")
-plt.title("is_all_true performance benchmarks")
+def before_plot(ax_plot):
+    particle_counts = next(iter(dic_bench.values()))["particle_counts"]
+    Nobj = np.array(particle_counts)
+    Time100M = Nobj / 1e8
+    ax_plot.plot(
+        particle_counts,
+        Time100M,
+        color="grey",
+        linestyle="-",
+        alpha=0.7,
+        label="100M obj/sec",
+    )
 
-plt.xscale("log")
-plt.yscale("log")
 
-plt.grid(True)
-
-plt.legend(fontsize=10)
+make_std_bench_plot(
+    plot_data,
+    xlabel="Number of elements",
+    ylabel="Time (s)",
+    title="is_all_true performance benchmarks",
+    end_label_fmt=lambda y: f"{y:.2e} s",
+    before_plot_func=before_plot,
+)
 plt.show()

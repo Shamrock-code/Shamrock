@@ -22,7 +22,7 @@ namespace shamalgs::primitives {
 
     void fill_buffer_index(sham::DeviceBuffer<u32> &buf, u32 len) {
         if (buf.get_size() < len) {
-            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+            shambase::throw_with_loc<std::invalid_argument>(sham::format(
                 "buf.get_size() < len\n  buf.get_size() = {},\n  len = {}", buf.get_size(), len));
         }
 

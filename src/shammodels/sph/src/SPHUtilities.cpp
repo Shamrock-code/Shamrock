@@ -276,7 +276,7 @@ namespace shammodels::sph {
                 flt omega_a = 1 + (h_a / (3 * rho_ha)) * part_omega_sum;
                 omega[id_a] = omega_a;
 
-                // logger::raw(shambase::format("pmass {}, rho_a {}, omega_a {}\n",
+                // logger::raw(sham::format("pmass {}, rho_a {}, omega_a {}\n",
                 // part_mass,rho_ha, omega_a));
             });
         });

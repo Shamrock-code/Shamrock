@@ -74,8 +74,8 @@ hyperfigures=false]
 
 class ReportFormat(Enum):
     Tex = 1
-    HTML = 1
-    Txt = 1
+    HTML = 2
+    Txt = 3
 
 
 def load_test_report(file):
@@ -103,7 +103,7 @@ def load_test_report(file):
             cur_test = test_name
             # print(" -> starting_test", test_name)
 
-            if not (cur_test in dic_loaded.keys()):
+            if not (cur_test in dic_loaded):
                 dic_loaded[cur_test] = {}
 
         elif l.startswith(r"%end_test"):
@@ -233,7 +233,7 @@ def make_tex_report(dat):
 
     dic_suc_cnt_global = {}
 
-    for kworldsz in dic_int.keys():
+    for kworldsz in dic_int:
         cnt_config = 0
         cnt_success = 0
 
@@ -256,7 +256,7 @@ def make_tex_report(dat):
         \hline
         World size & Status & Successful config / total number of config \\  \hline \hline
     """
-    for kworldsz in dic_int.keys():
+    for kworldsz in dic_int:
         config_suc_cnt = dic_suc_cnt_global[kworldsz]["global_suc_cnt"]
         config_cnt = dic_suc_cnt_global[kworldsz]["global_config_cnt"]
 
@@ -265,9 +265,9 @@ def make_tex_report(dat):
         tabl_world_sz_res += kworldsz + " & "
 
         if success:
-            tabl_world_sz_res += "\OK & "
+            tabl_world_sz_res += r"\OK & "
         else:
-            tabl_world_sz_res += "\FAIL & "
+            tabl_world_sz_res += r"\FAIL & "
 
         tabl_world_sz_res += (
             "$" + str(config_suc_cnt) + "/" + str(config_cnt) + r"$\\ \hline" + "\n"
@@ -279,7 +279,7 @@ def make_tex_report(dat):
 
     str_file = ""
 
-    for kworldsz in dic_int.keys():
+    for kworldsz in dic_int:
         str_file += (
             r"""
             \newpage
@@ -304,9 +304,9 @@ def make_tex_report(dat):
             str_file += kconfig + " & "
 
             if success:
-                str_file += "\OK & "
+                str_file += r"\OK & "
             else:
-                str_file += "\FAIL & "
+                str_file += r"\FAIL & "
 
             str_file += "$" + str(test_suc_cnt) + "/" + str(test_cnt) + r"$\\ \hline" + "\n"
 
@@ -338,9 +338,9 @@ def make_tex_report(dat):
                 str_file += r"\verb|" + ktest + "| & "
 
                 if success:
-                    str_file += "\OK & "
+                    str_file += r"\OK & "
                 else:
-                    str_file += "\FAIL & "
+                    str_file += r"\FAIL & "
 
                 str_file += "$" + str(assert_suc_cnt) + "/" + str(assert_cnt) + r"$\\ \hline" + "\n"
 

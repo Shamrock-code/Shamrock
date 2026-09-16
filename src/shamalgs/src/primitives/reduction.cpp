@@ -18,7 +18,9 @@
 #include "shambase/StlContainerConversion.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/logs/loglevels.hpp"
+#include "shambase/overloaded.hpp"
 #include "fmt/std.h"
+#include "shamalgs/ImplVariant.hpp"
 #include "shamalgs/details/reduction/fallbackReduction.hpp"
 #include "shamalgs/details/reduction/fallbackReduction_usm.hpp"
 #include "shamalgs/details/reduction/groupReduction.hpp"
@@ -26,80 +28,93 @@
 #include "shamalgs/details/reduction/reduction.hpp"
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"
 
-namespace shamalgs::primitives {
+namespace shamalgs::primitives::impl {
 
-    enum class REDUCTION_IMPL : u32 {
-        FALLBACK,
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        GROUP_REDUCTION16,
-        GROUP_REDUCTION128,
-        GROUP_REDUCTION256,
-#endif
+    /// Fallback USM reduction (portable, no group reduction support required)
+    struct Fallback {
+        static constexpr std::string_view variant_type_name = "fallback";
     };
 
-    REDUCTION_IMPL get_default_reduction_impl() {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        return REDUCTION_IMPL::GROUP_REDUCTION128;
+    /// USM group reduction, tunable work-group size
+    struct GroupReduction {
+        static constexpr std::string_view variant_type_name = "group_reduction";
+        u32 group_size                                      = 128;
+
+        /// Expose the group sizes worth benchmarking as separate default implementations
+        static std::vector<GroupReduction> variant_custom_defaults() {
+            return {
+                GroupReduction{16},
+                GroupReduction{128},
+                GroupReduction{256},
+            };
+        }
+    };
+#endif
+
+} // namespace shamalgs::primitives::impl
+
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+template<>
+struct shamalgs::ImplVariantParams<shamalgs::primitives::impl::GroupReduction> {
+    static nlohmann::json to_json(const shamalgs::primitives::impl::GroupReduction &p) {
+        return {{"group_size", p.group_size}};
+    }
+    static shamalgs::primitives::impl::GroupReduction from_json(const nlohmann::json &j) {
+        shamalgs::primitives::impl::GroupReduction p{};
+        if (j.contains("group_size")) {
+            p.group_size = j.at("group_size").get<u32>();
+        }
+        return p;
+    }
+};
+#endif
+
+namespace shamalgs::primitives {
+
+    /// namespace to control implementation behavior
+    namespace impl {
+
+        shamalgs::ImplVariantGlobal<
+            Fallback
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+            ,
+            GroupReduction
+#endif
+            >
+            reduction_impl;
+
+        /// Get list of available reduction implementations, as config json strings
+        std::vector<std::string> get_default_impl_list_reduction() {
+            return reduction_impl.get_default_config_list();
+        }
+
+        /// Get the current implementation for reduction, as a config json string
+        std::string get_current_impl_reduction() { return reduction_impl.get_current_config(); }
+
+        /// Check if an implementation has been selected for reduction
+        bool is_impl_set_reduction() { return reduction_impl.is_set(); }
+
+        /// Set the implementation for reduction, from a config json string
+        void set_impl_reduction(const std::string &impl) {
+            shamlog_info_ln("algs", "setting reduction implementation to impl :", impl);
+            reduction_impl.set(impl);
+        }
+
+        /// Select the default implementation for reduction
+        void autoselect_impl_reduction() {
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+            reduction_impl.set(GroupReduction{});
 #else
-        return REDUCTION_IMPL::FALLBACK;
+            reduction_impl.set(Fallback{});
 #endif
-    }
-
-    REDUCTION_IMPL reduction_impl = get_default_reduction_impl();
-
-    inline REDUCTION_IMPL reduction_impl_from_params(const std::string &impl) {
-        if (impl == "fallback") {
-            return REDUCTION_IMPL::FALLBACK;
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        } else if (impl == "group_reduction16") {
-            return REDUCTION_IMPL::GROUP_REDUCTION16;
-        } else if (impl == "group_reduction128") {
-            return REDUCTION_IMPL::GROUP_REDUCTION128;
-        } else if (impl == "group_reduction256") {
-            return REDUCTION_IMPL::GROUP_REDUCTION256;
-#endif
+            shamlog_info_ln(
+                "algs",
+                "defaulting reduction implementation to impl :",
+                get_current_impl_reduction());
         }
-        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
-            "invalid implementation : {}, possible implementations : {}",
-            impl,
-            impl::get_default_impl_list_reduction()));
-    }
 
-    inline shamalgs::impl_param reduction_impl_to_params(const REDUCTION_IMPL &impl) {
-        if (impl == REDUCTION_IMPL::FALLBACK) {
-            return {.impl_name = "fallback", .params = ""};
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        } else if (impl == REDUCTION_IMPL::GROUP_REDUCTION16) {
-            return {.impl_name = "group_reduction16", .params = ""};
-        } else if (impl == REDUCTION_IMPL::GROUP_REDUCTION128) {
-            return {.impl_name = "group_reduction128", .params = ""};
-        } else if (impl == REDUCTION_IMPL::GROUP_REDUCTION256) {
-            return {.impl_name = "group_reduction256", .params = ""};
-#endif
-        }
-        throw shambase::make_except_with_loc<std::invalid_argument>(
-            shambase::format("unknown reduction implementation : {}", u32(impl)));
-    }
-
-    std::vector<shamalgs::impl_param> impl::get_default_impl_list_reduction() {
-        return {
-            {.impl_name = "fallback", .params = ""},
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-            {.impl_name = "group_reduction16", .params = ""},
-            {.impl_name = "group_reduction128", .params = ""},
-            {.impl_name = "group_reduction256", .params = ""}
-#endif
-        };
-    }
-
-    shamalgs::impl_param impl::get_current_impl_reduction() {
-        return reduction_impl_to_params(reduction_impl);
-    }
-
-    void impl::set_impl_reduction(const std::string &impl, const std::string &param) {
-        shamlog_info_ln("tree", "setting reduction implementation to impl :", impl);
-        reduction_impl = reduction_impl_from_params(impl);
-    }
+    } // namespace impl
 
     template<class T>
     T sum(
@@ -110,20 +125,22 @@ namespace shamalgs::primitives {
 
         using namespace shamalgs::reduction::details;
 
-        switch (reduction_impl) {
-        case REDUCTION_IMPL::FALLBACK: return sum_usm_fallback(sched, buf1, start_id, end_id);
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        case REDUCTION_IMPL::GROUP_REDUCTION16:
-            return sum_usm_group(sched, buf1, start_id, end_id, 16);
-        case REDUCTION_IMPL::GROUP_REDUCTION128:
-            return sum_usm_group(sched, buf1, start_id, end_id, 128);
-        case REDUCTION_IMPL::GROUP_REDUCTION256:
-            return sum_usm_group(sched, buf1, start_id, end_id, 256);
-#endif
-        default:
-            shambase::throw_with_loc<std::invalid_argument>(
-                shambase::format("unimplemented case : {}", u32(reduction_impl)));
+        if (!impl::reduction_impl.is_set()) {
+            impl::autoselect_impl_reduction();
         }
+
+        return std::visit(
+            shambase::overloaded{
+                [&](impl::Fallback) {
+                    return sum_usm_fallback(sched, buf1, start_id, end_id);
+                },
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+                [&](impl::GroupReduction cfg) {
+                    return sum_usm_group(sched, buf1, start_id, end_id, cfg.group_size);
+                },
+#endif
+            },
+            impl::reduction_impl.get());
     }
 
     template<class T>
@@ -135,20 +152,22 @@ namespace shamalgs::primitives {
 
         using namespace shamalgs::reduction::details;
 
-        switch (reduction_impl) {
-        case REDUCTION_IMPL::FALLBACK: return min_usm_fallback(sched, buf1, start_id, end_id);
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        case REDUCTION_IMPL::GROUP_REDUCTION16:
-            return min_usm_group(sched, buf1, start_id, end_id, 16);
-        case REDUCTION_IMPL::GROUP_REDUCTION128:
-            return min_usm_group(sched, buf1, start_id, end_id, 128);
-        case REDUCTION_IMPL::GROUP_REDUCTION256:
-            return min_usm_group(sched, buf1, start_id, end_id, 256);
-#endif
-        default:
-            shambase::throw_with_loc<std::invalid_argument>(
-                shambase::format("unimplemented case : {}", u32(reduction_impl)));
+        if (!impl::reduction_impl.is_set()) {
+            impl::autoselect_impl_reduction();
         }
+
+        return std::visit(
+            shambase::overloaded{
+                [&](impl::Fallback) {
+                    return min_usm_fallback(sched, buf1, start_id, end_id);
+                },
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+                [&](impl::GroupReduction cfg) {
+                    return min_usm_group(sched, buf1, start_id, end_id, cfg.group_size);
+                },
+#endif
+            },
+            impl::reduction_impl.get());
     }
 
     template<class T>
@@ -160,20 +179,22 @@ namespace shamalgs::primitives {
 
         using namespace shamalgs::reduction::details;
 
-        switch (reduction_impl) {
-        case REDUCTION_IMPL::FALLBACK: return max_usm_fallback(sched, buf1, start_id, end_id);
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        case REDUCTION_IMPL::GROUP_REDUCTION16:
-            return max_usm_group(sched, buf1, start_id, end_id, 16);
-        case REDUCTION_IMPL::GROUP_REDUCTION128:
-            return max_usm_group(sched, buf1, start_id, end_id, 128);
-        case REDUCTION_IMPL::GROUP_REDUCTION256:
-            return max_usm_group(sched, buf1, start_id, end_id, 256);
-#endif
-        default:
-            shambase::throw_with_loc<std::invalid_argument>(
-                shambase::format("unimplemented case : {}", u32(reduction_impl)));
+        if (!impl::reduction_impl.is_set()) {
+            impl::autoselect_impl_reduction();
         }
+
+        return std::visit(
+            shambase::overloaded{
+                [&](impl::Fallback) {
+                    return max_usm_fallback(sched, buf1, start_id, end_id);
+                },
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+                [&](impl::GroupReduction cfg) {
+                    return max_usm_group(sched, buf1, start_id, end_id, cfg.group_size);
+                },
+#endif
+            },
+            impl::reduction_impl.get());
     }
 
 #ifndef DOXYGEN

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Top 10 codegen time</title>
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.3/plotly.min.js"></script>
+    <link rel="stylesheet" href="css/metrics-chart.css" />
+  </head>
+  <body>
+    <div id="status">Loading codegen time history…</div>
+    <div id="chart"></div>
+    <script src="js/metrics-chart.js"></script>
+    <script>
+      MetricsChart.mount({
+        urls: MetricsChart.metricsUrls("codegen_time_top10.json"),
+        loading: "Loading codegen time history…",
+        empty: "The codegen time dataset is empty.",
+        error: "Could not load codegen time history.",
+        events: true,
+        makePlot: function (payload, theme) {
+          const traces = MetricsChart.plotlyTraces(payload);
+          return {
+            traces: traces,
+            layout: MetricsChart.themedLayout(payload.layout, theme, { traces: traces }),
+          };
+        },
+      });
+    </script>
+  </body>
+</html>

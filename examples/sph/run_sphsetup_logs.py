@@ -24,9 +24,9 @@ import json
 import os
 
 import matplotlib.colors as mcolors
-import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import gridspec
 
 import shamrock
 
@@ -50,7 +50,7 @@ bmax = (0.6, 0.6, 0.6)
 
 N_target = 1e6
 scheduler_split_val = int(1e6 / 16)
-scheduler_merge_val = int(1)
+scheduler_merge_val = 1
 
 # render example
 """
@@ -213,7 +213,7 @@ def print_setup_logs(filepath, name_png_prefix):
 
 # sphinx_gallery_multi_image = "single"
 
-import matplotlib.animation as animation
+from matplotlib import animation
 from shamrock.utils.plot import show_image_sequence
 
 # %%

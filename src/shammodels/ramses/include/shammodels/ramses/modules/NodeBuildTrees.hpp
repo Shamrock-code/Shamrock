@@ -18,8 +18,8 @@
 
 #include "shammodels/ramses/solvegraph/TreeEdge.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include "shamtree/RadixTree.hpp"
 
 namespace shammodels::basegodunov::modules {

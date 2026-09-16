@@ -105,12 +105,6 @@ struct KernelUpdateDerivsMonofluidTVA {
         // eq 51, Hutchison 2018
         Tscal ds_j_dt_a = Tscal{-0.5} * term1 + (s_j_a / (2 * rho_a * omega_a)) * term2;
 
-        // if we dip in the negative range do not dip further
-        ds_j_dt_a *= (s_j_a < 0 && ds_j_dt_a < 0) ? 0 : 1;
-
-        // restore it slowly to 0
-        ds_j_dt_a += (s_j_a < 0) ? -s_j_a / (10 * Ttilde_sj_a) : 0;
-
         ds_j_dt[thread_id] = ds_j_dt_a;
     }
 };
@@ -138,7 +132,7 @@ void shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>::
     // ensure that the output edges are of size part_counts (output without ghosts zones)
     edges.ds_j_dt.ensure_sizes(part_counts);
 
-    const Tscal pmass = edges.gpart_mass.value;
+    const Tscal pmass = edges.gpart_mass.data;
 
     using ComputeKernel = KernelUpdateDerivsMonofluidTVA<Tvec, SPHKernel>;
 

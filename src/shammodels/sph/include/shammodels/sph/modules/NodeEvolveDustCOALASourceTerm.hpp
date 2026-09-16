@@ -18,18 +18,18 @@
 
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <experimental/mdspan>
 #include <vector>
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* scalars */                                                                                  \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, rhodust_eps)                                    \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, dv_max)                                         \
-    X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, massgrid)                          \
-    X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, tensor_tabflux_coag)               \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, rhodust_eps)                                     \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, dv_max)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<std::vector<Tscal>>, massgrid)                           \
+    X_RO(shamrock::solvergraph::IDataEdge<std::vector<Tscal>>, tensor_tabflux_coag)                \
                                                                                                    \
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \

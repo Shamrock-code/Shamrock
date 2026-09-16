@@ -11,7 +11,7 @@
  * @file Model.cpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief GSPH Model implementation
  */
 
@@ -26,6 +26,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/setup/generators.hpp"
 #include "shammodels/gsph/Model.hpp"
+#include "shammodels/gsph/modules/ComputeLoadBalanceValue.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -66,6 +67,59 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::init() {
     solver.init_solver_graph();
 
     solver.ensure_time_state_edges();
+}
+
+template<class Tvec>
+inline void post_insert_data(PatchScheduler &sched) {
+    StackEntry stack_loc{};
+
+    sched.scheduler_step(false, false);
+
+    auto [m, M] = sched.get_box_tranform<Tvec>();
+
+    {
+        StackEntry stack_loc{};
+        SerialPatchTree<Tvec> sptree(
+            sched.patch_tree, sched.get_sim_box().get_patch_transform<Tvec>());
+        shamrock::ReattributeDataUtility reatrib(sched);
+        sptree.attach_buf();
+        reatrib.reatribute_patch_objects(sptree, "xyz");
+        sched.check_patchdata_locality_correctness();
+    }
+
+    sched.scheduler_step(true, true);
+
+    {
+        StackEntry stack_loc{};
+        SerialPatchTree<Tvec> sptree(
+            sched.patch_tree, sched.get_sim_box().get_patch_transform<Tvec>());
+
+        shamrock::ReattributeDataUtility reatrib(sched);
+        sptree.attach_buf();
+        reatrib.reatribute_patch_objects(sptree, "xyz");
+        sched.check_patchdata_locality_correctness();
+    }
+
+    std::string log = "";
+
+    using namespace shamrock::patch;
+
+    u32 smallest_count = u32_max;
+    u32 largest_count  = 0;
+
+    sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
+        u32 tmp        = pdat.get_obj_cnt();
+        smallest_count = sham::min(tmp, smallest_count);
+        largest_count  = sham::max(tmp, largest_count);
+    });
+
+    smallest_count = shamalgs::collective::allreduce_min(smallest_count);
+    largest_count  = shamalgs::collective::allreduce_max(largest_count);
+
+    if (shamcomm::world_rank() == 0) {
+        logger::info_ln(
+            "Model", "current particle counts : min = ", smallest_count, "max = ", largest_count);
+    }
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -163,7 +217,7 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
                 return;
             }
 
-            log += shambase::format(
+            log += sham::format(
                 "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
                 shamcomm::world_rank(),
                 p.id_patch,
@@ -194,14 +248,10 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
         });
 
         sched.check_patchdata_locality_correctness();
-        sched.scheduler_step(true, true);
+        modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
+            .update_load_balancing();
+        post_insert_data<Tvec>(sched);
     }
-
-    sched.owned_patch_id = sched.patch_list.build_local();
-    sched.patch_list.build_local_idx_map();
-    sched.update_local_load_value([&](Patch p) {
-        return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
-    });
 
     shamlog_debug_ln("setup", log);
 }
@@ -272,7 +322,7 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
                 return;
             }
 
-            log += shambase::format(
+            log += sham::format(
                 "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
                 shamcomm::world_rank(),
                 p.id_patch,
@@ -303,14 +353,10 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
         });
 
         sched.check_patchdata_locality_correctness();
-        sched.scheduler_step(true, true);
+        modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
+            .update_load_balancing();
+        post_insert_data<Tvec>(sched);
     }
-
-    sched.owned_patch_id = sched.patch_list.build_local();
-    sched.patch_list.build_local_idx_map();
-    sched.update_local_load_value([&](Patch p) {
-        return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
-    });
 
     shamlog_debug_ln("setup", log);
 }

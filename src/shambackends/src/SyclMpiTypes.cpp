@@ -14,6 +14,7 @@
  */
 
 #include "shambackends/SyclMpiTypes.hpp"
+#include "shambase/exception.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 
@@ -96,7 +97,7 @@ void check_offset_validity() {
     std::ptrdiff_t s0   = reinterpret_cast<std::ptrdiff_t>(&a.s0());
 
     if (s0 - base != 0) {
-        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+        throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
             "Offset is not valid for type {}, base = {}, s0 = {}", typeid(T).name(), base, s0));
     }
 }

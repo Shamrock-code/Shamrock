@@ -31,7 +31,8 @@ namespace shammodels::sph::modules {
     template<class Tvec, class Tfield, template<class> class SPHKernel>
     shamrock::solvergraph::Field<Tfield> RenderFieldGetter<Tvec, Tfield, SPHKernel>::build_field(
         std::string field_name,
-        std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>> custom_getter) {
+        std::optional<std::function<py::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
+            custom_getter) {
 
         if (field_name != "custom" && custom_getter.has_value()) {
             throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -133,8 +134,8 @@ namespace shammodels::sph::modules {
 
                 return unity;
             } else if (field_name == "custom" && custom_getter.has_value()) {
-                std::function<py::array_t<Tfield>(size_t, pybind11::dict &)> &field_source_getter
-                    = custom_getter.value();
+                std::function<py::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>
+                    &field_source_getter = custom_getter.value();
 
                 auto custom = make_field(1, "custom", "custom");
 
@@ -148,11 +149,11 @@ namespace shammodels::sph::modules {
 
                     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-                    py::dict dic_out               = shamrock::pdat_to_dic(pdat);
+                    shamrock::PatchDataLazyGetter lazy_getter(pdat);
                     std::vector<Tfield> acc_custom = buf_custom.copy_to_stdvec();
 
                     py::array_t<Tfield> custom_array
-                        = field_source_getter(pdat.get_obj_cnt(), dic_out);
+                        = field_source_getter(pdat.get_obj_cnt(), lazy_getter);
 
                     if (acc_custom.size() != custom_array.size()) {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -208,10 +209,10 @@ namespace shammodels::sph::modules {
     auto RenderFieldGetter<Tvec, Tfield, SPHKernel>::runner_function(
         std::string field_name,
         lamda_runner lambda,
-        std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>> custom_getter)
-        -> sham::DeviceBuffer<Tfield> {
+        std::optional<std::function<py::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
+            custom_getter) -> sham::DeviceBuffer<Tfield> {
 
-        auto field = build_field(field_name, custom_getter);
+        auto field = build_field(std::move(field_name), std::move(custom_getter));
 
         auto field_source_getter
             = [&](const shamrock::patch::Patch cur_p,

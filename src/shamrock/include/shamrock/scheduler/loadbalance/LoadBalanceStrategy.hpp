@@ -297,7 +297,7 @@ namespace shamrock::scheduler {
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "LoadBalance",
-                shambase::format(
+                sham::format(
                     R"=(Summary (strategy = {0:}):
  - strategy "psweep"      : max = {1:.1f} min = {2:.1f} factor = {3:}
  - strategy "round robin" : max = {4:.1f} min = {5:.1f} factor = {6:})=",

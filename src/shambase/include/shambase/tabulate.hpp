@@ -53,7 +53,7 @@ namespace shambase {
         void add_double_rule() { table_lines.push_back(double_rule{}); }
         void add_rulled_data(const std::vector<std::string> &colnames) {
             if (colnames.size() != cols_count) {
-                throw make_except_with_loc<std::invalid_argument>(shambase::format(
+                throw make_except_with_loc<std::invalid_argument>(sham::format(
                     "the number of column does not match colnames.size() != cols_count ({} != {})",
                     colnames.size(),
                     cols_count));
@@ -62,7 +62,7 @@ namespace shambase {
         }
         void add_data(const std::vector<std::string> &cols, positionning position) {
             if (cols.size() != cols_count) {
-                throw make_except_with_loc<std::invalid_argument>(shambase::format(
+                throw make_except_with_loc<std::invalid_argument>(sham::format(
                     "the number of column does not match cols.size() != cols_count ({} != {})",
                     cols.size(),
                     cols_count));
@@ -96,18 +96,18 @@ namespace shambase {
                     print += "\n|";
                     for (u32 i = 0; i < cols_count; i++) {
                         if (data_line->position == left) {
-                            print += shambase::format(" {:<{}} |", data_line->cols[i], widths[i]);
+                            print += sham::format(" {:<{}} |", data_line->cols[i], widths[i]);
                         } else if (data_line->position == right) {
-                            print += shambase::format(" {:>{}} |", data_line->cols[i], widths[i]);
+                            print += sham::format(" {:>{}} |", data_line->cols[i], widths[i]);
                         } else if (data_line->position == center) {
-                            print += shambase::format(" {:^{}} |", data_line->cols[i], widths[i]);
+                            print += sham::format(" {:^{}} |", data_line->cols[i], widths[i]);
                         }
                     }
 
                 } else if (rulled_data *head_and_ruller_line = std::get_if<rulled_data>(&line)) {
                     std::string tmp = "+";
                     for (u32 i = 0; i < cols_count; i++) {
-                        tmp += shambase::format(
+                        tmp += sham::format(
                             " {:^{}} +", head_and_ruller_line->colnames[i], widths[i]);
                     }
 
@@ -133,14 +133,12 @@ namespace shambase {
                 } else if (rule *rule_line = std::get_if<rule>(&line)) {
                     print += "\n+";
                     for (u32 i = 0; i < cols_count; i++) {
-                        print += shambase::format(
-                            "-{:<{}}-+", std::string(widths[i], '-'), widths[i]);
+                        print += sham::format("-{:<{}}-+", std::string(widths[i], '-'), widths[i]);
                     }
                 } else if (double_rule *double_rule_line = std::get_if<double_rule>(&line)) {
                     print += "\n+";
                     for (u32 i = 0; i < cols_count; i++) {
-                        print += shambase::format(
-                            "={:<{}}=+", std::string(widths[i], '='), widths[i]);
+                        print += sham::format("={:<{}}=+", std::string(widths[i], '='), widths[i]);
                     }
                 }
             }

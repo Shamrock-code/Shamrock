@@ -21,15 +21,19 @@
 
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
+#include "shammodels/common/SolverLog.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/solvergraph/IDataEdgeSerializable.hpp"
+#include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
 #include "shamunits/Constants.hpp"
 #include "shamunits/UnitSystem.hpp"
 #include <algorithm>
+#include <functional>
+#include <optional>
+#include <vector>
 
 namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>
@@ -48,6 +52,7 @@ namespace shammodels::basegodunov {
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
         Config solver_config;
+        SolverLog solve_logs;
 
         SolverStorage<Tvec, TgridVec, u_morton> storage{};
 
@@ -91,6 +96,12 @@ namespace shammodels::basegodunov {
                 edge->data = 0;
             }
         }
+
+        struct SolverStepCallback {
+            std::optional<std::function<void(void)>> step_begin_callback;
+            std::optional<std::function<void(void)>> step_end_callback;
+        };
+        std::vector<SolverStepCallback> timestep_callbacks{};
 
         inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
 

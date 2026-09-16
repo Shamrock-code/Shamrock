@@ -121,9 +121,9 @@ namespace shammodels::basegodunov::modules {
         shambase::replace_all(tex, "{block_max}", block_max);
         shambase::replace_all(tex, "{block_cell_sizes}", block_cell_sizes);
         shambase::replace_all(tex, "{cell0block_aabb_lower}", cell0block_aabb_lower);
-        shambase::replace_all(tex, "{block_nside}", shambase::format("{}", block_nside));
+        shambase::replace_all(tex, "{block_nside}", sham::format("{}", block_nside));
         shambase::replace_all(
-            tex, "{grid_coord_to_pos_fact}", shambase::format("{}", grid_coord_to_pos_fact));
+            tex, "{grid_coord_to_pos_fact}", sham::format("{}", grid_coord_to_pos_fact));
 
         return tex;
     }

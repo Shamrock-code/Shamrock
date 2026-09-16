@@ -209,4 +209,29 @@ template shamtree::KarrasRadixTreeAABB<f64_3> shamtree::compute_tree_aabb_from_p
     shamtree::KarrasRadixTreeAABB<f64_3> &&recycled_tree_aabb,
     sham::DeviceBuffer<f64_3> &min,
     sham::DeviceBuffer<f64_3> &max);
+
+template shamtree::KarrasRadixTreeAABB<i64_3> shamtree::prepare_karras_radix_tree_aabb<i64_3>(
+    const KarrasRadixTree &tree, shamtree::KarrasRadixTreeAABB<i64_3> &&recycled_tree_aabb);
+
+template void shamtree::propagate_aabb_up<i64_3>(
+    shamtree::KarrasRadixTreeAABB<i64_3> &tree_aabb, const KarrasRadixTree &tree);
+
+template shamtree::KarrasRadixTreeAABB<i64_3> shamtree::compute_tree_aabb<i64_3>(
+    const KarrasRadixTree &tree,
+    shamtree::KarrasRadixTreeAABB<i64_3> &&recycled_tree_aabb,
+    const std::function<void(shamtree::KarrasRadixTreeAABB<i64_3> &, u32)> &fct_fill_leaf);
+
+template shamtree::KarrasRadixTreeAABB<i64_3> shamtree::compute_tree_aabb_from_positions<i64_3>(
+    const KarrasRadixTree &tree,
+    const LeafCellIterator &cell_it,
+    shamtree::KarrasRadixTreeAABB<i64_3> &&recycled_tree_aabb,
+    sham::DeviceBuffer<i64_3> &positions);
+
+template shamtree::KarrasRadixTreeAABB<i64_3> shamtree::compute_tree_aabb_from_position_ranges<
+    i64_3>(
+    const KarrasRadixTree &tree,
+    const LeafCellIterator &cell_it,
+    shamtree::KarrasRadixTreeAABB<i64_3> &&recycled_tree_aabb,
+    sham::DeviceBuffer<i64_3> &min,
+    sham::DeviceBuffer<i64_3> &max);
 #endif

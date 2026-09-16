@@ -10,8 +10,9 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shamsys/Log.hpp"
 #include "shamtest/shamtest.hpp"
+#include <iostream>
 
 NEW_TEST(Unittest, "shamsys/Log", 1) {
 
-    std::cout << shambase::format("{} 1", f64_3{0, 1, 2}) << std::endl;
+    std::cout << sham::format("{} 1", f64_3{0, 1, 2}) << std::endl;
 }

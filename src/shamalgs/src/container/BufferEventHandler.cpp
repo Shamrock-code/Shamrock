@@ -29,8 +29,8 @@ void shamalgs::BufferEventHandler::add_read_dependancies(std::vector<sycl::event
     if (!up_to_date_events) {
         std::string err
             = get_hash_log()
-              + "you want to create a event depedancy, but the event state was not updated "
-                "after last event usage";
+              + "cannot create a read dependency: the event state was not updated after the "
+                "last event usage";
 
         throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
@@ -49,8 +49,8 @@ void shamalgs::BufferEventHandler::add_read_write_dependancies(
     if (!up_to_date_events) {
         std::string err
             = get_hash_log()
-              + "you want to create a event depedancy, but the event state was not updated "
-                "after last event usage";
+              + "cannot create a read-write dependency: the event state was not updated after "
+                "the last event usage";
 
         throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
@@ -75,7 +75,8 @@ void shamalgs::BufferEventHandler::register_read_event(const sycl::event &e) {
     if (up_to_date_events) {
         std::string err
             = (get_hash_log()
-               + "you are trying to register an event without having fetched one previously");
+               + "cannot register a read event: no dependency was fetched before this "
+                 "registration");
 
         throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
@@ -83,7 +84,8 @@ void shamalgs::BufferEventHandler::register_read_event(const sycl::event &e) {
     if (last_event_create != READ) {
         std::string err
             = (get_hash_log()
-               + "you want to register a read event but the last dependency was not in read mode");
+               + "cannot register a read event: the last dependency created was not a read "
+                 "dependency");
 
         throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
@@ -99,7 +101,8 @@ void shamalgs::BufferEventHandler::register_read_write_event(const sycl::event &
     if (up_to_date_events) {
         std::string err
             = (get_hash_log()
-               + "you are trying to register an event without having fetched one previously");
+               + "cannot register a read-write event: no dependency was fetched before this "
+                 "registration");
 
         throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
@@ -107,8 +110,8 @@ void shamalgs::BufferEventHandler::register_read_write_event(const sycl::event &
     if (last_event_create != READ_WRITE) {
         std::string err
             = (get_hash_log()
-               + "you want to register a read-write event but the last dependency was not in "
-                 "read-write mode");
+               + "cannot register a read-write event: the last dependency created was not a "
+                 "read-write dependency");
 
         throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
@@ -122,7 +125,8 @@ void shamalgs::BufferEventHandler::synchronize() {
     shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "synchronize");
 
     if (!up_to_date_events) {
-        std::string err = (get_hash_log() + "the events are not up to date");
+        std::string err
+            = (get_hash_log() + "cannot synchronize: the event state is not up to date");
 
         throw shambase::make_except_with_loc<std::runtime_error>(err);
     }

@@ -35,6 +35,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
+#include "shammodels/gsph/config/ForceFormulationConfig.hpp"
 #include "shammodels/gsph/config/ReconstructConfig.hpp"
 #include "shammodels/gsph/config/RiemannConfig.hpp"
 #include "shammodels/sph/config/BCConfig.hpp" // Reuse boundary conditions from SPH
@@ -72,6 +73,26 @@ namespace shammodels::gsph {
     struct CFLConfig {
         Tscal cfl_cour  = 0.3;  ///< CFL condition for the courant factor
         Tscal cfl_force = 0.25; ///< CFL condition for the force
+    };
+
+    struct SmoothingLengthConfig {
+        struct DensityBased {};
+        struct DensityBasedNeighLim {
+            u32 max_neigh_count = 500;
+        };
+
+        using mode = std::variant<DensityBased, DensityBasedNeighLim>;
+
+        mode config = DensityBased{};
+
+        void set_density_based() { config = DensityBased{}; }
+        void set_density_based_neigh_lim(u32 max_neigh_count) {
+            config = DensityBasedNeighLim{max_neigh_count};
+        }
+
+        bool is_density_based_neigh_lim() const {
+            return std::holds_alternative<DensityBasedNeighLim>(config);
+        }
     };
 
 } // namespace shammodels::gsph
@@ -129,6 +150,10 @@ struct shammodels::gsph::SolverConfig {
 
     inline void set_riemann_hllc() { riemann_config.set_hllc(); }
 
+    inline void set_riemann_exact(Tscal tol = Tscal{1e-8}, u32 max_iter = 100) {
+        riemann_config.set_exact(tol, max_iter);
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Riemann Solver Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,6 +178,23 @@ struct shammodels::gsph::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Reconstruction Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Force Formulation Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using ForceFormulationConfig = ForceFormulationConfig<Tvec>;
+    ForceFormulationConfig force_formulation_config;
+
+    inline void set_force_cha_whitworth() { force_formulation_config.set_cha_whitworth(); }
+
+    inline void set_force_inutsuka_v2() { force_formulation_config.set_inutsuka_v2(); }
+
+    inline bool is_force_inutsuka_v2() const { return force_formulation_config.is_inutsuka_v2(); }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Force Formulation Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -257,11 +299,42 @@ struct shammodels::gsph::SolverConfig {
     // Solver behavior config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    Tscal htol_up_coarse_cycle = 1.1;  ///< Factor for neighbors search
-    Tscal htol_up_fine_cycle   = 1.1;  ///< Max smoothing length evolution per subcycle
-    Tscal epsilon_h            = 1e-6; ///< Convergence criteria for smoothing length
-    u32 h_iter_per_subcycles   = 50;   ///< Max iterations per subcycle
-    u32 h_max_subcycles_count  = 100;  ///< Max subcycles before crash
+    bool combined_dtdiv_divcurlv_compute = false; ///< Use the combined dtdivv and divcurlv compute
+    /// Factor applied to the smoothing length for neighbors search (and ghost zone size)
+    /// @note This value must be larger or equal to htol_up_fine_cycle
+    Tscal htol_up_coarse_cycle = 1.1; ///< Factor for neighbors search
+    /// Maximum factor of the smoothing length evolution per subcycles
+    Tscal htol_up_fine_cycle  = 1.1;
+    Tscal epsilon_h           = 1e-6; ///< Convergence criteria for the smoothing length
+    u32 h_iter_per_subcycles  = 50;   ///< Maximum number of iterations per subcycle
+    u32 h_max_subcycles_count = 100;  ///< Maximum number of subcycles before solver crash
+
+    SmoothingLengthConfig smoothing_length_config;
+
+    inline void set_smoothing_length_density_based() {
+        smoothing_length_config.set_density_based();
+    }
+    inline void set_smoothing_length_density_based_neigh_lim(u32 max_neigh_count) {
+        smoothing_length_config.set_density_based_neigh_lim(max_neigh_count);
+    }
+
+    bool enable_particle_reordering = false;
+    inline void set_enable_particle_reordering(bool enable) { enable_particle_reordering = enable; }
+    u64 particle_reordering_step_freq = 1000;
+    inline void set_particle_reordering_step_freq(u64 freq) {
+        if (freq == 0) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "particle_reordering_step_freq cannot be zero");
+        }
+        particle_reordering_step_freq = freq;
+    }
+
+    bool save_dt_to_fields = false;
+    inline void set_save_dt_to_fields(bool enable) { save_dt_to_fields = enable; }
+    inline bool should_save_dt_to_fields() const { return save_dt_to_fields; }
+
+    bool show_ghost_zone_graph = false;
+    inline void set_show_ghost_zone_graph(bool enable) { show_ghost_zone_graph = enable; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)
@@ -277,6 +350,7 @@ struct shammodels::gsph::SolverConfig {
         logger::raw_ln("gpart_mass  =", gpart_mass);
         riemann_config.print_status();
         reconstruct_config.print_status();
+        force_formulation_config.print_status();
         eos_config.print_status();
         logger::raw_ln("--------------------------------------");
     }
@@ -286,6 +360,14 @@ struct shammodels::gsph::SolverConfig {
         // Only check gamma for adiabatic EOS types
         if (is_eos_adiabatic() && get_eos_gamma() <= 1) {
             shambase::throw_with_loc<std::runtime_error>("gamma must be > 1 for adiabatic gas");
+        }
+
+        // InutsukaV2 is only wired into update_derivs_iterative()/update_derivs_exact();
+        // update_derivs_hllc() would silently fall back to ChaWhitworth otherwise.
+        if (force_formulation_config.is_inutsuka_v2() && riemann_config.is_hllc()) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "InutsukaV2 force formulation is not yet supported with the HLLC Riemann "
+                "solver. Use set_riemann_iterative() or set_riemann_exact() instead.");
         }
     }
 
@@ -318,6 +400,38 @@ namespace shammodels::gsph {
         j.at("cfl_force").get_to(p.cfl_force);
     }
 
+    // JSON serialization for SmoothingLengthConfig
+    inline void to_json(nlohmann::json &j, const SmoothingLengthConfig &p) {
+        if (const SmoothingLengthConfig::DensityBased *conf
+            = std::get_if<SmoothingLengthConfig::DensityBased>(&p.config)) {
+            j = {
+                {"type", "density_based"},
+            };
+
+        } else if (
+            const SmoothingLengthConfig::DensityBasedNeighLim *conf
+            = std::get_if<SmoothingLengthConfig::DensityBasedNeighLim>(&p.config)) {
+
+            j = {
+                {"type", "density_based_neigh_lim"},
+                {"max_neigh_count", conf->max_neigh_count},
+            };
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    inline void from_json(const nlohmann::json &j, SmoothingLengthConfig &p) {
+        if (j.at("type").get<std::string>() == "density_based") {
+            p.config = SmoothingLengthConfig::DensityBased{};
+        } else if (j.at("type").get<std::string>() == "density_based_neigh_lim") {
+            p.config
+                = SmoothingLengthConfig::DensityBasedNeighLim{j.at("max_neigh_count").get<u32>()};
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
     template<class Tvec, template<class> class SPHKernel>
     inline void to_json(nlohmann::json &j, const SolverConfig<Tvec, SPHKernel> &p) {
         using T       = SolverConfig<Tvec, SPHKernel>;
@@ -336,6 +450,7 @@ namespace shammodels::gsph {
             {"unit_sys", p.unit_sys},
             {"riemann_config", p.riemann_config},
             {"reconstruct_config", p.reconstruct_config},
+            {"force_formulation_config", p.force_formulation_config},
             {"eos_config", p.eos_config},
             {"boundary_config", p.boundary_config},
             {"tree_reduction_level", p.tree_reduction_level},
@@ -345,6 +460,11 @@ namespace shammodels::gsph {
             {"epsilon_h", p.epsilon_h},
             {"h_iter_per_subcycles", p.h_iter_per_subcycles},
             {"h_max_subcycles_count", p.h_max_subcycles_count},
+            {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
+            {"enable_particle_reordering", p.enable_particle_reordering},
+            {"particle_reordering_step_freq", p.particle_reordering_step_freq},
+            {"set_save_dt_to_fields", p.save_dt_to_fields},
+            {"show_ghost_zone_graph", p.show_ghost_zone_graph},
         };
     }
 
@@ -380,6 +500,7 @@ namespace shammodels::gsph {
         _get_to_if_contains("unit_sys", p.unit_sys);
         _get_to_if_contains("riemann_config", p.riemann_config);
         _get_to_if_contains("reconstruct_config", p.reconstruct_config);
+        _get_to_if_contains("force_formulation_config", p.force_formulation_config);
         _get_to_if_contains("eos_config", p.eos_config);
         _get_to_if_contains("boundary_config", p.boundary_config);
         _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);

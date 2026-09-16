@@ -167,7 +167,7 @@ namespace shamcmdopt {
         for (auto &[n, arg, desc] : registered_opts) {
             if (name == n) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("The option {} is already registered", name));
+                    sham::format("The option {} is already registered", name));
             }
         }
 
@@ -209,7 +209,7 @@ namespace shamcmdopt {
     }
 
     void print_help() {
-        shambase::println(shambase::format("executable : {}", executable_name));
+        shambase::println(sham::format("executable : {}", executable_name));
 
         fmt::println("\nUsage :");
 
@@ -223,7 +223,7 @@ namespace shamcmdopt {
             std::string arg_print = arg.value_or("");
 
             shambase::println(
-                shambase::format_printf(
+                sham::format_printf(
                     "%-15s %-15s : %s", n.c_str(), arg_print.c_str(), desc.c_str()));
         }
         print_help_env_var();

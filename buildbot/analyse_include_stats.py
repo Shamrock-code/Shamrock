@@ -13,7 +13,7 @@ args = parser.parse_args()
 
 
 def modify_command(cmd, output):
-    return re.sub(r"(-o [^ ]+) ", "-E -o {} ".format(output), cmd)
+    return re.sub(r"(-o [^ ]+) ", f"-E -o {output} ", cmd)
 
 
 def get_file_line_count(fname):
@@ -33,7 +33,7 @@ def analyse_file(f):
 
     md5 = hashlib.md5()
     md5.update(fname.encode())
-    hash_ = "{0}".format(md5.hexdigest())
+    hash_ = f"{md5.hexdigest()}"
 
     fout = "test" + hash_
 
@@ -50,7 +50,7 @@ def analyse_file(f):
 
     os.system("rm " + fout)
 
-    print(fname_relat, ": src : {} -E {}".format(line_src, line_src_preproc))
+    print(fname_relat, f": src : {line_src} -E {line_src_preproc}")
 
     return [fname_relat, line_src, line_src_preproc]
 
@@ -74,7 +74,7 @@ print(
     "----------------------------------------------------------------------    ---------   ---------"
 )
 for [name, src, preproc] in print_db:
-    tmp = "{:70s} {:10} {:10}".format(name, src, preproc)
+    tmp = f"{name:70s} {src:10} {preproc:10}"
     print(tmp)
 
     sum_l += src

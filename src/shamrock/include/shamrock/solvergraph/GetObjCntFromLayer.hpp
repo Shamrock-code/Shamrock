@@ -17,9 +17,9 @@
  *
  */
 
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/IPatchDataLayerRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
 
 namespace shamrock::solvergraph {

@@ -26,6 +26,7 @@
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
+#include "shammodels/ramses/config/enum_AMRInterpMode.hpp"
 #include "shammodels/ramses/config/enum_DragSolverMode.hpp"
 #include "shammodels/ramses/config/enum_DustRiemannSolverMode.hpp"
 #include "shammodels/ramses/config/enum_GravityMode.hpp"
@@ -34,6 +35,7 @@
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include <nlohmann/json.hpp>
 #include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
@@ -87,27 +89,52 @@ namespace shammodels::basegodunov {
         inline bool is_gravity_on() { return gravity_mode != NoGravity; }
     };
 
-    template<class Tvec>
-    struct SolverStatusVar;
-
     template<class Tvec, class TgridVec>
     struct AMRMode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
         struct None {};
+
         struct DensityBased {
             Tscal crit_mass;
         };
 
-        using mode = std::variant<None, DensityBased>;
+        struct PseudoGradientBased {
+            Tscal error_min;
+            Tscal error_max;
+        };
+
+        struct JeansLengthBased {
+            u32 N_J   = 4;
+            Tscal T_0 = 10.;
+        };
+
+        struct ShearBased {
+            Tscal threshold;
+        };
+
+        using mode
+            = std::variant<None, DensityBased, PseudoGradientBased, JeansLengthBased, ShearBased>;
 
         mode config = None{};
+
+        bool old_amr = true;
+
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
+        void set_refine_pseudo_gradient_based(Tscal error_min, Tscal error_max) {
+            config = PseudoGradientBased{error_min, error_max};
+        }
 
-        bool need_level_zero_compute() { return false; }
-        bool need_amr_level_compute() { return false; }
+        void set_refine_jeans_length_based(u32 N_J, Tscal T_0) {
+            config = JeansLengthBased{N_J, T_0};
+        }
+
+        void set_refine_shear_based(Tscal thresh) { config = ShearBased{thresh}; }
+
+        bool need_level_zero_compute() { return !old_amr; }
+        bool need_amr_level_compute() { return !old_amr; }
     };
 
     struct BCConfig {
@@ -131,16 +158,6 @@ namespace shammodels::basegodunov {
 
 }; // namespace shammodels::basegodunov
 
-template<class Tvec>
-struct shammodels::basegodunov::SolverStatusVar {
-
-    /// The type of the scalar used to represent the quantities
-    using Tscal = shambase::VecComponent<Tvec>;
-
-    Tscal time = 0; ///< Current time
-    Tscal dt   = 0; ///< Current time step
-};
-
 template<class Tvec, class TgridVec>
 struct shammodels::basegodunov::SolverConfig {
 
@@ -158,6 +175,8 @@ struct shammodels::basegodunov::SolverConfig {
     RiemannSolverMode riemann_config  = HLL;
     SlopeMode slope_config            = VanLeer_sym;
     bool face_half_time_interpolation = true;
+
+    AMRInterpMode amr_interp_mode = FIRST_ORDER;
 
     inline bool should_compute_rho_mean() { return is_gravity_on() && is_boundary_periodic(); }
 
@@ -238,31 +257,19 @@ struct shammodels::basegodunov::SolverConfig {
     PatchSchedulerConfig scheduler_conf = {};
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables
+    // CFL Configuration (config)
     //////////////////////////////////////////////////////////////////////////////////////////////
-
-    /// Alias to SolverStatusVar type
-    using SolverStatusVar = SolverStatusVar<Tvec>;
-    /// The time sate of the simulation
-    SolverStatusVar time_state;
-    /// Set the current time
-    inline void set_time(Tscal t) { time_state.time = t; }
-    /// Set the time step for the next iteration
-    inline void set_next_dt(Tscal dt) { time_state.dt = dt; }
-    /// Get the current time
-    inline Tscal get_time() { return time_state.time; }
-    /// Get the time step for the next iteration
-    inline Tscal get_dt() { return time_state.dt; }
 
     Tscal Csafe = 0.9;
+
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables (END)
+    // CFL Configuration (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     inline void check_config() {
         if (grid_coord_to_pos_fact <= 0) {
-            shambase::throw_with_loc<std::runtime_error>(shambase::format(
-                "grid_coord_to_pos_fact must be > 0, got {}", grid_coord_to_pos_fact));
+            shambase::throw_with_loc<std::runtime_error>(
+                sham::format("grid_coord_to_pos_fact must be > 0, got {}", grid_coord_to_pos_fact));
         }
 
         if (is_dust_on()) {
@@ -274,7 +281,7 @@ struct shammodels::basegodunov::SolverConfig {
             u32 mode = gravity_config.gravity_mode;
 
             shamrock::experimental_feature_check(
-                shambase::format(
+                sham::format(
                     "self gravity mode is not enabled but gravity mode is set to {} (> 0 whith 0 "
                     "== "
                     "NoGravity mode)",
@@ -283,17 +290,21 @@ struct shammodels::basegodunov::SolverConfig {
 
         if (!(eos_gamma > 1.0)) {
             shambase::throw_with_loc<std::invalid_argument>(
-                shambase::format("Gamma must be > 1, currently Gamma = {}", eos_gamma));
+                sham::format("Gamma must be > 1, currently Gamma = {}", eos_gamma));
         }
 
         if (is_gas_passive_scalar_on()) {
             ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental"));
             shamrock::experimental_feature_check(
-                shambase::format(
+                sham::format(
                     "gas passive scalars mode is not enabled but gas passive scalars mode is set "
                     "to {}"
                     "> 0",
                     npscal_gas_config.npscal_gas));
+        }
+
+        if (!amr_mode.old_amr) {
+            shamrock::experimental_feature_check("new AMR is experimental");
         }
     }
 
@@ -302,16 +313,111 @@ struct shammodels::basegodunov::SolverConfig {
 
 namespace shammodels::basegodunov {
 
-    template<class Tvec>
-    inline void to_json(nlohmann::json &j, const SolverStatusVar<Tvec> &p) {
-        j = nlohmann::json{{"time", p.time}, {"dt", p.dt}};
+    inline void to_json(nlohmann::json &j, const BCConfig::GhostType &e) {
+        switch (e) {
+        case BCConfig::GhostType::Periodic  : j = "periodic"; break;
+        case BCConfig::GhostType::Reflective: j = "reflective"; break;
+        case BCConfig::GhostType::Outflow   : j = "outflow"; break;
+        default:
+            shambase::throw_with_loc<std::runtime_error>(
+                "Invalid BCConfig::GhostType value: " + std::to_string(static_cast<int>(e)));
+        }
     }
 
-    template<class Tvec>
-    inline void from_json(const nlohmann::json &j, SolverStatusVar<Tvec> &p) {
-        using Tscal = typename SolverStatusVar<Tvec>::Tscal;
-        j.at("time").get_to<Tscal>(p.time);
-        j.at("dt").get_to<Tscal>(p.dt);
+    inline void from_json(const nlohmann::json &j, BCConfig::GhostType &e) {
+        const std::string type = j.get<std::string>();
+        if (type == "periodic") {
+            e = BCConfig::GhostType::Periodic;
+        } else if (type == "reflective") {
+            e = BCConfig::GhostType::Reflective;
+        } else if (type == "outflow") {
+            e = BCConfig::GhostType::Outflow;
+        } else {
+            shambase::throw_with_loc<std::runtime_error>(
+                "Invalid BCConfig::GhostType value: " + type);
+        }
+    }
+
+    inline void to_json(nlohmann::json &j, const BCConfig &p) {
+        j = nlohmann::json{
+            {"ghost_type_x", p.ghost_type_x},
+            {"ghost_type_y", p.ghost_type_y},
+            {"ghost_type_z", p.ghost_type_z}};
+    }
+
+    inline void from_json(const nlohmann::json &j, BCConfig &p) {
+        j.at("ghost_type_x").get_to(p.ghost_type_x);
+        j.at("ghost_type_y").get_to(p.ghost_type_y);
+        j.at("ghost_type_z").get_to(p.ghost_type_z);
+    }
+
+    inline void to_json(nlohmann::json &j, const DragConfig &p) {
+        j = nlohmann::json{
+            {"drag_solver", p.drag_solver_config},
+            {"alphas", p.alphas},
+            {"enable_frictional_heating", p.enable_frictional_heating}};
+    }
+
+    inline void from_json(const nlohmann::json &j, DragConfig &p) {
+        j.at("drag_solver").get_to(p.drag_solver_config);
+        j.at("alphas").get_to(p.alphas);
+        j.at("enable_frictional_heating").get_to(p.enable_frictional_heating);
+    }
+
+    template<class Tvec, class TgridVec>
+    inline void amr_config_to_json(nlohmann::json &j, const AMRMode<Tvec, TgridVec> &p) {
+        using AMR = AMRMode<Tvec, TgridVec>;
+
+        if (std::holds_alternative<typename AMR::None>(p.config)) {
+            j = {{"type", "none"}};
+        } else if (const auto *cfg = std::get_if<typename AMR::DensityBased>(&p.config)) {
+            j = {{"type", "density_based"}, {"crit_mass", cfg->crit_mass}};
+        } else if (const auto *cfg = std::get_if<typename AMR::PseudoGradientBased>(&p.config)) {
+            j
+                = {{"type", "pseudo_gradient_based"},
+                   {"error_min", cfg->error_min},
+                   {"error_max", cfg->error_max}};
+        } else if (const auto *cfg = std::get_if<typename AMR::JeansLengthBased>(&p.config)) {
+            j = {{"type", "jeans_length_based"}, {"N_J", cfg->N_J}, {"T_0", cfg->T_0}};
+        } else if (const auto *cfg = std::get_if<typename AMR::ShearBased>(&p.config)) {
+            j = {{"type", "shear_based"}, {"threshold", cfg->threshold}};
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    template<class Tvec, class TgridVec>
+    inline void amr_config_from_json(const nlohmann::json &j, AMRMode<Tvec, TgridVec> &p) {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        const std::string type = j.at("type").get<std::string>();
+        if (type == "none") {
+            p.set_refine_none();
+        } else if (type == "density_based") {
+            p.set_refine_density_based(j.at("crit_mass").get<Tscal>());
+        } else if (type == "pseudo_gradient_based") {
+            p.set_refine_pseudo_gradient_based(
+                j.at("error_min").get<Tscal>(), j.at("error_max").get<Tscal>());
+        } else if (type == "jeans_length_based") {
+            p.set_refine_jeans_length_based(j.at("N_J").get<u32>(), j.at("T_0").get<Tscal>());
+        } else if (type == "shear_based") {
+            p.set_refine_shear_based(j.at("threshold").get<Tscal>());
+        } else {
+            shambase::throw_with_loc<std::runtime_error>("Invalid AMR mode type: " + type);
+        }
+    }
+
+    template<class Tvec, class TgridVec>
+    inline void to_json(nlohmann::json &j, const AMRMode<Tvec, TgridVec> &p) {
+        nlohmann::json config_j;
+        amr_config_to_json(config_j, p);
+        j = nlohmann::json{{"old_amr", p.old_amr}, {"config", config_j}};
+    }
+
+    template<class Tvec, class TgridVec>
+    inline void from_json(const nlohmann::json &j, AMRMode<Tvec, TgridVec> &p) {
+        j.at("old_amr").get_to(p.old_amr);
+        amr_config_from_json(j.at("config"), p);
     }
 
     /**

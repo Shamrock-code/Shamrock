@@ -15,13 +15,16 @@
 
 #include "shambase/aliases_float.hpp"
 #include "shambase/time.hpp"
-#include "shamalgs/ImplControl.hpp"
+#include "shamalgs/collective/string_histogram.hpp"
 #include "shamalgs/details/random/random.hpp"
+#include "shamalgs/impl_utils.hpp"
 #include "shamalgs/primitives/compute_histogram.hpp"
 #include "shamalgs/primitives/is_all_true.hpp"
 #include "shamalgs/primitives/reduction.hpp"
 #include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
 #include "shamalgs/primitives/segmented_sort_in_place.hpp"
+#include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
+#include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shamalgs/random.hpp"
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
@@ -29,6 +32,7 @@
 #include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <pybind11/complex.h>
+#include <utility>
 
 ON_PYTHON_INIT {
     auto &m = root_module;
@@ -50,13 +54,13 @@ ON_PYTHON_INIT {
         .def(
             "__str__",
             [](const shamalgs::impl_param &impl_param) {
-                return shambase::format(
+                return sham::format(
                     "impl_param(impl_name=\"{}\", params=\"{}\")",
                     impl_param.impl_name,
                     impl_param.params);
             })
         .def("__repr__", [](const shamalgs::impl_param &impl_param) {
-            return shambase::format(
+            return sham::format(
                 "impl_param(impl_name=\"{}\", params=\"{}\")",
                 impl_param.impl_name,
                 impl_param.params);
@@ -118,10 +122,9 @@ ON_PYTHON_INIT {
             return timer.elapsed_sec();
         });
 
-        shamalgs_module.def(
-            "set_impl_is_all_true", [](const std::string &impl, const std::string &param = "") {
-                shamalgs::primitives::impl::set_impl_is_all_true(impl, param);
-            });
+        shamalgs_module.def("set_impl_is_all_true", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_is_all_true(impl);
+        });
 
         shamalgs_module.def("get_current_impl_is_all_true", []() {
             return shamalgs::primitives::impl::get_current_impl_is_all_true();
@@ -129,6 +132,14 @@ ON_PYTHON_INIT {
 
         shamalgs_module.def("get_default_impl_list_is_all_true", []() {
             return shamalgs::primitives::impl::get_default_impl_list_is_all_true();
+        });
+
+        shamalgs_module.def("is_impl_set_is_all_true", []() {
+            return shamalgs::primitives::impl::is_impl_set_is_all_true();
+        });
+
+        shamalgs_module.def("autoselect_impl_is_all_true", []() {
+            shamalgs::primitives::impl::autoselect_impl_is_all_true();
         });
     }
 
@@ -158,10 +169,9 @@ ON_PYTHON_INIT {
             return timer.elapsed_sec();
         });
 
-        shamalgs_module.def(
-            "set_impl_reduction", [](const std::string &impl, const std::string &param = "") {
-                shamalgs::primitives::impl::set_impl_reduction(impl, param);
-            });
+        shamalgs_module.def("set_impl_reduction", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_reduction(impl);
+        });
 
         shamalgs_module.def("get_current_impl_reduction", []() {
             return shamalgs::primitives::impl::get_current_impl_reduction();
@@ -169,6 +179,14 @@ ON_PYTHON_INIT {
 
         shamalgs_module.def("get_default_impl_list_reduction", []() {
             return shamalgs::primitives::impl::get_default_impl_list_reduction();
+        });
+
+        shamalgs_module.def("is_impl_set_reduction", []() {
+            return shamalgs::primitives::impl::is_impl_set_reduction();
+        });
+
+        shamalgs_module.def("autoselect_impl_reduction", []() {
+            shamalgs::primitives::impl::autoselect_impl_reduction();
         });
     }
 
@@ -190,11 +208,9 @@ ON_PYTHON_INIT {
                 return timer.elapsed_sec();
             });
 
-        shamalgs_module.def(
-            "set_impl_scan_exclusive_sum_in_place",
-            [](const std::string &impl, const std::string &param = "") {
-                shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(impl, param);
-            });
+        shamalgs_module.def("set_impl_scan_exclusive_sum_in_place", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(impl);
+        });
 
         shamalgs_module.def("get_current_impl_scan_exclusive_sum_in_place", []() {
             return shamalgs::primitives::impl::get_current_impl_scan_exclusive_sum_in_place();
@@ -202,6 +218,14 @@ ON_PYTHON_INIT {
 
         shamalgs_module.def("get_default_impl_list_scan_exclusive_sum_in_place", []() {
             return shamalgs::primitives::impl::get_default_impl_list_scan_exclusive_sum_in_place();
+        });
+
+        shamalgs_module.def("is_impl_set_scan_exclusive_sum_in_place", []() {
+            return shamalgs::primitives::impl::is_impl_set_scan_exclusive_sum_in_place();
+        });
+
+        shamalgs_module.def("autoselect_impl_scan_exclusive_sum_in_place", []() {
+            shamalgs::primitives::impl::autoselect_impl_scan_exclusive_sum_in_place();
         });
     }
 
@@ -232,11 +256,9 @@ ON_PYTHON_INIT {
                 return timer.elapsed_sec();
             });
 
-        shamalgs_module.def(
-            "set_impl_segmented_sort_in_place",
-            [](const std::string &impl, const std::string &param = "") {
-                shamalgs::primitives::impl::set_impl_segmented_sort_in_place(impl, param);
-            });
+        shamalgs_module.def("set_impl_segmented_sort_in_place", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_segmented_sort_in_place(impl);
+        });
 
         shamalgs_module.def("get_current_impl_segmented_sort_in_place", []() {
             return shamalgs::primitives::impl::get_current_impl_segmented_sort_in_place();
@@ -247,43 +269,130 @@ ON_PYTHON_INIT {
         });
     }
 
-    py::class_<shamalgs::primitives::ImplControl>(shamalgs_module, "ImplControl")
-        .def(
-            "get_alg_name",
-            [](shamalgs::primitives::ImplControl &impl_control) {
-                return impl_control.get_alg_name();
-            })
-        .def(
-            "was_configured",
-            [](shamalgs::primitives::ImplControl &impl_control) {
-                return impl_control.was_configured(shamsys::instance::get_compute_scheduler_ptr());
-            })
-        .def(
-            "get_config",
-            [](shamalgs::primitives::ImplControl &impl_control) {
-                return impl_control.get_config(shamsys::instance::get_compute_scheduler_ptr());
-            })
-        .def(
-            "set_config",
-            [](shamalgs::primitives::ImplControl &impl_control, const std::string &config) {
-                impl_control.set_config(shamsys::instance::get_compute_scheduler_ptr(), config);
-            })
-        .def(
-            "get_default_config",
-            [](shamalgs::primitives::ImplControl &impl_control) {
-                return impl_control.get_default_config(
-                    shamsys::instance::get_compute_scheduler_ptr());
-            })
-        .def("get_avail_configs", [](shamalgs::primitives::ImplControl &impl_control) {
-            return impl_control.get_avail_configs(shamsys::instance::get_compute_scheduler_ptr());
+    { // sort_by_keys
+        shamalgs_module.def(
+            "sort_by_keys",
+            [](sham::DeviceBuffer<u32> &buf_key, sham::DeviceBuffer<u32> &buf_values, u32 len) {
+                shamalgs::primitives::sort_by_keys(buf_key, buf_values, len);
+            });
+
+        shamalgs_module.def(
+            "benchmark_sort_by_keys",
+            [](sham::DeviceBuffer<u32> &buf_key, sham::DeviceBuffer<u32> &buf_values, u32 len) {
+                auto buf_key_copy    = buf_key.copy();
+                auto buf_values_copy = buf_values.copy();
+
+                buf_key_copy.synchronize();
+                buf_values_copy.synchronize();
+
+                shambase::Timer timer;
+                timer.start();
+
+                shamalgs::primitives::sort_by_keys(buf_key_copy, buf_values_copy, len);
+                buf_key_copy.synchronize();
+                buf_values_copy.synchronize();
+
+                timer.stop();
+                return timer.elapsed_sec();
+            });
+
+        shamalgs_module.def("set_impl_sort_by_keys", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_sort_by_keys(impl);
         });
 
-    shamalgs_module.def(
-        "compute_histogram_impl",
-        []() -> shamalgs::primitives::ImplControl & {
-            return shamalgs::primitives::impl::compute_histogram_impl_control;
-        },
-        py::return_value_policy::reference);
+        shamalgs_module.def("get_current_impl_sort_by_keys", []() {
+            return shamalgs::primitives::impl::get_current_impl_sort_by_keys();
+        });
+
+        shamalgs_module.def("get_default_impl_list_sort_by_keys", []() {
+            return shamalgs::primitives::impl::get_default_impl_list_sort_by_keys();
+        });
+
+        shamalgs_module.def("is_impl_set_sort_by_keys", []() {
+            return shamalgs::primitives::impl::is_impl_set_sort_by_keys();
+        });
+
+        shamalgs_module.def("autoselect_impl_sort_by_keys", []() {
+            shamalgs::primitives::impl::autoselect_impl_sort_by_keys();
+        });
+    }
+
+    { // sort_by_key_pow2_len
+        shamalgs_module.def(
+            "sort_by_key_pow2_len",
+            [](sham::DeviceBuffer<u32> &buf_key, sham::DeviceBuffer<u32> &buf_values, u32 len) {
+                shamalgs::primitives::sort_by_key_pow2_len(
+                    shamsys::instance::get_compute_scheduler_ptr(), buf_key, buf_values, len);
+            });
+
+        shamalgs_module.def(
+            "benchmark_sort_by_key_pow2_len",
+            [](sham::DeviceBuffer<u32> &buf_key, sham::DeviceBuffer<u32> &buf_values, u32 len) {
+                auto buf_key_copy    = buf_key.copy();
+                auto buf_values_copy = buf_values.copy();
+
+                buf_key_copy.synchronize();
+                buf_values_copy.synchronize();
+
+                shambase::Timer timer;
+                timer.start();
+
+                shamalgs::primitives::sort_by_key_pow2_len(
+                    shamsys::instance::get_compute_scheduler_ptr(),
+                    buf_key_copy,
+                    buf_values_copy,
+                    len);
+                buf_key_copy.synchronize();
+                buf_values_copy.synchronize();
+
+                timer.stop();
+                return timer.elapsed_sec();
+            });
+
+        shamalgs_module.def("set_impl_sort_by_key_pow2_len", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_sort_by_key_pow2_len(impl);
+        });
+
+        shamalgs_module.def("get_current_impl_sort_by_key_pow2_len", []() {
+            return shamalgs::primitives::impl::get_current_impl_sort_by_key_pow2_len();
+        });
+
+        shamalgs_module.def("get_default_impl_list_sort_by_key_pow2_len", []() {
+            return shamalgs::primitives::impl::get_default_impl_list_sort_by_key_pow2_len();
+        });
+
+        shamalgs_module.def("is_impl_set_sort_by_key_pow2_len", []() {
+            return shamalgs::primitives::impl::is_impl_set_sort_by_key_pow2_len();
+        });
+
+        shamalgs_module.def("autoselect_impl_sort_by_key_pow2_len", []() {
+            shamalgs::primitives::impl::autoselect_impl_sort_by_key_pow2_len();
+        });
+    }
+
+    { // compute_histogram
+
+        shamalgs_module.def("set_impl_compute_histogram", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_compute_histogram(impl);
+        });
+
+        shamalgs_module.def("get_current_impl_compute_histogram", []() {
+            return shamalgs::primitives::impl::get_current_impl_compute_histogram();
+        });
+
+        shamalgs_module.def("get_default_impl_list_compute_histogram", []() {
+            return shamalgs::primitives::impl::get_default_impl_list_compute_histogram();
+        });
+
+        shamalgs_module.def("is_impl_set_compute_histogram", []() {
+            return shamalgs::primitives::impl::is_impl_set_compute_histogram();
+        });
+
+        shamalgs_module.def("autoselect_impl_compute_histogram", []() {
+            shamalgs::primitives::impl::autoselect_impl_compute_histogram(
+                shamsys::instance::get_compute_scheduler_ptr());
+        });
+    }
 
     shamalgs_module.def(
         "compute_histogram_basic_f64",
@@ -352,4 +461,23 @@ ON_PYTHON_INIT {
 
             return shambase::timeitfor(run);
         });
+
+    shamalgs_module.def(
+        "string_histogram",
+        [](const std::vector<std::string> &inputs, std::string delimiter, bool hash_based) {
+            return shamalgs::collective::string_histogram(inputs, std::move(delimiter), hash_based);
+        },
+        py::arg("inputs"),
+        py::arg("delimiter")  = "\n",
+        py::arg("hash_based") = false);
+
+    shamalgs_module.def(
+        "all_string_histogram",
+        [](const std::vector<std::string> &inputs, std::string delimiter, bool hash_based) {
+            return shamalgs::collective::all_string_histogram(
+                inputs, std::move(delimiter), hash_based);
+        },
+        py::arg("inputs"),
+        py::arg("delimiter")  = "\n",
+        py::arg("hash_based") = false);
 }

@@ -75,6 +75,7 @@ add_library(shamlib::shamlib ALIAS shamlib)
 
 target_link_libraries(shamlib PUBLIC shambackends)
 target_link_libraries(shamlib PUBLIC shammath)
+target_link_libraries(shamlib PUBLIC shamsolvergraph)
 target_link_libraries(shamlib PUBLIC shamphys)
 target_link_libraries(shamlib PUBLIC shamalgs)
 target_link_libraries(shamlib PUBLIC shamsys)

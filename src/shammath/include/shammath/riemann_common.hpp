@@ -1,0 +1,628 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file riemann_common.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
+ * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief Gas and dust conservative/primitive states and axis-transform helpers
+ *        shared by every gas and dust Riemann solver
+ * From original version by Thomas Guillet (T.A.Guillet@exeter.ac.uk)
+ */
+
+#include "shambackends/math.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/vec.hpp"
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <concepts>
+#include <iostream>
+#include <utility>
+namespace shammath {
+
+    /**
+     * @brief An equation of state paired with the flux/wave-speed operations a Riemann solver
+     *        needs, so that solvers (see riemann_rusanov.hpp, riemann_hll.hpp) can be written
+     *        once and instantiated for any fluid state satisfying this interface.
+     */
+    template<class T>
+    concept FluidStateSpec = requires(
+        const T &self,
+        typename T::Tcons cons,
+        typename T::Tprim prim,
+        typename T::Tvec n,
+        typename T::Tscal vn) {
+        typename T::Tvec;
+        typename T::Tscal;
+        typename T::Tprim;
+        typename T::Tcons;
+        { self.cons_to_prim(cons) } -> std::convertible_to<typename T::Tprim>;
+        { self.prim_to_cons(prim) } -> std::convertible_to<typename T::Tcons>;
+        { self.sound_speed(prim) } -> std::convertible_to<typename T::Tscal>;
+        { self.vn(prim, n) } -> std::convertible_to<typename T::Tscal>;
+        { self.flux(prim, n) } -> std::convertible_to<typename T::Tcons>;
+        { self.flux(prim, n, vn) } -> std::convertible_to<typename T::Tcons>;
+    };
+
+    /**
+     * @brief The flux operations a dust (pressureless) Riemann solver needs, so that solvers
+     *        (see riemann_dust_hll.hpp, riemann_dust_huang_bai.hpp) can be written once and
+     *        instantiated for any dust state satisfying this interface. Analogous to
+     *        FluidStateSpec but without an equation of state, hence no sound_speed().
+     */
+    template<class T>
+    concept DustFluidStateSpec = requires(
+        const T &self,
+        typename T::Tcons cons,
+        typename T::Tprim prim,
+        typename T::Tvec n,
+        typename T::Tscal vn) {
+        typename T::Tvec;
+        typename T::Tscal;
+        typename T::Tprim;
+        typename T::Tcons;
+        { self.cons_to_prim(cons) } -> std::convertible_to<typename T::Tprim>;
+        { self.prim_to_cons(prim) } -> std::convertible_to<typename T::Tcons>;
+        { self.vn(prim, n) } -> std::convertible_to<typename T::Tscal>;
+        { self.flux(prim, n) } -> std::convertible_to<typename T::Tcons>;
+        { self.flux(prim, n, vn) } -> std::convertible_to<typename T::Tcons>;
+    };
+
+    namespace details {
+        /// True if T exposes a single, state-independent adiabatic index via gamma()
+        template<class T>
+        concept HasGlobalGamma = requires(const T &self) {
+            { self.gamma() } -> std::convertible_to<typename T::Tscal>;
+        };
+
+        /// True if T exposes a per-primitive-state adiabatic index via gamma(prim)
+        template<class T>
+        concept HasPerStateGamma = requires(const T &self, typename T::Tprim prim) {
+            { self.gamma(prim) } -> std::convertible_to<typename T::Tscal>;
+        };
+    } // namespace details
+
+    /**
+     * @brief A FluidStateSpec that also exposes the adiabatic index, for solvers (e.g. HLLC)
+     *        that need gamma directly rather than only through cons_to_prim/prim_to_cons/flux.
+     *        Satisfied by a state-independent gamma() (a single constant adiabatic index) or a
+     *        per-state gamma(prim) (e.g. a spatially/species-varying index); see
+     *        get_adiabatic_index_lr() for how solvers should read it.
+     */
+    template<class T>
+    concept FluidStateAdiabaticSpec
+        = FluidStateSpec<T> && (details::HasGlobalGamma<T> || details::HasPerStateGamma<T>);
+
+    /**
+     * @brief Read the left/right adiabatic indices a HLLC-style solver should use for a given
+     *        L/R pair.
+     *
+     * If fspec exposes a single state-independent gamma() it is returned for both sides;
+     * otherwise fspec is assumed to expose a per-state gamma(prim) and each side reads its own.
+     */
+    template<FluidStateAdiabaticSpec FSpec>
+    inline constexpr std::pair<typename FSpec::Tscal, typename FSpec::Tscal> get_adiabatic_index_lr(
+        const FSpec &fspec,
+        const typename FSpec::Tprim &prim_l,
+        const typename FSpec::Tprim &prim_r) {
+        if constexpr (details::HasGlobalGamma<FSpec>) {
+            const typename FSpec::Tscal gamma = fspec.gamma();
+            return {gamma, gamma};
+        } else {
+            return {fspec.gamma(prim_l), fspec.gamma(prim_r)};
+        }
+    }
+
+    template<class VecType>
+    struct ConsState {
+        using Tvec  = VecType;
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        Tscal rho{}, rhoe{};
+        Tvec rhovel{};
+
+        const ConsState &operator+=(const ConsState &);
+        const ConsState &operator-=(const ConsState &);
+        const ConsState &operator*=(const Tscal);
+    };
+
+    template<class VecType>
+    struct PrimState {
+        using Tvec  = VecType;
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        Tscal rho{}, press{};
+        Tvec vel{};
+    };
+
+    template<class Tvec>
+    const ConsState<Tvec> &ConsState<Tvec>::operator+=(const ConsState<Tvec> &cst) {
+        rho += cst.rho;
+        rhoe += cst.rhoe;
+        rhovel += cst.rhovel;
+        return *this;
+    }
+
+    template<class Tvec>
+    const ConsState<Tvec> operator+(const ConsState<Tvec> &lhs, const ConsState<Tvec> &rhs) {
+        return ConsState<Tvec>(lhs) += rhs;
+    }
+
+    template<class Tvec>
+    const ConsState<Tvec> &ConsState<Tvec>::operator-=(const ConsState<Tvec> &cst) {
+        rho -= cst.rho;
+        rhoe -= cst.rhoe;
+        rhovel -= cst.rhovel;
+        return *this;
+    }
+
+    template<class Tvec>
+    const ConsState<Tvec> operator-(const ConsState<Tvec> &lhs, const ConsState<Tvec> &rhs) {
+        return ConsState<Tvec>(lhs) -= rhs;
+    }
+
+    template<class Tvec>
+    const ConsState<Tvec> &ConsState<Tvec>::operator*=(
+        const typename ConsState<Tvec>::Tscal factor) {
+        rho *= factor;
+        rhoe *= factor;
+        rhovel *= factor;
+        return *this;
+    }
+
+    template<class Tvec>
+    const ConsState<Tvec> operator*(
+        const typename ConsState<Tvec>::Tscal factor, const ConsState<Tvec> &rhs) {
+        return ConsState<Tvec>(rhs) *= factor;
+    }
+
+    template<class Tvec>
+    const ConsState<Tvec> operator*(
+        const ConsState<Tvec> &lhs, const typename ConsState<Tvec>::Tscal factor) {
+        return ConsState<Tvec>(lhs) *= factor;
+    }
+
+    template<class VecType>
+    struct Fluxes {
+        using Tvec  = VecType;
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        std::array<ConsState<Tvec>, 3> f;
+    };
+
+    template<class Tvec>
+    inline constexpr shambase::VecComponent<Tvec> rhoekin(
+        shambase::VecComponent<Tvec> rho, Tvec v) {
+        using Tscal    = shambase::VecComponent<Tvec>;
+        const Tscal v2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+        return 0.5 * rho * v2;
+    }
+
+    template<class Tvec>
+    inline constexpr ConsState<Tvec> prim_to_cons(
+        const PrimState<Tvec> prim, typename PrimState<Tvec>::Tscal gamma) {
+        ConsState<Tvec> cons;
+
+        cons.rho = prim.rho;
+
+        const auto rhoeint = prim.press / (gamma - 1.0);
+        cons.rhoe          = rhoeint + rhoekin(prim.rho, prim.vel);
+
+        cons.rhovel[0] = prim.rho * prim.vel[0];
+        cons.rhovel[1] = prim.rho * prim.vel[1];
+        cons.rhovel[2] = prim.rho * prim.vel[2];
+
+        return cons;
+    }
+
+    template<class Tvec>
+    inline constexpr PrimState<Tvec> cons_to_prim(
+        const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma) {
+        PrimState<Tvec> prim;
+
+        prim.rho = cons.rho;
+
+        prim.vel[0] = cons.rhovel[0] / cons.rho;
+        prim.vel[1] = cons.rhovel[1] / cons.rho;
+        prim.vel[2] = cons.rhovel[2] / cons.rho;
+
+        const auto rhoeint = cons.rhoe - rhoekin(prim.rho, prim.vel);
+        prim.press         = (gamma - 1.0) * rhoeint;
+
+        return prim;
+    }
+
+    /**
+     * @brief Euler flux across a face of normal n, given a precomputed normal velocity
+     *        vn = dot(prim.vel, n)
+     *
+     * n is expected to be a unit vector, and vn is expected to be dot(prim.vel, n)
+     */
+    template<class Tvec>
+    inline constexpr ConsState<Tvec> hydro_flux_n(
+        const PrimState<Tvec> prim,
+        Tvec n,
+        typename PrimState<Tvec>::Tscal vn,
+        typename PrimState<Tvec>::Tscal gamma) {
+        ConsState<Tvec> flux;
+
+        const auto rhoeint = prim.press / (gamma - 1.0);
+        const auto rhoe    = rhoeint + rhoekin(prim.rho, prim.vel);
+
+        flux.rho = prim.rho * vn;
+
+        flux.rhoe = (rhoe + prim.press) * vn;
+
+        flux.rhovel[0] = prim.rho * vn * prim.vel[0] + prim.press * n[0];
+        flux.rhovel[1] = prim.rho * vn * prim.vel[1] + prim.press * n[1];
+        flux.rhovel[2] = prim.rho * vn * prim.vel[2] + prim.press * n[2];
+
+        return flux;
+    }
+
+    /**
+     * @brief Euler flux across a face of normal n
+     *
+     * n is expected to be a unit vector.
+     */
+    template<class Tvec>
+    inline constexpr ConsState<Tvec> hydro_flux_n(
+        const PrimState<Tvec> prim, Tvec n, typename PrimState<Tvec>::Tscal gamma) {
+        const auto vn = n[0] * prim.vel[0] + n[1] * prim.vel[1] + n[2] * prim.vel[2];
+        return hydro_flux_n(prim, n, vn, gamma);
+    }
+
+    template<class Tvec>
+    inline constexpr shambase::VecComponent<Tvec> sound_speed(
+        PrimState<Tvec> prim, shambase::VecComponent<Tvec> gamma) {
+        return sycl::sqrt(gamma * prim.press / prim.rho);
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons y_to_x(const Tcons c) {
+        Tcons cprime;
+        cprime.rho       = c.rho;
+        cprime.rhoe      = c.rhoe;
+        cprime.rhovel[0] = c.rhovel[1];
+        cprime.rhovel[1] = -c.rhovel[0];
+        cprime.rhovel[2] = c.rhovel[2];
+        return cprime;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons x_to_y(const Tcons c) {
+        Tcons cprime;
+        cprime.rho       = c.rho;
+        cprime.rhoe      = c.rhoe;
+        cprime.rhovel[0] = -c.rhovel[1];
+        cprime.rhovel[1] = c.rhovel[0];
+        cprime.rhovel[2] = c.rhovel[2];
+        return cprime;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons z_to_x(const Tcons c) {
+        Tcons cprime;
+        cprime.rho       = c.rho;
+        cprime.rhoe      = c.rhoe;
+        cprime.rhovel[0] = c.rhovel[2];
+        cprime.rhovel[1] = c.rhovel[1];
+        cprime.rhovel[2] = -c.rhovel[0];
+        return cprime;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons x_to_z(const Tcons c) {
+        Tcons cprime;
+        cprime.rho       = c.rho;
+        cprime.rhoe      = c.rhoe;
+        cprime.rhovel[0] = -c.rhovel[2];
+        cprime.rhovel[1] = c.rhovel[1];
+        cprime.rhovel[2] = c.rhovel[0];
+        return cprime;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons invert_axis(const Tcons c) {
+        Tcons cprime;
+        cprime.rho       = c.rho;
+        cprime.rhoe      = c.rhoe;
+        cprime.rhovel[0] = -c.rhovel[0];
+        cprime.rhovel[1] = -c.rhovel[1];
+        cprime.rhovel[2] = -c.rhovel[2];
+        return cprime;
+    }
+
+    // Axis-transform helpers for PrimState, mirroring y_to_x/z_to_x/invert_axis above.
+    // Riemann solvers take primitive states directly (see riemann_hll.hpp etc.), so these
+    // are applied to the inputs; the flux they return is a ConsState and is rotated back
+    // with the untransformed x_to_y/x_to_z/invert_axis.
+    template<class Tprim>
+    inline constexpr Tprim prim_y_to_x(const Tprim p) {
+        Tprim pprime;
+        pprime.rho    = p.rho;
+        pprime.press  = p.press;
+        pprime.vel[0] = p.vel[1];
+        pprime.vel[1] = -p.vel[0];
+        pprime.vel[2] = p.vel[2];
+        return pprime;
+    }
+
+    template<class Tprim>
+    inline constexpr Tprim prim_z_to_x(const Tprim p) {
+        Tprim pprime;
+        pprime.rho    = p.rho;
+        pprime.press  = p.press;
+        pprime.vel[0] = p.vel[2];
+        pprime.vel[1] = p.vel[1];
+        pprime.vel[2] = -p.vel[0];
+        return pprime;
+    }
+
+    template<class Tprim>
+    inline constexpr Tprim prim_invert_axis(const Tprim p) {
+        Tprim pprime;
+        pprime.rho    = p.rho;
+        pprime.press  = p.press;
+        pprime.vel[0] = -p.vel[0];
+        pprime.vel[1] = -p.vel[1];
+        pprime.vel[2] = -p.vel[2];
+        return pprime;
+    }
+
+    template<class VecType>
+    struct DustConsState {
+        using Tvec  = VecType;
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        Tscal rho{};
+        Tvec rhovel{};
+
+        const DustConsState &operator+=(const DustConsState &);
+        const DustConsState &operator-=(const DustConsState &);
+        const DustConsState &operator*=(const Tscal);
+    };
+
+    template<class VecType>
+    struct DustPrimState {
+        using Tvec  = VecType;
+        using Tscal = shambase::VecComponent<Tvec>;
+        Tscal rho{};
+        Tvec vel{};
+    };
+
+    template<class Tvec>
+    const DustConsState<Tvec> &DustConsState<Tvec>::operator+=(const DustConsState<Tvec> &d_cst) {
+        rho += d_cst.rho;
+        rhovel += d_cst.rhovel;
+        return *this;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> operator+(
+        const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
+        return DustConsState<Tvec>(lhs) += rhs;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> &DustConsState<Tvec>::operator-=(const DustConsState<Tvec> &d_cst) {
+        rho -= d_cst.rho;
+        rhovel -= d_cst.rhovel;
+        return *this;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> operator-(
+        const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
+        return DustConsState<Tvec>(lhs) -= rhs;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> &DustConsState<Tvec>::operator*=(
+        const typename DustConsState<Tvec>::Tscal factor) {
+        rho *= factor;
+        rhovel *= factor;
+        return *this;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> operator*(
+        const DustConsState<Tvec> &lhs, const typename DustConsState<Tvec>::Tscal factor) {
+        return DustConsState<Tvec>(lhs) *= factor;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> operator*(
+        const typename DustConsState<Tvec>::Tscal factor, const DustConsState<Tvec> &rhs) {
+        return DustConsState<Tvec>(rhs) *= factor;
+    }
+
+    template<class VecType>
+    struct DustFluxes {
+        using Tvec  = VecType;
+        using Tscal = shambase::VecComponent<Tvec>;
+        std::array<DustConsState<Tvec>, 3> f;
+    };
+
+    template<class Tvec>
+    inline constexpr DustConsState<Tvec> d_prim_to_cons(const DustPrimState<Tvec> d_prim) {
+        DustConsState<Tvec> d_cons;
+        d_cons.rho    = d_prim.rho;
+        d_cons.rhovel = (d_prim.vel * d_prim.rho);
+        return d_cons;
+    }
+
+    template<class Tvec>
+    inline constexpr DustPrimState<Tvec> d_cons_to_prim(const DustConsState<Tvec> d_cons) {
+        DustPrimState<Tvec> d_prim;
+        d_prim.rho = d_cons.rho;
+        d_prim.vel = (d_cons.rhovel * (1 / d_cons.rho));
+        return d_prim;
+    }
+
+    /**
+     * @brief Pressureless (dust) flux across a face of normal n, given a precomputed
+     *        normal velocity vn = dot(d_prim.vel, n)
+     *
+     * n is expected to be a unit vector, and vn is expected to be dot(d_prim.vel, n)
+     */
+    template<class Tvec>
+    inline constexpr DustConsState<Tvec> d_hydro_flux_n(
+        const DustPrimState<Tvec> d_prim, Tvec n, typename DustPrimState<Tvec>::Tscal vn) {
+        DustConsState<Tvec> d_flux;
+        d_flux.rho    = d_prim.rho * vn;
+        d_flux.rhovel = d_prim.vel * (d_prim.rho * vn);
+        return d_flux;
+    }
+
+    /**
+     * @brief Pressureless (dust) flux across a face of normal n
+     *
+     * n is expected to be a unit vector.
+     */
+    template<class Tvec>
+    inline constexpr DustConsState<Tvec> d_hydro_flux_n(const DustPrimState<Tvec> d_prim, Tvec n) {
+        const auto vn = n[0] * d_prim.vel[0] + n[1] * d_prim.vel[1] + n[2] * d_prim.vel[2];
+        return d_hydro_flux_n(d_prim, n, vn);
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons d_x_to_y(const Tcons c) {
+        Tcons d_cst;
+        d_cst.rho       = c.rho;
+        d_cst.rhovel[0] = -c.rhovel[1];
+        d_cst.rhovel[1] = c.rhovel[0];
+        d_cst.rhovel[2] = c.rhovel[2];
+
+        return d_cst;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons d_y_to_x(const Tcons c) {
+        Tcons d_cst;
+        d_cst.rho       = c.rho;
+        d_cst.rhovel[0] = c.rhovel[1];
+        d_cst.rhovel[1] = -c.rhovel[0];
+        d_cst.rhovel[2] = c.rhovel[2];
+        return d_cst;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons d_x_to_z(const Tcons c) {
+        Tcons d_cst;
+        d_cst.rho       = c.rho;
+        d_cst.rhovel[0] = -c.rhovel[2];
+        d_cst.rhovel[1] = c.rhovel[1];
+        d_cst.rhovel[2] = c.rhovel[0];
+        return d_cst;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons d_z_to_x(const Tcons c) {
+        Tcons d_cst;
+        d_cst.rho       = c.rho;
+        d_cst.rhovel[0] = c.rhovel[2];
+        d_cst.rhovel[1] = c.rhovel[1];
+        d_cst.rhovel[2] = -c.rhovel[0];
+        return d_cst;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons d_invert_axis(const Tcons c) {
+        Tcons d_cst;
+        d_cst.rho    = c.rho;
+        d_cst.rhovel = -(c.rhovel);
+        return d_cst;
+    }
+
+    // Axis-transform helpers for DustPrimState, mirroring d_y_to_x/d_z_to_x/d_invert_axis
+    // above. Dust Riemann solvers take primitive states directly, so these are applied to
+    // the inputs; the flux they return is a DustConsState and is rotated back with the
+    // untransformed d_x_to_y/d_x_to_z/d_invert_axis.
+    template<class Tprim>
+    inline constexpr Tprim d_prim_y_to_x(const Tprim p) {
+        Tprim pprime;
+        pprime.rho    = p.rho;
+        pprime.vel[0] = p.vel[1];
+        pprime.vel[1] = -p.vel[0];
+        pprime.vel[2] = p.vel[2];
+        return pprime;
+    }
+
+    template<class Tprim>
+    inline constexpr Tprim d_prim_z_to_x(const Tprim p) {
+        Tprim pprime;
+        pprime.rho    = p.rho;
+        pprime.vel[0] = p.vel[2];
+        pprime.vel[1] = p.vel[1];
+        pprime.vel[2] = -p.vel[0];
+        return pprime;
+    }
+
+    template<class Tprim>
+    inline constexpr Tprim d_prim_invert_axis(const Tprim p) {
+        Tprim pprime;
+        pprime.rho = p.rho;
+        pprime.vel = -(p.vel);
+        return pprime;
+    }
+
+    /**
+     * @brief FluidStateSpec implementation for an ideal (adiabatic) gas equation of state
+     */
+    template<class VecType>
+    struct FluidStateAdiabatic {
+        using Tvec  = VecType;
+        using Tscal = shambase::VecComponent<Tvec>;
+        using Tprim = PrimState<Tvec>;
+        using Tcons = ConsState<Tvec>;
+
+        Tscal m_gamma; // need a different name than the methods below
+
+        Tprim cons_to_prim(Tcons c) const { return shammath::cons_to_prim(c, m_gamma); }
+        Tcons prim_to_cons(Tprim p) const { return shammath::prim_to_cons(p, m_gamma); }
+        Tscal sound_speed(Tprim p) const { return shammath::sound_speed(p, m_gamma); }
+        Tscal vn(Tprim p, Tvec n) const { return sham::dot(p.vel, n); }
+        Tcons flux(Tprim p, Tvec n, Tscal vn) const {
+            return shammath::hydro_flux_n(p, n, vn, m_gamma);
+        }
+        Tcons flux(Tprim p, Tvec n) const { return shammath::hydro_flux_n(p, n, m_gamma); }
+        Tscal gamma() const { return m_gamma; }
+    };
+
+    static_assert(FluidStateSpec<FluidStateAdiabatic<f64_3>>);
+    static_assert(FluidStateAdiabaticSpec<FluidStateAdiabatic<f64_3>>);
+
+    /**
+     * @brief cons_to_prim/prim_to_cons/vn/flux wrapper for a pressureless (dust) fluid.
+     *        Unlike FluidStateAdiabatic there is no equation of state, so sound_speed() and
+     *        gamma() are not defined here; this type satisfies DustFluidStateSpec rather than
+     *        FluidStateSpec.
+     */
+    template<class VecType>
+    struct FluidStateDust {
+        using Tvec  = VecType;
+        using Tscal = shambase::VecComponent<Tvec>;
+        using Tprim = DustPrimState<Tvec>;
+        using Tcons = DustConsState<Tvec>;
+
+        Tprim cons_to_prim(Tcons c) const { return shammath::d_cons_to_prim(c); }
+        Tcons prim_to_cons(Tprim p) const { return shammath::d_prim_to_cons(p); }
+        Tscal vn(Tprim p, Tvec n) const { return sham::dot(p.vel, n); }
+        Tcons flux(Tprim p, Tvec n, Tscal vn) const { return shammath::d_hydro_flux_n(p, n, vn); }
+        Tcons flux(Tprim p, Tvec n) const { return shammath::d_hydro_flux_n(p, n); }
+    };
+
+    static_assert(DustFluidStateSpec<FluidStateDust<f64_3>>);
+
+} // namespace shammath

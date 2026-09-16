@@ -52,6 +52,27 @@ Always use something like `&& echo DONE` after the build command to avoid confus
 
 Check if `./shamrock`, `./shamrock_test` are present in the build dir, if yes it has succeeded.
 
+### Incremental builds
+
+A full `./shamenv_do shammake` compiles every target (~40min from a cold
+build) — do not run it after every small change. When you modify a single
+component, build only that component's target instead:
+
+```bash
+cd build
+./shamenv_do shammake <target>   # e.g. shammake shammodels_sph
+```
+
+List available targets with:
+
+```bash
+ninja -t targets all | grep ': phony$'
+```
+
+Only run a full `./shamenv_do shammake` (or build `shamrock`/`shamrock_test`
+specifically) when unit tests need to run or the binary needs to execute —
+those require the whole dependency graph to be up to date anyway.
+
 ## Testing
 
 **BEFORE running any unittest, always check that reference files exist.**
@@ -82,13 +103,46 @@ Show the device table from the `--smi` output and **ask the user to select which
 - **Pre-commit hooks**: `.pre-commit-config.yaml`
 - Run `pre-commit run --all-files` before committing
 
-## Naming conventions (from `.clang-tidy` `CheckOptions`)
+## Naming conventions (enforced as warnings by `.clang-tidy` `CheckOptions`)
 
-| Entity                         | Case       |
-| ------------------------------ | ---------- |
-| Class/Enum/Union               | CamelCase  |
-| Function/Variable/Parameter    | lower_case |
-| Member                         | lower_case |
+| Entity                            | Case       |
+| --------------------------------- | ---------- |
+| Class/Struct/Enum/Union           | CamelCase  |
+| Function/Variable/Parameter       | lower_case |
+| Member                            | lower_case |
+| Constant (incl. class `static constexpr`) | lower_case |
+| Namespace                         | lower_case |
+| Macro                             | UPPER_CASE |
+| Enum value                        | CamelCase  |
+| Template parameter (type, e.g. `Tvec`) | CamelCase  |
+| Template parameter (non-type, e.g. `dim`) | lower_case |
+
+Enum values use **acronym-preserving CamelCase**: each word is
+capitalized, but a word that is itself a recognized acronym (a
+vendor/hardware name like `AMD`, `CPU`, `GPU`, or a numerical-method name
+like `CG`, `PCG`, `HLL`) is kept fully capitalized as that one word
+instead of only its first letter (`Nvidia`, but `AMD`, `CPU`, `CUDA`,
+`PCG`). A plain English word typed in caps for consistency (`UNKNOWN`,
+`MULTIGRID`) is not an acronym and should be normalized (`Unknown`,
+`Multigrid`). When the value names a specific external technology with
+its own established spelling (`OpenMP`, `ROCm`, `BiCGSTAB`), match that
+spelling rather than deriving one mechanically.
+
+Note: `readability-identifier-naming`'s `CamelCase` check only rejects a
+name with an underscore or a lowercase first letter, so it can't tell an
+acronym from a plain word typed in caps by mistake — it won't flag
+`UNKNOWN` even though the convention above says it should become
+`Unknown`. Treat the table above as the target and fix those on sight.
+
+### File naming
+
+- A file that implements a single class/struct is named after that type
+  in CamelCase (e.g. `PatchDataField.hpp` for `class PatchDataField`).
+- A file that holds a free-function algorithm, a kernel, or a bag of
+  related utilities (no single owning type) is named in `lower_case`
+  (e.g. `compute_ranges.hpp`, `key_morton_sort.hpp`).
+- This is not enforced by clang-tidy (no such check exists there); it's a
+  review-time convention.
 
 ## Architecture overview
 
@@ -101,6 +155,7 @@ src/
   shamcmdopt/        CLI argument parsing, env/tty detection utilities
   shamcomm/          MPI and SYCL comm layer for Shamrock
   shammath/          tensor and linear algebra math routines
+  shamsolvergraph/   core solver graph nodes, edges, and registry
   shammodels/        SPH, GSPH, Ramses, Zeus hydro model implementations
   shamphys/          physics utilities: EOS, MHD, orbits, collapse
   shamrock/          core hydrodynamics framework: solvers, mesh, AMR, I/O, scheduler, graph
@@ -118,15 +173,40 @@ src/
 - `external/` submodules — upstream dependencies.
 - `LICENSE`, `LICENSE.en` — legal files.
 
-## Agent commit attribution
+## Git, commits & pull requests
 
-Agent-made commits should use `Assisted-by: <agent_name>` instead of
-`Co-Authored-by`. Reserve `Co-Authored-by` for human collaborators only.
+The upstream repo is `Shamrock-code/Shamrock`. Open pull requests against
+upstream `main` on that repo.
 
-## Upstream repo & PRs
+### Commit authorship
 
-The upstream repo is `Shamrock-code/Shamrock`.
-PR lookups should target the upstream:
+Commit-msg hooks can rewrite the author and inject `Co-authored-by` (often
+with a model name). After every `git commit`, amend with `--no-verify`
+before pushing (a plain amend re-runs the hook):
+
+- **Author** = the human who initiated the work. Use `--author`; do not
+  change gitconfig.
+- Trailer = `Assisted-by: <agent>` only. No model names. No
+  `Co-authored-by` (`Co-authored-by` is for extra human authors only). Also
+  no session url.
+
+Check `git log -1 --format='Author: %an <%ae>%n%B'` before push.
+
+### Opening pull requests
+
+Target upstream `Shamrock-code/Shamrock` and base branch `main`.
+
+If the agent environment can only open a PR on a fork, put an upstream compare
+link at the top of the PR description so the user can open the PR against
+upstream directly:
+
+```text
+https://github.com/Shamrock-code/Shamrock/compare/main...<fork-owner>:Shamrock:<branch>?expand=1
+```
+
+Replace `<fork-owner>` and `<branch>` with the fork owner and branch name.
+
+PR lookups should also target upstream:
 
 ```bash
 gh pr list --repo Shamrock-code/Shamrock
@@ -146,8 +226,14 @@ gh pr view <number> --repo Shamrock-code/Shamrock
 ./env/new-env --machine <machine> --builddir build-debug -- \
   <machine specific flags>
 
-# Build
-pwd && ls && cd build && ./shamenv_do shammake && echo "build done"
+# Build (only the target(s) you touched; see Incremental builds above)
+pwd && ls && cd build && ./shamenv_do shammake <target> && echo "build done"
+
+# List available build targets
+cd build && ninja -t targets all | grep ': phony$'
+
+# Full build (only when running tests or the binary)
+cd build && ./shamenv_do shammake && echo "build done"
 
 # Run pre-commit
 pre-commit run --all-files

@@ -89,7 +89,7 @@ namespace shamrock {
                 },
                 var);
 
-            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+            throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
                 "unknown type: {}\navailable types: {}\njson: {}",
                 type_id,
                 available_types,

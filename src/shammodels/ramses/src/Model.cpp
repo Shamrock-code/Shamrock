@@ -49,6 +49,9 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::init() {
     // sched.update_local_dtcnt_value();
     // sched.update_local_load_value();
 
+    // must be done after init_sched to ensure time/dt edges are registered
+    solver.ensure_time_state_edges();
+
     solver.init_solver_graph();
 }
 
@@ -57,19 +60,19 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::make_base_grid(
     TgridVec bmin, TgridVec cell_size, u32_3 cell_count) {
 
     if (cell_size.x() < Solver::Config::AMRBlock::Nside) {
-        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+        shambase::throw_with_loc<std::invalid_argument>(sham::format(
             "the x block size must be larger than {}, currently : cell_size = {}",
             Solver::Config::AMRBlock::Nside,
             cell_size));
     }
     if (cell_size.y() < Solver::Config::AMRBlock::Nside) {
-        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+        shambase::throw_with_loc<std::invalid_argument>(sham::format(
             "the y block size must be larger than {}, currently : cell_size = {}",
             Solver::Config::AMRBlock::Nside,
             cell_size));
     }
     if (cell_size.z() < Solver::Config::AMRBlock::Nside) {
-        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+        shambase::throw_with_loc<std::invalid_argument>(sham::format(
             "the z block size must be larger than {}, currently : cell_size = {}",
             Solver::Config::AMRBlock::Nside,
             cell_size));

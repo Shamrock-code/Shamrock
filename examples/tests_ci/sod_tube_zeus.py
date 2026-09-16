@@ -220,4 +220,4 @@ if P > pass_P:
     test_pass = False
 
 if test_pass == False:
-    exit("Test did not pass L2 margins : \n" + err_log)
+    exit(f"Test did not pass L2 margins : \n{err_log}")

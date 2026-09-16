@@ -192,7 +192,7 @@ shamalgs::SerializeHelper::SerializeHelper(
 
     shamlog_debug_sycl_ln(
         "SerializeHelper",
-        shambase::format(
+        sham::format(
             "Init SerializeHelper from buffer\n    storage size : {},\n    header_size : {}",
             storage.get_size(),
             header_size));

@@ -16,9 +16,9 @@
  */
 
 #include "shambase/SourceLocation.hpp"
+#include "shambase/aliases_float.hpp"
 #include "shambase/string.hpp"
 #include "TestAssert.hpp"
-#include "shambackends/sycl.hpp"
 #include <utility>
 
 namespace shamtest::details {
@@ -117,7 +117,7 @@ namespace shamtest::details {
         [[deprecated("Please use the supplied testing macros instead")]]
         inline void assert_float_equal(
             std::string assert_name, f64 a, f64 b, f64 eps, SourceLocation loc = SourceLocation{}) {
-            f64 diff = sycl::fabs(a - b);
+            f64 diff = std::fabs(a - b);
 
             bool t              = diff < eps;
             std::string comment = "";

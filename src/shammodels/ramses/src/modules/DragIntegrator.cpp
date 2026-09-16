@@ -573,7 +573,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
         } else {
 
             if (loc_mem_size > q.get_device_prop().local_mem_size) {
-                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                shambase::throw_with_loc<std::runtime_error>(sham::format(
                     "not enough local memory for expo drag integrator:\n"
                     "loc_mem_size: {} > max_local_mem: {}\n"
                     "loc_acc_size: {}\n"
@@ -595,7 +595,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                 sycl::local_accessor<Tscal> local_Id(loc_acc_size, cgh);
 
                 logger::debug_sycl_ln(
-                    "SYCL", shambase::format("parallel_for add_drag [expo-shared-mem]"));
+                    "SYCL", sham::format("parallel_for add_drag [expo-shared-mem]"));
                 cgh.parallel_for(
                     shambase::make_range(cell_count, group_size), [=](sycl::nd_item<1> id) {
                         u32 loc_id = id.get_local_id();

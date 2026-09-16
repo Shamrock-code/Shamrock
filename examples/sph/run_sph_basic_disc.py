@@ -165,8 +165,8 @@ gen_disc = setup.make_generator_disc_mc(
     random_seed=666,
 )
 
-# Print the dot graph of the setup
-print(gen_disc.get_dot())
+# Show the dot graph of the setup
+shamrock.utils.plot.DotGraph(gen_disc.get_dot())
 
 # %%
 # Apply the setup
@@ -275,7 +275,7 @@ cbar = plt.colorbar(res, extend="both")
 cbar.set_label(r"$\int \rho \, \mathrm{d} z$ [code unit]")
 # or r"$\rho$ [code unit]" for slices
 
-plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
+plt.title(f"t = {model.get_time():0.3f} [code unit]")
 plt.xlabel("x")
 plt.ylabel("z")
 plt.show()

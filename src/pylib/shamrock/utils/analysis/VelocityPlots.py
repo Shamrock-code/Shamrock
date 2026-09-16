@@ -100,9 +100,8 @@ def SliceDiffVthetaProfile(
     min_normalization=1e-9,
 ):
     def compute_diff_vtheta_profile(helper):
-        if _HAS_NUMBA:
-            if shamrock.sys.world_rank() == 0:
-                print("Using numba for velocity profile in SliceDiffVthetaProfile")
+        if _HAS_NUMBA and shamrock.sys.world_rank() == 0:
+            print("Using numba for velocity profile in SliceDiffVthetaProfile")
 
         if _HAS_NUMBA:
             vel_profile_jit = njit(velocity_profile)
@@ -169,9 +168,8 @@ def VerticalShearGradient(
     min_normalization=1e-9,
 ):
     def compute_vertical_shear_gradient(helper):
-        if _HAS_NUMBA:
-            if shamrock.sys.world_rank() == 0:
-                print("Using numba for custom getter in VerticalShearGradient")
+        if _HAS_NUMBA and shamrock.sys.world_rank() == 0:
+            print("Using numba for custom getter in VerticalShearGradient")
 
         def internal(
             size: int, x: np.array, y: np.array, vx: np.array, vy: np.array, vz: np.array

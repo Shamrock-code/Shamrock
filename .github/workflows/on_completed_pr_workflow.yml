@@ -19,7 +19,8 @@ on:
       - completed
 
 jobs:
-  deploy:
+  post_workflow_report:
+    name: Post workflow report
     runs-on: ubuntu-latest
 
     steps:

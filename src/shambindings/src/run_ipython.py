@@ -13,7 +13,7 @@ signal.signal(signal.SIGINT, shamrock.sys.signal_handler)
 
 c = Config()
 
-banner = "SHAMROCK Ipython terminal\n" + "Python %s\n" % sys.version.split("\n")[0]
+banner = f"SHAMROCK Ipython terminal\nPython {sys.version.split('\n')[0]}\n"
 
 c.TerminalInteractiveShell.banner1 = banner
 

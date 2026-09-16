@@ -12,8 +12,8 @@
 #include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/string.hpp"
 #include "shambase/type_traits.hpp"
+#include "sham/format/format.hpp"
 #include <limits>
 #include <stdexcept>
 
@@ -88,7 +88,7 @@ namespace shambase {
             return static_cast<U>(val);
         } else {
             using lim_U = std::numeric_limits<U>;
-            throw make_except_with_loc<std::runtime_error>(shambase::format(
+            throw make_except_with_loc<std::runtime_error>(sham::format(
                 "value {} cannot be narrowed to type U (see signature) static_cast<U>({}) = {} "
                 "(U::min() = {}, U::max() = {})",
                 val,

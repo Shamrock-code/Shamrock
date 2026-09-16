@@ -348,7 +348,7 @@ void test_sph_iter_overhead(std::string dset_name) {
 
             shamlog_debug_ln(
                 "TestTreePerf",
-                shambase::format(
+                sham::format(
                     "dataset : {}, len={:e} seed={:10} len_p_obj={:e} rpart={:e}",
                     dset_name,
                     f32(len_pos),
@@ -674,7 +674,7 @@ f64 amr_walk_perf(
                 = tree_cell_bound.get_intersect(current_values.cell_bound);
 
             // logger::raw(
-            //     shambase::format("{} {} | {} {} -> {} {} -> {}\n",
+            //     sham::format("{} {} | {} {} -> {} {} -> {}\n",
             //     tree_cell_bound.lower,
             //     tree_cell_bound.upper,
             //     current_values.cell_bound.lower,
@@ -980,8 +980,7 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta) {
 
             shamlog_debug_ln(
                 "TestTreePerf",
-                shambase::format(
-                    "dataset : {}, len={:e} seed={:10}", dset_name, f32(len_pos), seed));
+                sham::format("dataset : {}, len={:e} seed={:10}", dset_name, f32(len_pos), seed));
 
             auto pos = shamalgs::random::mock_buffer_ptr<vec>(
                 seed, len_pos, coord_range.lower, coord_range.upper);

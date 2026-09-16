@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/term_colors.hpp"
 #include "sham/term/tty.hpp"
@@ -57,7 +58,7 @@ namespace logformatter {
      * @return std::string The formatted log
      */
     std::string style1_formatter_full(const logger::ReformatArgs &args) {
-        return shambase::format(
+        return sham::format(
             "{5:}rank={6:<4}{2:} {5:}({3:^20}){2:} {0:}{1:}{2:}: {4:}",
             args.color,
             args.level_name,
@@ -75,7 +76,7 @@ namespace logformatter {
      * @return std::string The formatted log
      */
     std::string style1_formatter_simple(const logger::ReformatArgs &args) {
-        return shambase::format(
+        return sham::format(
             "{5:}({3:}){2:} : {4:}",
             args.color,
             args.level_name,
@@ -93,7 +94,7 @@ namespace logformatter {
 
     std::string style2_formatter_full(const logger::ReformatArgs &args) {
 
-        return shambase::format(
+        return sham::format(
             "{0:}{1:}{2:}: {4:}{5:} | ({3:}) rank={6:<4}{2:}",
             args.color,
             args.level_name,
@@ -111,7 +112,7 @@ namespace logformatter {
      * @return std::string The formatted log
      */
     std::string style2_formatter_simple(const logger::ReformatArgs &args) {
-        return shambase::format(
+        return sham::format(
             "{5:}({3:}){2:} : {4:}",
             args.color,
             args.level_name,
@@ -134,7 +135,7 @@ namespace logformatter {
         std::string ansi_reset = shambase::term_colors::reset();
         std::string ansi_faint = shambase::term_colors::faint();
 
-        std::string lineend = shambase::format(
+        std::string lineend = sham::format(
             "{5:} [{3:}][rank={6:}]{2:}",
             args.color,
             args.level_name,
@@ -144,7 +145,7 @@ namespace logformatter {
             ansi_faint,
             shamcomm::world_rank());
 
-        std::string log = shambase::format(
+        std::string log = sham::format(
             "{0:}{1:}{2:}: {4:}",
             args.color,
             args.level_name,
@@ -166,7 +167,7 @@ namespace logformatter {
 
         u32 ansi_count = ansi_reset.size() * 2 + ansi_faint.size() + args.color.size();
 
-        return shambase::format("{:<{}}", log_line1, tty_width - lineend.size() + ansi_count - 1)
+        return sham::format("{:<{}}", log_line1, tty_width - lineend.size() + ansi_count - 1)
                + lineend + log_line2;
     }
 
@@ -177,7 +178,7 @@ namespace logformatter {
      * @return std::string The formatted log
      */
     std::string style3_formatter_simple(const logger::ReformatArgs &args) {
-        return shambase::format(
+        return sham::format(
             "{5:}{3:}{2:}: {4:}",
             args.color,
             args.level_name,
@@ -200,7 +201,7 @@ namespace logformatter {
         std::string ansi_reset = shambase::term_colors::reset();
         std::string ansi_faint = shambase::term_colors::faint();
 
-        std::string lineend = shambase::format(
+        std::string lineend = sham::format(
             "{5:} [{3:}][rank={6:}][{7:.2f}s]{2:}",
             args.color,
             args.level_name,
@@ -211,7 +212,7 @@ namespace logformatter {
             shamcomm::world_rank(),
             shambase::details::get_wtime());
 
-        std::string log = shambase::format(
+        std::string log = sham::format(
             "{0:}{1:}{2:}: {4:}",
             args.color,
             args.level_name,
@@ -233,7 +234,7 @@ namespace logformatter {
 
         u32 ansi_count = ansi_reset.size() * 2 + ansi_faint.size() + args.color.size();
 
-        return shambase::format("{:<{}}", log_line1, tty_width - lineend.size() + ansi_count - 1)
+        return sham::format("{:<{}}", log_line1, tty_width - lineend.size() + ansi_count - 1)
                + lineend + log_line2;
     }
 
@@ -244,7 +245,7 @@ namespace logformatter {
      * @return std::string The formatted log
      */
     std::string style4_formatter_simple(const logger::ReformatArgs &args) {
-        return shambase::format(
+        return sham::format(
             "{5:}{3:}{2:}: {4:}",
             args.color,
             args.level_name,

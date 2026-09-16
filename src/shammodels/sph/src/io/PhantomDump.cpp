@@ -218,7 +218,7 @@ void shammodels::sph::PhantomDumpBlock::write(
 
 u64 shammodels::sph::PhantomDumpBlock::get_ref_fort_real(std::string s) {
 
-    s            = shambase::format("{:16s}", s);
+    s            = sham::format("{:16s}", s);
     auto &blocks = blocks_fort_real;
 
     for (u32 i = 0; i < blocks_fort_real.size(); i++) {
@@ -242,7 +242,7 @@ u64 shammodels::sph::PhantomDumpBlock::get_ref_fort_real(std::string s) {
 
 u64 shammodels::sph::PhantomDumpBlock::get_ref_f32(std::string s) {
 
-    s = shambase::format("{:16s}", s);
+    s = sham::format("{:16s}", s);
 
     auto &blocks = blocks_f32;
 
@@ -444,7 +444,7 @@ bool shammodels::sph::compare_phantom_dumps(PhantomDump &dump_ref, PhantomDump &
         if (header_ref[matching_key] != header_comp[matching_key]) {
             logger::warn_ln(
                 "PhantomDump",
-                shambase::format(
+                sham::format(
                     "Mismatch in the header key {}, ref={}, comp={}",
                     matching_key,
                     header_ref[matching_key],

@@ -17,9 +17,9 @@
 
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* ------------------- inputs ------------------- */                                           \

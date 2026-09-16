@@ -1,0 +1,18 @@
+name: Configure ccache
+description: Set ccache compiler_check for AdaptiveCpp / Shamrock CI builds
+
+runs:
+  using: composite
+  steps:
+    - name: Configure ccache
+      shell: bash
+      run: |
+        echo " ----- ccache configuration ----- "
+        echo " Old configuration: "
+        ccache -p
+        echo " ----- New configuration:   ----- "
+        ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
+        ccache -o compression=true
+        ccache -o compression_level=4
+        ccache -p
+        echo " ----- ccache configuration done ----- "

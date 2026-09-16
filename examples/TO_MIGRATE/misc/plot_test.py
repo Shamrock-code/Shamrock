@@ -451,7 +451,7 @@ else:
         sum(s["mass"] * s["pos"][2] for s in sink_list) / sum_mass,
     )
 
-    print("sinks baryenceter : velocity {} position {}".format(vel_bary, pos_bary))
+    print(f"sinks baryenceter : velocity {vel_bary} position {pos_bary}")
 
     # plot_sim_orbit(sink_list)
     # plot_sim_orbit2(sink_list)
@@ -471,9 +471,7 @@ else:
         vy -= vel_bary[1]
         vz -= vel_bary[2]
 
-        print(
-            "add sink : mass {} pos {} vel {} racc {}".format(mass, (x, y, z), (vx, vy, vz), racc)
-        )
+        print(f"add sink : mass {mass} pos {(x, y, z)} vel {(vx, vy, vz)} racc {racc}")
         model.add_sink(mass, (x, y, z), (vx, vy, vz), racc)
 
     setup = model.get_setup()
@@ -533,12 +531,12 @@ def plot_rho(ext, sinks, arr_rho, iplot):
 
     plt.xlabel("x")
     plt.ylabel("y")
-    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2 * np.pi)))
+    plt.title(f"t = {model.get_time() / (2 * np.pi):0.3f} [Binary orbit]")
 
     cbar = plt.colorbar(res, extend="both")
     cbar.set_label(r"$\rho$ [code unit]")
 
-    plt.savefig("plot_rho_{:04}.png".format(iplot))
+    plt.savefig(f"plot_rho_{iplot:04}.png")
 
 
 def plot_rho_integ(ext, sinks, arr_rho, iplot):
@@ -576,7 +574,7 @@ def plot_rho_integ(ext, sinks, arr_rho, iplot):
 
     plt.xlabel("x")
     plt.ylabel("y")
-    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2 * np.pi)))
+    plt.title(f"t = {model.get_time() / (2 * np.pi):0.3f} [Binary orbit]")
 
     center_cmap_x = ext * 0.75
     center_cmap_y = 0
@@ -586,7 +584,7 @@ def plot_rho_integ(ext, sinks, arr_rho, iplot):
     cbar = plt.colorbar(res, extend="both")
     cbar.set_label(r"$\int \rho \, \mathrm{d}z$ [code unit]")
 
-    plt.savefig("plot_rho_integ_{:04}.png".format(iplot))
+    plt.savefig(f"plot_rho_integ_{iplot:04}.png")
 
 
 def rot_plot_rho(ext, sinks, arr_rho, iplot, e_r, e_theta):
@@ -633,12 +631,12 @@ def rot_plot_rho(ext, sinks, arr_rho, iplot, e_r, e_theta):
 
     plt.xlabel(r"$x_{binary}$")
     plt.ylabel(r"$y_{binary}$")
-    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2 * np.pi)))
+    plt.title(f"t = {model.get_time() / (2 * np.pi):0.3f} [Binary orbit]")
 
     cbar = plt.colorbar(res, extend="both")
     cbar.set_label(r"$\rho$ [code unit]")
 
-    plt.savefig("plot_rho_rot_{:04}.png".format(iplot))
+    plt.savefig(f"plot_rho_rot_{iplot:04}.png")
 
 
 def plot_vx(ext, sinks, arr_vx, iplot):
@@ -672,12 +670,12 @@ def plot_vx(ext, sinks, arr_vx, iplot):
 
     plt.xlabel("x")
     plt.ylabel("y")
-    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2 * np.pi)))
+    plt.title(f"t = {model.get_time() / (2 * np.pi):0.3f} [Binary orbit]")
 
     cbar = plt.colorbar(res, extend="both")
     cbar.set_label(r"$v_x$ [code unit]")
 
-    plt.savefig("plot_vx_{:04}.png".format(iplot))
+    plt.savefig(f"plot_vx_{iplot:04}.png")
 
 
 def plot_vz_z(ext, sinks, arr_vz, iplot):
@@ -711,12 +709,12 @@ def plot_vz_z(ext, sinks, arr_vz, iplot):
 
     plt.xlabel("x")
     plt.ylabel("z")
-    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2 * np.pi)))
+    plt.title(f"t = {model.get_time() / (2 * np.pi):0.3f} [Binary orbit]")
 
     cbar = plt.colorbar(res, extend="both")
     cbar.set_label(r"$v_z$ [code unit]")
 
-    plt.savefig("plot_vz_z_{:04}.png".format(iplot))
+    plt.savefig(f"plot_vz_z_{iplot:04}.png")
 
 
 def rot_plot_vz_z(ext, sinks, arr_vz, iplot, e_r, e_z):
@@ -758,12 +756,12 @@ def rot_plot_vz_z(ext, sinks, arr_vz, iplot, e_r, e_z):
 
     plt.xlabel(r"$x_{binary}$")
     plt.ylabel(r"$z_{binary}$")
-    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2 * np.pi)))
+    plt.title(f"t = {model.get_time() / (2 * np.pi):0.3f} [Binary orbit]")
 
     cbar = plt.colorbar(res, extend="both")
     cbar.set_label(r"$\rho$ [code unit]")
 
-    plt.savefig("plot_vz_z_rot_{:04}.png".format(iplot))
+    plt.savefig(f"plot_vz_z_rot_{iplot:04}.png")
 
 
 def plot_state(iplot):

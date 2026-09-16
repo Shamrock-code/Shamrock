@@ -7,14 +7,66 @@ on:
   workflow_dispatch:
 
   schedule:
-    # At 02:00 on Monday, Wednesday, and Friday.
-    - cron:  '0 2 * * 1,3,5'
+    # Every 3 hours. CI jobs below are skipped whenever a push, schedule, or
+    # pull_request workflow run in the repo is already queued or in_progress,
+    # to avoid stacking a new scheduled CI run on top of one already running.
+    - cron:  '0 */3 * * *'
 
 
 jobs:
 
+  should_run:
+    name: Check if scheduled CI is needed
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    outputs:
+      run_ci: ${{ steps.check.outputs.run_ci }}
+    steps:
+      - name: Skip if a CI job is already running
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          export GH_PAGER=cat
+
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "run_ci=true" >> "$GITHUB_OUTPUT"
+            echo "Event '${{ github.event_name }}' always runs CI."
+            exit 0
+          fi
+
+          list_runs() {
+            gh run list --repo "$GH_REPO" --event "$1" --status "$2" --limit 100 \
+              --json databaseId,name,event,headBranch
+          }
+
+          runs="$(
+            {
+              list_runs push in_progress
+              list_runs push queued
+              list_runs schedule in_progress
+              list_runs schedule queued
+              list_runs pull_request in_progress
+              list_runs pull_request queued
+            } | jq -s 'add | unique_by(.databaseId) | map(select(.databaseId != ${{ github.run_id }}))'
+          )"
+
+          if [ "$(jq 'length' <<<"$runs")" -eq 0 ]; then
+            echo "run_ci=true" >> "$GITHUB_OUTPUT"
+            echo "No other push/schedule/pull_request CI job queued or in_progress; running scheduled CI."
+          else
+            echo "run_ci=false" >> "$GITHUB_OUTPUT"
+            echo "A push/schedule/pull_request CI job is already queued or in_progress; skipping scheduled CI."
+            jq -r '.[] | "\(.event) \(.name) #\(.databaseId) (\(.headBranch))"' <<<"$runs"
+          fi
+
   check_codecov_secret:
     name: Check Codecov secret
+    needs: [should_run]
+    if: ${{ needs.should_run.outputs.run_ci == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Debug Codecov token
@@ -25,9 +77,16 @@ jobs:
           else
             echo "TOKEN EXISTS"
           fi
+
   main_workflow:
     name: CI
+    needs: [should_run]
+    if: ${{ needs.should_run.outputs.run_ci == 'true' }}
     uses: ./.github/workflows/main_workflow.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     with:
-      run_build_push_docker: true
+      # This workflow only re-tests already-published commits, so it never
+      # touches the images; On Push publishes for any actual change.
+      run_build_push_docker: false
       light_ci: false

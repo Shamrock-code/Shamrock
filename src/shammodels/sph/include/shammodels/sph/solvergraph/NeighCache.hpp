@@ -17,7 +17,7 @@
  */
 
 #include "shambase/DistributedData.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 #include "shamtree/TreeTraversal.hpp"
 
 namespace shammodels::sph::solvergraph {

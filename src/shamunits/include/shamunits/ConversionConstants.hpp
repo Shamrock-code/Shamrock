@@ -29,6 +29,8 @@ namespace shamunits {
         static constexpr T rsol_to_m   = 6.957e8;          //(m)
         static constexpr T rearth_to_m = 6.378137e6;       // Earth equatorial radius (m)
 
+        static constexpr T sol_mass_to_kg = 1.98847e30; //(kg)
+
         static constexpr T mn_to_s  = 60;            //(s)
         static constexpr T hr_to_s  = 3600;          //(s)
         static constexpr T dy_to_s  = 24 * hr_to_s;  //(s)
@@ -76,6 +78,9 @@ namespace shamunits {
  *
  * @fn shamunits::ConversionConstants::rearth_to_m()
  * @brief conversion factor from earth equatorial radii to meters
+ *
+ * @fn shamunits::ConversionConstants::sol_mass_to_kg()
+ * @brief conversion factor from solar masses to kilograms
  *
  * @fn shamunits::ConversionConstants::mn_to_s()
  * @brief conversion factor from minutes to seconds

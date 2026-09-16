@@ -115,7 +115,7 @@ NEW_TEST(Unittest, "shammath/crystalLattice/LatticeHCP/get_periodic_box", 1) {
         i32 zmax = shamalgs::primitives::mock_value(eng, 0, 7);
 
         REQUIRE_NAMED(
-            shambase::format(
+            sham::format(
                 "check periodicity : ({} {} {}) ({} {} {}) ({} {} {}) ",
                 xmin,
                 ymin,
@@ -151,7 +151,7 @@ NEW_TEST(Unittest, "shammath/crystalLattice/LatticeHCP/nearest_periodic_box_indi
                 {xmin, ymin, zmin}, {xmax, ymax, zmax});
 
         REQUIRE_NAMED(
-            shambase::format(
+            sham::format(
                 "check periodicity : ({} {} {}) ({} {} {}) ({} {} {})",
                 xmin,
                 ymin,

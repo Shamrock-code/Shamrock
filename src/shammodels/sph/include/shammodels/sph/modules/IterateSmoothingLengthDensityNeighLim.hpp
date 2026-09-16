@@ -19,9 +19,19 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+    X_RO(shammodels::sph::solvergraph::NeighCache, neigh_cache)                                    \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, positions)                                       \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, old_h)                                          \
+                                                                                                   \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, new_h)                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, eps_h)                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<u32>, was_limited)
 
 namespace shammodels::sph::modules {
 
@@ -33,47 +43,21 @@ namespace shammodels::sph::modules {
         Tscal gpart_mass;
         Tscal h_evol_max;
         Tscal h_evol_iter_max;
+        Tscal epsilon_h;
 
         u32 trigger_threshold;
 
         public:
         IterateSmoothingLengthDensityNeighLim(
-            Tscal gpart_mass, Tscal h_evol_max, Tscal h_evol_iter_max, u32 trigger_threshold)
+            Tscal gpart_mass,
+            Tscal h_evol_max,
+            Tscal h_evol_iter_max,
+            u32 trigger_threshold,
+            Tscal epsilon_h)
             : gpart_mass(gpart_mass), h_evol_max(h_evol_max), h_evol_iter_max(h_evol_iter_max),
-              trigger_threshold(trigger_threshold) {}
+              epsilon_h(epsilon_h), trigger_threshold(trigger_threshold) {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            const shammodels::sph::solvergraph::NeighCache &neigh_cache;
-            const shamrock::solvergraph::IFieldSpan<Tvec> &positions;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &old_h;
-            shamrock::solvergraph::IFieldSpan<Tscal> &new_h;
-            shamrock::solvergraph::IFieldSpan<Tscal> &eps_h;
-            shamrock::solvergraph::IFieldSpan<u32> &was_limited;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> positions,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> old_h,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> new_h,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> eps_h,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<u32>> was_limited) {
-            __internal_set_ro_edges({sizes, neigh_cache, positions, old_h});
-            __internal_set_rw_edges({new_h, eps_h, was_limited});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shammodels::sph::solvergraph::NeighCache>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<u32>>(2)};
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -84,3 +68,5 @@ namespace shammodels::sph::modules {
         virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::sph::modules
+
+#undef NODE_EDGES

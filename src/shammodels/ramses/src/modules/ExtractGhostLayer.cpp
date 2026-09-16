@@ -18,7 +18,7 @@
 #include "shamrock/patch/PatchDataLayer.hpp"
 
 void shammodels::basegodunov::modules::ExtractGhostLayer::_impl_evaluate_internal() {
-    StackEntry stack_loc{};
+    __shamrock_stack_entry();
 
     auto edges = get_edges();
 

@@ -153,15 +153,15 @@ def plot_case(k_plot, eps_value, cs_value, ts_value):
     fig, axs = plt.subplots(2, 2, figsize=(8, 8), sharex=True)
 
     # Real parts
-    axs[0, 0].plot(k_plot, r1_vals_re, color="0", linewidth=2, label="Re($\omega_+$)")
-    axs[0, 0].plot(k_plot, r2_vals_re, color="0", linewidth=2, label="Re($\omega_-$)")
-    axs[0, 0].plot(k_plot, r1_vals_re_LP14, "--", label="Re($\omega_{+,LP14}$)")
-    axs[0, 0].plot(k_plot, r2_vals_re_LP14, "--", label="Re($\omega_{-,LP14}$)")
+    axs[0, 0].plot(k_plot, r1_vals_re, color="0", linewidth=2, label=r"Re($\omega_+$)")
+    axs[0, 0].plot(k_plot, r2_vals_re, color="0", linewidth=2, label=r"Re($\omega_-$)")
+    axs[0, 0].plot(k_plot, r1_vals_re_LP14, "--", label=r"Re($\omega_{+,LP14}$)")
+    axs[0, 0].plot(k_plot, r2_vals_re_LP14, "--", label=r"Re($\omega_{-,LP14}$)")
     axs[0, 0].plot(
-        k_plot, r1_vals_re_DCL26_simple, linestyle="dotted", label="Re($\omega_{+,approx}$)"
+        k_plot, r1_vals_re_DCL26_simple, linestyle="dotted", label=r"Re($\omega_{+,approx}$)"
     )
     axs[0, 0].plot(
-        k_plot, r2_vals_re_DCL26_simple, linestyle="dotted", label="Re($\omega_{-,approx}$)"
+        k_plot, r2_vals_re_DCL26_simple, linestyle="dotted", label=r"Re($\omega_{-,approx}$)"
     )
     # axs[0,0].plot(k_plot, r1_vals_re_DCL26,"--", label="Re($r_1$) DCL26")
     # axs[0,0].plot(k_plot, r2_vals_re_DCL26,"--", label="Re($r_2$) DCL26")
@@ -170,15 +170,15 @@ def plot_case(k_plot, eps_value, cs_value, ts_value):
     axs[0, 0].legend()
 
     # Imaginary parts
-    axs[0, 1].plot(k_plot, r1_vals_im, color="0", linewidth=2, label="Im($\omega_+$)")
-    axs[0, 1].plot(k_plot, r2_vals_im, color="0", linewidth=2, label="Im($\omega_-$)")
-    axs[0, 1].plot(k_plot, r1_vals_im_LP14, "--", label="Im($\omega_{+,LP14}$)")
-    axs[0, 1].plot(k_plot, r2_vals_im_LP14, "--", label="Im($\omega_{-,LP14}$)")
+    axs[0, 1].plot(k_plot, r1_vals_im, color="0", linewidth=2, label=r"Im($\omega_+$)")
+    axs[0, 1].plot(k_plot, r2_vals_im, color="0", linewidth=2, label=r"Im($\omega_-$)")
+    axs[0, 1].plot(k_plot, r1_vals_im_LP14, "--", label=r"Im($\omega_{+,LP14}$)")
+    axs[0, 1].plot(k_plot, r2_vals_im_LP14, "--", label=r"Im($\omega_{-,LP14}$)")
     axs[0, 1].plot(
-        k_plot, r1_vals_im_DCL26_simple, linestyle="dotted", label="Im($\omega_{+,approx}$)"
+        k_plot, r1_vals_im_DCL26_simple, linestyle="dotted", label=r"Im($\omega_{+,approx}$)"
     )
     axs[0, 1].plot(
-        k_plot, r2_vals_im_DCL26_simple, linestyle="dotted", label="Im($\omega_{-,approx}$)"
+        k_plot, r2_vals_im_DCL26_simple, linestyle="dotted", label=r"Im($\omega_{-,approx}$)"
     )
     # axs[0,1].plot(k_plot, r1_vals_im_DCL26,"--", label="Im($r_1$) DCL26")
     # axs[0,1].plot(k_plot, r2_vals_im_DCL26,"--", label="Im($r_2$) DCL26")
@@ -196,15 +196,15 @@ def plot_case(k_plot, eps_value, cs_value, ts_value):
     r2_vals_abs_DCL26_simple = np.sqrt(r2_vals_re_DCL26_simple**2 + r2_vals_im_DCL26_simple**2)
     r1_vals_abs_DCL26 = np.sqrt(r1_vals_re_DCL26**2 + r1_vals_im_DCL26**2)
     r2_vals_abs_DCL26 = np.sqrt(r2_vals_re_DCL26**2 + r2_vals_im_DCL26**2)
-    axs[1, 0].plot(k_plot, r1_vals_abs, color="0", linewidth=2, label="Abs($\omega_+$)")
-    axs[1, 0].plot(k_plot, r2_vals_abs, color="0", linewidth=2, label="Abs($\omega_-$)")
-    axs[1, 0].plot(k_plot, r1_vals_abs_LP14, "--", label="Abs($\omega_{+,LP14}$)")
-    axs[1, 0].plot(k_plot, r2_vals_abs_LP14, "--", label="Abs($\omega_{-,LP14}$)")
+    axs[1, 0].plot(k_plot, r1_vals_abs, color="0", linewidth=2, label=r"Abs($\omega_+$)")
+    axs[1, 0].plot(k_plot, r2_vals_abs, color="0", linewidth=2, label=r"Abs($\omega_-$)")
+    axs[1, 0].plot(k_plot, r1_vals_abs_LP14, "--", label=r"Abs($\omega_{+,LP14}$)")
+    axs[1, 0].plot(k_plot, r2_vals_abs_LP14, "--", label=r"Abs($\omega_{-,LP14}$)")
     axs[1, 0].plot(
-        k_plot, r1_vals_abs_DCL26_simple, linestyle="dotted", label="Abs($\omega_{+,approx}$)"
+        k_plot, r1_vals_abs_DCL26_simple, linestyle="dotted", label=r"Abs($\omega_{+,approx}$)"
     )
     axs[1, 0].plot(
-        k_plot, r2_vals_abs_DCL26_simple, linestyle="dotted", label="Abs($\omega_{-,approx}$)"
+        k_plot, r2_vals_abs_DCL26_simple, linestyle="dotted", label=r"Abs($\omega_{-,approx}$)"
     )
 
     def approx(_k, _cs, _ts, _eps):

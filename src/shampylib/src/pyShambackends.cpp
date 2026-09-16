@@ -137,7 +137,7 @@ ON_PYTHON_INIT {
         .def(
             "__str__",
             [](const sham::MemPerfInfos &mem_perf_infos) {
-                return shambase::format(
+                return sham::format(
                     "MemPerfInfos(\n"
                     "    time_alloc_host=\"{0:}\",\n"
                     "    time_alloc_device=\"{1:}\",\n"
@@ -165,7 +165,7 @@ ON_PYTHON_INIT {
                     mem_perf_infos.max_allocated_byte_shared);
             })
         .def("__repr__", [](const sham::MemPerfInfos &mem_perf_infos) {
-            return shambase::format(
+            return sham::format(
                 "MemPerfInfos(\n"
                 "    time_alloc_host=\"{0:}\",\n"
                 "    time_alloc_device=\"{1:}\",\n"

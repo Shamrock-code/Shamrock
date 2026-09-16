@@ -7,10 +7,12 @@ This example benchmarks the scan exclusive sum in place performance for the diff
 
 # sphinx_gallery_multi_image = "single"
 
+import json
 import time
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shamrock.utils.plot import make_std_bench_plot
 
 import shamrock
 
@@ -24,6 +26,13 @@ if not shamrock.sys.is_initialized():
 # %%
 # Use shamrock documentation style for matplotlib
 shamrock.matplotlib.set_shamrock_mpl_style()
+
+# %%
+# Recover microbenchmark results
+microbench_results = shamrock.sys.get_microbench_results(allow_run=True)
+if len(microbench_results) == 0:
+    print("no microbench results, please run with --benchmark-mpi")
+    raise ValueError("no microbench results")
 
 
 # %%
@@ -73,6 +82,9 @@ def run_performance_sweep():
 
 # %%
 # List current implementation
+if not shamrock.algs.is_impl_set_scan_exclusive_sum_in_place():
+    shamrock.algs.autoselect_impl_scan_exclusive_sum_in_place()
+
 current_impl = shamrock.algs.get_current_impl_scan_exclusive_sum_in_place()
 
 print(current_impl)
@@ -86,30 +98,102 @@ print(all_default_impls)
 # %%
 # Run the performance benchmarks for all implementations
 
+dic_bench = {}
 for impl in all_default_impls:
-    shamrock.algs.set_impl_scan_exclusive_sum_in_place(impl.impl_name, impl.params)
+    shamrock.algs.set_impl_scan_exclusive_sum_in_place(impl)
+
+    impl_name = json.loads(impl)["implementation"]
 
     print(f"Running ex-scan in place performance benchmarks for {impl}...")
 
     # Run the performance sweep
     particle_counts, results_u32 = run_performance_sweep()
 
-    plt.plot(particle_counts, results_u32, "--.", label=impl.impl_name + " (u32)")
+    dic_bench[impl_name] = {"particle_counts": particle_counts, "results_u32": results_u32}
 
 
-Nobj = np.array(particle_counts)
-Time100M = Nobj / 1e8
-plt.plot(particle_counts, Time100M, color="grey", linestyle="-", alpha=0.7, label="100M obj/sec")
+# %%
+# Plot results (time)
+
+color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+plot_data = {}
+for i, (label, item) in enumerate(dic_bench.items()):
+    color = color_cycle[i % len(color_cycle)]
+    plot_data[label + " (u32)"] = {
+        "x": item["particle_counts"],
+        "y": item["results_u32"],
+        "color": color,
+        "label": label + " (u32)",
+        "linestyle": "--",
+        "marker": ".",
+    }
 
 
-plt.xlabel("Number of elements")
-plt.ylabel("Time (s)")
-plt.title("ex-scan in place performance benchmarks")
+def before_plot(ax_plot):
+    particle_counts = next(iter(dic_bench.values()))["particle_counts"]
+    Nobj = np.array(particle_counts)
+    Time100M = Nobj / 1e8
+    ax_plot.plot(
+        particle_counts,
+        Time100M,
+        color="grey",
+        linestyle="-",
+        alpha=0.7,
+        label="100M obj/sec",
+    )
 
-plt.xscale("log")
-plt.yscale("log")
 
-plt.grid(True)
+make_std_bench_plot(
+    plot_data,
+    xlabel="Number of elements",
+    ylabel="Time (s)",
+    title="ex-scan in place performance benchmarks",
+    end_label_fmt=lambda y: f"{y:.2e} s",
+    before_plot_func=before_plot,
+)
+plt.show()
 
-plt.legend()
+
+# %%
+# Plot results (bandwidth)
+
+peak_bw = microbench_results["saxpy_f32"]
+
+color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+plot_data = {}
+for i, (label, item) in enumerate(dic_bench.items()):
+    color = color_cycle[i % len(color_cycle)]
+    Nobj = np.array(item["particle_counts"])
+
+    Bytes = 2 * 4 * Nobj  # 1 read, 1 write u32 (sizeof = 4)
+    BW = Bytes / np.array(item["results_u32"])
+    plot_data[label + " (u32)"] = {
+        "x": item["particle_counts"],
+        "y": BW,
+        "color": color,
+        "label": label + " (u32)",
+        "linestyle": "--",
+        "marker": "x",
+    }
+
+
+def before_plot(ax_plot):
+    ax_plot.axhline(
+        y=peak_bw,
+        color="black",
+        linestyle=":",
+        label="microbenchmark peak BW f32",
+    )
+
+
+make_std_bench_plot(
+    plot_data,
+    xlabel="Number of elements",
+    ylabel="Bandwidth (B.s^-1)",
+    title="ex-scan in place performance benchmarks",
+    end_label_fmt=lambda y: f"{y / 1e9:.2f} GB.s^-1",
+    before_plot_func=before_plot,
+)
 plt.show()

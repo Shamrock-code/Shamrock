@@ -142,7 +142,7 @@ import numpy as np
 def plot(iplot):
     dic = ctx.collect_data()
     fig, axs = plt.subplots(2, 1, figsize=(5, 8), sharex=True)
-    fig.suptitle("t = {:.2f}".format(model.get_time()))
+    fig.suptitle(f"t = {model.get_time():.2f}")
     axs[0].scatter(dic["xyz"][:, 0], dic["xyz"][:, 1], s=1)
     axs[1].scatter(dic["xyz"][:, 0], dic["vxyz"][:, 1], s=1)
 
@@ -182,7 +182,7 @@ for i in range(20):
 # Convert PNG sequence to Image sequence in mpl
 ####################################################
 
-import matplotlib.animation as animation
+from matplotlib import animation
 from shamrock.utils.plot import show_image_sequence
 
 # If the animation is not returned only a static image will be shown in the doc

@@ -46,7 +46,7 @@ class ShamEnvBuild(build_ext):
 
     def build_extension(self, ext: ShamEnvExtension) -> None:
         if self.is_editable_mode():
-            raise Exception(
+            raise ValueError(
                 "Editable mode not supported for this config:\n"
                 "  -> both the executable and the pylib are called shamrock\n"
                 "  -> so there is a name conflict in editable mode since\n"

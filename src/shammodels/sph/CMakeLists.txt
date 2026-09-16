@@ -14,7 +14,6 @@ set(Sources
     src/Model.cpp
     src/Solver.cpp
     src/SPHUtilities.cpp
-    src/SolverLog.cpp
     src/io/PhantomDump.cpp
     src/io/Phantom2Shamrock.cpp
     src/io/PhantomDumpEOSUtils.cpp
@@ -28,6 +27,9 @@ set(Sources
     src/modules/DiffOperator.cpp
     src/modules/DiffOperatorDtDivv.cpp
     src/modules/SinkParticlesUpdate.cpp
+    src/modules/SinkParticlesFlagAccreteHard.cpp
+    src/modules/SinkParticlesAccreteQuantities.cpp
+    src/modules/SinkParticlesEvictAccretedParticles.cpp
     src/modules/ConservativeCheck.cpp
     src/modules/ExternalForces.cpp
     src/modules/ComputeEos.cpp
@@ -47,7 +49,8 @@ set(Sources
     src/modules/LoopSmoothingLengthIter.cpp
     src/modules/ComputeNeighStats.cpp
     src/modules/NodeUpdateDerivsVaryingAlphaAV.cpp
-    src/modules/NodeUpdateDerivsMonofluidTVI.cpp
+    src/modules/NodeUpdateDerivsVaryingAlphaAVDustTVA.cpp
+    src/modules/NodeUpdateDerivsMonofluidTVA.cpp
     src/modules/NodeComputePressureGrad.cpp
     src/modules/NodeEvolveDustCOALASourceTerm.cpp
     src/modules/setup/GeneratorMCDisc.cpp
@@ -62,6 +65,9 @@ set(Sources
     src/modules/self_gravity/SGSFMMPlummer.cpp
     src/modules/render/CartesianRender.cpp
     src/modules/render/RenderFieldGetter.cpp
+    src/modules/render/SPHInterpolation.cpp
+    src/modules/render/SPHColumnInteg.cpp
+    src/modules/render/SPHAzymuthalInteg.cpp
     src/modules/io/VTKDump.cpp
 )
 

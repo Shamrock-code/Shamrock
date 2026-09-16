@@ -23,7 +23,7 @@ namespace shamtest::details {
         std::string acc = "\n[\n";
 
         for (u32 i = 0; i < vec.size(); i++) {
-            acc += shambase::format_printf("%e", vec[i]);
+            acc += sham::format_printf("%e", vec[i]);
             if (i < vec.size() - 1) {
                 acc += ", ";
             }

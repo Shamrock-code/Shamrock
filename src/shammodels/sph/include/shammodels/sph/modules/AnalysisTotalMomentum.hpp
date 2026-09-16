@@ -77,9 +77,11 @@ namespace shammodels::sph::modules {
 
             Tvec tot_total_momentum = shamalgs::collective::allreduce_sum(total_momentum);
 
-            if (!solver.storage.sinks.is_empty()) {
-                for (auto &sink : solver.storage.sinks.get()) {
-                    tot_total_momentum += sink.mass * sink.velocity;
+            auto &mass = get_sink_mass<Tvec>(sched.synchronized_data);
+            auto &vel  = get_sink_vel<Tvec>(sched.synchronized_data);
+            if (!mass.empty()) {
+                for (size_t i = 0; i < mass.size(); i++) {
+                    tot_total_momentum += mass[i] * vel[i];
                 }
             }
 

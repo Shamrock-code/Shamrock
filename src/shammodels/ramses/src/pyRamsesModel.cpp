@@ -200,6 +200,44 @@ namespace shammodels::basegodunov {
                 py::kw_only(),
                 py::arg("crit_mass"))
             .def(
+                "set_amr_mode_pseudo_gradient_based",
+                [](TConfig &self, Tscal error_min, Tscal error_max) {
+                    self.amr_mode.set_refine_pseudo_gradient_based(error_min, error_max);
+                },
+                py::kw_only(),
+                py::arg("error_min"),
+                py::arg("error_max"))
+            .def(
+                "set_amr_mode_jeans_length_based",
+                [](TConfig &self, u32 N_jeans, Tscal T_init) {
+                    self.amr_mode.set_refine_jeans_length_based(N_jeans, T_init);
+                },
+                py::kw_only(),
+                py::arg("N_jeans"),
+                py::arg("T_init"))
+            .def(
+                "set_amr_mode_shear_based",
+                [](TConfig &self, Tscal threshold) {
+                    self.amr_mode.set_refine_shear_based(threshold);
+                },
+                py::kw_only(),
+                py::arg("Threshold"))
+            .def(
+                "set_amr_mode_old",
+                [](TConfig &self, bool use_old_amr) {
+                    self.amr_mode.old_amr = use_old_amr;
+                })
+            .def(
+                "set_first_order_interpolation_mode",
+                [](TConfig &self) {
+                    self.amr_interp_mode = FIRST_ORDER;
+                })
+            .def(
+                "set_second_order_interpolation_mode",
+                [](TConfig &self) {
+                    self.amr_interp_mode = SECOND_ORDER;
+                })
+            .def(
                 "set_gravity_mode_no_gravity",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = NoGravity;
@@ -248,8 +286,28 @@ namespace shammodels::basegodunov {
                 py::kw_only(),
                 py::arg("niter_max") = -1)
             .def("timestep", &T::timestep)
-            // .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
-            // .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
+            .def("solver_logs_last_rate", &T::solver_logs_last_rate)
+            .def("solver_logs_last_obj_count", &T::solver_logs_last_obj_count)
+            .def(
+                "solver_logs_last_system_metrics",
+                [](T &self) {
+                    auto system_metrics = self.solver.solve_logs.get_last_system_metrics();
+                    py::dict ret;
+                    ret["duration"] = system_metrics.wall_time;
+                    if (system_metrics.rank_energy_consummed.has_value()) {
+                        ret["rank_energy_consummed"] = system_metrics.rank_energy_consummed.value();
+                    }
+                    if (system_metrics.gpu_energy_consummed.has_value()) {
+                        ret["gpu_energy_consummed"] = system_metrics.gpu_energy_consummed.value();
+                    }
+                    if (system_metrics.cpu_energy_consummed.has_value()) {
+                        ret["cpu_energy_consummed"] = system_metrics.cpu_energy_consummed.value();
+                    }
+                    if (system_metrics.dram_energy_consummed.has_value()) {
+                        ret["dram_energy_consummed"] = system_metrics.dram_energy_consummed.value();
+                    }
+                    return ret;
+                })
             .def(
                 "set_field_value_lambda_f64",
                 [](T &self,
@@ -315,6 +373,17 @@ namespace shammodels::basegodunov {
                         x_max);
                 })
             .def(
+                "add_timestep_callback",
+                [](T &self,
+                   std::optional<std::function<void(void)>> step_begin_callback,
+                   std::optional<std::function<void(void)>> step_end_callback) {
+                    self.solver.timestep_callbacks.push_back(
+                        {std::move(step_begin_callback), std::move(step_end_callback)});
+                },
+                py::kw_only(),
+                py::arg("step_begin") = std::nullopt,
+                py::arg("step_end")   = std::nullopt)
+            .def(
                 "get_solver_tex",
                 [](T &self) {
                     return shambase::get_check_ref(self.solver.storage.solver_sequence).get_tex();
@@ -346,20 +415,20 @@ namespace shammodels::basegodunov {
             .def(
                 "get_time",
                 [](T &self) {
-                    return self.solver.solver_config.get_time();
+                    return self.solver.get_time();
                 })
             .def(
                 "get_dt",
                 [](T &self) {
-                    return self.solver.solver_config.get_dt();
+                    return self.solver.get_dt();
                 })
             .def(
                 "set_time",
                 [](T &self, Tscal t) {
-                    return self.solver.solver_config.set_time(t);
+                    return self.solver.set_time(t);
                 })
             .def("set_next_dt", [](T &self, Tscal dt) {
-                return self.solver.solver_config.set_next_dt(dt);
+                return self.solver.set_next_dt(dt);
             });
     }
 } // namespace shammodels::basegodunov

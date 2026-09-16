@@ -589,7 +589,7 @@ column_average_vz_plot.render_all(
 
 # sphinx_gallery_multi_image = "single"
 
-import matplotlib.animation as animation
+from matplotlib import animation
 from shamrock.utils.plot import show_image_sequence
 
 render_gif = True

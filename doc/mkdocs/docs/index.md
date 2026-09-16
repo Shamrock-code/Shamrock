@@ -50,7 +50,7 @@ We can run some SPH, AMR, but not only that!
 
     Shamrock has plenty of features, be sure to check the list to know what's **available** and to **avoid duplicates**.
 
-    [:octicons-arrow-right-24: Features](./features.md)
+    [:octicons-arrow-right-24: Features](../sphinx/features.html)
 
 </div>
 

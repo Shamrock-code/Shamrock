@@ -250,8 +250,8 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
             load_patch_internal_block_zp(nobj, nvar, buf_src, buf_dest);
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
-                "offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                sham::format("offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
         }
     } else {
         shambase::throw_unimplemented();
@@ -738,8 +738,8 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                 offset, buf_cell_min, buf_cell_max, face_lists, nobj, nvar, buf_src, buf_dest);
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
-                "offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                sham::format("offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
         }
     } else {
         shambase::throw_unimplemented();
@@ -798,8 +798,8 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
             OrientedNeighFaceList<Tvec> &face_zp = face_lists.zp();
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
-                "offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                sham::format("offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
         }
     } else {
         shambase::throw_unimplemented();
@@ -857,8 +857,8 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
             OrientedNeighFaceList<Tvec> &face_zp = face_lists.zp();
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
-                "offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                sham::format("offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
         }
     } else {
         shambase::throw_unimplemented();

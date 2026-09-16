@@ -46,7 +46,7 @@ namespace {
             u64 tid;
 
             std::string to_string() const {
-                return shambase::format(
+                return sham::format(
                     "{{\"name\": \"{}\", \"cat\": \"{}\", \"ph\": \"B\", \"ts\": {}, \"pid\": {}, "
                     "\"tid\": "
                     "{}}},\n",
@@ -66,7 +66,7 @@ namespace {
             u64 tid;
 
             std::string to_string() const {
-                return shambase::format(
+                return sham::format(
                     "{{\"name\": \"{}\", \"cat\": \"{}\", \"ph\": \"E\", \"ts\": {}, \"pid\": {}, "
                     "\"tid\": "
                     "{}}},\n",
@@ -87,7 +87,7 @@ namespace {
             u64 tid;
 
             std::string to_string() const {
-                return shambase::format(
+                return sham::format(
                     "{{\"name\": \"{}\", \"cat\": \"{}\", \"ph\": \"X\", \"ts\": {}, \"dur\": {}, "
                     "\"pid\": {}, "
                     "\"tid\": "
@@ -108,7 +108,7 @@ namespace {
             u64 pid;
 
             std::string to_string() const {
-                return shambase::format(
+                return sham::format(
                     "{{ \"pid\": {}, \"ph\": \"C\", \"ts\":  {}, \"args\": {{\"{}\": {:e} }} }},\n",
                     pid,
                     to_prof_time(t),

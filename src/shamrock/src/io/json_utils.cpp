@@ -34,7 +34,7 @@ namespace shamrock {
 
         int dash_count = 50;
 
-        std::string faint_line = shambase::format(
+        std::string faint_line = sham::format(
             "{}{:-^{}}{}\n",
             shambase::term_colors::faint(),
             "",         // empty string
@@ -46,11 +46,11 @@ namespace shamrock {
         auto red   = shambase::term_colors::col8b_red();
 
         std::string newold_text
-            = shambase::format("[{}+ | added{}] [{}- | removed{}]", green, reset, red, reset);
-        std::string nice_plus  = shambase::format("{}+{}", green, reset);
-        std::string nice_minus = shambase::format("{}-{}", red, reset);
+            = sham::format("[{}+ | added{}] [{}- | removed{}]", green, reset, red, reset);
+        std::string nice_plus  = sham::format("{}+{}", green, reset);
+        std::string nice_minus = sham::format("{}-{}", red, reset);
 
-        std::string log = shambase::format(
+        std::string log = sham::format(
             "Used config parameters are listed below;\n      "
             "Possible cases for highlighted entries:\n      "
             "  - ({})   default-added\n      "

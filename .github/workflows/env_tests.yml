@@ -3,113 +3,248 @@ name: Compile & Unit tests
 
 on:
   workflow_call:
+    inputs:
+      light_ci:
+        description: "If true, keep only matrix entries with light_ci: true"
+        required: false
+        type: boolean
+        default: false
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      light_ci:
+        description: "If true, keep only matrix entries with light_ci: true"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
 
-  compile_and_test:
-    name: "${{ matrix.imagename }} -- ${{ matrix.machine }} -- ${{ matrix.args }}"
-    runs-on: ${{ matrix.runson }}
-
-    container:
-      image: ${{ matrix.container }}
-
-    strategy:
-      matrix:
-        include:
-
+  # matrix is not available in job-level if; filter here instead.
+  # Entries with "light_ci": true are kept when inputs.light_ci is true.
+  set_matrix:
+    name: Set env tests matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+      has_jobs: ${{ steps.set.outputs.has_jobs }}
+    steps:
+      - id: set
+        shell: bash
+        run: |
           ##########################################################################################
           # Ubuntu
           ##########################################################################################
-          - machine: debian-generic.acpp
-            args: --backend omp
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15
-            runson: ubuntu-latest
-            imagename: Ubuntu 22 LLVM 15
-            runtest: yes
-            runtestpy: yes
-            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
-            ccache-key-extra: omp
-
-          - machine: debian-generic.acpp
-            args: --backend generic
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15
-            runson: ubuntu-latest
-            imagename: Ubuntu 22 LLVM 15
-            runtest: yes
-            runtestpy: yes
-            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
-            ccache-key-extra: generic
-
-          - machine: debian-generic.acpp
-            args: --backend cuda.explicit-multipass --arch sm_80
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15cuda11
-            runson: ubuntu-latest
-            imagename: Ubuntu 22 LLVM 15 CUDA 11
-            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
-            ccache-key-extra: cuda.explicit-multipass
-
-          - machine: debian-generic.acpp
-            args: --backend cuda.integrated-multipass --arch sm_80
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15cuda11
-            runson: ubuntu-latest
-            imagename: Ubuntu 22 LLVM 15 CUDA 11
-            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
-            ccache-key-extra: cuda.integrated-multipass
-
-          - machine: debian-generic.acpp
-            args: --backend hip --arch gfx906
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15rocm543
-            runson: ubuntu-latest
-            imagename: Ubuntu 22 LLVM 15 ROCM 5.4.3
-            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
-            ccache-key-extra: hip
+          cat > ubuntu.json <<'JSON'
+          [
+            {
+              "machine": "debian-generic.acpp",
+              "args": "--backend omp",
+              "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15",
+              "runson": "[\"ubuntu-latest\"]",
+              "imagename": "Ubuntu 22 LLVM 15",
+              "runtest": true,
+              "runtest_rscript": true,
+              "runtestpy": true,
+              "runtestpypip": true,
+              "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
+              "ccache-key-extra": "omp"
+            },
+            {
+              "machine": "debian-generic.acpp",
+              "args": "--backend generic",
+              "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15",
+              "runson": "[\"ubuntu-latest\"]",
+              "imagename": "Ubuntu 22 LLVM 15",
+              "runtest": true,
+              "runtest_rscript": true,
+              "runtestpy": true,
+              "runtestpypip": true,
+              "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
+              "ccache-key-extra": "generic"
+            },
+            {
+              "machine": "debian-generic.acpp",
+              "args": "--backend cuda.explicit-multipass --arch sm_80",
+              "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15cuda11",
+              "runson": "[\"ubuntu-latest\"]",
+              "imagename": "Ubuntu 22 LLVM 15 CUDA 11",
+              "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
+              "ccache-key-extra": "cuda.explicit-multipass"
+            },
+            {
+              "machine": "debian-generic.acpp",
+              "args": "--backend cuda.integrated-multipass --arch sm_80",
+              "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15cuda11",
+              "runson": "[\"ubuntu-latest\"]",
+              "imagename": "Ubuntu 22 LLVM 15 CUDA 11",
+              "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
+              "ccache-key-extra": "cuda.integrated-multipass"
+            },
+            {
+              "machine": "debian-generic.acpp",
+              "args": "--backend hip --arch gfx906",
+              "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15rocm543",
+              "runson": "[\"ubuntu-latest\"]",
+              "imagename": "Ubuntu 22 LLVM 15 ROCM 5.4.3",
+              "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
+              "ccache-key-extra": "hip"
+            }
+          ]
+          JSON
 
           ##########################################################################################
           # Arch Linux
           ##########################################################################################
-          - machine: archlinux.acpp
-            args: --backend generic
-            container: archlinux/archlinux:base-devel
-            runson: ubuntu-latest
-            imagename: ArchLinux
-            runtest: yes
-            runtestpy: yes
-            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
-            ccache-key-extra: generic
+          cat > arch.json <<'JSON'
+          [
+            {
+              "machine": "archlinux.acpp",
+              "args": "--backend generic",
+              "container": "archlinux/archlinux:base-devel",
+              "runson": "[\"ubuntu-latest\"]",
+              "imagename": "ArchLinux",
+              "runtest": true,
+              "runtest_rscript": true,
+              "runtestpy": true,
+              "runtestpypip": true,
+              "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
+              "ccache-key-extra": "generic"
+            }
+          ]
+          JSON
 
           ##########################################################################################
           # MacOS
           ##########################################################################################
-          - machine: macos-generic.acpp
-            runson: macos-14
-            imagename: MacOS-14
-            runtest: yes
-            mpiargs: --oversubscribe
-            ccache-key-extra: macos14
+          cat > macos.json <<'JSON'
+          [
+            {
+              "machine": "macos-generic.acpp",
+              "runson": "[\"macos-14\"]",
+              "imagename": "MacOS-14",
+              "runtest": true,
+              "runtest_rscript": true,
+              "mpiargs": "--oversubscribe",
+              "ccache-key-extra": "macos14"
+            },
+            {
+              "machine": "macos-generic.acpp",
+              "runson": "[\"macos-15\"]",
+              "imagename": "MacOS-15",
+              "runtest": true,
+              "runtest_rscript": true,
+              "mpiargs": "--oversubscribe",
+              "ccache-key-extra": "macos15",
+              "build_nproc": 4
+            },
+            {
+              "machine": "macos-generic.acpp",
+              "runson": "[\"macos-26\"]",
+              "imagename": "MacOS-26",
+              "runtest": true,
+              "runtest_rscript": true,
+              "mpiargs": "--oversubscribe",
+              "ccache-key-extra": "macos26"
+            }
+          ]
+          JSON
 
-          - machine: macos-generic.acpp
-            runson: macos-15
-            imagename: MacOS-15
-            runtest: yes
-            mpiargs: --oversubscribe
-            ccache-key-extra: macos15
+          ##########################################################################################
+          # Conda (AdaptiveCpp)
+          ##########################################################################################
+          cat > conda.json <<'JSON'
+          [
+            {
+              "machine": "conda.acpp",
+              "args": "--backend omp --arch none",
+              "container": "continuumio/anaconda3",
+              "runson": "[\"ubuntu-latest\"]",
+              "imagename": "Anaconda3",
+              "runtest": true,
+              "runtest_rscript": true,
+              "mpiargs": "--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe",
+              "ccache-key-extra": "omp",
+              "shell": "bash -el {0}",
+              "light_ci": true
+            }
+          ]
+          JSON
 
-          - machine: macos-generic.acpp
-            runson: macos-15-intel
-            imagename: MacOS-15 (intel)
-            runtest: yes
-            mpiargs: --oversubscribe
-            ccache-key-extra: macos15-intel
+          ##########################################################################################
+          # Intel/LLVM (DPC++)
+          ##########################################################################################
+          # On older self-hosted runners the container must be started with --shm-size=512m,
+          # otherwise we get bus errors with intel mpi.
+          cat > dpcpp.json <<'JSON'
+          [
+            {
+              "machine": "ci.intel-llvm.cuda",
+              "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22cuda12dpcpp",
+              "runson": "[\"self-hosted\", \"docker-runner\"]",
+              "imagename": "Ubuntu 22 CUDA 12 DPC++",
+              "mpiargs": "--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe",
+              "ccache-key-extra": "cuda"
+            },
+            {
+              "machine": "ci.intel-llvm.rocm",
+              "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22rocm543dpcpp",
+              "runson": "[\"self-hosted\", \"docker-runner\"]",
+              "imagename": "Ubuntu 22 ROCM 5.4.3 DPC++",
+              "mpiargs": "--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe",
+              "ccache-key-extra": "rocm"
+            },
+            {
+              "machine": "docker.intel_oneapi",
+              "container": "intel/oneapi",
+              "docker_options": "--shm-size=512m",
+              "runson": "[\"self-hosted\", \"docker-runner\"]",
+              "imagename": "Intel oneAPI",
+              "runtest": true,
+              "mpiargs": "",
+              "ccache-key-extra": "oneapi",
+              "light_ci": true
+            }
+          ]
+          JSON
 
-          - machine: macos-generic.acpp
-            runson: macos-26
-            imagename: MacOS-26
-            runtest: yes
-            mpiargs: --oversubscribe
-            ccache-key-extra: macos26
+          jq -s '{include: add}' ubuntu.json arch.json macos.json conda.json dpcpp.json > matrix.json
+
+          if [[ "${{ inputs.light_ci }}" == "true" ]]; then
+            jq '{include: [.include[] | select(.light_ci == true)]}' matrix.json > matrix.filtered.json
+            mv matrix.filtered.json matrix.json
+          fi
+
+          echo "matrix.json:"
+          cat matrix.json
+
+          {
+            echo "matrix<<EOF"
+            cat matrix.json
+            echo "EOF"
+            echo "has_jobs=$(jq -r '.include | length > 0' matrix.json)"
+          } >> "$GITHUB_OUTPUT"
+
+  compile_and_test:
+    name: "${{ matrix.imagename }} -- ${{ matrix.machine }} -- ${{ matrix.args }}"
+    needs: [set_matrix]
+    # Empty include lists fail strategy.matrix evaluation; skip instead.
+    if: ${{ needs.set_matrix.outputs.has_jobs == 'true' }}
+    runs-on: ${{ fromJSON(matrix.runson) }}
+
+    container:
+      image: ${{ matrix.container }}
+      options: ${{ matrix.docker_options }}
+
+    strategy:
+      matrix: ${{ fromJSON(needs.set_matrix.outputs.matrix) }}
+
+    # In docker containers GitHub Actions defaults to sh, so set bash here.
+    # conda.acpp needs a login shell so `conda activate` is available.
+    defaults:
+      run:
+        shell: ${{ matrix.shell || 'bash' }}
 
     timeout-minutes: 120
     steps:
@@ -123,6 +258,7 @@ jobs:
       # if macos container
       - name : Install macos dependencies
         if: matrix.machine == 'macos-generic.acpp'
+        timeout-minutes: 10
         run: |
           set +e
 
@@ -156,14 +292,14 @@ jobs:
         run:  |
           git config --global --add safe.directory '*'
           git config --global --list
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
         with:
           fetch-depth: 0
           submodules: recursive
           ref: "refs/pull/${{ github.event.number }}/merge"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name != 'pull_request_target'
         with:
           fetch-depth: 0
@@ -174,48 +310,66 @@ jobs:
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
+      # Avoids git clone failing with exit code 128 on the GitHub runner
+      - name: Authenticate git for github.com
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
       - name: Install ccache
         if: matrix.machine == 'archlinux.acpp'
         run: |
           sudo pacman -Sy --noconfirm ccache
 
+      - name: Install ccache
+        if: matrix.machine == 'conda.acpp' || matrix.machine == 'docker.intel_oneapi'
+        run: |
+          apt update
+          apt install -y ccache
+
+      - name: Run conda info
+        if: matrix.machine == 'conda.acpp'
+        run: conda info
+
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ github.job }}-${{matrix.machine}}-${{matrix.ccache-key-extra}}
           verbose: 2
+          save: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
+          evict-old-files: 4d
 
-      - name: Configure ccache
-        shell: bash
-        run: |
-          echo " ----- ccache configuration ----- "
-          echo " Old configuration: "
-          ccache -p
-          echo " ----- New configuration:   ----- "
-          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
-          ccache -p
-          echo " ----- ccache configuration done ----- "
+      - uses: ./.github/actions/configure_ccache
 
       - name: ls local
         run : ls -la
 
       - name: Setup env
+        env:
+          SHAMROCK_BUILD_NPROC: ${{ matrix.build_nproc }}
         run : ./env/new-env --machine ${{ matrix.machine }} --builddir build -- ${{ matrix.args }}
 
+      - name: Cat activate file
+        run: |
+          cat build/activate
+
+      - name: Show current conda env
+        if: matrix.machine == 'conda.acpp'
+        run: |
+          cd build
+          source ./activate
+          conda env export
+
       - name: Configure
-        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source ./activate && shamconfigure
 
       - name: Configure sham install
-        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source ./activate &&  \
             cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test -DCMAKE_INSTALL_PYTHONDIR=$(pwd)/pyinstall_test
 
       - name: Build & install
-        shell: bash # In docker container github action default to sh
         run: |
           cd build
           export NINJA_STATUS="[%f/%t j=%r] "
@@ -230,13 +384,13 @@ jobs:
         if: matrix.runtest
         run: |
           cd build
+          source ./activate
           export SYCLCFG=0:0
           export MPIARGS="${{ matrix.mpiargs }}"
           ../tools/test_sequence.sh
 
       - name: Create Python test script for next tests
-        shell: bash # In docker container github action default to sh
-        if: matrix.runtest
+        if: matrix.runtest_rscript || matrix.runtestpy || matrix.runtestpypip
         run: |
           cat > /tmp/test_rscript.py << 'EOF'
           import shamrock
@@ -253,20 +407,25 @@ jobs:
           cat /tmp/test_rscript.py
 
       - name: Try starting Shamrock (build dir)
-        if: matrix.runtest
+        if: matrix.runtest_rscript
         run: |
           cd build
+          source ./activate
           ./shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py
 
       - name: Try starting Shamrock (installed version)
-        shell: bash # In docker container github action default to sh
         if: matrix.runtest
         run: |
-          cd build/install_test/bin
-          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py
+          cd build
+          source ./activate
+          cd install_test/bin
+          RSCRIPT_ARGS=""
+          if [ "${{ matrix.runtest_rscript }}" = "true" ]; then
+            RSCRIPT_ARGS="--rscript /tmp/test_rscript.py"
+          fi
+          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0 $RSCRIPT_ARGS
 
       - name: Try starting Shamrock (installed python libs)
-        shell: bash # In docker container github action default to sh
         if: matrix.runtestpy
         run: |
           cd build/install_test
@@ -278,31 +437,29 @@ jobs:
           python3 /tmp/test_rscript.py
 
       - name: Rm CMake cache
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
           cd build
           rm -rf CMakeCache.txt
 
-
       - name: Create a Python venv
-        shell: bash # In docker container github action default to sh
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
-          python3 -m venv venv
+          PYTHON_EXECUTABLE="$(python3 -c "import sys; print(sys.executable)")"
+          which "${PYTHON_EXECUTABLE}" || true
+          "${PYTHON_EXECUTABLE}" -m venv venv
           . venv/bin/activate
           pip install -U pip setuptools
 
       - name: Try pip install Shamrock
-        shell: bash # In docker container github action default to sh
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
           . venv/bin/activate
           cd build
           pip install --verbose .
 
       - name: Try shamrock startup (pip install)
-        shell: bash # In docker container github action default to sh
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
           . venv/bin/activate
           ACPP_VISIBILITY_MASK=omp \
@@ -310,8 +467,7 @@ jobs:
           python3 /tmp/test_rscript.py
 
       - name: Try shamrock startup (pip install)
-        shell: bash # In docker container github action default to sh
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
           . venv/bin/activate
           ACPP_VISIBILITY_MASK=omp \
@@ -319,7 +475,7 @@ jobs:
           shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py
 
       - name: Try pip uninstall Shamrock
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
           . venv/bin/activate
           pip uninstall -y shamrock

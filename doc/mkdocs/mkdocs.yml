@@ -10,12 +10,9 @@ nav:
   - 'Doxygen documentation': 'doxygen.md'
 
   - 'Features':
-    - 'Feature list': 'features.md'
     - 'SPH model':
       - 'Phantom conformance': 'features/sph/conformance_phantom.md'
       - 'Sink particles': 'features/sph/sinks.md'
-      - 'Shearing box' : 'features/sph/shearing_box.md'
-      - 'Setup Graph' : 'features/sph/setup_graph.md'
 
   - 'User Documentation' :
     - 'QuickStart' : 'usermanual/quickstart.md'
@@ -42,7 +39,6 @@ nav:
   - 'Physical models' :
     - 'SPH' :
       - 'Scalling test' : 'models/sph/scalling.md'
-      - 'Smoothing length tolerance' : 'models/sph/smoothing_length_tolerance.md'
 
   - 'Develloper Doc' :
     - 'Git guide' : 'devdoc/git_guide.md'

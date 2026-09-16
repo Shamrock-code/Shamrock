@@ -19,7 +19,7 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 #include <functional>
 
 namespace shamrock::solvergraph {
@@ -31,7 +31,8 @@ namespace shamrock::solvergraph {
         public:
         using IEdgeNamed::IEdgeNamed;
 
-        virtual ~IPatchDataLayerRefs() = default;
+        // No destructor here on purpose: IEdge's is already virtual, and declaring one would
+        // suppress implicit move generation, leaving this (and PatchDataLayerRefs) unmovable.
 
         virtual patch::PatchDataLayer &get(u64 id_patch)             = 0;
         virtual const patch::PatchDataLayer &get(u64 id_patch) const = 0;

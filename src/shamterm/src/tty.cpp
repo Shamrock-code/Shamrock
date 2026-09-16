@@ -26,14 +26,25 @@
     #include <sys/ioctl.h>
 #endif
 
-namespace sham::term {
+namespace {
 
-    bool is_a_tty() {
+    /// Whether stdout is a tty, computed once on first use and cached (isatty() does not
+    /// change over the life of the process).
+    bool compute_is_a_tty() {
 #if __has_include(<unistd.h>)
         return isatty(fileno(stdout));
 #else
         return true;
 #endif
+    }
+
+} // namespace
+
+namespace sham::term {
+
+    bool is_a_tty() {
+        static bool cached = compute_is_a_tty();
+        return cached;
     }
 
     /// Forced width of the terminal, if set by set_tty_columns.
@@ -80,5 +91,11 @@ namespace sham::term {
 
     int get_tty_columns() { return get_tty_dim().second; }
     int get_tty_lines() { return get_tty_dim().first; }
+
+    /// Whether the current terminal/locale supports UTF-8 output, as set by set_support_utf8.
+    bool utf8_supported = false;
+
+    void set_support_utf8(bool support) { utf8_supported = support; }
+    bool support_utf8() { return utf8_supported; }
 
 } // namespace sham::term

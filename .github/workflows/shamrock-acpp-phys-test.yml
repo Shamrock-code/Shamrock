@@ -2,6 +2,12 @@ name: Acpp/clang
 
 on:
   workflow_call:
+    inputs:
+      fail_fast:
+        description: "Cancel remaining matrix jobs when one fails"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
 
@@ -10,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: repo
           submodules: recursive
@@ -83,6 +89,8 @@ jobs:
           - worldsize: 2
             testfile: gsph_sod_tube_gsph.py
           - worldsize: 1
+            testfile: gsph_sod_tube_exact_inutsuka.py
+          - worldsize: 1
             testfile: comp_phantom_sedov_1patch.py
           - worldsize: 2
             testfile: comp_phantom_sedov_1patch.py
@@ -120,7 +128,15 @@ jobs:
             testfile: run_sg_compare_error_sph.py
           - worldsize: 1
             testfile: run_compare_shamrock_ph_disc.py
-      fail-fast: false
+          - worldsize: 1
+            testfile: run_test_sink_synchro.py
+          - worldsize: 2
+            testfile: run_test_sink_synchro.py
+          - worldsize: 1
+            testfile: run_test_ext_forces_accretion.py
+          - worldsize: 2
+            testfile: run_test_ext_forces_accretion.py
+      fail-fast: ${{ inputs.fail_fast }}
 
     timeout-minutes: 60
     steps:
@@ -174,6 +190,22 @@ jobs:
             artifact_name: gallery_ramses_run_advect
           - testfile: "examples/ramses/run_toro_shocks.py"
             artifact_name: gallery_ramses_run_toro_shocks
+          - testfile: "examples/ramses/run_sod_amr_reflective.py"
+            artifact_name: gallery_ramses_run_sod_amr_reflective
+          - testfile: "examples/ramses/run_compare_amr_refine_sod.py"
+            artifact_name: gallery_ramses_run_compare_amr_refine_sod
+
+          # GSPH examples
+          - testfile: "examples/gsph/run_sod.py"
+            artifact_name: gallery_gsph_run_sod
+          - testfile: "examples/gsph/run_advection.py"
+            artifact_name: gallery_gsph_run_advection
+          - testfile: "examples/gsph/run_123_problem.py"
+            artifact_name: gallery_gsph_run_123_problem
+          - testfile: "examples/gsph/run_symmetric_collision.py"
+            artifact_name: gallery_gsph_run_symmetric_collision
+          - testfile: "examples/gsph/run_blast_wave.py"
+            artifact_name: gallery_gsph_run_blast_wave
 
           # SPH examples
           - testfile: "examples/sph/run_circular_disc_lense_thirring.py"
@@ -198,18 +230,22 @@ jobs:
             artifact_name: gallery_sph_pairing_instab
           - testfile: "examples/sph/run_cubic_reorganisation.py"
             artifact_name: gallery_sph_cubic_reorg
-          - testfile: "examples/sph/run_dustydiffuse_tvi.py"
-            artifact_name: gallery_sph_dustydiffuse_tvi
-          - testfile: "examples/sph/run_dustywave_tvi.py"
-            artifact_name: gallery_sph_dustywave_tvi
-          - testfile: "examples/sph/run_dustysettle_tvi.py"
-            artifact_name: gallery_sph_dustysettle_tvi
+          - testfile: "examples/sph/run_dustydiffuse_tva.py"
+            artifact_name: gallery_sph_dustydiffuse_tva
+          - testfile: "examples/sph/run_dustywave_tva.py"
+            artifact_name: gallery_sph_dustywave_tva
+          - testfile: "examples/sph/run_dustysettle_tva.py"
+            artifact_name: gallery_sph_dustysettle_tva
+          - testfile: "examples/sph/run_sod.py"
+            artifact_name: gallery_sph_sod
+          - testfile: "examples/sph/run_sod_dust_tva.py"
+            artifact_name: gallery_sph_sod_dust_tva
 
           # Tests CI
           - testfile: "examples/tests_ci/run_compare_shamrock_ph_disc.py"
             artifact_name: gallery_tests_ci_run_compare_shamrock_ph_disc
 
-      fail-fast: false
+      fail-fast: ${{ inputs.fail_fast }}
 
     timeout-minutes: 60
     steps:
@@ -228,14 +264,14 @@ jobs:
         run: |
           git config --global --add safe.directory '*'
           git config --global --list
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
         with:
           fetch-depth: 0
           submodules: recursive
           ref: "refs/pull/${{ github.event.number }}/merge"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name != 'pull_request_target'
         with:
           fetch-depth: 0
@@ -290,14 +326,14 @@ jobs:
         run: |
           git config --global --add safe.directory '*'
           git config --global --list
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
         with:
           fetch-depth: 0
           submodules: recursive
           ref: "refs/pull/${{ github.event.number }}/merge"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name != 'pull_request_target'
         with:
           fetch-depth: 0

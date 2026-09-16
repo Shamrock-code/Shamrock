@@ -139,18 +139,18 @@ std::string shammodels::report_perf_timestep(
     table.add_double_rule();
     for (u32 i = 0; i < shamcomm::world_size(); i++) {
         std::vector<std::string> row = {
-            shambase::format("{:<4}", i),
-            shambase::format("{:.4e}", rate_all_ranks[i]),
-            shambase::format("{:}", nobj_all_ranks[i]),
-            shambase::format("{:}", npatch_all_ranks[i]),
-            shambase::format("{:.3e}", tcompute_all_ranks[i]),
-            shambase::format("{:.1f}%", 100 * (mpi_timer_all_ranks[i] / tcompute_all_ranks[i])),
-            shambase::format(
+            sham::format("{:<4}", i),
+            sham::format("{:.4e}", rate_all_ranks[i]),
+            sham::format("{:}", nobj_all_ranks[i]),
+            sham::format("{:}", npatch_all_ranks[i]),
+            sham::format("{:.3e}", tcompute_all_ranks[i]),
+            sham::format("{:.1f}%", 100 * (mpi_timer_all_ranks[i] / tcompute_all_ranks[i])),
+            sham::format(
                 "{:>.1f}% {:<.1f}%",
                 100 * (alloc_time_device_all_ranks[i] / tcompute_all_ranks[i]),
                 100 * (alloc_time_host_all_ranks[i] / tcompute_all_ranks[i])),
-            shambase::format("{}", shambase::readable_sizeof(max_mem_device_all_ranks[i])),
-            shambase::format("{}", shambase::readable_sizeof(max_mem_host_all_ranks[i])),
+            sham::format("{}", shambase::readable_sizeof(max_mem_device_all_ranks[i])),
+            sham::format("{}", shambase::readable_sizeof(max_mem_host_all_ranks[i])),
         };
         if (report_power_usage) {
             if (shamsys::support_rank_energy_consummed()) {
@@ -188,17 +188,17 @@ std::string shammodels::report_perf_timestep(
         table.add_rulled_data(ruled);
         std::vector<std::string> all_row = {
             "all",
-            shambase::format("{:.4e}", f64(obj_total) / max_t),
-            shambase::format("{:}", obj_total),
-            shambase::format("{:}", npatch_total),
-            shambase::format("{:.3e}", max_t),
-            shambase::format("{:.1f}%", 100 * (sum_mpi / sum_t)),
-            shambase::format(
+            sham::format("{:.4e}", f64(obj_total) / max_t),
+            sham::format("{:}", obj_total),
+            sham::format("{:}", npatch_total),
+            sham::format("{:.3e}", max_t),
+            sham::format("{:.1f}%", 100 * (sum_mpi / sum_t)),
+            sham::format(
                 "{:>.1f}% {:<.1f}%",
                 100 * (sum_alloc_device / sum_t),
                 100 * (sum_alloc_host / sum_t)),
-            shambase::format("{}", shambase::readable_sizeof(sum_mem_device_total)),
-            shambase::format("{}", shambase::readable_sizeof(sum_mem_host_total)),
+            sham::format("{}", shambase::readable_sizeof(sum_mem_device_total)),
+            sham::format("{}", shambase::readable_sizeof(sum_mem_host_total)),
         };
         if (report_power_usage) {
             if (shamsys::support_rank_energy_consummed()) {

@@ -16,12 +16,15 @@
 
 #include "shamalgs/details/reduction/reduction.hpp"
 #include "shambase/floats.hpp"
+#include "shambase/memory.hpp"
 #include "shamalgs/details/reduction/fallbackReduction.hpp"
 #include "shamalgs/details/reduction/fallbackReduction_usm.hpp"
 #include "shamalgs/details/reduction/groupReduction.hpp"
 #include "shamalgs/details/reduction/groupReduction_usm.hpp"
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/is_all_true.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
 
@@ -54,80 +57,70 @@ namespace shamalgs::reduction {
 #endif
     }
 
-    bool is_all_true(sycl::buffer<u8> &buf, u32 cnt) {
-
-        // TODO do it on GPU pleeeaze
-
-        bool res = true;
-        {
-            sycl::host_accessor acc{buf, sycl::read_only};
-
-            for (u32 i = 0; i < cnt; i++) {
-                res = res && (acc[i] != 0);
-            }
-        }
-
-        return res;
-    }
-
     template<class T>
-    bool has_nan(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt) {
+    bool has_nan(sham::DeviceBuffer<T> &buf, u64 cnt) {
         if constexpr (shambase::VectorProperties<T>::is_float_based) {
+            auto &dev_sched = buf.get_dev_scheduler_ptr();
+
             // res is filled with 1 if no nan 0 otherwise
-            sycl::buffer<u8> res(cnt);
-            q.submit([&](sycl::handler &cgh) {
-                sycl::accessor acc1{buf, cgh, sycl::read_only};
+            sham::DeviceBuffer<u8> res(cnt, dev_sched);
 
-                sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
-
-                cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    out[item] = !sham::has_nan(acc1[item]);
+            sham::kernel_call(
+                shambase::get_check_ref(dev_sched).get_queue(),
+                sham::MultiRef{buf},
+                sham::MultiRef{res},
+                u32(cnt),
+                [](u32 i, const T *in, u8 *out) {
+                    out[i] = !sham::has_nan(in[i]);
                 });
-            });
 
-            return !is_all_true(res, cnt);
+            return !shamalgs::primitives::is_all_true(res, u32(cnt));
         } else {
             return false;
         }
     }
 
     template<class T>
-    bool has_inf(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt) {
+    bool has_inf(sham::DeviceBuffer<T> &buf, u64 cnt) {
         if constexpr (shambase::VectorProperties<T>::is_float_based) {
+            auto &dev_sched = buf.get_dev_scheduler_ptr();
+
             // res is filled with 1 if no inf 0 otherwise
-            sycl::buffer<u8> res(cnt);
-            q.submit([&](sycl::handler &cgh) {
-                sycl::accessor acc1{buf, cgh, sycl::read_only};
+            sham::DeviceBuffer<u8> res(cnt, dev_sched);
 
-                sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
-
-                cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    out[item] = !sham::has_inf(acc1[item]);
+            sham::kernel_call(
+                shambase::get_check_ref(dev_sched).get_queue(),
+                sham::MultiRef{buf},
+                sham::MultiRef{res},
+                u32(cnt),
+                [](u32 i, const T *in, u8 *out) {
+                    out[i] = !sham::has_inf(in[i]);
                 });
-            });
 
-            return !is_all_true(res, cnt);
+            return !shamalgs::primitives::is_all_true(res, u32(cnt));
         } else {
             return false;
         }
     }
 
     template<class T>
-    bool has_nan_or_inf(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt) {
+    bool has_nan_or_inf(sham::DeviceBuffer<T> &buf, u64 cnt) {
         if constexpr (shambase::VectorProperties<T>::is_float_based) {
+            auto &dev_sched = buf.get_dev_scheduler_ptr();
+
             // res is filled with 1 if no nan or inf 0 otherwise
-            sycl::buffer<u8> res(cnt);
-            q.submit([&](sycl::handler &cgh) {
-                sycl::accessor acc1{buf, cgh, sycl::read_only};
+            sham::DeviceBuffer<u8> res(cnt, dev_sched);
 
-                sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
-
-                cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    out[item] = !sham::has_nan_or_inf(acc1[item]);
+            sham::kernel_call(
+                shambase::get_check_ref(dev_sched).get_queue(),
+                sham::MultiRef{buf},
+                sham::MultiRef{res},
+                u32(cnt),
+                [](u32 i, const T *in, u8 *out) {
+                    out[i] = !sham::has_nan_or_inf(in[i]);
                 });
-            });
 
-            return !is_all_true(res, cnt);
+            return !shamalgs::primitives::is_all_true(res, u32(cnt));
         } else {
             return false;
         }
@@ -160,9 +153,9 @@ namespace shamalgs::reduction {
         template _arg_ sum(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);   \
         template _arg_ max(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);   \
         template _arg_ min(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);   \
-        template bool has_nan(sycl::queue &q, sycl::buffer<_arg_> &buf1, u64 cnt);                 \
-        template bool has_inf(sycl::queue &q, sycl::buffer<_arg_> &buf1, u64 cnt);                 \
-        template bool has_nan_or_inf(sycl::queue &q, sycl::buffer<_arg_> &buf1, u64 cnt);
+        template bool has_nan(sham::DeviceBuffer<_arg_> &buf1, u64 cnt);                           \
+        template bool has_inf(sham::DeviceBuffer<_arg_> &buf1, u64 cnt);                           \
+        template bool has_nan_or_inf(sham::DeviceBuffer<_arg_> &buf1, u64 cnt);
 
     XMAC_TYPES
     #undef X

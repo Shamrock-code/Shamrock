@@ -66,6 +66,7 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec>
     void NodeConsToPrimDust<Tvec>::_impl_evaluate_internal() {
+        __shamrock_stack_entry();
         auto edges = get_edges();
 
         edges.spans_rho_dust.check_sizes(edges.sizes.indexes);
@@ -106,8 +107,8 @@ namespace shammodels::basegodunov::modules {
         shambase::replace_all(tex, "{rho}", rho);
         shambase::replace_all(tex, "{rhov}", rhov);
         shambase::replace_all(tex, "{block_count}", block_count);
-        shambase::replace_all(tex, "{ndust}", shambase::format("{}", ndust));
-        shambase::replace_all(tex, "{block_size}", shambase::format("{}", block_size));
+        shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
+        shambase::replace_all(tex, "{block_size}", sham::format("{}", block_size));
 
         return tex;
     }

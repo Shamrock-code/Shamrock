@@ -22,7 +22,9 @@
  * - Symmetry properties
  */
 
+#include "shammath/sphkernels.hpp"
 #include "shammodels/gsph/math/forces.hpp"
+#include "shammodels/gsph/math/reconstruction.hpp"
 #include "shammodels/gsph/math/riemann/iterative.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shamtest/shamtest.hpp"
@@ -563,6 +565,209 @@ namespace {
         }
     }
 
+    //==========================================================================
+    // SCENARIO: accumulate_gsph_pair_force dispatches correctly to each branch
+    //==========================================================================
+
+    void test_accumulate_dispatch_inutsuka_matches_manual() {
+        using Tvec   = f64_3;
+        using Tscal  = f64;
+        using Kernel = shammath::M4<Tscal>;
+
+        const Tscal pmass   = 1.0;
+        const Tscal p_star  = 1.2;
+        const Tscal v_star  = 0.3;
+        const Tscal rho_a   = 1.0;
+        const Tscal rho_b   = 0.8;
+        const Tscal omega_a = 1.0;
+        const Tscal omega_b = 1.0;
+        const Tscal h_a     = 0.15;
+        const Tscal h_b     = 0.12;
+        const Tscal rab     = 0.1;
+        const Tscal rab_inv = 1.0 / rab;
+        Tvec r_ab_unit      = Tvec{1, 0, 0};
+        Tvec v_a            = Tvec{0.1, 0, 0};
+
+        Tvec sum_axyz  = Tvec{0, 0, 0};
+        Tscal sum_du_a = 0;
+        accumulate_gsph_pair_force<Kernel, Tvec, Tscal>(
+            /*use_inutsuka_v2=*/true,
+            pmass,
+            p_star,
+            v_star,
+            rho_a,
+            rho_b,
+            omega_a,
+            omega_b,
+            rab,
+            rab_inv,
+            h_a,
+            h_b,
+            r_ab_unit,
+            v_a,
+            sum_axyz,
+            sum_du_a);
+
+        // Manually reproduce the InutsukaV2 path: effective face (reconstruction.hpp)
+        // plus the pair-symmetrized gradient evaluated at sqrt(2)*h.
+        const Tscal vol_a = Tscal{1} / rho_a;
+        const Tscal vol_b = Tscal{1} / rho_b;
+        auto face         = lin_v2_sast_ij<Tscal>(vol_a, vol_b, h_a, h_b, rab_inv);
+
+        const Tscal sqrt2    = shambase::constants::sqrt_2<Tscal>;
+        const Tscal Fab2_a   = Kernel::dW_3d(rab, sqrt2 * h_a);
+        const Tscal Fab2_b   = Kernel::dW_3d(rab, sqrt2 * h_b);
+        const Tvec grad_W_ij = (Fab2_a + Fab2_b) * r_ab_unit;
+
+        Tvec dv_ref  = Tvec{0, 0, 0};
+        Tscal du_ref = 0;
+        add_gsph_force_contribution_inutsuka<Tvec, Tscal>(
+            pmass, p_star, v_star, face.V2, grad_W_ij, r_ab_unit, v_a, dv_ref, du_ref);
+
+        REQUIRE_FLOAT_EQUAL_NAMED(
+            "dispatcher matches manual ax (InutsukaV2)", sum_axyz[0], dv_ref[0], 1e-12);
+        REQUIRE_FLOAT_EQUAL_NAMED(
+            "dispatcher matches manual du (InutsukaV2)", sum_du_a, du_ref, 1e-12);
+
+        // The whole point of the sqrt(2)h widening is that it differs from the
+        // ordinary h gradient used by the ChaWhitworth branch.
+        const Tscal Fab_a_plain = Kernel::dW_3d(rab, h_a);
+        const Tscal Fab_b_plain = Kernel::dW_3d(rab, h_b);
+        REQUIRE_NAMED(
+            "InutsukaV2 gradient uses sqrt(2)h, not plain h",
+            std::abs(Fab2_a - Fab_a_plain) > 1e-6 || std::abs(Fab2_b - Fab_b_plain) > 1e-6);
+    }
+
+    void test_accumulate_dispatch_chawhitworth_matches_manual() {
+        using Tvec   = f64_3;
+        using Tscal  = f64;
+        using Kernel = shammath::M4<Tscal>;
+
+        const Tscal pmass   = 1.0;
+        const Tscal p_star  = 0.9;
+        const Tscal v_star  = -0.2;
+        const Tscal rho_a   = 1.0;
+        const Tscal rho_b   = 0.8;
+        const Tscal omega_a = 1.0;
+        const Tscal omega_b = 1.0;
+        const Tscal h_a     = 0.15;
+        const Tscal h_b     = 0.12;
+        const Tscal rab     = 0.1;
+        const Tscal rab_inv = 1.0 / rab;
+        Tvec r_ab_unit      = Tvec{1, 0, 0};
+        Tvec v_a            = Tvec{-0.05, 0, 0};
+
+        Tvec sum_axyz  = Tvec{0, 0, 0};
+        Tscal sum_du_a = 0;
+        accumulate_gsph_pair_force<Kernel, Tvec, Tscal>(
+            /*use_inutsuka_v2=*/false,
+            pmass,
+            p_star,
+            v_star,
+            rho_a,
+            rho_b,
+            omega_a,
+            omega_b,
+            rab,
+            rab_inv,
+            h_a,
+            h_b,
+            r_ab_unit,
+            v_a,
+            sum_axyz,
+            sum_du_a);
+
+        const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
+        const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
+
+        Tvec dv_ref  = Tvec{0, 0, 0};
+        Tscal du_ref = 0;
+        add_gsph_force_contribution<Tvec, Tscal>(
+            pmass,
+            p_star,
+            v_star,
+            rho_a,
+            rho_b,
+            omega_a,
+            omega_b,
+            Fab_a,
+            Fab_b,
+            r_ab_unit,
+            v_a,
+            dv_ref,
+            du_ref);
+
+        REQUIRE_FLOAT_EQUAL_NAMED(
+            "dispatcher matches manual ax (ChaWhitworth)", sum_axyz[0], dv_ref[0], 1e-12);
+        REQUIRE_FLOAT_EQUAL_NAMED(
+            "dispatcher matches manual du (ChaWhitworth)", sum_du_a, du_ref, 1e-12);
+    }
+
+    void test_accumulate_dispatch_newtons_third_law() {
+        using Tvec   = f64_3;
+        using Tscal  = f64;
+        using Kernel = shammath::M4<Tscal>;
+
+        const Tscal pmass   = 1.0;
+        const Tscal p_star  = 1.1;
+        const Tscal v_star  = 0.15;
+        const Tscal rho     = 1.0;
+        const Tscal omega   = 1.0;
+        const Tscal h       = 0.15;
+        const Tscal rab     = 0.1;
+        const Tscal rab_inv = 1.0 / rab;
+        Tvec v_a            = Tvec{0, 0, 0};
+
+        for (bool use_v2 : {true, false}) {
+            Tvec dv_a  = Tvec{0, 0, 0};
+            Tscal du_a = 0;
+            accumulate_gsph_pair_force<Kernel, Tvec, Tscal>(
+                use_v2,
+                pmass,
+                p_star,
+                v_star,
+                rho,
+                rho,
+                omega,
+                omega,
+                rab,
+                rab_inv,
+                h,
+                h,
+                Tvec{1, 0, 0},
+                v_a,
+                dv_a,
+                du_a);
+
+            Tvec dv_b  = Tvec{0, 0, 0};
+            Tscal du_b = 0;
+            accumulate_gsph_pair_force<Kernel, Tvec, Tscal>(
+                use_v2,
+                pmass,
+                p_star,
+                v_star,
+                rho,
+                rho,
+                omega,
+                omega,
+                rab,
+                rab_inv,
+                h,
+                h,
+                Tvec{-1, 0, 0},
+                v_a,
+                dv_b,
+                du_b);
+
+            REQUIRE_FLOAT_EQUAL_NAMED(
+                use_v2 ? "InutsukaV2 dispatcher: dv_x antisymmetric"
+                       : "ChaWhitworth dispatcher: dv_x antisymmetric",
+                dv_a[0],
+                -dv_b[0],
+                1e-12);
+        }
+    }
+
 } // anonymous namespace
 
 //==============================================================================
@@ -594,3 +799,15 @@ NEW_TEST(Unittest, "shammodels/gsph/force/different_directions", 1) {
 }
 
 NEW_TEST(Unittest, "shammodels/gsph/force/different_kernels", 1) { test_force_different_kernels(); }
+
+NEW_TEST(Unittest, "shammodels/gsph/force/dispatch_inutsuka", 1) {
+    test_accumulate_dispatch_inutsuka_matches_manual();
+}
+
+NEW_TEST(Unittest, "shammodels/gsph/force/dispatch_chawhitworth", 1) {
+    test_accumulate_dispatch_chawhitworth_matches_manual();
+}
+
+NEW_TEST(Unittest, "shammodels/gsph/force/dispatch_newtons_third", 1) {
+    test_accumulate_dispatch_newtons_third_law();
+}

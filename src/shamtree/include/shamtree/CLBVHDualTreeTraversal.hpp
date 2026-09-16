@@ -18,9 +18,10 @@
  * Bounding Volume Hierarchies (CLBVH).
  */
 
-#include "shamalgs/impl_utils.hpp"
 #include "shambackends/vec.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
+#include <string>
+#include <vector>
 
 namespace shamtree {
 
@@ -63,15 +64,20 @@ namespace shamtree {
     /// namespace to control implementation behavior
     namespace impl {
 
-        /// Get list of available dual tree traversal implementations
-        std::vector<shamalgs::impl_param> get_default_impl_list_clbvh_dual_tree_traversal();
+        /// Get list of available dual tree traversal implementations, as config json strings
+        std::vector<std::string> get_default_impl_list_clbvh_dual_tree_traversal();
 
-        /// Get the current implementation for dual tree traversal
-        shamalgs::impl_param get_current_impl_clbvh_dual_tree_traversal_impl();
+        /// Get the current implementation for dual tree traversal, as a config json string
+        std::string get_current_impl_clbvh_dual_tree_traversal_impl();
 
-        /// Set the implementation for dual tree traversal
-        void set_impl_clbvh_dual_tree_traversal(
-            const std::string &impl, const std::string &param = "");
+        /// Check if an implementation has been selected for dual tree traversal
+        bool is_impl_set_clbvh_dual_tree_traversal();
+
+        /// Set the implementation for dual tree traversal, from a config json string
+        void set_impl_clbvh_dual_tree_traversal(const std::string &impl);
+
+        /// Select the default implementation for dual tree traversal
+        void autoselect_impl_clbvh_dual_tree_traversal();
 
     } // namespace impl
 

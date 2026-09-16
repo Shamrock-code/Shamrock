@@ -21,16 +21,16 @@ shamrock.matplotlib.set_shamrock_mpl_style()
 
 def compute_integ_3d(q, W):
     if hasattr(np, "trapezoid"):
-        integrate_func = getattr(np, "trapezoid")
+        integrate_func = np.trapezoid
     else:
-        integrate_func = getattr(np, "trapz")
+        integrate_func = np.trapz  # noqa: NPY201
     return integrate_func(4 * np.pi * q**2 * W, q)
 
 
 def plot_test_sph_kernel(q, f, df, W, dW, title, ax):
     integral_result = compute_integ_3d(q, W)
     assert np.abs(integral_result - 1) < 1e-6, (
-        "3D integration of 4\pi q^2 W(q) is not 1, kernel: " + title
+        r"3D integration of 4\pi q^2 W(q) is not 1, kernel: " + title
     )
 
     ax[0].plot(q, W, label=f"$W_{{{title}}}(q)$")

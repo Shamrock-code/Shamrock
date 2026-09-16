@@ -18,9 +18,16 @@
  */
 
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataFieldDDShared.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::PatchDataFieldDDShared<T>, ghost_fields)                           \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldRefs<T>, fields)
 
 namespace shamrock::solvergraph {
 
@@ -30,28 +37,14 @@ namespace shamrock::solvergraph {
         public:
         ReplaceGhostField() {}
 
-        struct Edges {
-            const shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_fields;
-            shamrock::solvergraph::IFieldRefs<T> &fields;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<T>> ghost_fields,
-            std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> fields) {
-            __internal_set_ro_edges({ghost_fields});
-            __internal_set_rw_edges({fields});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_rw_edge<shamrock::solvergraph::PatchDataFieldDDShared<T>>(0),
-                get_rw_edge<shamrock::solvergraph::IFieldRefs<T>>(1)};
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "ReplaceGhostField"; };
+        inline virtual std::string _impl_get_label() const { return "ReplaceGhostField"; };
 
-        virtual std::string _impl_get_tex() { return "ReplaceGhostField"; };
+        virtual std::string _impl_get_tex() const { return "ReplaceGhostField"; };
     };
 } // namespace shamrock::solvergraph
+
+#undef NODE_EDGES

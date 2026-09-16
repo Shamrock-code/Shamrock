@@ -39,7 +39,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
     if (shamcomm::world_rank() == 0) {
-        logger::normal_ln("amr::Zeus", shambase::format("t = {}, dt = {}", t_current, dt_input));
+        logger::normal_ln("amr::Zeus", sham::format("t = {}, dt = {}", t_current, dt_input));
     }
 
     shambase::Timer tstep;

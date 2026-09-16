@@ -61,14 +61,14 @@ namespace shamtest {
         if (is_run_only) {
             output += ("- : ");
         } else {
-            output += shambase::format("- [{}/{}] :", test_num + 1, test_count);
+            output += sham::format("- [{}/{}] :", test_num + 1, test_count);
         }
 
         bool any_node_cnt = test.world_size == -1;
         if (any_node_cnt) {
             output += (" [any] ");
         } else {
-            output += shambase::format(" [{:03}] ", test.world_size);
+            output += sham::format(" [{:03}] ", test.world_size);
         }
 
         output += "\033[;34m" + test.name + "\033[0m\n";
@@ -123,13 +123,13 @@ namespace shamtest {
             std::cout << "   -> Result : \033[1;31m Fail \033[0m";
         }
 
-        std::string s_assert = shambase::format(" [{}/{}] ", success_cnt, assert_count);
+        std::string s_assert = sham::format(" [{}/{}] ", success_cnt, assert_count);
         printf("%-15s", s_assert.c_str());
         std::cout << " (" << timer.get_time_str() << ")" << std::endl;
 
         if (shamcmdopt::is_ci_github_actions()) {
             if (success_cnt != assert_count) {
-                logger::raw_ln(shambase::format("##[error]Test {} failed", rank_results[0].name));
+                logger::raw_ln(sham::format("##[error]Test {} failed", rank_results[0].name));
             }
         }
 
@@ -171,8 +171,8 @@ namespace shamtest {
 
         for (unsigned int j = 0; j < res.asserts.asserts.size(); j++) {
 
-            out += shambase::format_printf("     - [%d/%zu] ", j + 1, res.asserts.asserts.size());
-            out += shambase::format_printf("%-20s", res.asserts.asserts[j].name.c_str());
+            out += sham::format_printf("     - [%d/%zu] ", j + 1, res.asserts.asserts.size());
+            out += sham::format_printf("%-20s", res.asserts.asserts[j].name.c_str());
 
             if (res.asserts.asserts[j].value) {
                 out += "  (\033[;32mSuccess\033[0m)\n";
@@ -409,7 +409,7 @@ namespace shamtest {
                 if (any_node_cnt) {
                     output += (" - [\033[;32many\033[0m] ");
                 } else {
-                    output += shambase::format(" - [\033[;32m{:03}\033[0m] ", t.world_size);
+                    output += sham::format(" - [\033[;32m{:03}\033[0m] ", t.world_size);
                 }
                 output += "\033[;32m" + t.name + "\033[0m\n";
 
@@ -417,7 +417,7 @@ namespace shamtest {
                 if (any_node_cnt) {
                     output += (" - [\033[;31many\033[0m] ");
                 } else {
-                    output += shambase::format(" - [\033[;31m{:03}\033[0m] ", t.world_size);
+                    output += sham::format(" - [\033[;31m{:03}\033[0m] ", t.world_size);
                 }
                 output += "\033[;31m" + t.name + "\033[0m\n";
             }
@@ -614,7 +614,7 @@ namespace shamtest {
 
         auto get_test_name = [&](Test t, int ranks) -> std::string {
             std::string name = get_pref_type(t.type) + "/" + t.name
-                               + shambase::format(
+                               + sham::format(
                                    "(ranks={})"
                                    //"{}"
                                    ,

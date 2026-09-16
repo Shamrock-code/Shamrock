@@ -24,20 +24,21 @@
 namespace {
 
     /**
-     * @brief List of known terminal ident that support colors
+     * @brief List of known TERM idents that support basic ANSI/16 colors (SGR codes)
      */
-    static const std::vector<std::string_view> color_support_term{
-        "xterm",
-        "xterm-256",
-        "xterm-256color",
-        "xterm-truecolor",
-        "vt100",
-        "color",
-        "ansi",
-        "cygwin",
-        "linux",
-        "xterm-kitty",
-        "alacritty"};
+    static const std::vector<std::string_view> basic_color_term{
+        "xterm", "vt100", "color", "ansi", "cygwin", "linux"};
+
+    /**
+     * @brief List of known TERM idents that support the 256-color palette (\x1b[38;5;Nm)
+     */
+    static const std::vector<std::string_view> ansi256_color_term{"xterm-256", "xterm-256color"};
+
+    /**
+     * @brief List of known TERM idents that support 24-bit RGB truecolor output (\x1b[38;2;r;g;bm)
+     */
+    static const std::vector<std::string_view> truecolor_term{
+        "xterm-truecolor", "xterm-direct", "xterm-kitty", "alacritty"};
 
     /**
      * @brief Case-insensitive substring search
@@ -102,16 +103,23 @@ namespace sham::term {
     ColorLevel detect_color_level(TermEnvVars vars) {
 
         if (vars.COLORTERM) {
-            if (*vars.COLORTERM == "truecolor") {
-                return ColorLevel::Basic;
-            }
-            if (*vars.COLORTERM == "24bit") {
-                return ColorLevel::Basic;
+            if (*vars.COLORTERM == "truecolor" || *vars.COLORTERM == "24bit") {
+                return ColorLevel::TrueColor;
             }
         }
 
         if (vars.TERM) {
-            for (auto term : color_support_term) {
+            for (auto term : truecolor_term) {
+                if (*vars.TERM == term) {
+                    return ColorLevel::TrueColor;
+                }
+            }
+            for (auto term : ansi256_color_term) {
+                if (*vars.TERM == term) {
+                    return ColorLevel::ANSI256;
+                }
+            }
+            for (auto term : basic_color_term) {
                 if (*vars.TERM == term) {
                     return ColorLevel::Basic;
                 }

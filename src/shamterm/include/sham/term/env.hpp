@@ -46,6 +46,8 @@ namespace sham::term {
     /**
      * @brief Detect the terminal emulator's color support level from TERM/COLORTERM.
      *
+     * COLORTERM=truecolor/24bit returns ColorLevel::TrueColor.
+     *
      * @return the detected color support level
      */
     ColorLevel detect_color_level(TermEnvVars vars);

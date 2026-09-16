@@ -19,6 +19,7 @@
 #include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "shambase/term_colors.hpp"
+#include "sham/term/color.hpp"
 #include "sham/term/env.hpp"
 #include "sham/term/tty.hpp"
 #include "shamcmdopt/cmdopt.hpp"
@@ -146,6 +147,15 @@ namespace shamcmdopt {
             } else {
                 shambase::println("  utf8 = disabled");
             }
+
+            const char *color_level_str = "unknown";
+            switch (sham::term::color_level()) {
+            case sham::term::ColorLevel::NoColor  : color_level_str = "0 (none)"; break;
+            case sham::term::ColorLevel::Basic    : color_level_str = "1 (ANSI/16 colors)"; break;
+            case sham::term::ColorLevel::ANSI256  : color_level_str = "2 (256 colors)"; break;
+            case sham::term::ColorLevel::TrueColor: color_level_str = "3 (truecolor)"; break;
+            }
+            shambase::println(sham::format("  colorlevel = {}", color_level_str));
 
             shambase::println(
                 sham::format(

@@ -145,8 +145,9 @@ namespace shammodels {
                 shambase::throw_with_loc<std::invalid_argument>(
                     "the sping direction should be a unit vector");
             }
-            ext_forces.push_back(ExtForceVariant<Tvec>{
-                LenseThirring{central_mass, Racc, a_spin, dir_spin, central_pos, central_vel}});
+            ext_forces.push_back(
+                ExtForceVariant<Tvec>{
+                    LenseThirring{central_mass, Racc, a_spin, dir_spin, central_pos, central_vel}});
         }
 
         /**
@@ -193,10 +194,11 @@ namespace shammodels {
                    {"central_pos", v->central_pos},
                    {"Racc", v->Racc}};
         } else if (const PN_1PN *v = std::get_if<PN_1PN>(&p.val)) {
-            j = {{"force_type", "1pn"},
-                 {"central_mass", v->central_mass},
-                 {"central_pos", v->central_pos},
-                 {"central_vel", v->central_vel}};
+            j
+                = {{"force_type", "1pn"},
+                   {"central_mass", v->central_mass},
+                   {"central_pos", v->central_pos},
+                   {"central_vel", v->central_vel}};
         } else if (const LenseThirring *v = std::get_if<LenseThirring>(&p.val)) {
             j = {
                 {"force_type", "lense_thirring"},

@@ -45,8 +45,7 @@ namespace shammodels::common::modules {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
-    public:
-
+        public:
         AddForce1PN() = default;
 
         EXPAND_NODE_EDGES(NODE_EDGES)
@@ -67,30 +66,21 @@ namespace shammodels::common::modules {
             Tvec cvel   = edges.central_vel.data;
             Tscal GM    = cmass * G;
 
-
             sham::distributed_data_kernel_call(
                 shamsys::instance::get_compute_scheduler_ptr(),
 
                 sham::DDMultiRef{
-                    edges.spans_positions.get_spans(),
-                    edges.spans_velocities.get_spans()
-                },
+                    edges.spans_positions.get_spans(), edges.spans_velocities.get_spans()},
 
-                sham::DDMultiRef{
-                    edges.spans_accel_ext.get_spans()
-                },
+                sham::DDMultiRef{edges.spans_accel_ext.get_spans()},
 
                 edges.sizes.indexes,
 
-                [cpos, cvel, GM, c](u32 gid,
-                                            const Tvec *xyz,
-                                            const Tvec *vxyz,
-                                            Tvec *axyz_ext) {
-
+                [cpos, cvel, GM, c](u32 gid, const Tvec *xyz, const Tvec *vxyz, Tvec *axyz_ext) {
                     Tvec r_a = xyz[gid] - cpos;
                     Tvec v_a = vxyz[gid] - cvel;
 
-                    Tscal r = sycl::length(r_a);
+                    Tscal r      = sycl::length(r_a);
                     Tscal inv_r  = sham::inv_sat_zero(r);
                     Tscal inv_r2 = sham::inv_sat_zero(r * r);
                     Tvec r_hat   = r_a * inv_r;
@@ -99,23 +89,12 @@ namespace shammodels::common::modules {
 
                     Tscal vr = sham::dot(v_a, r_hat);
 
-                    Tvec acc_1PN =
-                        -GM * inv_r2
-                        *
-                        (
-                            (
-                                v2 / (c * c)
-                                -
-                                4 * GM * inv_r / (c * c)
-                            )
-                            * r_hat
+                    Tvec acc_1PN = -GM * inv_r2
+                                   * ((v2 / (c * c) - 4 * GM * inv_r / (c * c)) * r_hat
 
-                            -
+                                      -
 
-                            (4 * vr / (c * c))
-                            * v_a
-                        );
-
+                                      (4 * vr / (c * c)) * v_a);
 
                     axyz_ext[gid] += acc_1PN;
                 });

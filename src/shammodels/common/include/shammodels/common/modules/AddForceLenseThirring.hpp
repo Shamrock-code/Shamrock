@@ -64,7 +64,7 @@ namespace shammodels::common::modules {
             Tscal c       = edges.constant_c.data;
             Tscal cmass   = edges.central_mass.data;
             Tvec cpos     = edges.central_pos.data;
-            Tvec cvel = edges.central_vel.data;
+            Tvec cvel     = edges.central_vel.data;
             Tscal a_spin  = edges.a_spin.data;
             Tvec dir_spin = edges.dir_spin.data;
 

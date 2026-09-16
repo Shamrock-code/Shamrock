@@ -78,15 +78,17 @@ namespace shammodels::common::modules {
                 sham::DDMultiRef{edges.spans_accel_ext.get_spans()},
                 edges.sizes.indexes,
                 [cpos, cvel, S](u32 gid, const Tvec *xyz, const Tvec *vxyz, Tvec *axyz_ext) {
-                    Tvec r_a       = xyz[gid] - cpos;
-                    Tvec v_a       = vxyz[gid] - cvel;
-                    Tscal abs_ra   = sycl::length(r_a);
-                    Tscal abs_ra_2 = abs_ra * abs_ra;
-                    Tscal abs_ra_3 = abs_ra_2 * abs_ra;
-                    Tscal abs_ra_5 = abs_ra_2 * abs_ra_2 * abs_ra;
+                    Tvec r_a           = xyz[gid] - cpos;
+                    Tvec v_a           = vxyz[gid] - cvel;
+                    Tscal abs_ra       = sycl::length(r_a);
+                    Tscal abs_ra_2     = abs_ra * abs_ra;
+                    Tscal abs_ra_3     = abs_ra_2 * abs_ra;
+                    Tscal abs_ra_5     = abs_ra_2 * abs_ra_2 * abs_ra;
+                    Tscal inv_abs_ra_5 = sham::inv_sat_zero(abs_ra_5);
 
-                    Tvec omega_a = (S * (2 / abs_ra_3)) - (6 * sham::dot(S, r_a) * r_a) / abs_ra_5;
-                    Tvec acc_lt  = sycl::cross(v_a, omega_a);
+                    Tvec omega_a
+                        = (S * (2 / abs_ra_3)) - (6 * sham::dot(S, r_a) * r_a) * inv_abs_ra_5;
+                    Tvec acc_lt = sycl::cross(v_a, omega_a);
                     axyz_ext[gid] += acc_lt;
                 });
         }

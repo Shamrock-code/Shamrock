@@ -643,7 +643,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
                 Tscal press = (gamma - 1) * eint;
                 Tscal cs    = sycl::sqrt(gamma * press / rho);
 
-                constexpr Tscal div = 1. / 3.;
+                constexpr Tscal div = 1.; // this can be lowered if it is too unstable later
 
                 Tscal dt_vel = dx / sycl::length(vel);
                 Tscal dt_cs  = dx / cs;

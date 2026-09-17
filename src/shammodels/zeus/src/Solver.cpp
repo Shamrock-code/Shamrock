@@ -16,6 +16,7 @@
 
 #include "shammodels/zeus/Solver.hpp"
 #include "shamalgs/collective/gather_str.hpp"
+#include "shamalgs/collective/reduction.hpp"
 #include "shamcomm/wrapper.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/zeus/modules/AMRTree.hpp"
@@ -591,7 +592,83 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
     storage.timings_details.reset();
 
-    return 0;
+    // CFL timestep computation for the next iteration
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
+    const u32 irho            = pdl.get_field_idx<Tscal>("rho");
+    const u32 ieint           = pdl.get_field_idx<Tscal>("eint");
+    const u32 ivel            = pdl.get_field_idx<Tvec>("vel");
+
+    ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", AMRBlock::block_size);
+
+    Tscal gamma          = solver_config.eos_gamma;
+    Tscal Csafe          = solver_config.Csafe;
+    Tscal dxfact         = solver_config.grid_coord_to_pos_fact;
+    Tscal one_over_Nside = 1. / AMRBlock::Nside;
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
+
+        sham::DeviceBuffer<TgridVec> &buf_block_min = pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_block_max = pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<Tscal> &buf_rho          = pdat.get_field_buf_ref<Tscal>(irho);
+        sham::DeviceBuffer<Tscal> &buf_eint         = pdat.get_field_buf_ref<Tscal>(ieint);
+        sham::DeviceBuffer<Tvec> &buf_vel           = pdat.get_field_buf_ref<Tvec>(ivel);
+        sham::DeviceBuffer<Tscal> &cfl_dt_buf       = cfl_dt.get_buf_check(cur_p.id_patch);
+
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+        sham::EventList depends_list;
+        auto acc_cfl_dt    = cfl_dt_buf.get_write_access(depends_list);
+        auto acc_block_min = buf_block_min.get_read_access(depends_list);
+        auto acc_block_max = buf_block_max.get_read_access(depends_list);
+        auto acc_rho       = buf_rho.get_read_access(depends_list);
+        auto acc_eint      = buf_eint.get_read_access(depends_list);
+        auto acc_vel       = buf_vel.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            shambase::parallel_for(cgh, cell_count, "compute_cfl_zeus", [=](u64 gid) {
+                const u32 block_id = (u32) gid / AMRBlock::block_size;
+
+                TgridVec lower       = acc_block_min[block_id];
+                TgridVec upper       = acc_block_max[block_id];
+                Tvec lower_flt       = lower.template convert<Tscal>() * dxfact;
+                Tvec upper_flt       = upper.template convert<Tscal>() * dxfact;
+                Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
+                Tscal dx             = block_cell_size.x();
+
+                Tscal rho  = acc_rho[gid];
+                Tscal eint = acc_eint[gid];
+                Tvec vel   = acc_vel[gid];
+
+                Tscal press = (gamma - 1) * eint;
+                Tscal cs    = sycl::sqrt(gamma * press / rho);
+
+                constexpr Tscal div = 1. / 3.;
+
+                Tscal dt_vel = dx / sycl::length(vel);
+                Tscal dt_cs  = dx / cs;
+                Tscal dt = Csafe * div * sycl::rsqrt(sycl::pown(dt_vel, -2) + sycl::pown(dt_cs, -2));
+
+                acc_cfl_dt[gid] = dt;
+            });
+        });
+
+        cfl_dt_buf.complete_event_state(e);
+        buf_block_min.complete_event_state(e);
+        buf_block_max.complete_event_state(e);
+        buf_rho.complete_event_state(e);
+        buf_eint.complete_event_state(e);
+        buf_vel.complete_event_state(e);
+    });
+
+    Tscal rank_dt = cfl_dt.compute_rank_min();
+    Tscal next_dt = shamalgs::collective::allreduce_min(rank_dt);
+
+    if (shamcomm::world_rank() == 0) {
+        logger::info_ln("amr::Zeus", "cfl dt =", next_dt);
+    }
+
+    return next_dt;
 }
 
 template class shammodels::zeus::Solver<f64_3, i64_3>;

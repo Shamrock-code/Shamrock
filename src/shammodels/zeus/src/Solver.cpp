@@ -647,7 +647,8 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
                 Tscal dt_vel = dx / sycl::length(vel);
                 Tscal dt_cs  = dx / cs;
-                Tscal dt = Csafe * div * sycl::rsqrt(sycl::pown(dt_vel, -2) + sycl::pown(dt_cs, -2));
+                Tscal dt
+                    = Csafe * div * sycl::rsqrt(sycl::pown(dt_vel, -2) + sycl::pown(dt_cs, -2));
 
                 acc_cfl_dt[gid] = dt;
             });

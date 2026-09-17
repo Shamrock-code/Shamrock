@@ -111,6 +111,8 @@
 #include "shamsolvergraph/SolverGraph.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
+#include "shamsolvergraph/node/ForwardEulerHost.hpp"
+#include "shamsolvergraph/node/ForwardEulerHost2Deriv.hpp"
 #include "shamsolvergraph/node/NodeFreeAlloc.hpp"
 #include "shamsolvergraph/node/NodeMapEdge.hpp"
 #include "shamsolvergraph/node/NodeSetEdge.hpp"
@@ -842,6 +844,62 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         auto sink_ext_force = solver_graph.register_node(
             "sink ext force", OperationIf("sink ext force", ext_force_body));
         shambase::get_check_ref(sink_ext_force)
+            .set_edges(solver_graph.get_edge_ptr<IDataEdge<bool>>("has_sinks"));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // sink predictor step (leapfrog kick-drift of the sink particles themselves)
+    ////////////////////////////////////////////////////////////////////////////////////////
+    {
+        solver_graph.register_edge(
+            "sink_predictor_dt_half", IDataEdge<Tscal>("dt_half", "\\frac{dt}{2}"));
+
+        auto sink_predictor_dt_to_half_dt = solver_graph.register_node(
+            "sink_predictor_dt_to_half_dt",
+            NodeMapEdge<IDataEdge<Tscal>, IDataEdge<Tscal>>{
+                [](const IDataEdge<Tscal> &dt, IDataEdge<Tscal> &half_dt) {
+                    half_dt.data = dt.data / 2;
+                }});
+        shambase::get_check_ref(sink_predictor_dt_to_half_dt)
+            .set_edges(
+                sync_data.get_edge_ptr<IDataEdge<Tscal>>("dt"),
+                solver_graph.get_edge_ptr<IDataEdge<Tscal>>("sink_predictor_dt_half"));
+
+        auto sink_predictor_vel_update = solver_graph.register_node(
+            "sink_predictor_vel_update", ForwardEulerHost2Deriv<Tvec, Tscal>{});
+        shambase::get_check_ref(sink_predictor_vel_update)
+            .set_edges(
+                solver_graph.get_edge_ptr<IDataEdge<Tscal>>("sink_predictor_dt_half"),
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_acc_sph"),
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_acc_ext"),
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_vel"));
+
+        auto sink_predictor_pos_update = solver_graph.register_node(
+            "sink_predictor_pos_update", ForwardEulerHost<Tvec, Tscal>{});
+        shambase::get_check_ref(sink_predictor_pos_update)
+            .set_edges(
+                sync_data.get_edge_ptr<IDataEdge<Tscal>>("dt"),
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_vel"),
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_pos"));
+
+        auto sink_predictor_body = solver_graph.register_node(
+            "sink_predictor_body",
+            OperationSequence(
+                "sink predictor body",
+                {
+                    // recompute the sink self-gravity at the current (pre-predictor) sink
+                    // positions before using it to kick the sink velocities
+                    solver_graph.get_node_ptr_base("sink ext force"),
+                    sink_predictor_dt_to_half_dt,
+                    sink_predictor_vel_update,
+                    sink_predictor_pos_update,
+                }));
+
+        // register the actual node that will be used, gated on the same "has_sinks" edge
+        // maintained by the "sink accretion" section above
+        auto sink_predictor = solver_graph.register_node(
+            "sink predictor", OperationIf("sink predictor", sink_predictor_body));
+        shambase::get_check_ref(sink_predictor)
             .set_edges(solver_graph.get_edge_ptr<IDataEdge<bool>>("has_sinks"));
     }
 
@@ -2233,7 +2291,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
 
-    sink_update.predictor_step(dt);
+    storage.solver_graph.get_node_ref_base("sink predictor").evaluate();
 
     {
         // beginning of SolverGraph migration

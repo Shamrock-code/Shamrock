@@ -18,48 +18,7 @@
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/sink_edges_helper.hpp"
-#include "shamsolvergraph/edge/IDataEdge.hpp"
-#include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
-#include "shamsolvergraph/node/ForwardEulerHost.hpp"
-#include "shamsolvergraph/node/ForwardEulerHost2Deriv.hpp"
 #include <vector>
-
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::predictor_step(Tscal dt) {
-
-    StackEntry stack_loc{};
-
-    auto &sync = scheduler().synchronized_data;
-    auto &pos  = get_sink_pos<Tvec>(sync);
-    if (pos.empty()) {
-        return;
-    }
-
-    storage.solver_graph.get_node_ref_base("sink ext force").evaluate();
-
-    using VecEdge = shamrock::solvergraph::IDataEdgeSerializable<std::vector<Tvec>>;
-
-    auto dt_half_edge  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("dt_half", "dt/2");
-    dt_half_edge->data = dt / 2;
-
-    shamrock::solvergraph::ForwardEulerHost2Deriv<Tvec, Tscal> vel_update{};
-    vel_update.set_edges(
-        dt_half_edge,
-        sync.template get_edge_ptr<VecEdge>("sink_acc_sph"),
-        sync.template get_edge_ptr<VecEdge>("sink_acc_ext"),
-        sync.template get_edge_ptr<VecEdge>("sink_vel"));
-    vel_update.evaluate();
-
-    auto dt_edge  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("dt", "dt");
-    dt_edge->data = dt;
-
-    shamrock::solvergraph::ForwardEulerHost<Tvec, Tscal> pos_update{};
-    pos_update.set_edges(
-        dt_edge,
-        sync.template get_edge_ptr<VecEdge>("sink_vel"),
-        sync.template get_edge_ptr<VecEdge>("sink_pos"));
-    pos_update.evaluate();
-}
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::corrector_step(Tscal dt) {

@@ -22,6 +22,7 @@
 #include "shamalgs/collective/reduction.hpp"
 #include "shambackends/Device.hpp"
 #include "shambackends/benchmarks/fma_chains.hpp"
+#include "shambackends/benchmarks/int_chains.hpp"
 #include "shambackends/benchmarks/saxpy.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/math.hpp"
@@ -53,6 +54,10 @@ namespace shamsys::microbench {
     /// FMA chains benchmark to get the maximum floating point performance
     template<typename T>
     void fma_chains_rotation();
+
+    /// Integer chains benchmark to get the maximum integer performance
+    template<typename T, sham::benchmarks::IntChainOp op>
+    void int_chains_rotation();
 
     /// Vector allgather benchmark
     void vector_allgather(u32 el_per_rank);
@@ -89,6 +94,10 @@ void shamsys::run_micro_benchmark() {
     microbench::fma_chains_rotation<f64_3>();
     microbench::fma_chains_rotation<f32_4>();
     microbench::fma_chains_rotation<f64_4>();
+    microbench::int_chains_rotation<u32, sham::benchmarks::IntChainOp::Mul>();
+    microbench::int_chains_rotation<u64, sham::benchmarks::IntChainOp::Mul>();
+    microbench::int_chains_rotation<u32, sham::benchmarks::IntChainOp::Add>();
+    microbench::int_chains_rotation<u64, sham::benchmarks::IntChainOp::Add>();
     microbench::vector_allgather(1);
     microbench::vector_allgather(8);
     microbench::vector_allgather(64);
@@ -395,6 +404,49 @@ void shamsys::microbench::fma_chains_rotation() {
                 min_flop * flops_multiplier,
                 max_flop * flops_multiplier,
                 avg_flop * flops_multiplier,
+                result.seconds * 1e3,
+                result.nrotations));
+    }
+}
+
+template<typename T, sham::benchmarks::IntChainOp op>
+void shamsys::microbench::int_chains_rotation() {
+    int N = (1 << 22);
+
+    auto result
+        = sham::benchmarks::int_chains_bench<T, op>(instance::get_compute_scheduler_ptr(), N, 0.2);
+
+    std::string type_name;
+    if constexpr (std::is_same_v<T, u32>) {
+        type_name = "u32";
+    } else if constexpr (std::is_same_v<T, u64>) {
+        type_name = "u64";
+    } else {
+        throw shambase::make_except_with_loc<std::invalid_argument>("unsupported type");
+    }
+
+    std::string op_name = (op == sham::benchmarks::IntChainOp::Mul) ? "mul" : "add";
+
+    f64 min_iops = shamalgs::collective::allreduce_min(result.iops);
+    f64 max_iops = shamalgs::collective::allreduce_max(result.iops);
+    f64 sum_iops = shamalgs::collective::allreduce_sum(result.iops);
+    f64 avg_iops = sum_iops / (f64) shamcomm::world_size();
+
+    microbench_results["int_" + op_name + "_chains_" + type_name] = sum_iops;
+
+    if (shamcomm::world_rank() == 0) {
+        auto hr_iops = sham::to_human_readable<false>(sum_iops);
+        logger::raw_ln(
+            sham::format(
+                " - int_{}_chains ({}) : {:.2f} {}iops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
+                "({:.1e} ms, rotations = {})",
+                op_name,
+                type_name,
+                hr_iops.value,
+                hr_iops.prefix,
+                min_iops,
+                max_iops,
+                avg_iops,
                 result.seconds * 1e3,
                 result.nrotations));
     }

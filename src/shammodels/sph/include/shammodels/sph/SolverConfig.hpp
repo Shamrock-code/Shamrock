@@ -1118,6 +1118,13 @@ struct shammodels::sph::SolverConfig {
     bool compute_luminosity = false;
     inline void use_luminosity(bool enable) { compute_luminosity = enable; }
 
+    /// @brief Whether to compute GW
+    bool compute_gw = false;
+    inline void use_GW(bool enable) {
+        shamrock::experimental_feature_check("GW computation is experimental.");
+        compute_gw = enable;
+    }
+
     /// Print the current status of the solver config
     inline void print_status() {
         if (shamcomm::world_rank() != 0) {

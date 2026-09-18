@@ -76,7 +76,7 @@ namespace shammodels::common::modules {
                 sham::DDMultiRef{edges.spans_accel_ext.get_spans()},
                 edges.sizes.indexes,
                 [cpos, S](u32 gid, const Tvec *xyz, const Tvec *vxyz, Tvec *axyz_ext) {
-                    Tvec r_a       = xyz[gid];
+                    Tvec r_a       = xyz[gid] - cpos;
                     Tvec v_a       = vxyz[gid];
                     Tscal abs_ra   = sycl::length(r_a);
                     Tscal abs_ra_2 = abs_ra * abs_ra;

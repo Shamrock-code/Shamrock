@@ -30,6 +30,7 @@
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, constant_c)                                      \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, central_mass)                                    \
     X_RO(shamrock::solvergraph::IDataEdge<Tvec>, central_pos)                                      \
+    X_RO(shamrock::solvergraph::IDataEdge<Tvec>, central_vel)                                      \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, a_spin)                                          \
     X_RO(shamrock::solvergraph::IDataEdge<Tvec>, dir_spin)                                         \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_positions)                                 \
@@ -63,6 +64,7 @@ namespace shammodels::common::modules {
             Tscal c       = edges.constant_c.data;
             Tscal cmass   = edges.central_mass.data;
             Tvec cpos     = edges.central_pos.data;
+            Tvec cvel     = edges.central_vel.data;
             Tscal a_spin  = edges.a_spin.data;
             Tvec dir_spin = edges.dir_spin.data;
 
@@ -75,16 +77,18 @@ namespace shammodels::common::modules {
                     edges.spans_positions.get_spans(), edges.spans_velocities.get_spans()},
                 sham::DDMultiRef{edges.spans_accel_ext.get_spans()},
                 edges.sizes.indexes,
-                [cpos, S](u32 gid, const Tvec *xyz, const Tvec *vxyz, Tvec *axyz_ext) {
-                    Tvec r_a       = xyz[gid];
-                    Tvec v_a       = vxyz[gid];
-                    Tscal abs_ra   = sycl::length(r_a);
-                    Tscal abs_ra_2 = abs_ra * abs_ra;
-                    Tscal abs_ra_3 = abs_ra_2 * abs_ra;
-                    Tscal abs_ra_5 = abs_ra_2 * abs_ra_2 * abs_ra;
+                [cpos, cvel, S](u32 gid, const Tvec *xyz, const Tvec *vxyz, Tvec *axyz_ext) {
+                    Tvec r_a           = xyz[gid] - cpos;
+                    Tvec v_a           = vxyz[gid] - cvel;
+                    Tscal abs_ra       = sycl::length(r_a);
+                    Tscal abs_ra_2     = abs_ra * abs_ra;
+                    Tscal abs_ra_3     = abs_ra_2 * abs_ra;
+                    Tscal abs_ra_5     = abs_ra_2 * abs_ra_2 * abs_ra;
+                    Tscal inv_abs_ra_5 = sham::inv_sat_zero(abs_ra_5);
 
-                    Tvec omega_a = (S * (2 / abs_ra_3)) - (6 * sham::dot(S, r_a) * r_a) / abs_ra_5;
-                    Tvec acc_lt  = sycl::cross(v_a, omega_a);
+                    Tvec omega_a
+                        = (S * (2 / abs_ra_3)) - (6 * sham::dot(S, r_a) * r_a) * inv_abs_ra_5;
+                    Tvec acc_lt = sycl::cross(v_a, omega_a);
                     axyz_ext[gid] += acc_lt;
                 });
         }

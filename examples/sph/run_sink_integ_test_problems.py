@@ -14,11 +14,11 @@ import shamrock
 # If we use the shamrock executable to run this script instead of the python interpreter,
 # we should not initialize the system as the shamrock executable needs to handle specific MPI logic
 if not shamrock.sys.is_initialized():
-    # loglevel 0 (the shamrock executable's own default) rather than 1: the
-    # choreographies below need thousands of timesteps per period, and the
-    # per-step performance report is 35 lines each.
-    shamrock.change_loglevel(0)
     shamrock.sys.init("0:0")
+
+# loglevel 0 to avoid too many lines being printed
+# TODO: we should do that using a scoped variant
+shamrock.change_loglevel(0)
 
 # %%
 # Use shamrock documentation style for matplotlib

@@ -620,21 +620,6 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                 solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"));
     }
 
-    {
-        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> seq{};
-
-        seq.push_back(solver_graph.get_node_ptr_base("dt_to_half_dt"));
-        seq.push_back(solver_graph.get_node_ptr_base("set_gpart_mass"));
-        seq.push_back(solver_graph.get_node_ptr_base("attach fields to scheduler"));
-        seq.push_back(solver_graph.get_node_ptr_base("leapfrog predictor"));
-        if (do_part_killing_step) {
-            seq.push_back(solver_graph.get_node_ptr_base("part killing step"));
-        }
-
-        storage.solver_sequence = solver_graph.register_node(
-            "time_step", OperationSequence("time step", std::move(seq)));
-    }
-
     storage.part_counts
         = std::make_shared<shamrock::solvergraph::Indexes<u32>>("part_counts", "N_{\\rm part}");
 
@@ -1031,6 +1016,25 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                     set_has_accretion,
                     if_has_accretion,
                 }));
+    }
+
+    {
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> seq{};
+
+        seq.push_back(solver_graph.get_node_ptr_base("sink accretion"));
+        seq.push_back(solver_graph.get_node_ptr_base("point mass accretion"));
+        seq.push_back(solver_graph.get_node_ptr_base("sink predictor"));
+        seq.push_back(solver_graph.get_node_ptr_base("dt_to_half_dt"));
+        seq.push_back(solver_graph.get_node_ptr_base("set_gpart_mass"));
+        seq.push_back(solver_graph.get_node_ptr_base("attach fields to scheduler"));
+        seq.push_back(solver_graph.get_node_ptr_base("leapfrog predictor"));
+        if (do_part_killing_step) {
+            seq.push_back(solver_graph.get_node_ptr_base("part killing step"));
+        }
+        seq.push_back(solver_graph.get_node_ptr_base("sink ext force"));
+
+        storage.solver_sequence = solver_graph.register_node(
+            "time_step", OperationSequence("time step", std::move(seq)));
     }
 }
 
@@ -2287,13 +2291,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     shamrock::SchedulerUtility utility(scheduler());
 
-    storage.solver_graph.get_node_ref_base("sink accretion").evaluate();
-    storage.solver_graph.get_node_ref_base("point mass accretion").evaluate();
-
-    modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
-
-    storage.solver_graph.get_node_ref_base("sink predictor").evaluate();
-
     {
         // beginning of SolverGraph migration
 
@@ -2307,8 +2304,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         shambase::get_check_ref(storage.solver_sequence).evaluate();
     }
-
-    storage.solver_graph.get_node_ref_base("sink ext force").evaluate();
 
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
     ext_forces.compute_ext_forces_indep_v();
@@ -3018,6 +3013,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         if (!need_rerun_corrector) {
 
+            modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
             sink_update.corrector_step(dt);
 
             // write back alpha av field

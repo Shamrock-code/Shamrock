@@ -170,6 +170,27 @@ jobs:
     with:
       fail_fast: ${{ inputs.is_merge_queue }}
 
+  # On the Mergify merge queue, dockerbuild/doc/phystest failing means the
+  # merge gate ("all") will fail anyway, so cancel the whole run early
+  # instead of waiting on the remaining CI jobs (asan, ubsan, tidy, coverage,
+  # pylib) to finish.
+  cancel_on_merge_queue_phystest_failure:
+    name: Cancel run (merge queue phystest failure)
+    needs:
+      [build_push_docker, make_documentation, shamrock_linux_acpp_phystests]
+    if: ${{ always() && inputs.is_merge_queue && contains(needs.*.result, 'failure') }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Cancel this workflow run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          echo "Mergify merge queue: dockerbuild/doc/phystest failed, cancelling run ${{ github.run_id }}."
+          gh run cancel "${{ github.run_id }}"
+
   shamrock_linux_acpp_pylib:
     needs: [src_check]
     name: Tests

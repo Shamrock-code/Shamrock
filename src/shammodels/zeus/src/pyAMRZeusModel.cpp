@@ -46,6 +46,11 @@ namespace shammodels::zeus {
                     self.set_eos_gamma(eos_gamma);
                 })
             .def(
+                "set_Csafe",
+                [](TConfig &self, Tscal Csafe) {
+                    self.Csafe = Csafe;
+                })
+            .def(
                 "set_consistent_transport",
                 [](TConfig &self, bool enable) {
                     self.use_consistent_transport = enable;

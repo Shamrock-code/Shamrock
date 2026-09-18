@@ -24,6 +24,13 @@
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::ScalarsEdge<u64>, object_counts)                                   \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::PatchDataLayerDDShared, ghost_layer)
+
 namespace shamrock::solvergraph {
 
     class ExchangeGhostLayerDebugDotGraph : public shamrock::solvergraph::INode {
@@ -33,24 +40,7 @@ namespace shamrock::solvergraph {
         public:
         ExchangeGhostLayerDebugDotGraph() {}
 
-        struct Edges {
-            const shamrock::solvergraph::ScalarsEdge<u64> &object_counts;
-            shamrock::solvergraph::PatchDataLayerDDShared &ghost_layer;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u64>> object_counts,
-            std::shared_ptr<shamrock::solvergraph::PatchDataLayerDDShared> ghost_layer) {
-            __internal_set_ro_edges({object_counts});
-            __internal_set_rw_edges({ghost_layer});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                .object_counts = get_ro_edge<shamrock::solvergraph::ScalarsEdge<u64>>(0),
-                .ghost_layer   = get_rw_edge<shamrock::solvergraph::PatchDataLayerDDShared>(0),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal() {
             auto edges        = get_edges();
@@ -155,3 +145,5 @@ namespace shamrock::solvergraph {
         inline virtual std::string _impl_get_tex() const { return ""; };
     };
 } // namespace shamrock::solvergraph
+
+#undef NODE_EDGES

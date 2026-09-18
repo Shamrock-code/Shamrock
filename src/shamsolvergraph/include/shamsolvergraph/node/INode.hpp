@@ -302,6 +302,54 @@ namespace shamrock::solvergraph {
         return sham::format("n_{}", this->get_uuid());
     }
 
+    /// Cast a single generic edge to the concrete type expected, throwing a message naming the
+    /// edge and the expected/actual type on any mismatch. Used to implement the untyped
+    /// per-slot INode::set_edges() overload's cast step, which the generic vector-based overload
+    /// forwards to.
+    template<class T>
+    inline std::shared_ptr<T> __node_edge_cast_checked(
+        const std::shared_ptr<IEdge> &edge, const char *edge_name, const char *type_name) {
+        if (!edge) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
+                "set_edges: edge \"{}\" is null: expected type {}", edge_name, type_name));
+        }
+
+        auto casted = std::dynamic_pointer_cast<T>(edge);
+        if (!casted) {
+            const auto &e = *edge; // necessary to avoid -Wpotentially-evaluated-expression
+            throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
+                "set_edges: edge \"{}\" has the wrong type: expected {}, got {}",
+                edge_name,
+                type_name,
+                typeid(e).name()));
+        }
+
+        return casted;
+    }
+
+    /// Same as above, but for optional edge slots: a null edge or a null-opt edge sentinel is
+    /// interpreted as "no value" instead of raising an error.
+    template<class T>
+    inline std::optional<std::shared_ptr<T>> __node_edge_cast_checked_optional(
+        const std::shared_ptr<IEdge> &edge, const char *edge_name, const char *type_name) {
+        if (!edge || is_null_opt_edge(edge)) {
+            return std::nullopt;
+        }
+        return __node_edge_cast_checked<T>(edge, edge_name, type_name);
+    }
+
+    /// Ensure that all edges passed to the generic vector-based INode::set_edges() were consumed,
+    /// i.e. that neither too few nor too many edges were provided for a given side of the node.
+    inline void __node_edge_check_count(size_t provided, size_t expected, const char *side_name) {
+        if (provided != expected) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
+                "set_edges: wrong number of {} edges provided: expected {}, got {}",
+                side_name,
+                expected,
+                provided));
+        }
+    }
+
 } // namespace shamrock::solvergraph
 
 #define INODE_DECL_RO(type, name) const type &name;
@@ -315,6 +363,28 @@ namespace shamrock::solvergraph {
 #define INODE_GET_RO(type, name) get_ro_edge<type>(ro++),
 #define INODE_GET_RW(type, name) get_rw_edge<type>(rw++),
 
+/// Param type used by the untyped, per-slot set_edges_untyped() overload: same slot
+/// count/order as the typed setter, but every slot is a plain IEdge, cast to its concrete type
+/// before being forwarded to the typed setter. (Named differently from set_edges() itself: for a
+/// node whose edge type already is IEdge, e.g. NodeFreeAlloc, the two would otherwise be the same
+/// overload.)
+#define INODE_PARAM_EDGE(type, name) const std::shared_ptr<shamrock::solvergraph::IEdge> &name,
+
+#define INODE_CHECK_RO_ARG(type, name)                                                             \
+    shamrock::solvergraph::__node_edge_cast_checked<type>(name, #name, #type),
+#define INODE_CHECK_RW_ARG(type, name)                                                             \
+    shamrock::solvergraph::__node_edge_cast_checked<type>(name, #name, #type),
+
+/// Count/declare/forward macros used by the generic vector-based set_edges() overload to forward
+/// each vector slot, in order, to the untyped per-slot setter above. The slots are bound to named
+/// local variables first (rather than picked directly as call arguments) because argument
+/// evaluation order is unspecified in C++, and here it must match the vector's slot order.
+#define INODE_COUNT_RO(type, name) ro_count++;
+#define INODE_COUNT_RW(type, name) rw_count++;
+#define INODE_DECLARE_PICK_RO(type, name) auto &&name = ro_edges_in[ro_idx++];
+#define INODE_DECLARE_PICK_RW(type, name) auto &&name = rw_edges_in[rw_idx++];
+#define INODE_FORWARD_ARG(type, name) name,
+
 #define INODE_DECL_RO_OPTIONAL(type, name)                                                         \
     const std::optional<std::reference_wrapper<const type>> name;
 #define INODE_DECL_RW_OPTIONAL(type, name) const std::optional<std::reference_wrapper<type>> name;
@@ -326,6 +396,11 @@ namespace shamrock::solvergraph {
 #define INODE_PUSH_RW2_OPTIONAL(type, name) shamrock::solvergraph::obsfucate_null_opt_edge(name),
 #define INODE_GET_RO_OPTIONAL(type, name) get_ro_edge_optional<type>(ro++),
 #define INODE_GET_RW_OPTIONAL(type, name) get_rw_edge_optional<type>(rw++),
+
+#define INODE_CHECK_RO_ARG_OPTIONAL(type, name)                                                    \
+    shamrock::solvergraph::__node_edge_cast_checked_optional<type>(name, #name, #type),
+#define INODE_CHECK_RW_ARG_OPTIONAL(type, name)                                                    \
+    shamrock::solvergraph::__node_edge_cast_checked_optional<type>(name, #name, #type),
 
 #define EXPAND_NODE_EDGES(EDGES)                                                                   \
                                                                                                    \
@@ -339,6 +414,33 @@ namespace shamrock::solvergraph {
                                                                                                    \
         __internal_set_ro_edges({EDGES(INODE_PUSH_RO1, INODE_PUSH_RW1)});                          \
         __internal_set_rw_edges({EDGES(INODE_PUSH_RO2, INODE_PUSH_RW2)});                          \
+    }                                                                                              \
+                                                                                                   \
+    inline void set_edges_untyped(                                                                 \
+        EDGES(INODE_PARAM_EDGE, INODE_PARAM_EDGE) SourceLocation loc = SourceLocation{}) {         \
+        __shamrock_log_callsite(loc);                                                              \
+                                                                                                   \
+        set_edges(EDGES(INODE_CHECK_RO_ARG, INODE_CHECK_RW_ARG) loc);                              \
+    }                                                                                              \
+                                                                                                   \
+    inline void set_edges(                                                                         \
+        std::vector<std::shared_ptr<shamrock::solvergraph::IEdge>> ro_edges_in,                    \
+        std::vector<std::shared_ptr<shamrock::solvergraph::IEdge>> rw_edges_in,                    \
+        SourceLocation loc = SourceLocation{}) {                                                   \
+        __shamrock_log_callsite(loc);                                                              \
+                                                                                                   \
+        size_t ro_count = 0;                                                                       \
+        size_t rw_count = 0;                                                                       \
+        EDGES(INODE_COUNT_RO, INODE_COUNT_RW)                                                      \
+                                                                                                   \
+        shamrock::solvergraph::__node_edge_check_count(ro_edges_in.size(), ro_count, "read-only"); \
+        shamrock::solvergraph::__node_edge_check_count(                                            \
+            rw_edges_in.size(), rw_count, "read-write");                                           \
+                                                                                                   \
+        size_t ro_idx = 0;                                                                         \
+        size_t rw_idx = 0;                                                                         \
+        EDGES(INODE_DECLARE_PICK_RO, INODE_DECLARE_PICK_RW)                                        \
+        set_edges_untyped(EDGES(INODE_FORWARD_ARG, INODE_FORWARD_ARG) loc);                        \
     }                                                                                              \
                                                                                                    \
     inline Edges get_edges() {                                                                     \
@@ -362,6 +464,43 @@ namespace shamrock::solvergraph {
             INODE_PUSH_RO1, INODE_PUSH_RW1, INODE_PUSH_RO1_OPTIONAL, INODE_PUSH_RW1_OPTIONAL)});   \
         __internal_set_rw_edges({EDGES(                                                            \
             INODE_PUSH_RO2, INODE_PUSH_RW2, INODE_PUSH_RO2_OPTIONAL, INODE_PUSH_RW2_OPTIONAL)});   \
+    }                                                                                              \
+                                                                                                   \
+    inline void set_edges_untyped(                                                                 \
+        EDGES(INODE_PARAM_EDGE, INODE_PARAM_EDGE, INODE_PARAM_EDGE, INODE_PARAM_EDGE)              \
+            SourceLocation loc = SourceLocation{}) {                                               \
+        __shamrock_log_callsite(loc);                                                              \
+                                                                                                   \
+        set_edges(EDGES(                                                                           \
+            INODE_CHECK_RO_ARG,                                                                    \
+            INODE_CHECK_RW_ARG,                                                                    \
+            INODE_CHECK_RO_ARG_OPTIONAL,                                                           \
+            INODE_CHECK_RW_ARG_OPTIONAL) loc);                                                     \
+    }                                                                                              \
+                                                                                                   \
+    inline void set_edges(                                                                         \
+        std::vector<std::shared_ptr<shamrock::solvergraph::IEdge>> ro_edges_in,                    \
+        std::vector<std::shared_ptr<shamrock::solvergraph::IEdge>> rw_edges_in,                    \
+        SourceLocation loc = SourceLocation{}) {                                                   \
+        __shamrock_log_callsite(loc);                                                              \
+                                                                                                   \
+        size_t ro_count = 0;                                                                       \
+        size_t rw_count = 0;                                                                       \
+        EDGES(INODE_COUNT_RO, INODE_COUNT_RW, INODE_COUNT_RO, INODE_COUNT_RW)                      \
+                                                                                                   \
+        shamrock::solvergraph::__node_edge_check_count(ro_edges_in.size(), ro_count, "read-only"); \
+        shamrock::solvergraph::__node_edge_check_count(                                            \
+            rw_edges_in.size(), rw_count, "read-write");                                           \
+                                                                                                   \
+        size_t ro_idx = 0;                                                                         \
+        size_t rw_idx = 0;                                                                         \
+        EDGES(                                                                                     \
+            INODE_DECLARE_PICK_RO,                                                                 \
+            INODE_DECLARE_PICK_RW,                                                                 \
+            INODE_DECLARE_PICK_RO,                                                                 \
+            INODE_DECLARE_PICK_RW)                                                                 \
+        set_edges_untyped(EDGES(                                                                   \
+            INODE_FORWARD_ARG, INODE_FORWARD_ARG, INODE_FORWARD_ARG, INODE_FORWARD_ARG) loc);      \
     }                                                                                              \
                                                                                                    \
     inline Edges get_edges() {                                                                     \

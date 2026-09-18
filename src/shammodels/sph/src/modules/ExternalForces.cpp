@@ -144,8 +144,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             set_central_mass.set_edges(central_mass);
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
-                set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
-                    central_pos.data = {}; // no support for offset yet
+                set_central_pos([cpos = ext_force->central_pos](
+                                    shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                    central_pos.data = cpos;
                 });
             set_central_pos.set_edges(central_pos);
 
@@ -211,8 +212,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             set_central_mass.set_edges(central_mass);
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
-                set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
-                    central_pos.data = {}; // no support for offset yet
+                set_central_pos([cpos = ext_force->central_pos](
+                                    shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                    central_pos.data = cpos;
                 });
             set_central_pos.set_edges(central_pos);
 
@@ -486,7 +488,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
             auto set_central_pos
                 = register_constant_set<Tvec>(solver_graph, prefix_central_pos, [&]() {
-                      return Tvec{0, 0, 0}; // no support for offset yet
+                      return ext_force->central_pos;
                   });
 
             auto set_a_spin = register_constant_set<Tscal>(solver_graph, prefix_a_spin, [&]() {

@@ -273,8 +273,9 @@ struct shammodels::gsph::SolverConfig {
     using ExtForceConfig = shammodels::ExtForceConfig<Tvec>;
     ExtForceConfig ext_force_config{};
 
-    inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
-        ext_force_config.add_point_mass(central_mass, Racc);
+    inline void add_ext_force_point_mass(
+        Tscal central_mass, Tscal Racc, Tvec central_pos = Tvec{}) {
+        ext_force_config.add_point_mass(central_mass, Racc, central_pos);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

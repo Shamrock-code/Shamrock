@@ -32,6 +32,8 @@ target_link_libraries(shampylib PUBLIC shamlib)
 target_link_libraries(shampylib PUBLIC shambindings)
 target_link_libraries(shampylib PUBLIC shamtree)
 
+sham_pch_reuse(shampylib)
+
 target_include_directories(
     shampylib PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
                      "$<INSTALL_INTERFACE:include>"

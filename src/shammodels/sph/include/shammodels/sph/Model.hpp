@@ -194,7 +194,8 @@ namespace shammodels::sph {
             }
             auto edges = get_sink_edges<Tvec>(sched.synchronized_data);
 
-            shamlog_debug_ln("SPH", "add sink :", mass, pos, velocity, accretion_radius);
+            shamlog_debug_ln(
+                "SPH", "add sink :", mass, pos, velocity, accretion_radius, angular_momentum);
 
             shammodels::sph::add_sink(edges, mass, pos, velocity, accretion_radius);
         }

@@ -77,7 +77,6 @@
 #include "shammodels/sph/modules/SinkParticlesAccreteQuantities.hpp"
 #include "shammodels/sph/modules/SinkParticlesEvictAccretedParticles.hpp"
 #include "shammodels/sph/modules/SinkParticlesFlagAccreteHard.hpp"
-#include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/SinkSelfGravityHost.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
@@ -886,6 +885,27 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         auto sink_predictor = solver_graph.register_node(
             "sink predictor", OperationIf("sink predictor", sink_predictor_body));
         shambase::get_check_ref(sink_predictor)
+            .set_edges(solver_graph.get_edge_ptr<IDataEdge<bool>>("has_sinks"));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // sink corrector step (leapfrog kick of the sink particles themselves)
+    ////////////////////////////////////////////////////////////////////////////////////////
+    {
+        auto sink_corrector_vel_update = solver_graph.register_node(
+            "sink_corrector_vel_update", ForwardEulerHost2Deriv<Tvec, Tscal>{});
+        shambase::get_check_ref(sink_corrector_vel_update)
+            .set_edges(
+                solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_acc_sph"),
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_acc_ext"),
+                sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_vel"));
+
+        // register the actual node that will be used, gated on the same "has_sinks" edge
+        // maintained by the "sink accretion" section above
+        auto sink_corrector = solver_graph.register_node(
+            "sink corrector", OperationIf("sink corrector", sink_corrector_vel_update));
+        shambase::get_check_ref(sink_corrector)
             .set_edges(solver_graph.get_edge_ptr<IDataEdge<bool>>("has_sinks"));
     }
 
@@ -3013,8 +3033,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         if (!need_rerun_corrector) {
 
-            modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
-            sink_update.corrector_step(dt);
+            storage.solver_graph.get_node_ref_base("sink corrector").evaluate();
 
             // write back alpha av field
             if (solver_config.has_field_alphaAV()) {

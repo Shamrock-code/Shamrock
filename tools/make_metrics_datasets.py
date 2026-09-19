@@ -27,20 +27,35 @@ def load_snapshots(root):
     return snapshots
 
 
+DATETIME_FORMATS = (
+    "%Y-%m-%d %H:%M:%SZ",  # e.g. "2026-09-19 04:19:09Z" (workflow-generated)
+    "%Y-%m-%dT%H:%M:%S%z",  # e.g. "2021-09-30T15:38:34+00:00" (backfilled history)
+    "%Y-%m-%d",  # e.g. "2021-09-30" (plain date, no time)
+)
+
+
 def to_iso8601(datetime_str):
-    dt = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%SZ").replace(tzinfo=timezone.utc)
-    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    for fmt in DATETIME_FORMATS:
+        try:
+            dt = datetime.strptime(datetime_str, fmt)  # noqa: DTZ007
+        except ValueError:
+            continue
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    raise ValueError(f"unrecognized datetime format: {datetime_str!r}")
 
 
 def build_doxygen_warnings(snapshots):
     data = []
     for snapshot in snapshots:
+        doxygen_warn = snapshot.get("metrics", {}).get("doxygen_warn")
+        if doxygen_warn is None:
+            continue
         data.append(
             {
                 "datetime": to_iso8601(snapshot["datetime"]),
-                "doxygen_warning_count": snapshot["metrics"]["doxygen_warn"][
-                    "doxygen_warning_count"
-                ],
+                "doxygen_warning_count": doxygen_warn["doxygen_warning_count"],
             }
         )
     return data

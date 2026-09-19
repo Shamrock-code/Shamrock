@@ -22,25 +22,6 @@
 #include <vector>
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::corrector_step(Tscal dt) {
-
-    StackEntry stack_loc{};
-
-    auto &sync = scheduler().synchronized_data;
-    auto &vel  = get_sink_vel<Tvec>(sync);
-    if (vel.empty()) {
-        return;
-    }
-
-    auto &acc_sph = get_sink_acc_sph<Tvec>(sync);
-    auto &acc_ext = get_sink_acc_ext<Tvec>(sync);
-
-    for (size_t i = 0; i < vel.size(); i++) {
-        vel[i] += (dt / 2) * (acc_sph[i] + acc_ext[i]);
-    }
-}
-
-template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph_forces() {
 
     StackEntry stack_loc{};

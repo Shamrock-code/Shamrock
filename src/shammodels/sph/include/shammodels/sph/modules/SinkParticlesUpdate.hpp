@@ -42,6 +42,8 @@ namespace shammodels::sph::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         void compute_sph_forces();
+        void compute_ext_forces(Tscal dt);
+        void update_sink_spins(Tscal dt);
         void corrector_step(Tscal dt);
 
         private:

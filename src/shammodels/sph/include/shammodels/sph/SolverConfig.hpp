@@ -999,9 +999,11 @@ struct shammodels::sph::SolverConfig {
      *
      * @param[in] central_mass The mass of the central object
      * @param[in] Racc The accretion radius of the central object
+     * @param[in] central_pos The position of the central object
      */
-    inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
-        ext_force_config.add_point_mass(central_mass, Racc);
+    inline void add_ext_force_point_mass(
+        Tscal central_mass, Tscal Racc, Tvec central_pos = Tvec{}) {
+        ext_force_config.add_point_mass(central_mass, Racc, central_pos);
     }
 
     /**
@@ -1021,10 +1023,11 @@ struct shammodels::sph::SolverConfig {
      * @param[in] Racc The accretion radius of the central object
      * @param[in] a_spin The spin of the central object
      * @param[in] dir_spin The direction of the spin of the central object
+     * @param[in] central_pos The position of the central object
      */
     inline void add_ext_force_lense_thirring(
-        Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
-        ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin);
+        Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin, Tvec central_pos = Tvec{}) {
+        ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin, central_pos);
     }
 
     /**

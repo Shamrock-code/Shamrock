@@ -1,0 +1,100 @@
+{
+   "month": "2023-12",
+   "datetime": "2023-12-31T15:26:05+00:00",
+   "sha": "f5fde97bc295ea68f99cae484b374877fd291568",
+   "ref": "refs/heads/main",
+   "repository": "Shamrock-code/Shamrock",
+   "metrics": {
+      "loc": {
+         "*.cpp": {
+            "code": 42137,
+            "shammodels/sph": 7205,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "shammodels/basegodunov": 347,
+            "shammodels/nbody": 1485,
+            "examples": 0,
+            "doc": 0
+         },
+         "*.hpp": {
+            "code": 44267,
+            "shammodels/sph": 5751,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "shammodels/basegodunov": 257,
+            "shammodels/nbody": 172,
+            "examples": 0,
+            "doc": 0
+         },
+         "*.py": {
+            "code": 12269,
+            "shammodels/sph": 0,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "shammodels/basegodunov": 0,
+            "shammodels/nbody": 0,
+            "examples": 0,
+            "doc": 341
+         },
+         "*.md": {
+            "code": 265,
+            "shammodels/sph": 0,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "shammodels/basegodunov": 0,
+            "shammodels/nbody": 0,
+            "examples": 0,
+            "doc": 5524
+         },
+         "*.rst": {
+            "code": 0,
+            "shammodels/sph": 0,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "shammodels/basegodunov": 0,
+            "shammodels/nbody": 0,
+            "examples": 0,
+            "doc": 0
+         },
+         "*.yml": {
+            "code": 687,
+            "shammodels/sph": 0,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "shammodels/basegodunov": 0,
+            "shammodels/nbody": 0,
+            "examples": 0,
+            "doc": 206
+         },
+         "CMakeLists.txt + *.cmake": {
+            "code": 1647,
+            "shammodels/sph": 35,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "shammodels/basegodunov": 22,
+            "shammodels/nbody": 72,
+            "examples": 0,
+            "doc": 0
+         },
+         "total": {
+            "code": 101272,
+            "shammodels/sph": 12991,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "shammodels/basegodunov": 626,
+            "shammodels/nbody": 1729,
+            "examples": 0,
+            "doc": 6071,
+            "all": 107343
+         }
+      }
+   }
+}

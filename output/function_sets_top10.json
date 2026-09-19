@@ -84,7 +84,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             74.899,
@@ -110,6 +111,7 @@
             34.102,
             26.231,
             48.738,
+            null,
             null,
             null,
             null,
@@ -562,6 +564,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -650,7 +657,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             46.863,
@@ -731,7 +739,8 @@
             28.787,
             30.013,
             29.509,
-            29.983
+            29.983,
+            30.056
          ],
          "customdata": [
             [
@@ -1128,6 +1137,11 @@
                "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
                593,
                50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               593,
+               50
             ]
          ],
          "connectgaps": false,
@@ -1216,7 +1230,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             34.783,
@@ -1242,6 +1257,7 @@
             16.457,
             13.086,
             23.414,
+            null,
             null,
             null,
             null,
@@ -1694,6 +1710,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -1782,7 +1803,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             26.429,
@@ -1863,7 +1885,8 @@
             13.356,
             14.207,
             14.395,
-            13.852
+            13.852,
+            13.786
          ],
          "customdata": [
             [
@@ -2260,6 +2283,11 @@
                "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
                40,
                346
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               344
             ]
          ],
          "connectgaps": false,
@@ -2348,7 +2376,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             25.75,
@@ -2374,6 +2403,7 @@
             12.257,
             9.67,
             17.41,
+            null,
             null,
             null,
             null,
@@ -2826,6 +2856,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -2914,7 +2949,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             17.951,
@@ -2940,6 +2976,7 @@
             8.311,
             6.518,
             11.778,
+            null,
             null,
             null,
             null,
@@ -3392,6 +3429,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -3480,7 +3522,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             17.067,
@@ -3561,7 +3604,8 @@
             11.126,
             11.487,
             11.473,
-            11.314
+            11.314,
+            11.57
          ],
          "customdata": [
             [
@@ -3958,6 +4002,11 @@
                "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
                262,
                43
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               262,
+               44
             ]
          ],
          "connectgaps": false,
@@ -4046,7 +4095,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             16.012,
@@ -4076,6 +4126,7 @@
             7.3,
             7.094,
             7.456,
+            null,
             null,
             null,
             null,
@@ -4524,6 +4575,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -4612,7 +4668,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             16.251,
@@ -4638,6 +4695,7 @@
             7.601,
             6.061,
             10.922,
+            null,
             null,
             null,
             null,
@@ -5090,6 +5148,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -5178,7 +5241,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             16.172,
@@ -5259,7 +5323,8 @@
             7.724,
             8.489,
             7.791,
-            7.99
+            7.99,
+            8.88
          ],
          "customdata": [
             [
@@ -5656,6 +5721,11 @@
                "void test_karras_alg&lt;$&gt;()",
                2,
                3995
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               4440
             ]
          ],
          "connectgaps": false,
@@ -5744,7 +5814,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             null,
@@ -5825,7 +5896,8 @@
             9.365,
             9.654,
             9.552,
-            9.536
+            9.536,
+            9.497
          ],
          "customdata": [
             [
@@ -6222,6 +6294,11 @@
                "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
                257,
                37
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               258,
+               36
             ]
          ],
          "connectgaps": false,
@@ -6310,7 +6387,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             null,
@@ -6391,7 +6469,8 @@
             9.673,
             11.708,
             11.086,
-            9.702
+            9.702,
+            10.939
          ],
          "customdata": [
             [
@@ -6788,6 +6867,11 @@
                "shammodels::sph::Solver&lt;$&gt;::init_solver_graph()",
                6,
                1617
+            ],
+            [
+               "shammodels::sph::Solver&lt;$&gt;::init_solver_graph()",
+               6,
+               1823
             ]
          ],
          "connectgaps": false,
@@ -6876,13 +6960,15 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             null,
             null,
             null,
             10.013,
+            null,
             null,
             null,
             null,
@@ -7354,6 +7440,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -7442,7 +7533,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             null,
@@ -7523,7 +7615,8 @@
             8.76,
             9.083,
             8.995,
-            9.14
+            9.14,
+            9.194
          ],
          "customdata": [
             [
@@ -7920,6 +8013,11 @@
                "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, unsigned int)",
                184,
                49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, unsigned int)",
+               184,
+               49
             ]
          ],
          "connectgaps": false,
@@ -8008,7 +8106,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             null,
@@ -8028,6 +8127,7 @@
             null,
             null,
             9.176,
+            null,
             null,
             null,
             null,
@@ -8486,572 +8586,11 @@
                null,
                null,
                null
-            ]
-         ],
-         "connectgaps": false,
-         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
-      },
-      {
-         "type": "scatter",
-         "mode": "lines+markers",
-         "name": "hipsycl::sycl::queue::submit<$> #3",
-         "x": [
-            "2026-08-15T12:17:37Z",
-            "2026-08-15T18:30:03Z",
-            "2026-08-15T23:38:59Z",
-            "2026-08-16T17:04:41Z",
-            "2026-08-16T19:02:01Z",
-            "2026-08-17T00:34:05Z",
-            "2026-08-17T03:58:48Z",
-            "2026-08-17T08:05:26Z",
-            "2026-08-17T18:42:41Z",
-            "2026-08-17T23:57:01Z",
-            "2026-08-18T03:05:25Z",
-            "2026-08-18T12:55:21Z",
-            "2026-08-18T20:08:58Z",
-            "2026-08-18T22:10:05Z",
-            "2026-08-19T01:44:00Z",
-            "2026-08-19T15:21:03Z",
-            "2026-08-19T22:28:50Z",
-            "2026-08-20T04:05:51Z",
-            "2026-08-20T09:52:59Z",
-            "2026-08-20T14:48:57Z",
-            "2026-08-21T02:30:02Z",
-            "2026-08-21T05:04:21Z",
-            "2026-08-21T10:39:25Z",
-            "2026-08-21T14:23:46Z",
-            "2026-08-21T17:58:42Z",
-            "2026-08-21T20:40:23Z",
-            "2026-08-22T00:21:56Z",
-            "2026-08-23T00:50:58Z",
-            "2026-08-23T04:26:36Z",
-            "2026-08-23T16:02:39Z",
-            "2026-08-24T09:05:49Z",
-            "2026-08-24T17:28:50Z",
-            "2026-08-25T03:52:18Z",
-            "2026-08-25T16:43:29Z",
-            "2026-08-26T15:25:46Z",
-            "2026-08-27T08:11:30Z",
-            "2026-08-27T13:55:27Z",
-            "2026-08-27T19:36:52Z",
-            "2026-08-28T01:37:10Z",
-            "2026-08-28T09:38:19Z",
-            "2026-08-28T16:50:29Z",
-            "2026-08-28T22:30:12Z",
-            "2026-08-29T04:44:35Z",
-            "2026-08-29T06:50:42Z",
-            "2026-08-29T15:16:08Z",
-            "2026-08-29T19:59:56Z",
-            "2026-08-30T00:36:26Z",
-            "2026-08-30T09:01:29Z",
-            "2026-08-31T18:23:48Z",
-            "2026-08-31T21:36:51Z",
-            "2026-09-01T00:44:08Z",
-            "2026-09-01T02:32:48Z",
-            "2026-09-03T07:02:33Z",
-            "2026-09-03T12:47:06Z",
-            "2026-09-04T13:13:29Z",
-            "2026-09-04T16:39:08Z",
-            "2026-09-04T19:51:27Z",
-            "2026-09-04T22:10:58Z",
-            "2026-09-05T12:33:05Z",
-            "2026-09-08T01:35:45Z",
-            "2026-09-09T18:47:06Z",
-            "2026-09-10T18:12:48Z",
-            "2026-09-10T23:11:15Z",
-            "2026-09-11T18:20:59Z",
-            "2026-09-12T00:56:29Z",
-            "2026-09-12T12:42:31Z",
-            "2026-09-12T23:19:38Z",
-            "2026-09-15T10:20:11Z",
-            "2026-09-15T17:45:33Z",
-            "2026-09-15T21:28:52Z",
-            "2026-09-16T02:06:28Z",
-            "2026-09-16T04:38:18Z",
-            "2026-09-16T12:55:22Z",
-            "2026-09-17T19:41:09Z",
-            "2026-09-17T22:54:22Z",
-            "2026-09-18T01:55:04Z",
-            "2026-09-18T03:39:54Z",
-            "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
-         ],
-         "y": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            6.202,
-            7.905,
-            7.355,
-            8.107,
-            8.441,
-            8.097,
-            8.215,
-            7.058,
-            7.53,
-            8.049,
-            5.835,
-            7.256,
-            7.421,
-            8.213,
-            5.73,
-            7.331,
-            7.297,
-            8.33,
-            7.393,
-            7.278,
-            8.382,
-            5.842,
-            7.985,
-            8.084,
-            5.879,
-            5.903,
-            8.455,
-            7.403,
-            7.692,
-            4.932,
-            8.258,
-            4.483,
-            7.999,
-            8.164,
-            7.436,
-            8.148,
-            7.893,
-            8.348,
-            8.414,
-            8.209,
-            5.71,
-            7.853,
-            7.25,
-            8.062,
-            4.329,
-            8.145,
-            8.195,
-            8.107,
-            8.223,
-            5.495,
-            8.232,
-            4.95,
-            8.073,
-            8.436,
-            8.233,
-            8.234
-         ],
-         "customdata": [
-            [
-               null,
-               null,
-               null
             ],
             [
                null,
                null,
                null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               null,
-               null,
-               null
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               38
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               48
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               45
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               50
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               52
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               49
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               50
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               43
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               46
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               49
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               36
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               44
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               45
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               50
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               35
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               45
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               44
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               51
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               45
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               44
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               51
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               35
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               48
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               49
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               165,
-               35
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               165,
-               35
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               165,
-               51
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               165,
-               44
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               165,
-               46
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               165,
-               29
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               162,
-               50
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               27
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               49
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               50
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               45
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               49
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               48
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               51
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               51
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               50
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               35
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               48
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               44
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               49
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               26
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               49
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               50
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               49
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               50
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               33
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               163,
-               50
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               164,
-               30
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               164,
-               49
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               164,
-               51
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               164,
-               50
-            ],
-            [
-               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
-               164,
-               50
             ]
          ],
          "connectgaps": false,
@@ -9140,7 +8679,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             null,
@@ -9221,7 +8761,8 @@
             7.034,
             7.66,
             7.908,
-            7.023
+            7.023,
+            9.14
          ],
          "customdata": [
             [
@@ -9618,6 +9159,584 @@
                "shammodels::sph::Solver&lt;$&gt;::evolve_once()",
                6,
                1170
+            ],
+            [
+               "shammodels::sph::Solver&lt;$&gt;::evolve_once()",
+               6,
+               1523
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "hipsycl::sycl::queue::submit<$> #3",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z",
+            "2026-08-21T20:40:23Z",
+            "2026-08-22T00:21:56Z",
+            "2026-08-23T00:50:58Z",
+            "2026-08-23T04:26:36Z",
+            "2026-08-23T16:02:39Z",
+            "2026-08-24T09:05:49Z",
+            "2026-08-24T17:28:50Z",
+            "2026-08-25T03:52:18Z",
+            "2026-08-25T16:43:29Z",
+            "2026-08-26T15:25:46Z",
+            "2026-08-27T08:11:30Z",
+            "2026-08-27T13:55:27Z",
+            "2026-08-27T19:36:52Z",
+            "2026-08-28T01:37:10Z",
+            "2026-08-28T09:38:19Z",
+            "2026-08-28T16:50:29Z",
+            "2026-08-28T22:30:12Z",
+            "2026-08-29T04:44:35Z",
+            "2026-08-29T06:50:42Z",
+            "2026-08-29T15:16:08Z",
+            "2026-08-29T19:59:56Z",
+            "2026-08-30T00:36:26Z",
+            "2026-08-30T09:01:29Z",
+            "2026-08-31T18:23:48Z",
+            "2026-08-31T21:36:51Z",
+            "2026-09-01T00:44:08Z",
+            "2026-09-01T02:32:48Z",
+            "2026-09-03T07:02:33Z",
+            "2026-09-03T12:47:06Z",
+            "2026-09-04T13:13:29Z",
+            "2026-09-04T16:39:08Z",
+            "2026-09-04T19:51:27Z",
+            "2026-09-04T22:10:58Z",
+            "2026-09-05T12:33:05Z",
+            "2026-09-08T01:35:45Z",
+            "2026-09-09T18:47:06Z",
+            "2026-09-10T18:12:48Z",
+            "2026-09-10T23:11:15Z",
+            "2026-09-11T18:20:59Z",
+            "2026-09-12T00:56:29Z",
+            "2026-09-12T12:42:31Z",
+            "2026-09-12T23:19:38Z",
+            "2026-09-15T10:20:11Z",
+            "2026-09-15T17:45:33Z",
+            "2026-09-15T21:28:52Z",
+            "2026-09-16T02:06:28Z",
+            "2026-09-16T04:38:18Z",
+            "2026-09-16T12:55:22Z",
+            "2026-09-17T19:41:09Z",
+            "2026-09-17T22:54:22Z",
+            "2026-09-18T01:55:04Z",
+            "2026-09-18T03:39:54Z",
+            "2026-09-18T09:08:49Z",
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
+         ],
+         "y": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            6.202,
+            7.905,
+            7.355,
+            8.107,
+            8.441,
+            8.097,
+            8.215,
+            7.058,
+            7.53,
+            8.049,
+            5.835,
+            7.256,
+            7.421,
+            8.213,
+            5.73,
+            7.331,
+            7.297,
+            8.33,
+            7.393,
+            7.278,
+            8.382,
+            5.842,
+            7.985,
+            8.084,
+            5.879,
+            5.903,
+            8.455,
+            7.403,
+            7.692,
+            4.932,
+            8.258,
+            4.483,
+            7.999,
+            8.164,
+            7.436,
+            8.148,
+            7.893,
+            8.348,
+            8.414,
+            8.209,
+            5.71,
+            7.853,
+            7.25,
+            8.062,
+            4.329,
+            8.145,
+            8.195,
+            8.107,
+            8.223,
+            5.495,
+            8.232,
+            4.95,
+            8.073,
+            8.436,
+            8.233,
+            8.234,
+            8.4
+         ],
+         "customdata": [
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               38
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               48
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               45
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               52
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               43
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               46
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               36
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               44
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               45
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               35
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               45
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               44
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               51
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               45
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               44
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               51
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               35
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               48
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               165,
+               35
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               165,
+               35
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               165,
+               51
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               165,
+               44
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               165,
+               46
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               165,
+               29
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               27
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               45
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               48
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               51
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               51
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               35
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               48
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               44
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               26
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               33
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               163,
+               50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               164,
+               30
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               164,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               164,
+               51
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               164,
+               50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               164,
+               50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               164,
+               51
             ]
          ],
          "connectgaps": false,
@@ -9706,7 +9825,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             null,
@@ -9787,7 +9907,8 @@
             7.076,
             7.353,
             7.245,
-            7.278
+            7.278,
+            7.639
          ],
          "customdata": [
             [
@@ -10184,6 +10305,11 @@
                "void test_comm&lt;$&gt;()",
                60,
                121
+            ],
+            [
+               "void test_comm&lt;$&gt;()",
+               60,
+               127
             ]
          ],
          "connectgaps": false,
@@ -10272,7 +10398,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             null,
@@ -10326,6 +10453,7 @@
             null,
             null,
             6.154,
+            null,
             null,
             null,
             null,
@@ -10610,6 +10738,11 @@
                "std::shared_ptr&lt;$&gt; hipsycl::sycl::queue::execute_submission&lt;$&gt;(hipsycl::sycl::vec&lt;$&gt;, hipsycl::sycl::handler&amp;)",
                632,
                9
+            ],
+            [
+               null,
+               null,
+               null
             ],
             [
                null,
@@ -10838,7 +10971,8 @@
             "2026-09-18T01:55:04Z",
             "2026-09-18T03:39:54Z",
             "2026-09-18T09:08:49Z",
-            "2026-09-19T00:54:22Z"
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z"
          ],
          "y": [
             null,
@@ -10875,6 +11009,7 @@
             null,
             null,
             4.865,
+            null,
             null,
             null,
             null,
@@ -11091,6 +11226,11 @@
                "pybind11::cpp_function::initialize_generic(std::unique_ptr&lt;$&gt;&amp;&amp;, char const*, std::type_info const* const*, unsigned long)",
                39,
                124
+            ],
+            [
+               null,
+               null,
+               null
             ],
             [
                null,

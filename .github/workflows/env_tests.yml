@@ -122,15 +122,6 @@ jobs:
           [
             {
               "machine": "macos-generic.acpp",
-              "runson": "[\"macos-14\"]",
-              "imagename": "MacOS-14",
-              "runtest": true,
-              "runtest_rscript": true,
-              "mpiargs": "--oversubscribe",
-              "ccache-key-extra": "macos14"
-            },
-            {
-              "machine": "macos-generic.acpp",
               "runson": "[\"macos-15\"]",
               "imagename": "MacOS-15",
               "runtest": true,

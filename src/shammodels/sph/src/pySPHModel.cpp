@@ -86,7 +86,27 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("split_load_value"),
             py::arg("merge_load_value"))
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
-        .def("set_two_stage_search", &TConfig::set_two_stage_search)
+        .def(
+            "set_neigh_cache_strategy",
+            &TConfig::set_neigh_cache_strategy,
+            R"==(
+    Set the strategy used to build the neighbours cache.
+
+    Parameters
+    ----------
+    strategy : NeighCacheStrategy
+        Either ``NeighCacheStrategy.SingleStage`` or ``NeighCacheStrategy.TwoStage``
+        (the default), as obtained from ``from shamrock import NeighCacheStrategy``.
+)==")
+        .def(
+            "set_two_stage_search",
+            &TConfig::set_two_stage_search,
+            R"==(
+    Set the neighbours cache strategy from a boolean.
+
+    .. deprecated::
+        Use :py:meth:`set_neigh_cache_strategy` instead.
+)==")
         .def("set_show_neigh_stats", &TConfig::set_show_neigh_stats)
         .def(
             "set_max_neigh_cache_size",

@@ -23,6 +23,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/logs.hpp"
+#include "shammodels/common/config/enum_NeighCacheStrategy.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <pybind11/cast.h>
@@ -67,6 +68,40 @@ namespace sham {
 
 ON_PYTHON_INIT {
     auto &m = root_module;
+
+    py::enum_<shammodels::NeighCacheStrategy>(
+        m,
+        "NeighCacheStrategy",
+        R"==(
+    Strategy used to build the neighbours cache out of the tree traversal.
+
+    Usage
+    -----
+    >>> from shamrock import NeighCacheStrategy
+    >>> cfg.set_neigh_cache_strategy(NeighCacheStrategy.SingleStage)
+)==")
+        .value(
+            "SingleStage",
+            shammodels::NeighCacheStrategy::SingleStage,
+            R"==(
+    Single tree traversal per particle.
+
+    Each particle walks the tree itself and writes its neighbours straight to the
+    cache. Prefer this one when the tree ends up with giant leaves, as on a chaotic
+    disc: there the leaf bounding boxes grow so large that the two stage search makes
+    each particle scan far more candidates than it keeps.
+)==")
+        .value(
+            "TwoStage",
+            shammodels::NeighCacheStrategy::TwoStage,
+            R"==(
+    Two stage neighbours search (see the shamrock paper). This is the default.
+
+    A first pass walks the tree once per leaf to build a leaf to leaf neighbour map,
+    then each particle only scans the particles held by its own leaf's neighbour
+    leaves. This is usually the faster of the two, since the tree traversal is paid
+    once per leaf instead of once per particle.
+)==");
 
     m.def(
         "compute_histogram",

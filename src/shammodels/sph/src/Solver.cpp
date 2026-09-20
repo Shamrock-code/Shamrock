@@ -1855,14 +1855,13 @@ void shammodels::sph::Solver<Tvec, Kern>::reset_presteps_rint() {
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::start_neighbors_cache() {
-    if (solver_config.use_two_stage_search) {
-        shammodels::sph::modules::NeighbourCache<Tvec, u_morton, Kern>(
-            context, solver_config, storage)
-            .start_neighbors_cache_2stages();
-    } else {
-        shammodels::sph::modules::NeighbourCache<Tvec, u_morton, Kern>(
-            context, solver_config, storage)
-            .start_neighbors_cache();
+    shammodels::sph::modules::NeighbourCache<Tvec, u_morton, Kern> neigh_cache_builder(
+        context, solver_config, storage);
+
+    switch (solver_config.neigh_cache_strategy) {
+    case NeighCacheStrategy::SingleStage: neigh_cache_builder.start_neighbors_cache(); break;
+    case NeighCacheStrategy::TwoStage: neigh_cache_builder.start_neighbors_cache_2stages(); break;
+    default: shambase::throw_unimplemented("unknown neighbours cache strategy");
     }
 
     if (solver_config.show_neigh_stats) {

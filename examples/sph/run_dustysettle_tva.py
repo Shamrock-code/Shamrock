@@ -35,6 +35,7 @@ from shamrock.utils.numba_helper import maybe_njit
 from shamrock.utils.plot import show_image_sequence
 
 import shamrock
+from shamrock import NeighCacheStrategy
 
 # %%
 # Shamrock initialization
@@ -820,7 +821,7 @@ def setup_model():
     cfg.set_dust_drag_epstein(gamma, mrn_distribution.grain_size, mrn_distribution.rho_grains)
     cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)
     cfg.add_ext_force_velocity_dissipation(eta=vel_dissipation_eta)
-    cfg.set_two_stage_search(False)
+    cfg.set_neigh_cache_strategy(NeighCacheStrategy.SingleStage)
     cfg.set_show_cfl_detail(True)
     cfg.set_boundary_periodic()
     cfg.set_units(codeu)

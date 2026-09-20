@@ -35,6 +35,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
+#include "shammodels/common/config/enum_NeighCacheStrategy.hpp"
 #include "shammodels/gsph/config/ForceFormulationConfig.hpp"
 #include "shammodels/gsph/config/ReconstructConfig.hpp"
 #include "shammodels/gsph/config/RiemannConfig.hpp"
@@ -285,11 +286,32 @@ struct shammodels::gsph::SolverConfig {
     // Tree config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    u32 tree_reduction_level  = 3;
-    bool use_two_stage_search = true;
+    u32 tree_reduction_level = 3;
+
+    /// Strategy used to build the neighbours cache out of the tree traversal
+    /// @note The GSPH solver only implements the single stage traversal for now, this is
+    /// carried in the config (and dumped to json) for parity with the SPH solver.
+    NeighCacheStrategy neigh_cache_strategy = NeighCacheStrategy::TwoStage;
 
     inline void set_tree_reduction_level(u32 level) { tree_reduction_level = level; }
-    inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
+
+    /// Setter for the neighbours cache strategy
+    inline void set_neigh_cache_strategy(NeighCacheStrategy strategy) {
+        neigh_cache_strategy = strategy;
+    }
+
+    /**
+     * @brief Setter for the two stage search
+     * @deprecated Use set_neigh_cache_strategy instead
+     */
+    inline void set_two_stage_search(bool enable) {
+        ON_RANK_0(shamlog_warn_ln(
+                      "GSPH::SolverConfig",
+                      "set_two_stage_search() is deprecated,\n"
+                      "    -> use set_neigh_cache_strategy(NeighCacheStrategy.TwoStage) or\n"
+                      "       set_neigh_cache_strategy(NeighCacheStrategy.SingleStage) instead"););
+        neigh_cache_strategy = neigh_cache_strategy_from_two_stage_search(enable);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config (END)
@@ -454,7 +476,7 @@ namespace shammodels::gsph {
             {"eos_config", p.eos_config},
             {"boundary_config", p.boundary_config},
             {"tree_reduction_level", p.tree_reduction_level},
-            {"use_two_stage_search", p.use_two_stage_search},
+            {shammodels::neigh_cache_strategy_json_key, p.neigh_cache_strategy},
             {"htol_up_coarse_cycle", p.htol_up_coarse_cycle},
             {"htol_up_fine_cycle", p.htol_up_fine_cycle},
             {"epsilon_h", p.epsilon_h},
@@ -504,7 +526,9 @@ namespace shammodels::gsph {
         _get_to_if_contains("eos_config", p.eos_config);
         _get_to_if_contains("boundary_config", p.boundary_config);
         _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);
-        _get_to_if_contains("use_two_stage_search", p.use_two_stage_search);
+        // Reads the new enum key, falling back on the legacy `use_two_stage_search` boolean
+        shammodels::get_to_neigh_cache_strategy(
+            j, p.neigh_cache_strategy, "GSPH::SolverConfig", has_used_defaults, has_updated_config);
         _get_to_if_contains("htol_up_coarse_cycle", p.htol_up_coarse_cycle);
         _get_to_if_contains("htol_up_fine_cycle", p.htol_up_fine_cycle);
         _get_to_if_contains("epsilon_h", p.epsilon_h);

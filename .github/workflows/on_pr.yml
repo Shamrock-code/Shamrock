@@ -52,7 +52,7 @@ jobs:
           The merge gate job "on PR / all" is skipped in this case. Queue entry uses "on PR / all_light"; full CI runs in the merge queue.
           EOF
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: report_light_ci
           path: ./report_______light_ci.md

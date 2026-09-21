@@ -69,7 +69,7 @@ jobs:
             CLANGVERSION=18
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ci-phys-test-image
           path: /tmp/ci-phys-test-image.tar
@@ -141,7 +141,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ci-phys-test-image
           path: /tmp
@@ -250,7 +250,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ci-phys-test-image
           path: /tmp
@@ -299,7 +299,7 @@ jobs:
           sudo find . -type d -name "_to_trash" -exec rm -rfv {} +
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: ./doc
@@ -312,7 +312,7 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ci-phys-test-image
           path: /tmp
@@ -346,7 +346,7 @@ jobs:
 
       # download the artifact from the example gallery
       - name: Download example gallery artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: gallery_*
           path: ./doc
@@ -364,7 +364,7 @@ jobs:
             bash /work/doc/sphinx/gen_sphinx_doc.sh
 
       - name: Upload doc artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sphinx_doc
           path: doc/sphinx/build/html

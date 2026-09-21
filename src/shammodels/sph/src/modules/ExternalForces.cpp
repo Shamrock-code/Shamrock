@@ -146,8 +146,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             set_central_mass.set_edges(central_mass);
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
-                set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
-                    central_pos.data = {}; // no support for offset yet
+                set_central_pos([cpos = ext_force->central_pos](
+                                    shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                    central_pos.data = cpos;
                 });
             set_central_pos.set_edges(central_pos);
 
@@ -214,8 +215,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             set_central_mass.set_edges(central_mass);
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
-                set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
-                    central_pos.data = {}; // no support for offset yet
+                set_central_pos([cpos = ext_force->central_pos](
+                                    shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                    central_pos.data = cpos;
                 });
             set_central_pos.set_edges(central_pos);
 
@@ -494,7 +496,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
             auto set_central_pos
                 = register_constant_set<Tvec>(solver_graph, prefix_central_pos, [&]() {
-                      return Tvec{0, 0, 0}; // no support for offset yet
+                      return ext_force->central_pos;
                   });
 
             auto set_central_vel
@@ -530,6 +532,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
             add_ext_forces_seq.push_back(set_central_pos);
             add_ext_forces_seq.push_back(set_a_spin);
             add_ext_forces_seq.push_back(set_dir_spin);
+            // set_central_vel is intentionally not run: the external force's central object is
+            // stationary, so central_vel stays null.
             add_ext_forces_seq.push_back(solver_graph.get_node_ptr_base(prefix_lt));
 
         } else if (

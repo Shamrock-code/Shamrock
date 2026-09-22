@@ -403,7 +403,8 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
             leaf_it.complete_event_state(e);
         }
         // search in which leaf each parts are
-        sycl::buffer<u32> leaf_part_id(obj_cnt);
+        sham::DeviceBuffer<u32> leaf_part_id(
+            obj_cnt, shamsys::instance::get_compute_scheduler_ptr());
 
         {
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -411,9 +412,9 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
             auto xyz         = buf_xyz.get_read_access(depends_list);
             auto leaf_looper = leaf_it.get_read_access(depends_list);
+            auto found_id    = leaf_part_id.get_write_access(depends_list);
 
             auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
-                sycl::accessor found_id{leaf_part_id, cgh, sycl::write_only, sycl::no_init};
                 u32 offset_leaf = intnode_cnt;
                 // sycl::stream out {4096,4096,cgh};
                 shambase::parallel_for(cgh, obj_cnt, "search particles parent leaf", [=](u64 gid) {
@@ -448,6 +449,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
             buf_xyz.complete_event_state(e);
             leaf_it.complete_event_state(e);
+            leaf_part_id.complete_event_state(e);
         }
 
         //{
@@ -478,11 +480,10 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
             auto acc_neigh_leaf_looper = pleaf_cache.get_read_access(depends_list);
             auto neigh_cnt             = neigh_count.get_write_access(depends_list);
             auto particle_looper       = obj_it.cell_iterator.get_read_access(depends_list);
+            auto leaf_owner            = leaf_part_id.get_read_access(depends_list);
 
             auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
                 tree::ObjectCacheIterator neigh_leaf_looper(acc_neigh_leaf_looper);
-
-                sycl::accessor leaf_owner{leaf_part_id, cgh, sycl::read_only};
 
                 u32 offset_leaf = intnode_cnt;
                 // sycl::stream out {4096,1024,cgh};
@@ -524,6 +525,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
             pleaf_cache.complete_event_state(e);
             neigh_count.complete_event_state(e);
             obj_it.cell_iterator.complete_event_state(e);
+            leaf_part_id.complete_event_state(e);
         }
 
         tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
@@ -540,11 +542,10 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
             auto scanned_neigh_cnt     = pcache.scanned_cnt.get_read_access(depends_list);
             auto neigh                 = pcache.index_neigh_map.get_write_access(depends_list);
             auto particle_looper       = obj_it.cell_iterator.get_read_access(depends_list);
+            auto leaf_owner            = leaf_part_id.get_read_access(depends_list);
 
             auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
                 tree::ObjectCacheIterator neigh_leaf_looper(acc_neigh_leaf_looper);
-
-                sycl::accessor leaf_owner{leaf_part_id, cgh, sycl::read_only};
 
                 u32 offset_leaf = intnode_cnt;
 
@@ -587,6 +588,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
             pcache.scanned_cnt.complete_event_state(e);
             pcache.index_neigh_map.complete_event_state(e);
             obj_it.cell_iterator.complete_event_state(e);
+            leaf_part_id.complete_event_state(e);
         }
         return pcache;
     };

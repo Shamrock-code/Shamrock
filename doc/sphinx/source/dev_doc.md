@@ -14,6 +14,7 @@ dev_doc/building-doc.md
 dev_doc/history-graphs.md
 dev_doc/testing.md
 dev_doc/types.md
+dev_doc/solvergraph.md
 dev_doc/solvergraph_nodes.md
 dev_doc/solvergraph_edges.md
 dev_doc/kernel_call.md

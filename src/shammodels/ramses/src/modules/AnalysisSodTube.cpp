@@ -92,7 +92,8 @@ auto shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>::compute_
                     Tscal rhoe = acc_rhoe[i];
 
                     auto conststate = shammath::ConsState<Tvec>{rho, rhoe, rhov};
-                    auto prim_state = shammath::cons_to_prim(conststate, gamma);
+                    shammath::FluidStateAdiabatic<Tvec> adiab_fluid{.m_gamma = gamma};
+                    auto prim_state = adiab_fluid.cons_to_prim(conststate);
 
                     Tscal P = prim_state.press;
                     Tvec v  = prim_state.vel;

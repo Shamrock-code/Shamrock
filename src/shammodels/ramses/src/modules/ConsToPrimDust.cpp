@@ -53,7 +53,8 @@ namespace {
                    const Tvec *__restrict rhov_dust,
                    Tvec *__restrict vel_dust) {
                     auto d_conststate = shammath::DustConsState<Tvec>{rho_dust[i], rhov_dust[i]};
-                    auto d_prim_state = shammath::d_cons_to_prim(d_conststate);
+                    shammath::FluidStateDust<Tvec> dust_fluid{};
+                    auto d_prim_state = dust_fluid.cons_to_prim(d_conststate);
 
                     vel_dust[i] = d_prim_state.vel;
                 });

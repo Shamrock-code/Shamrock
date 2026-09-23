@@ -92,11 +92,12 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
 
                 auto conststate = shammath::ConsState<Tvec>{rho[gid], rhoe[gid], rhov[gid]};
 
-                auto prim_state = shammath::cons_to_prim(conststate, gamma);
+                shammath::FluidStateAdiabatic<Tvec> adiab_fluid{.m_gamma = gamma};
+                auto prim_state = adiab_fluid.cons_to_prim(conststate);
 
                 constexpr Tscal div = 1. / 3.;
 
-                Tscal cs    = sound_speed(prim_state, gamma);
+                Tscal cs    = adiab_fluid.sound_speed(prim_state);
                 Tscal vnorm = sycl::length(prim_state.vel);
                 Tscal dt    = C_safe * dx * div / (cs + vnorm);
 
@@ -186,7 +187,8 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
                     rhov_dust[ndust * cell_global_id + ndust_off_loc]};
                 Tscal dx = acc_aabb_cell_size[block_id];
 
-                auto prim_state = shammath::d_cons_to_prim(conststate);
+                shammath::FluidStateDust<Tvec> dust_fluid{};
+                auto prim_state = dust_fluid.cons_to_prim(conststate);
 
                 constexpr Tscal div = 1. / 3.;
 

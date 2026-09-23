@@ -25,6 +25,7 @@
  */
 
 #include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
 #include <string>
 #include <vector>
@@ -117,7 +118,7 @@ namespace shamalgs::primitives {
         void set_impl_is_all_true(const std::string &impl);
 
         /// Select the default implementation for is_all_true
-        void autoselect_impl_is_all_true();
+        void autoselect_impl_is_all_true(const sham::DeviceScheduler_ptr &dev_sched);
 
     } // namespace impl
 

@@ -107,7 +107,8 @@ inline void register_dtt_alg(py::module &m) {
     });
 
     m.def("autoselect_impl_clbvh_dual_tree_traversal", []() {
-        shamtree::impl::autoselect_impl_clbvh_dual_tree_traversal();
+        shamtree::impl::autoselect_impl_clbvh_dual_tree_traversal(
+            shamsys::instance::get_compute_scheduler_ptr());
     });
 }
 

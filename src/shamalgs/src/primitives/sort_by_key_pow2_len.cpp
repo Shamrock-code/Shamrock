@@ -117,7 +117,7 @@ namespace shamalgs::primitives {
         }
 
         /// Select the default implementation for sort by key (pow2 len)
-        void autoselect_impl_sort_by_key_pow2_len() {
+        void autoselect_impl_sort_by_key_pow2_len(const sham::DeviceScheduler_ptr &dev_sched) {
             sort_by_key_pow2_len_impl.set(BitonicSort{});
             shamlog_info_ln(
                 "algs",
@@ -176,7 +176,7 @@ namespace shamalgs::primitives {
         }
 
         if (!impl::sort_by_key_pow2_len_impl.is_set()) {
-            impl::autoselect_impl_sort_by_key_pow2_len();
+            impl::autoselect_impl_sort_by_key_pow2_len(sched);
         }
 
         std::visit(

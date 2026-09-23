@@ -141,7 +141,7 @@ namespace shamalgs::primitives {
         }
 
         /// Select the default implementation for segmented sort in place
-        void autoselect_impl_segmented_sort_in_place() {
+        void autoselect_impl_segmented_sort_in_place(const sham::DeviceScheduler_ptr &dev_sched) {
             segmented_sort_in_place_impl.set(MultiStdSort{});
             shamlog_info_ln(
                 "algs",
@@ -164,7 +164,7 @@ namespace shamalgs::primitives {
         }
 
         if (!impl::segmented_sort_in_place_impl.is_set()) {
-            impl::autoselect_impl_segmented_sort_in_place();
+            impl::autoselect_impl_segmented_sort_in_place(buf.get_dev_scheduler_ptr());
         }
 
         std::visit(

@@ -75,7 +75,8 @@ NEW_TEST(Unittest, "shamalgs/primitives/scan_exclusive_sum_in_place", 1) {
     };
 
     if (!shamalgs::primitives::impl::is_impl_set_scan_exclusive_sum_in_place()) {
-        shamalgs::primitives::impl::autoselect_impl_scan_exclusive_sum_in_place();
+        shamalgs::primitives::impl::autoselect_impl_scan_exclusive_sum_in_place(
+            shamsys::instance::get_compute_scheduler_ptr());
     }
     auto current_impl = shamalgs::primitives::impl::get_current_impl_scan_exclusive_sum_in_place();
 

@@ -182,7 +182,8 @@ NEW_TEST(Unittest, "shamalgs/primitives/segmented_sort_in_place", 1) {
     };
 
     if (!shamalgs::primitives::impl::is_impl_set_segmented_sort_in_place()) {
-        shamalgs::primitives::impl::autoselect_impl_segmented_sort_in_place();
+        shamalgs::primitives::impl::autoselect_impl_segmented_sort_in_place(
+            shamsys::instance::get_compute_scheduler_ptr());
     }
     auto current_impl = shamalgs::primitives::impl::get_current_impl_segmented_sort_in_place();
 

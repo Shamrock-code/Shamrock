@@ -139,7 +139,8 @@ ON_PYTHON_INIT {
         });
 
         shamalgs_module.def("autoselect_impl_is_all_true", []() {
-            shamalgs::primitives::impl::autoselect_impl_is_all_true();
+            shamalgs::primitives::impl::autoselect_impl_is_all_true(
+                shamsys::instance::get_compute_scheduler_ptr());
         });
     }
 
@@ -186,7 +187,8 @@ ON_PYTHON_INIT {
         });
 
         shamalgs_module.def("autoselect_impl_reduction", []() {
-            shamalgs::primitives::impl::autoselect_impl_reduction();
+            shamalgs::primitives::impl::autoselect_impl_reduction(
+                shamsys::instance::get_compute_scheduler_ptr());
         });
     }
 
@@ -225,7 +227,8 @@ ON_PYTHON_INIT {
         });
 
         shamalgs_module.def("autoselect_impl_scan_exclusive_sum_in_place", []() {
-            shamalgs::primitives::impl::autoselect_impl_scan_exclusive_sum_in_place();
+            shamalgs::primitives::impl::autoselect_impl_scan_exclusive_sum_in_place(
+                shamsys::instance::get_compute_scheduler_ptr());
         });
     }
 
@@ -313,7 +316,8 @@ ON_PYTHON_INIT {
         });
 
         shamalgs_module.def("autoselect_impl_sort_by_keys", []() {
-            shamalgs::primitives::impl::autoselect_impl_sort_by_keys();
+            shamalgs::primitives::impl::autoselect_impl_sort_by_keys(
+                shamsys::instance::get_compute_scheduler_ptr());
         });
     }
 
@@ -366,7 +370,8 @@ ON_PYTHON_INIT {
         });
 
         shamalgs_module.def("autoselect_impl_sort_by_key_pow2_len", []() {
-            shamalgs::primitives::impl::autoselect_impl_sort_by_key_pow2_len();
+            shamalgs::primitives::impl::autoselect_impl_sort_by_key_pow2_len(
+                shamsys::instance::get_compute_scheduler_ptr());
         });
     }
 

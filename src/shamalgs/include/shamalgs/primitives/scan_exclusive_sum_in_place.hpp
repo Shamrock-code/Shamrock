@@ -26,6 +26,7 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include <string>
 #include <vector>
 
@@ -91,7 +92,8 @@ namespace shamalgs::primitives {
         void set_impl_scan_exclusive_sum_in_place(const std::string &impl);
 
         /// Select the default implementation for scan_exclusive_sum_in_place
-        void autoselect_impl_scan_exclusive_sum_in_place();
+        void autoselect_impl_scan_exclusive_sum_in_place(
+            const sham::DeviceScheduler_ptr &dev_sched);
 
     } // namespace impl
 

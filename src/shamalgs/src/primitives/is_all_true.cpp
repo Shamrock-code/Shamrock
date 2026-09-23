@@ -225,7 +225,7 @@ namespace shamalgs::primitives {
         }
 
         /// Select the default implementation for is_all_true
-        void autoselect_impl_is_all_true() {
+        void autoselect_impl_is_all_true(const sham::DeviceScheduler_ptr &dev_sched) {
             is_all_true_impl.set(Host{});
             shamlog_info_ln(
                 "algs",
@@ -239,7 +239,7 @@ namespace shamalgs::primitives {
     bool is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt) {
 
         if (!impl::is_all_true_impl.is_set()) {
-            impl::autoselect_impl_is_all_true();
+            impl::autoselect_impl_is_all_true(buf.get_dev_scheduler_ptr());
         }
 
         return std::visit(

@@ -408,7 +408,8 @@ void dtt_test(
     }
 
     if (!shamtree::impl::is_impl_set_clbvh_dual_tree_traversal()) {
-        shamtree::impl::autoselect_impl_clbvh_dual_tree_traversal();
+        shamtree::impl::autoselect_impl_clbvh_dual_tree_traversal(
+            shamsys::instance::get_compute_scheduler_ptr());
     }
     auto current_impl = shamtree::impl::get_current_impl_clbvh_dual_tree_traversal_impl();
 
@@ -450,7 +451,8 @@ inline void dtt_test_empty(bool ordered_result, bool allow_leaf_lowering) {
     auto bvh       = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
 
     if (!shamtree::impl::is_impl_set_clbvh_dual_tree_traversal()) {
-        shamtree::impl::autoselect_impl_clbvh_dual_tree_traversal();
+        shamtree::impl::autoselect_impl_clbvh_dual_tree_traversal(
+            shamsys::instance::get_compute_scheduler_ptr());
     }
     auto current_impl = shamtree::impl::get_current_impl_clbvh_dual_tree_traversal_impl();
 

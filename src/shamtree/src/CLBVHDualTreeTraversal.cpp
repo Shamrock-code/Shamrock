@@ -63,7 +63,7 @@ namespace shamtree {
         }
 
         /// Select the default implementation for dual tree traversal
-        void autoselect_impl_clbvh_dual_tree_traversal() {
+        void autoselect_impl_clbvh_dual_tree_traversal(const sham::DeviceScheduler_ptr &dev_sched) {
             dtt_impl.set(ScanMultipass{});
             shamlog_info_ln(
                 "tree",
@@ -91,7 +91,7 @@ namespace shamtree {
         using ImplSca = details::DTTScanMultipass<Tmorton, Tvec, dim>;
 
         if (!impl::dtt_impl.is_set()) {
-            impl::autoselect_impl_clbvh_dual_tree_traversal();
+            impl::autoselect_impl_clbvh_dual_tree_traversal(dev_sched);
         }
 
         bool ord  = ordered_result;

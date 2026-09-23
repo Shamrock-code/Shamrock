@@ -28,6 +28,7 @@
 
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include <string>
 #include <vector>
 
@@ -110,7 +111,7 @@ namespace shamalgs::primitives {
         void set_impl_sort_by_key_pow2_len(const std::string &impl);
 
         /// Select the default implementation for sort by key pow2 len
-        void autoselect_impl_sort_by_key_pow2_len();
+        void autoselect_impl_sort_by_key_pow2_len(const sham::DeviceScheduler_ptr &dev_sched);
 
     } // namespace impl
 

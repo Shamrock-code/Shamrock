@@ -176,7 +176,8 @@ namespace shamalgs::primitives {
         }
 
         /// Select the default implementation for scan_exclusive_sum_in_place
-        void autoselect_impl_scan_exclusive_sum_in_place() {
+        void autoselect_impl_scan_exclusive_sum_in_place(
+            const sham::DeviceScheduler_ptr &dev_sched) {
 #ifdef __MACH__     // decoupled lookback perf on mac os is awful
     #ifdef __ACPP__ // for acpp we gain using enqueue custom operation instead of copying
             scan_exclusive_sum_in_place_impl.set(StdScanSingleTaskAcpp{});
@@ -214,7 +215,7 @@ namespace shamalgs::primitives {
         }
 
         if (!impl::scan_exclusive_sum_in_place_impl.is_set()) {
-            impl::autoselect_impl_scan_exclusive_sum_in_place();
+            impl::autoselect_impl_scan_exclusive_sum_in_place(buf1.get_dev_scheduler_ptr());
         }
 
         std::visit(

@@ -92,7 +92,7 @@ namespace shamalgs::primitives {
         }
 
         /// Select the default implementation for sort by keys
-        void autoselect_impl_sort_by_keys() {
+        void autoselect_impl_sort_by_keys(const sham::DeviceScheduler_ptr &dev_sched) {
             sort_by_keys_impl.set(StdSort{});
             shamlog_info_ln(
                 "algs",
@@ -107,7 +107,7 @@ namespace shamalgs::primitives {
         sham::DeviceBuffer<Tkey> &buf_key, sham::DeviceBuffer<Tval> &buf_values, u32 len) {
 
         if (!impl::sort_by_keys_impl.is_set()) {
-            impl::autoselect_impl_sort_by_keys();
+            impl::autoselect_impl_sort_by_keys(buf_key.get_dev_scheduler_ptr());
         }
 
         std::visit(

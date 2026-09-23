@@ -181,7 +181,8 @@ NEW_TEST(Unittest, "shamalgs/primitives/sort_by_keys", 1) {
     };
 
     if (!shamalgs::primitives::impl::is_impl_set_sort_by_keys()) {
-        shamalgs::primitives::impl::autoselect_impl_sort_by_keys();
+        shamalgs::primitives::impl::autoselect_impl_sort_by_keys(
+            shamsys::instance::get_compute_scheduler_ptr());
     }
     auto current_impl = shamalgs::primitives::impl::get_current_impl_sort_by_keys();
 

@@ -152,7 +152,7 @@ namespace shamalgs::primitives {
         void set_impl_reduction(const std::string &impl);
 
         /// Select the default implementation for reduction
-        void autoselect_impl_reduction();
+        void autoselect_impl_reduction(const sham::DeviceScheduler_ptr &dev_sched);
 
     } // namespace impl
 

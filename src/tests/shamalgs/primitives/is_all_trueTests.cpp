@@ -138,7 +138,8 @@ NEW_TEST(Unittest, "shamalgs/primitives/is_all_true:USM", 1) {
     };
 
     if (!shamalgs::primitives::impl::is_impl_set_is_all_true()) {
-        shamalgs::primitives::impl::autoselect_impl_is_all_true();
+        shamalgs::primitives::impl::autoselect_impl_is_all_true(
+            shamsys::instance::get_compute_scheduler_ptr());
     }
     auto current_impl = shamalgs::primitives::impl::get_current_impl_is_all_true();
 

@@ -10,6 +10,7 @@
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "sortTests.hpp"
 
 NEW_TEST(Unittest, "shamalgs/algorithm/sort_by_key_pow2_len", 1) {
@@ -23,7 +24,8 @@ NEW_TEST(Unittest, "shamalgs/algorithm/sort_by_key_pow2_len(usm)", 1) {
                                         shamalgs::algorithm::sort_by_key_pow2_len<u32, u32>);
 
     if (!shamalgs::primitives::impl::is_impl_set_sort_by_key_pow2_len()) {
-        shamalgs::primitives::impl::autoselect_impl_sort_by_key_pow2_len();
+        shamalgs::primitives::impl::autoselect_impl_sort_by_key_pow2_len(
+            shamsys::instance::get_compute_scheduler_ptr());
     }
     auto current_impl = shamalgs::primitives::impl::get_current_impl_sort_by_key_pow2_len();
 

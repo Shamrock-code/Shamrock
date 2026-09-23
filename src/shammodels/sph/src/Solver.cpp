@@ -53,6 +53,7 @@
 #include "shammodels/sph/modules/ComputeCFLDust1Fluid.hpp"
 #include "shammodels/sph/modules/ComputeCFLDustDrift.hpp"
 #include "shammodels/sph/modules/ComputeCFLForce.hpp"
+#include "shammodels/sph/modules/ComputeCFLSinkSink.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ComputeLuminosity.hpp"
@@ -3533,43 +3534,30 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             if (!pos.empty()) {
                 // sink sink CFL
 
-                Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
+                std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> G_edge
+                    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("G", "G");
+                G_edge->data = solver_config.get_constant_G();
 
-                Tscal G = solver_config.get_constant_G();
+                std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> sink_sink_cfl
+                    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared(
+                        "sink_sink_cfl", "\\Delta t_{\\rm sink-sink}");
 
-                auto &mass    = get_sink_mass<Tvec>(sync);
-                auto &acc_ext = get_sink_acc_ext<Tvec>(sync);
+                using SinkVecEdge = shamrock::solvergraph::IDataEdgeSerializable<std::vector<Tvec>>;
+                using SinkScalEdge
+                    = shamrock::solvergraph::IDataEdgeSerializable<std::vector<Tscal>>;
 
-                for (u32 i = 0; i < pos.size(); i++) {
-                    Tscal sink_sink_cfl_i = shambase::get_infty<Tscal>();
+                ComputeCFLSinkSink<Tvec> compute_cfl_sink_sink{};
+                compute_cfl_sink_sink.set_edges(
+                    G_edge,
+                    C_force_edge,
+                    eta_phi_edge,
+                    sync.template get_edge_ptr<SinkVecEdge>("sink_pos"),
+                    sync.template get_edge_ptr<SinkScalEdge>("sink_mass"),
+                    sync.template get_edge_ptr<SinkVecEdge>("sink_acc_ext"),
+                    sink_sink_cfl);
+                compute_cfl_sink_sink.evaluate();
 
-                    Tvec f_i = acc_ext[i];
-
-                    Tscal grad_phi_i_sq = sham::dot(f_i, f_i); // m^2.s^-4
-
-                    if (grad_phi_i_sq == 0) {
-                        continue;
-                    }
-
-                    for (u32 j = 0; j < pos.size(); j++) {
-                        if (i == j) {
-                            continue;
-                        }
-
-                        Tvec rij       = pos[i] - pos[j];
-                        Tscal rij_scal = sycl::length(rij);
-
-                        Tscal phi_ij  = G * mass[j] / rij_scal;            // J / kg = m^2.s^-2
-                        Tscal term_ij = sham::abs(phi_ij) / grad_phi_i_sq; // s^2
-                        Tscal dt_ij   = C_force * eta_phi * sycl::sqrt(term_ij); // s
-
-                        sink_sink_cfl_i = sham::min(sink_sink_cfl_i, dt_ij);
-                    }
-
-                    sink_sink_cfl = sham::min(sink_sink_cfl, sink_sink_cfl_i);
-                }
-
-                cfl_detail.push_back({"sink_sink", sink_sink_cfl});
+                cfl_detail.push_back({"sink_sink", sink_sink_cfl->data});
             }
 
             Tscal rank_dt = shambase::get_infty<Tscal>();

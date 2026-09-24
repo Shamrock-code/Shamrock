@@ -284,8 +284,8 @@ namespace shammath {
         mat_set_nul<T>(F);
 
         for (auto k = r - 1; k >= 0; k--) {
-            mat_set_identity<T>(I);
-            mat_set_identity<T>(Id);
+            mat_set_identity(I);
+            mat_set_identity(Id);
             mat_set_nul<T>(B);
             i32 cc = 0;
 
@@ -295,7 +295,7 @@ namespace shammath {
                 cc = q * k + j;
                 mat_axpy_beta<T, U>(bi_seq[cc], I, 1, B);
             }
-            mat_set_identity<T>(Id);
+            mat_set_identity(Id);
 
             i32 cond = (k >= 1);
             mat_axpy_beta<T, U>(1, B, 1, F);
@@ -361,8 +361,8 @@ namespace shammath {
         taylor_eval<T, U>(r, q, seq_bi, size_A, A, F, B, I, Id);
 
         // squaring step
-        mat_set_identity<T>(Id);
-        mat_set_identity<T>(I);
+        mat_set_identity(Id);
+        mat_set_identity(I);
 
         for (auto j = 1; j <= pw; j++) {
             mat_copy<T>(I, Id);

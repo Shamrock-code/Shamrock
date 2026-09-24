@@ -94,7 +94,10 @@ namespace shamalgs::primitives {
     /// namespace to control implementation behavior
     namespace impl {
 
-        shamalgs::ImplVariantGlobal<BitonicSort, StdSort> sort_by_key_pow2_len_impl;
+        shamalgs::ImplVariantGlobal<BitonicSort, StdSort> sort_by_key_pow2_len_impl{
+            [](const sham::DeviceScheduler_ptr &, auto &self) {
+                self.set(BitonicSort{});
+            }};
 
         /// Get list of available sort by key (pow2 len) implementations
         std::vector<std::string> get_default_impl_list_sort_by_key_pow2_len() {
@@ -118,7 +121,7 @@ namespace shamalgs::primitives {
 
         /// Select the default implementation for sort by key (pow2 len)
         void autoselect_impl_sort_by_key_pow2_len(const sham::DeviceScheduler_ptr &dev_sched) {
-            sort_by_key_pow2_len_impl.set(BitonicSort{});
+            sort_by_key_pow2_len_impl.autoselect(dev_sched);
             shamlog_info_ln(
                 "algs",
                 "defaulting sort by key (pow2 len) implementation to impl :",

@@ -54,7 +54,13 @@ namespace shamalgs::primitives {
         };
 
         inline shamalgs::ImplVariantGlobal<Reference, NaiveGpu, GpuTeamFetching, GpuOversubscribe>
-            compute_histogram_impl;
+            compute_histogram_impl{[](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
+                if (dev_sched->ctx->device->prop.type == sham::DeviceType::GPU) {
+                    self.set(GpuOversubscribe{});
+                } else {
+                    self.set(NaiveGpu{}); // it is portable and fast everywhere
+                }
+            }};
 
         /// Get list of available compute_histogram implementations
         inline std::vector<std::string> get_default_impl_list_compute_histogram() {
@@ -77,11 +83,7 @@ namespace shamalgs::primitives {
 
         /// Select the default implementation for compute_histogram
         inline void autoselect_impl_compute_histogram(const sham::DeviceScheduler_ptr &dev_sched) {
-            if (dev_sched->ctx->device->prop.type == sham::DeviceType::GPU) {
-                compute_histogram_impl.set(GpuOversubscribe{});
-            } else {
-                compute_histogram_impl.set(NaiveGpu{}); // it is portable and fast everywhere
-            }
+            compute_histogram_impl.autoselect(dev_sched);
             shamlog_info_ln(
                 "algs",
                 "defaulting compute_histogram implementation to impl :",

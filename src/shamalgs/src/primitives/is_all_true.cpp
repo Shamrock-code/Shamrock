@@ -205,7 +205,10 @@ namespace shamalgs::primitives {
     /// namespace to control implementation behavior
     namespace impl {
 
-        shamalgs::ImplVariantGlobal<Host, SumReduction, AtomicEarlyExit> is_all_true_impl;
+        shamalgs::ImplVariantGlobal<Host, SumReduction, AtomicEarlyExit> is_all_true_impl{
+            [](const sham::DeviceScheduler_ptr &, auto &self) {
+                self.set(Host{});
+            }};
 
         /// Get list of available is_all_true implementations, as config json strings
         std::vector<std::string> get_default_impl_list_is_all_true() {
@@ -226,7 +229,7 @@ namespace shamalgs::primitives {
 
         /// Select the default implementation for is_all_true
         void autoselect_impl_is_all_true(const sham::DeviceScheduler_ptr &dev_sched) {
-            is_all_true_impl.set(Host{});
+            is_all_true_impl.autoselect(dev_sched);
             shamlog_info_ln(
                 "algs",
                 "defaulting is_all_true implementation to impl :",

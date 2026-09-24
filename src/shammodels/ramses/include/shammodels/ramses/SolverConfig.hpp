@@ -34,7 +34,7 @@
 #include "shammodels/ramses/config/enum_SlopeMode.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
-#include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shamrock/scheduler/PatchSchedulerConfig.hpp"
 #include <nlohmann/json.hpp>
 #include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>

@@ -33,9 +33,9 @@ Implementations are plain JSON config strings of the form
 `{"implementation": "<name>", "parameters": {...}}`. `set_impl_<algo>` takes that whole string
 back.
 
-`is_impl_set_<algo>` / `autoselect_impl_<algo>` matter because `ImplVariantGlobal` has no notion
-of a default until something picks one: some algorithms only pick their default the first time
-they actually run, so `get_current_impl_<algo>()` returns `"null"` until then, unless you call
+`is_impl_set_<algo>` / `autoselect_impl_<algo>` matter because an `ImplVariantGlobal` starts
+unset: algorithms only pick their default the first time they actually run, so
+`get_current_impl_<algo>()` returns `"null"` until then, unless you call
 `autoselect_impl_<algo>()` yourself first. From Python, the default is picked for the compute
 device (`shamsys::instance::get_compute_scheduler_ptr()`).
 
@@ -107,7 +107,12 @@ namespace shamalgs::primitives {
             static constexpr std::string_view variant_type_name = "alt_b";
         };
 
-        shamalgs::ImplVariantGlobal<AltA, AltB> my_algo_impl;
+        /// The lambda picks the default implementation, it may inspect the device behind
+        /// the scheduler or ignore it
+        shamalgs::ImplVariantGlobal<AltA, AltB> my_algo_impl{
+            [](const sham::DeviceScheduler_ptr &, auto &self) {
+                self.set(AltA{});
+            }};
 
         std::vector<std::string> get_default_impl_list_my_algo() {
             return my_algo_impl.get_default_config_list();
@@ -121,7 +126,7 @@ namespace shamalgs::primitives {
 
         /// Called lazily on first use if no implementation was selected yet
         void autoselect_impl_my_algo(const sham::DeviceScheduler_ptr &dev_sched) {
-            my_algo_impl.set(AltA{});
+            my_algo_impl.autoselect(dev_sched);
         }
 
     } // namespace impl
@@ -142,17 +147,30 @@ namespace shamalgs::primitives {
 } // namespace shamalgs::primitives
 ```
 
-`ImplVariantGlobal` has no notion of a default at construction — `is_set()` starts `false`. It is
-up to each call site to decide what to do when unset: the lazy-default pattern above (check
-`is_set()`, autoselect right before dispatching) is what `segmented_sort_in_place` and
-`scan_exclusive_sum_in_place` do, but picking a default eagerly, right where the selector is
-declared, is just as valid when there is no reason to defer it.
+`ImplVariantGlobal` starts unset — `is_set()` is `false` until something selects an
+implementation — but the rule picking its default is given at construction, as a callable of
+signature `void(const sham::DeviceScheduler_ptr &, ImplVariantGlobal &)` that calls `set()` on the
+selector it is handed. `autoselect(dev_sched)` runs it. Both `is_set()` and `autoselect()` are part
+of the non-template `shamalgs::IImplVariant` interface, so code holding a selector type-erased can
+also check and fill it in. The lazy-default pattern above (check `is_set()`, autoselect right
+before dispatching) is what every algorithm currently does.
 
-`autoselect_impl_<algo>` always takes the `sham::DeviceScheduler_ptr` the algorithm runs on, so
-that the default may depend on the device. Most algorithms ignore it, because their default only
+`autoselect_impl_<algo>` always takes the `sham::DeviceScheduler_ptr` the algorithm runs on, and
+forwards it to the selector's `autoselect`. Most lambdas ignore it, because the default only
 depends on compile-time information (a `#ifdef` backend/platform check, e.g.
-`scan_exclusive_sum_in_place`'s). `compute_histogram` does look at it: a GPU device picks a
-different default than a CPU one.
+`scan_exclusive_sum_in_place`'s). When the default depends on the device, the lambda looks at it.
+`compute_histogram` does this: a GPU device picks a different default than a CPU one.
+
+```cpp
+inline shamalgs::ImplVariantGlobal<Reference, NaiveGpu, GpuTeamFetching, GpuOversubscribe>
+    compute_histogram_impl{[](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
+        if (dev_sched->ctx->device->prop.type == sham::DeviceType::GPU) {
+            self.set(GpuOversubscribe{});
+        } else {
+            self.set(NaiveGpu{});
+        }
+    }};
+```
 
 The dispatching function passes its own scheduler (or `buf.get_dev_scheduler_ptr()` when it only
 gets buffers). The Python binding and unit tests supply the compute scheduler explicitly:
@@ -198,7 +216,7 @@ tells them apart in the resulting config strings, so any code keying results off
 Once the selector and dispatch are in place, wire it up end to end:
 
 1. Header: declare `get_default_impl_list_<algo>`, `get_current_impl_<algo>`,
-   `set_impl_<algo>`, and (if using the lazy-default pattern) `is_impl_set_<algo>` and
+   `set_impl_<algo>`, `is_impl_set_<algo>` and
    `autoselect_impl_<algo>(const sham::DeviceScheduler_ptr &)` in the algorithm's `impl`
    namespace.
 2. Python bindings (`shampylib/src/pyShamalgs.cpp` or `pyShamtree.cpp`): expose all the
@@ -206,9 +224,8 @@ Once the selector and dispatch are in place, wire it up end to end:
 3. Unit test: loop over `get_default_impl_list_<algo>()`, calling `set_impl_<algo>` before each
    run, then restore the implementation that was active before the loop.
 4. Benchmark script (`examples/benchmarks/`, if one exists for the algorithm): same loop,
-   extracting the implementation's display name with `json.loads(impl)["implementation"]`; if
-   using the lazy-default pattern, call `autoselect_impl_<algo>()` first when
-   `is_impl_set_<algo>()` is `False`.
+   extracting the implementation's display name with `json.loads(impl)["implementation"]`; call
+   `autoselect_impl_<algo>()` first when `is_impl_set_<algo>()` is `False`.
 
 ## Related files
 

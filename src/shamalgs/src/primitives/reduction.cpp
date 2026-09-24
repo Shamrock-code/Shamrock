@@ -82,7 +82,13 @@ namespace shamalgs::primitives {
             GroupReduction
 #endif
             >
-            reduction_impl;
+            reduction_impl{[](const sham::DeviceScheduler_ptr &, auto &self) {
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+                self.set(GroupReduction{});
+#else
+                self.set(Fallback{});
+#endif
+            }};
 
         /// Get list of available reduction implementations, as config json strings
         std::vector<std::string> get_default_impl_list_reduction() {
@@ -103,11 +109,7 @@ namespace shamalgs::primitives {
 
         /// Select the default implementation for reduction
         void autoselect_impl_reduction(const sham::DeviceScheduler_ptr &dev_sched) {
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-            reduction_impl.set(GroupReduction{});
-#else
-            reduction_impl.set(Fallback{});
-#endif
+            reduction_impl.autoselect(dev_sched);
             shamlog_info_ln(
                 "algs",
                 "defaulting reduction implementation to impl :",

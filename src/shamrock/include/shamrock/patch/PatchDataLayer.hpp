@@ -79,19 +79,15 @@ namespace shamrock::patch {
             init_fields();
         }
 
-        inline PatchDataLayer(const PatchDataLayer &other) : pdl_ptr(other.get_layout_ptr()) {
-
-            NamedStackEntry stack_loc{"PatchDataLayer::copy_constructor", true};
-
-            for (auto &field_var : other.fields) {
-
-                field_var.visit([&](auto &field) {
-                    using base_t =
-                        typename std::remove_reference<decltype(field)>::type::Field_type;
-                    fields.emplace_back(PatchDataField<base_t>(field));
-                });
-            };
-        }
+        /**
+         * @brief PatchDataLayer copy constructor
+         *
+         * Defined out of line: visiting every FieldVariant alternative instantiates the copy
+         * of all PatchDataField types, which is costly to compile in every includer.
+         *
+         * @param other
+         */
+        PatchDataLayer(const PatchDataLayer &other);
 
         /**
          * @brief PatchDataLayer move constructor

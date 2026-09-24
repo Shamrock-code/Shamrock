@@ -108,36 +108,9 @@ namespace shammodels::sph {
             shamrock::patch::PatchtreeField<flt> &&int_range_max_tree,
             shamrock::patch::PatchField<flt> &int_range_max);
 
-        /**
-         * @brief precompute interfaces members and cache result in the return
-         *
-         * @param gen
-         * @return shambase::DistributedDataShared<InterfaceIdTable>
-         */
-        shambase::DistributedDataShared<InterfaceIdTable> gen_id_table_interfaces(
-            GeneratorMap &&gen);
-
         void gen_debug_patch_ghost(shambase::DistributedDataShared<InterfaceIdTable> &interf_info);
 
         using CacheMap = shambase::DistributedDataShared<InterfaceIdTable>;
-
-        /**
-         * @brief utility to generate both the metadata and index tables
-         *
-         * @param sptree
-         * @param int_range_max_tree (consumed)
-         * @param int_range_max
-         * @return shambase::DistributedDataShared<InterfaceIdTable>
-         */
-        CacheMap make_interface_cache(
-            SerialPatchTree<vec> &sptree,
-            shamrock::patch::PatchtreeField<flt> &&int_range_max_tree,
-            shamrock::patch::PatchField<flt> &int_range_max) {
-            StackEntry stack_loc{};
-
-            return gen_id_table_interfaces(
-                find_interfaces(sptree, std::move(int_range_max_tree), int_range_max));
-        }
 
         /**
          * @brief native handle to generate interfaces

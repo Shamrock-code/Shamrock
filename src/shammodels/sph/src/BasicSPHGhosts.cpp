@@ -20,10 +20,8 @@
 #include "shamalgs/collective/reduction.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/modules/BuildGhostInterfaceIdTable.hpp"
 #include "shammodels/sph/modules/FindGhostInterfaces.hpp"
 #include "shamrock/solvergraph/DDSharedScalar.hpp"
-#include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/PatchtreeFieldEdge.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
@@ -117,36 +115,6 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
     // ----------------------------------------------------------------------------------------
 
     return std::move(interface_infos->values);
-}
-
-template<class vec>
-auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
-    -> shambase::DistributedDataShared<InterfaceIdTable> {
-    StackEntry stack_loc{};
-    using namespace shamrock::patch;
-
-    // ----------------------------------------------------------------------------------------
-    // temporary wrapper to slowly migrate to the new solvergraph
-    auto positions = std::make_shared<shamrock::solvergraph::FieldRefs<vec>>("", "");
-    shamrock::solvergraph::DDPatchDataFieldRef<vec> positions_refs = {};
-    sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        positions_refs.add_obj(p.id_patch, std::ref(pdat.get_field<vec>(0)));
-    });
-    positions->set_refs(positions_refs);
-
-    auto interface_infos
-        = std::make_shared<shamrock::solvergraph::DDSharedScalar<InterfaceBuildInfos>>("", "");
-    interface_infos->values = std::forward<GeneratorMap>(gen);
-
-    auto interface_id_table
-        = std::make_shared<shamrock::solvergraph::DDSharedScalar<InterfaceIdTable>>("", "");
-
-    modules::BuildGhostInterfaceIdTable<vec> node;
-    node.set_edges(positions, interface_infos, interface_id_table);
-    node.evaluate();
-    // ----------------------------------------------------------------------------------------
-
-    return std::move(interface_id_table->values);
 }
 
 template<class vec>

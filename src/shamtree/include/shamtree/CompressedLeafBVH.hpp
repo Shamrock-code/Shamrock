@@ -90,6 +90,18 @@ class shamtree::CompressedLeafBVH {
           structure(std::forward<KarrasRadixTree>(structure)),
           aabbs(std::forward<KarrasRadixTreeAABB<Tvec>>(aabbs)) {}
 
+    /**
+     * @brief Compute the exact depth of the tree.
+     *
+     * The depth is the number of edges on the longest path from the root to a leaf (0 if the
+     * tree is empty or the root is a leaf). It is computed on each call by propagating the cell
+     * heights bottom-up with `KarrasRadixTree::tree_depth` kernel launches, followed by a single
+     * device to host read back of the root height.
+     *
+     * @return the exact tree depth
+     */
+    u32 get_exact_tree_depth() const;
+
     /// make an empty BVH
     static CompressedLeafBVH make_empty(sham::DeviceScheduler_ptr dev_sched);
 

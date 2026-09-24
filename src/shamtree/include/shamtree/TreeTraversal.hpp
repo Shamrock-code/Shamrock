@@ -456,19 +456,14 @@ namespace shamrock::tree {
     inline ObjectCache prepare_object_cache(sham::DeviceBuffer<u32> &&counts, u32 obj_cnt) {
 
         shamlog_debug_sycl_ln("Cache", " reading last value ...");
-        u32 neigh_last_val = shamalgs::memory::extract_element(
-            shamsys::instance::get_compute_scheduler().get_queue(), counts, obj_cnt - 1);
+        u32 neigh_last_val = counts.get_val_at_idx(obj_cnt - 1);
 
         shamlog_debug_sycl_ln("Cache", " last value =", neigh_last_val);
 
         sham::DeviceBuffer<u32> neigh_scanned_vals = shamalgs::numeric::scan_exclusive(
             shamsys::instance::get_compute_scheduler_ptr(), counts, obj_cnt);
 
-        u32 neigh_sum = neigh_last_val
-                        + shamalgs::memory::extract_element(
-                            shamsys::instance::get_compute_scheduler().get_queue(),
-                            neigh_scanned_vals,
-                            obj_cnt - 1);
+        u32 neigh_sum = neigh_last_val + neigh_scanned_vals.get_val_at_idx(obj_cnt - 1);
 
         shamlog_debug_sycl_ln("Cache", " cache for N=", obj_cnt, "size() =", neigh_sum);
 

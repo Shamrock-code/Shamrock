@@ -101,6 +101,26 @@ ON_PYTHON_INIT {
     then each particle only scans the particles held by its own leaf's neighbour
     leaves. This is usually the faster of the two, since the tree traversal is paid
     once per leaf instead of once per particle.
+)==")
+        .value(
+            "SingleStageSharedOffload",
+            shammodels::NeighCacheStrategy::SingleStageSharedOffload,
+            R"==(
+    Single tree traversal per particle, shared memory offload variant.
+
+    Same algorithm as SingleStage, but the tree traversal stack is placed in a
+    work-group local memory allocation (one private slice per work-item) instead of a
+    per-work-item std::array, and the kernel is launched over nd_range work-groups.
+)==")
+        .value(
+            "TwoStageSharedOffload",
+            shammodels::NeighCacheStrategy::TwoStageSharedOffload,
+            R"==(
+    Two stage neighbours search, shared memory offload variant.
+
+    Same algorithm as TwoStage, but every tree traversal stack (leaf to leaf search
+    and particle parent-leaf search) is placed in work-group local memory instead of a
+    per-work-item std::array.
 )==");
 
     m.def(

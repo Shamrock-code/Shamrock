@@ -16,6 +16,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 
 template<class Tmorton, class Tvec, u32 dim>
@@ -133,6 +134,48 @@ void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_position_rang
             "min and max must have the same size");
     }
     this->rebuild_from_position_range(min, max, min.get_size(), bounding_box, compression_level);
+}
+
+template<class Tmorton, class Tvec, u32 dim>
+u32 shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::get_exact_tree_depth() const {
+    __shamrock_stack_entry();
+
+    // a single leaf root (or an empty tree) has no edge to walk
+    if (is_empty() || structure.is_root_leaf()) {
+        return 0;
+    }
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q        = dev_sched->get_queue();
+
+    u32 int_cell_count = structure.get_internal_cell_count();
+
+    // height of every cell (internal cells first then leaves, leaves are at height 0)
+    sham::DeviceBuffer<u32> height(structure.get_total_cell_count(), dev_sched);
+    height.fill(0);
+
+    auto traverser = structure.get_structure_traverser();
+
+    // Heights only ever grow towards their exact value, so racing on the in-place updates within
+    // a pass is harmless. Each pass propagates the heights up by at least one level, so after
+    // tree_depth (an upper bound of the real depth) passes the exact height has reached the root.
+    // No convergence check is done to avoid a device to host read back after every pass.
+    for (u32 i = 0; i < structure.tree_depth; i++) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{traverser},
+            sham::MultiRef{height},
+            int_cell_count,
+            [](u32 gid, auto tree_traverser, u32 *height) {
+                u32 hl = height[tree_traverser.get_left_child(gid)];
+                u32 hr = height[tree_traverser.get_right_child(gid)];
+
+                height[gid] = 1 + sycl::max(hl, hr);
+            });
+    }
+
+    // the root of a Karras tree is always the cell 0
+    return height.get_val_at_idx(0);
 }
 
 template class shamtree::CompressedLeafBVH<u32, f64_3, 3>;

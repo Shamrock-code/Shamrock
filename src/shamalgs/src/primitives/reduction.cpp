@@ -27,6 +27,7 @@
 #include "shamalgs/details/reduction/groupReduction_usm.hpp"
 #include "shamalgs/details/reduction/reduction.hpp"
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"
+#include "shamalgs/details/reduction/syclNativeReduction_usm.hpp"
 
 namespace shamalgs::primitives::impl {
 
@@ -49,6 +50,13 @@ namespace shamalgs::primitives::impl {
                 GroupReduction{256},
             };
         }
+    };
+#endif
+
+#ifdef SYCL2020_FEATURE_REDUCTION
+    /// USM reduction using the sycl::reduction() facility from SYCL2020
+    struct SyclNative {
+        static constexpr std::string_view variant_type_name = "sycl_native";
     };
 #endif
 
@@ -80,6 +88,10 @@ namespace shamalgs::primitives {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
             ,
             GroupReduction
+#endif
+#ifdef SYCL2020_FEATURE_REDUCTION
+            ,
+            SyclNative
 #endif
             >
             reduction_impl;
@@ -139,6 +151,11 @@ namespace shamalgs::primitives {
                     return sum_usm_group(sched, buf1, start_id, end_id, cfg.group_size);
                 },
 #endif
+#ifdef SYCL2020_FEATURE_REDUCTION
+                [&](impl::SyclNative) {
+                    return sum_usm_sycl_native(sched, buf1, start_id, end_id);
+                },
+#endif
             },
             impl::reduction_impl.get());
     }
@@ -166,6 +183,11 @@ namespace shamalgs::primitives {
                     return min_usm_group(sched, buf1, start_id, end_id, cfg.group_size);
                 },
 #endif
+#ifdef SYCL2020_FEATURE_REDUCTION
+                [&](impl::SyclNative) {
+                    return min_usm_sycl_native(sched, buf1, start_id, end_id);
+                },
+#endif
             },
             impl::reduction_impl.get());
     }
@@ -191,6 +213,11 @@ namespace shamalgs::primitives {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
                 [&](impl::GroupReduction cfg) {
                     return max_usm_group(sched, buf1, start_id, end_id, cfg.group_size);
+                },
+#endif
+#ifdef SYCL2020_FEATURE_REDUCTION
+                [&](impl::SyclNative) {
+                    return max_usm_sycl_native(sched, buf1, start_id, end_id);
                 },
 #endif
             },

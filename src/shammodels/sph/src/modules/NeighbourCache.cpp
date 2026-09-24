@@ -18,10 +18,12 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/assert.hpp"
 #include "shambase/memory.hpp"
+#include "shambackends/Device.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/TreeTraversal.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
@@ -181,6 +183,232 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
                         cnt += (no_interact) ? 0 : 1;
                     });
             });
+
+        return pcache;
+    };
+
+    shambase::get_check_ref(storage.neigh_cache).free_alloc();
+
+    using namespace shamrock::patch;
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        auto &ncache = shambase::get_check_ref(storage.neigh_cache);
+        ncache.neigh_cache.add_obj(cur_p.id_patch, build_neigh_cache(cur_p.id_patch));
+    });
+
+    time_neigh.stop();
+    storage.timings_details.neighbors += time_neigh.elapsed_sec();
+}
+
+namespace sham {
+    u32 get_persistent_worker_group_count(sham::DeviceProperties &dev) {
+        return dev.max_compute_units * 2;
+    }
+
+    u32 get_persistent_thread_count(sham::DeviceProperties &dev) {
+        return get_persistent_worker_group_count(dev) * (dev.type == DeviceType::GPU ? 256 : 1);
+    }
+
+    template<class T>
+    T global_fetch_add_relaxed(T *ptr, T offset) {
+        sycl::atomic_ref<
+            T,
+            sycl::memory_order_relaxed,
+            sycl::memory_scope_device,
+            sycl::access::address_space::global_space>
+            ref(*ptr);
+
+        return ref.fetch_add(offset);
+    }
+} // namespace sham
+
+template<class Tvec, class Tmorton, template<class> class SPHKernel>
+void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
+    start_neighbors_cache_persistent_kernel() {
+
+    // interface_control
+    using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
+    using GhostHandleCache = typename GhostHandle::CacheMap;
+    using RTree            = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
+
+    shambase::Timer time_neigh;
+    time_neigh.start();
+
+    StackEntry stack_loc{};
+
+    // do cache
+    auto build_neigh_cache = [&](u64 patch_id) {
+        shamlog_debug_ln("BasicSPH", "build particle cache id =", patch_id);
+
+        NamedStackEntry cache_build_stack_loc{"build cache"};
+
+        auto &mfield = storage.merged_xyzh.get().get(patch_id);
+
+        sham::DeviceBuffer<Tvec> &buf_xyz    = mfield.template get_field_buf_ref<Tvec>(0);
+        sham::DeviceBuffer<Tscal> &buf_hpart = mfield.template get_field_buf_ref<Tscal>(1);
+
+        sham::DeviceBuffer<Tscal> &tree_field_rint
+            = storage.rtree_rint_field.get().get(patch_id).buf_field;
+
+        RTree &tree = storage.merged_pos_trees.get().get(patch_id);
+        auto obj_it = tree.get_object_iterator();
+
+        u32 obj_cnt = shambase::get_check_ref(storage.part_counts).indexes.get(patch_id);
+
+        sycl::range range_npart{obj_cnt};
+
+        Tscal h_tolerance = solver_config.htol_up_coarse_cycle;
+
+        NamedStackEntry stack_loc1{"init cache"};
+
+        using namespace shamrock;
+
+        sham::DeviceBuffer<u32> neigh_count(
+            obj_cnt, shamsys::instance::get_compute_scheduler_ptr());
+
+        // persistent kernel handling
+        u32 persistent_tcount = sham::get_persistent_thread_count(
+            shamsys::instance::get_compute_scheduler().get_queue().get_device_prop());
+        sham::DeviceBuffer<u32> work_index(1, shamsys::instance::get_compute_scheduler_ptr());
+        work_index.fill(0);
+
+        shamlog_debug_sycl_ln("Cache", "generate cache for N=", obj_cnt);
+        {
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_xyz, buf_hpart, tree_field_rint, obj_it},
+                sham::MultiRef{work_index, neigh_count},
+                persistent_tcount,
+                [h_tolerance, obj_cnt](
+                    u32,
+                    const Tvec *__restrict xyz,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict rint_tree,
+                    auto particle_looper,
+                    u32 *work_index,
+                    u32 *__restrict neigh_cnt) {
+                    while (true) {
+                        u32 id_a = sham::global_fetch_add_relaxed<u32>(work_index, 1);
+                        if (id_a >= obj_cnt) {
+                            break;
+                        }
+
+                        constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
+                        Tscal rint_a = hpart[id_a] * h_tolerance;
+
+                        Tvec xyz_a = xyz[id_a];
+
+                        Tvec inter_box_a_min = xyz_a - rint_a * Kernel::Rkern;
+                        Tvec inter_box_a_max = xyz_a + rint_a * Kernel::Rkern;
+
+                        u32 cnt = 0;
+
+                        particle_looper.rtree_for(
+                            [&](u32 node_id, shammath::AABB<Tvec> node_aabb) -> bool {
+                                Tscal int_r_max_cell = rint_tree[node_id] * Kernel::Rkern;
+
+                                using namespace walker::interaction_crit;
+
+                                return sph_radix_cell_crit(
+                                    xyz_a,
+                                    inter_box_a_min,
+                                    inter_box_a_max,
+                                    node_aabb.lower,
+                                    node_aabb.upper,
+                                    int_r_max_cell);
+                            },
+                            [&](u32 id_b) {
+                                // particle_looper.for_each_object(id_a,[&](u32 id_b){
+                                //  compute only omega_a
+                                Tvec dr      = xyz_a - xyz[id_b];
+                                Tscal rab2   = sycl::dot(dr, dr);
+                                Tscal rint_b = hpart[id_b] * h_tolerance;
+
+                                bool no_interact = rab2 > rint_a * rint_a * Rker2
+                                                   && rab2 > rint_b * rint_b * Rker2;
+
+                                cnt += (no_interact) ? 0 : 1;
+                            });
+
+                        neigh_cnt[id_a] = cnt;
+                    }
+                });
+        }
+
+        tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
+
+        // reset the work queue to 0 to start the next persistent kernel
+        work_index.fill(0);
+
+        NamedStackEntry stack_loc2{"fill cache"};
+        {
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_xyz, buf_hpart, tree_field_rint, obj_it, pcache.scanned_cnt},
+                sham::MultiRef{work_index, pcache.index_neigh_map},
+                persistent_tcount,
+                [h_tolerance, obj_cnt](
+                    u32,
+                    const Tvec *__restrict xyz,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict rint_tree,
+                    auto particle_looper,
+                    const u32 *__restrict scanned_neigh_cnt,
+                    u32 *work_index,
+                    u32 *__restrict neigh) {
+                    while (true) {
+                        u32 id_a = sham::global_fetch_add_relaxed<u32>(work_index, 1);
+                        if (id_a >= obj_cnt) {
+                            break;
+                        }
+
+                        constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
+                        Tscal rint_a = hpart[id_a] * h_tolerance;
+
+                        Tvec xyz_a = xyz[id_a];
+
+                        Tvec inter_box_a_min = xyz_a - rint_a * Kernel::Rkern;
+                        Tvec inter_box_a_max = xyz_a + rint_a * Kernel::Rkern;
+
+                        u32 cnt = scanned_neigh_cnt[id_a];
+
+                        particle_looper.rtree_for(
+                            [&](u32 node_id, shammath::AABB<Tvec> node_aabb) -> bool {
+                                Tscal int_r_max_cell = rint_tree[node_id] * Kernel::Rkern;
+
+                                using namespace walker::interaction_crit;
+
+                                return sph_radix_cell_crit(
+                                    xyz_a,
+                                    inter_box_a_min,
+                                    inter_box_a_max,
+                                    node_aabb.lower,
+                                    node_aabb.upper,
+                                    int_r_max_cell);
+                            },
+                            [&](u32 id_b) {
+                                // particle_looper.for_each_object(id_a,[&](u32 id_b){
+                                //  compute only omega_a
+                                Tvec dr      = xyz_a - xyz[id_b];
+                                Tscal rab2   = sycl::dot(dr, dr);
+                                Tscal rint_b = hpart[id_b] * h_tolerance;
+
+                                bool no_interact = rab2 > rint_a * rint_a * Rker2
+                                                   && rab2 > rint_b * rint_b * Rker2;
+
+                                if (!no_interact) {
+                                    neigh[cnt] = id_b;
+                                }
+                                cnt += (no_interact) ? 0 : 1;
+                            });
+                    }
+                });
+        }
 
         return pcache;
     };

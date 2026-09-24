@@ -1893,6 +1893,9 @@ void shammodels::sph::Solver<Tvec, Kern>::start_neighbors_cache() {
     switch (solver_config.neigh_cache_strategy) {
     case NeighCacheStrategy::SingleStage: neigh_cache_builder.start_neighbors_cache(); break;
     case NeighCacheStrategy::TwoStage: neigh_cache_builder.start_neighbors_cache_2stages(); break;
+    case NeighCacheStrategy::SingleStagePersistentKernel:
+        neigh_cache_builder.start_neighbors_cache_persistent_kernel();
+        break;
     default: shambase::throw_unimplemented("unknown neighbours cache strategy");
     }
 

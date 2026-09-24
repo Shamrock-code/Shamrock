@@ -101,6 +101,14 @@ ON_PYTHON_INIT {
     then each particle only scans the particles held by its own leaf's neighbour
     leaves. This is usually the faster of the two, since the tree traversal is paid
     once per leaf instead of once per particle.
+)==")
+        .value(
+            "SingleStagePersistentKernel",
+            shammodels::NeighCacheStrategy::SingleStagePersistentKernel,
+            R"==(
+    Single tree traversal per particle, persistent kernel variant.
+
+    Not implemented yet.
 )==");
 
     m.def(

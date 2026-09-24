@@ -12,6 +12,7 @@ import math
 from statistics import mean, stdev
 
 import shamrock
+from shamrock import NeighCacheStrategy
 
 device_properties = shamrock.sys.get_compute_device_properties()
 
@@ -79,6 +80,8 @@ cfg = model.gen_default_config()
 cfg.set_artif_viscosity_VaryingCD10(
     alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
 )
+cfg.set_tree_reduction_level(3)
+cfg.set_neigh_cache_strategy(NeighCacheStrategy.SingleStagePersistentKernel)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
 cfg.print_status()

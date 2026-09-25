@@ -47,6 +47,7 @@
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
 #include "shammodels/sph/modules/BallabioTsLimiter.hpp"
+#include "shammodels/sph/modules/BuildGhostInterfaceIdTable.hpp"
 #include "shammodels/sph/modules/BuildTrees.hpp"
 #include "shammodels/sph/modules/ComputeCFLCourant.hpp"
 #include "shammodels/sph/modules/ComputeCFLDivBCleaning.hpp"
@@ -59,10 +60,12 @@
 #include "shammodels/sph/modules/ComputeLuminosity.hpp"
 #include "shammodels/sph/modules/ComputeNeighStats.hpp"
 #include "shammodels/sph/modules/ComputeOmega.hpp"
+#include "shammodels/sph/modules/ComputePatchTreeMaxField.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
+#include "shammodels/sph/modules/FindGhostInterfaces.hpp"
 #include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
@@ -99,6 +102,7 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/solvergraph/CopyPatchDataFieldFromLayer.hpp"
+#include "shamrock/solvergraph/DDSharedScalar.hpp"
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
@@ -107,8 +111,11 @@
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
+#include "shamrock/solvergraph/PatchtreeFieldEdge.hpp"
 #include "shamrock/solvergraph/RankGetter.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SerialPatchTreeEdge.hpp"
 #include "shamsolvergraph/SolverGraph.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
@@ -1504,17 +1511,129 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_val
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache() {
+void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache(Tscal time_val) {
 
     StackEntry stack_loc{};
 
-    using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
-    SPHUtils sph_utils(scheduler());
+    using namespace shamrock::patch;
+    using namespace shamrock::solvergraph;
 
-    storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
-        storage.ghost_handler.get(),
-        storage.serial_patch_tree.get(),
-        solver_config.htol_up_coarse_cycle));
+    using InterfaceBuildInfos = typename GhostHandle::InterfaceBuildInfos;
+    using InterfaceIdTable    = typename GhostHandle::InterfaceIdTable;
+
+    PatchScheduler &sched = scheduler();
+
+    // ----------------------------------------------------------------------------------------
+    // temporary edges, until the ghost cache build is integrated in the solver graph
+
+    // interaction radius of every patch (gathered over all ranks)
+    const u32 ihpart = sched.pdl_old().template get_field_idx<Tscal>("hpart");
+    Tscal h_evol_max = solver_config.htol_up_coarse_cycle;
+
+    auto interact_radius    = std::make_shared<ScalarsEdge<Tscal>>("", "");
+    interact_radius->values = sched.map_owned_patchdata_fetch_simple<Tscal>(
+        [&](const Patch p, PatchDataLayer &pdat) -> Tscal {
+            if (!pdat.is_empty()) {
+                return pdat.get_field<Tscal>(ihpart).compute_max() * h_evol_max * Rkern;
+            } else {
+                return shambase::VectorProperties<Tscal>::get_min();
+            }
+        });
+
+    auto sim_box_edge = std::make_shared<ScalarEdge<shammath::AABB<Tvec>>>("", "");
+    {
+        auto [bmin, bmax]   = sched.get_sim_box().template get_bounding_box<Tvec>();
+        sim_box_edge->value = shammath::AABB<Tvec>(bmin, bmax);
+    }
+
+    auto patch_tree        = std::make_shared<SerialPatchTreeRefEdge<Tvec>>("", "");
+    patch_tree->patch_tree = std::ref(storage.serial_patch_tree.get());
+
+    auto local_patch_boxes = std::make_shared<ScalarsEdge<shammath::CoordRange<Tvec>>>("", "");
+    {
+        PatchCoordTransform<Tvec> patch_coord_transf
+            = sched.get_sim_box().template get_patch_transform<Tvec>();
+        sched.for_each_local_patch([&](const Patch &p) {
+            local_patch_boxes->values.add_obj(p.id_patch, patch_coord_transf.to_obj_coord(p));
+        });
+    }
+
+    auto positions = std::make_shared<FieldRefs<Tvec>>("", "");
+    {
+        DDPatchDataFieldRef<Tvec> positions_refs = {};
+        sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+            positions_refs.add_obj(p.id_patch, std::ref(pdat.get_field<Tvec>(0)));
+        });
+        positions->set_refs(positions_refs);
+    }
+
+    auto interact_radius_tree = std::make_shared<PatchtreeFieldEdge<Tscal>>("", "");
+    auto interface_infos      = std::make_shared<DDSharedScalar<InterfaceBuildInfos>>("", "");
+    auto interface_id_table   = std::make_shared<DDSharedScalar<InterfaceIdTable>>("", "");
+
+    // ----------------------------------------------------------------------------------------
+    // nodes
+
+    modules::ComputePatchTreeMaxField<Tvec> compute_interact_radius_tree;
+    compute_interact_radius_tree.set_edges(patch_tree, interact_radius, interact_radius_tree);
+    compute_interact_radius_tree.evaluate();
+
+    using SolverConfigBC           = typename Config::BCConfig;
+    using SolverBCFree             = typename SolverConfigBC::Free;
+    using SolverBCPeriodic         = typename SolverConfigBC::Periodic;
+    using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
+
+    // boundary condition selections
+    if (SolverBCFree *c = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
+        modules::FindGhostInterfacesFree<Tvec> find_interfaces;
+        find_interfaces.set_edges(
+            sim_box_edge,
+            patch_tree,
+            interact_radius_tree,
+            interact_radius,
+            local_patch_boxes,
+            interface_infos);
+        find_interfaces.evaluate();
+    } else if (
+        SolverBCPeriodic *c
+        = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
+        modules::FindGhostInterfacesPeriodic<Tvec> find_interfaces;
+        find_interfaces.set_edges(
+            sim_box_edge,
+            patch_tree,
+            interact_radius_tree,
+            interact_radius,
+            local_patch_boxes,
+            interface_infos);
+        find_interfaces.evaluate();
+    } else if (
+        SolverBCShearingPeriodic *c
+        = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
+        auto time  = IDataEdge<Tscal>::make_shared("", "");
+        time->data = time_val;
+
+        modules::FindGhostInterfacesShearingPeriodic<Tvec> find_interfaces(
+            c->shear_base, c->shear_dir, c->shear_speed);
+        find_interfaces.set_edges(
+            sim_box_edge,
+            patch_tree,
+            interact_radius_tree,
+            interact_radius,
+            local_patch_boxes,
+            time,
+            interface_infos);
+        find_interfaces.evaluate();
+    } else {
+        shambase::throw_with_loc<std::runtime_error>("Unsupported boundary condition");
+    }
+
+    modules::BuildGhostInterfaceIdTable<Tvec> build_id_table;
+    build_id_table.set_edges(positions, interface_infos, interface_id_table);
+    build_id_table.evaluate();
+
+    // ----------------------------------------------------------------------------------------
+
+    storage.ghost_patch_cache.set(std::move(interface_id_table->values));
 
     // storage.ghost_handler.get().gen_debug_patch_ghost(storage.ghost_patch_cache.get());
 }
@@ -1604,8 +1723,8 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
     u32 hstep_max = solver_config.h_max_subcycles_count;
     for (; hstep_cnt < hstep_max; hstep_cnt++) {
 
-        gen_ghost_handler(time_val + dt);
-        build_ghost_cache();
+        gen_ghost_handler();
+        build_ghost_cache(time_val + dt);
         merge_position_ghost();
         build_merged_pos_trees();
         compute_presteps_rint();

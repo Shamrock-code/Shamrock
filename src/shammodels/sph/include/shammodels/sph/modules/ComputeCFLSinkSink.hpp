@@ -104,15 +104,6 @@ class ComputeCFLSinkSink : public shamrock::solvergraph::INode {
     inline virtual std::string _impl_get_label() const { return "ComputeCFLSinkSink"; };
 
     inline virtual std::string _impl_get_tex() const {
-
-        auto G         = get_ro_edge_base(0).get_tex_symbol();
-        auto C_force   = get_ro_edge_base(1).get_tex_symbol();
-        auto eta_phi   = get_ro_edge_base(2).get_tex_symbol();
-        auto positions = get_ro_edge_base(3).get_tex_symbol();
-        auto masses    = get_ro_edge_base(4).get_tex_symbol();
-        auto acc_ext   = get_ro_edge_base(5).get_tex_symbol();
-        auto cfl_dt    = get_rw_edge_base(0).get_tex_symbol();
-
         std::string tex = R"tex(
             Sink-sink CFL
 
@@ -123,13 +114,7 @@ class ComputeCFLSinkSink : public shamrock::solvergraph::INode {
             \end{align}
         )tex";
 
-        shambase::replace_all(tex, "{G}", G);
-        shambase::replace_all(tex, "{C_force}", C_force);
-        shambase::replace_all(tex, "{eta_phi}", eta_phi);
-        shambase::replace_all(tex, "{positions}", positions);
-        shambase::replace_all(tex, "{masses}", masses);
-        shambase::replace_all(tex, "{acc_ext}", acc_ext);
-        shambase::replace_all(tex, "{cfl_dt}", cfl_dt);
+        replace_edges_tex_symbols(tex);
 
         return tex;
     };

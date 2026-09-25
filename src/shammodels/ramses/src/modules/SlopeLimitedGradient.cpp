@@ -251,22 +251,11 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
     std::string SlopeLimitedScalarGradient<Tvec, TgridVec>::_impl_get_tex() const {
-
-        std::string sizes                  = get_ro_edge_base(0).get_tex_symbol();
-        std::string cell_neigh_graph       = get_ro_edge_base(1).get_tex_symbol();
-        std::string spans_block_cell_sizes = get_ro_edge_base(2).get_tex_symbol();
-        std::string span_field             = get_ro_edge_base(3).get_tex_symbol();
-        std::string span_grad_field        = get_rw_edge_base(0).get_tex_symbol();
-
         std::string tex = R"tex(
             Slope limited gradient (Scalar)
         )tex";
 
-        shambase::replace_all(tex, "{sizes}", sizes);
-        shambase::replace_all(tex, "{cell_neigh_graph}", cell_neigh_graph);
-        shambase::replace_all(tex, "{spans_block_cell_sizes}", spans_block_cell_sizes);
-        shambase::replace_all(tex, "{span_field}", span_field);
-        shambase::replace_all(tex, "{span_grad_field}", span_grad_field);
+        replace_edges_tex_symbols(tex);
 
         return tex;
     }
@@ -304,26 +293,11 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
     std::string SlopeLimitedVectorGradient<Tvec, TgridVec>::_impl_get_tex() const {
-
-        std::string sizes                  = get_ro_edge_base(0).get_tex_symbol();
-        std::string cell_neigh_graph       = get_ro_edge_base(1).get_tex_symbol();
-        std::string spans_block_cell_sizes = get_ro_edge_base(2).get_tex_symbol();
-        std::string span_field             = get_ro_edge_base(3).get_tex_symbol();
-        std::string span_dx_field          = get_rw_edge_base(0).get_tex_symbol();
-        std::string span_dy_field          = get_rw_edge_base(0).get_tex_symbol();
-        std::string span_dz_field          = get_rw_edge_base(0).get_tex_symbol();
-
         std::string tex = R"tex(
             Slope limited gradient (Vector)
         )tex";
 
-        shambase::replace_all(tex, "{sizes}", sizes);
-        shambase::replace_all(tex, "{cell_neigh_graph}", cell_neigh_graph);
-        shambase::replace_all(tex, "{spans_block_cell_sizes}", spans_block_cell_sizes);
-        shambase::replace_all(tex, "{span_field}", span_field);
-        shambase::replace_all(tex, "{span_dx_field}", span_dx_field);
-        shambase::replace_all(tex, "{span_dy_field}", span_dy_field);
-        shambase::replace_all(tex, "{span_dz_field}", span_dz_field);
+        replace_edges_tex_symbols(tex);
 
         return tex;
     }

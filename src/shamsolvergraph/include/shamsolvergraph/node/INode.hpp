@@ -18,6 +18,7 @@
 
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shamsolvergraph/LifetimeTracker.hpp"
 #include "shamsolvergraph/edge/IEdge.hpp"
 #include "shamsolvergraph/edge/INullOptEdge.hpp"
@@ -327,6 +328,39 @@ namespace shamrock::solvergraph {
 #define INODE_GET_RO_OPTIONAL(type, name) get_ro_edge_optional<type>(ro++),
 #define INODE_GET_RW_OPTIONAL(type, name) get_rw_edge_optional<type>(rw++),
 
+// TeX symbol accessors, shared by the plain and optional variants (a null optional edge still
+// occupies its slot and reports a placeholder symbol)
+#define INODE_TEX_DECL(type, name) std::string name;
+#define INODE_TEX_GET_RO(type, name) get_ro_edge_base(ro++).get_tex_symbol(),
+#define INODE_TEX_GET_RW(type, name) get_rw_edge_base(rw++).get_tex_symbol(),
+#define INODE_TEX_REPLACE(type, name) shambase::replace_all(tex, "{" #name "}", symbols.name);
+
+/**
+ * @brief Generate the TeX symbol helpers of a node from its edge list
+ *
+ * Defines `EdgesTexSymbols` (one `std::string` per edge, named after it),
+ * `get_edges_tex_symbols()` and `replace_edges_tex_symbols(tex)` which replaces every
+ * `{<edge name>}` placeholder in `tex` by the TeX symbol of that edge. This lets `_impl_get_tex`
+ * refer to edges by name instead of by slot index, so that `NODE_EDGES` remains the single source
+ * of truth for the edge order.
+ */
+#define INODE_EXPAND_TEX_SYMBOLS(TEX_DECLS, TEX_GETS, TEX_REPLACES)                                \
+                                                                                                   \
+    struct EdgesTexSymbols {                                                                       \
+        TEX_DECLS                                                                                  \
+    };                                                                                             \
+                                                                                                   \
+    inline EdgesTexSymbols get_edges_tex_symbols() const {                                         \
+        int ro = 0;                                                                                \
+        int rw = 0;                                                                                \
+        return EdgesTexSymbols{TEX_GETS};                                                          \
+    }                                                                                              \
+                                                                                                   \
+    inline void replace_edges_tex_symbols(std::string &tex) const {                                \
+        auto symbols = get_edges_tex_symbols();                                                    \
+        TEX_REPLACES                                                                               \
+    }
+
 #define EXPAND_NODE_EDGES(EDGES)                                                                   \
                                                                                                    \
     struct Edges {                                                                                 \
@@ -345,7 +379,12 @@ namespace shamrock::solvergraph {
         int ro = 0;                                                                                \
         int rw = 0;                                                                                \
         return Edges{EDGES(INODE_GET_RO, INODE_GET_RW)};                                           \
-    }
+    }                                                                                              \
+                                                                                                   \
+    INODE_EXPAND_TEX_SYMBOLS(                                                                      \
+        EDGES(INODE_TEX_DECL, INODE_TEX_DECL),                                                     \
+        EDGES(INODE_TEX_GET_RO, INODE_TEX_GET_RW),                                                 \
+        EDGES(INODE_TEX_REPLACE, INODE_TEX_REPLACE))
 
 #define EXPAND_NODE_EDGES_OPTIONAL(EDGES)                                                          \
                                                                                                    \
@@ -369,4 +408,9 @@ namespace shamrock::solvergraph {
         int rw = 0;                                                                                \
         return Edges{                                                                              \
             EDGES(INODE_GET_RO, INODE_GET_RW, INODE_GET_RO_OPTIONAL, INODE_GET_RW_OPTIONAL)};      \
-    }
+    }                                                                                              \
+                                                                                                   \
+    INODE_EXPAND_TEX_SYMBOLS(                                                                      \
+        EDGES(INODE_TEX_DECL, INODE_TEX_DECL, INODE_TEX_DECL, INODE_TEX_DECL),                     \
+        EDGES(INODE_TEX_GET_RO, INODE_TEX_GET_RW, INODE_TEX_GET_RO, INODE_TEX_GET_RW),             \
+        EDGES(INODE_TEX_REPLACE, INODE_TEX_REPLACE, INODE_TEX_REPLACE, INODE_TEX_REPLACE))

@@ -86,28 +86,20 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec>
     std::string NodeConsToPrimDust<Tvec>::_impl_get_tex() const {
-
-        auto block_count = get_ro_edge_base(0).get_tex_symbol();
-        auto rho         = get_ro_edge_base(1).get_tex_symbol();
-        auto rhov        = get_ro_edge_base(2).get_tex_symbol();
-        auto vel         = get_rw_edge_base(0).get_tex_symbol();
-
         std::string tex = R"tex(
             Conservative to primitive variable (dust)
 
             \begin{align}
-            {vel}_{i,j} &= \frac{ {rhov}_{i,j} }{ {rho}_{i,j} } \\
-            i &\in [0,{block_count} * N_{\rm cell/block}) \\
+            {spans_vel_dust}_{i,j} &= \frac{ {spans_rhov_dust}_{i,j} }{ {spans_rho_dust}_{i,j} } \\
+            i &\in [0,{sizes} * N_{\rm cell/block}) \\
             j &\in [0,n_{\rm dust}) \\
             n_{\rm dust} & = {ndust} \\
             N_{\rm cell/block} & = {block_size}
             \end{align}
         )tex";
 
-        shambase::replace_all(tex, "{vel}", vel);
-        shambase::replace_all(tex, "{rho}", rho);
-        shambase::replace_all(tex, "{rhov}", rhov);
-        shambase::replace_all(tex, "{block_count}", block_count);
+        replace_edges_tex_symbols(tex);
+
         shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
         shambase::replace_all(tex, "{block_size}", sham::format("{}", block_size));
 

@@ -127,41 +127,23 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec>
     std::string NodeEulerTimeDerivativeDust<Tvec>::_impl_get_tex() const {
-
-        auto block_count   = get_ro_edge_base(0).get_tex_symbol();
-        auto rho_dust      = get_ro_edge_base(1).get_tex_symbol();
-        auto vel_dust      = get_ro_edge_base(2).get_tex_symbol();
-        auto grad_rho_dust = get_ro_edge_base(3).get_tex_symbol();
-        auto dx_v_dust     = get_ro_edge_base(4).get_tex_symbol();
-        auto dy_v_dust     = get_ro_edge_base(5).get_tex_symbol();
-        auto dz_v_dust     = get_ro_edge_base(6).get_tex_symbol();
-        auto dt_rho_dust   = get_rw_edge_base(0).get_tex_symbol();
-        auto dt_vel_dust   = get_rw_edge_base(1).get_tex_symbol();
-
         std::string tex = R"tex(
             Euler time derivatives of the dust primitive state (pressureless)
 
             \begin{align}
-            {dt_rho_dust}_i &= - \left( {vel_dust}_i \cdot {grad_rho_dust}_i
-                + {rho_dust}_i \left( {dx_v_dust}_{i,x} + {dy_v_dust}_{i,y}
-                + {dz_v_dust}_{i,z} \right) \right) \\
-            {dt_vel_dust}_i &= - \left( {vel_dust}_{i,x} {dx_v_dust}_i
-                + {vel_dust}_{i,y} {dy_v_dust}_i + {vel_dust}_{i,z} {dz_v_dust}_i \right) \\
-            i &\in [0,{block_count} * N_{\rm cell/block} * N_{\rm dust}) \\
+            {spans_dt_rho_dust}_i &= - \left( {spans_vel_dust}_i \cdot {spans_grad_rho_dust}_i
+                + {spans_rho_dust}_i \left( {spans_dx_v_dust}_{i,x} + {spans_dy_v_dust}_{i,y}
+                + {spans_dz_v_dust}_{i,z} \right) \right) \\
+            {spans_dt_vel_dust}_i &= - \left( {spans_vel_dust}_{i,x} {spans_dx_v_dust}_i
+                + {spans_vel_dust}_{i,y} {spans_dy_v_dust}_i + {spans_vel_dust}_{i,z} {spans_dz_v_dust}_i \right) \\
+            i &\in [0,{sizes} * N_{\rm cell/block} * N_{\rm dust}) \\
             N_{\rm cell/block} & = {block_size} \\
             N_{\rm dust} & = {ndust}
             \end{align}
         )tex";
 
-        shambase::replace_all(tex, "{dt_rho_dust}", dt_rho_dust);
-        shambase::replace_all(tex, "{dt_vel_dust}", dt_vel_dust);
-        shambase::replace_all(tex, "{grad_rho_dust}", grad_rho_dust);
-        shambase::replace_all(tex, "{rho_dust}", rho_dust);
-        shambase::replace_all(tex, "{vel_dust}", vel_dust);
-        shambase::replace_all(tex, "{dx_v_dust}", dx_v_dust);
-        shambase::replace_all(tex, "{dy_v_dust}", dy_v_dust);
-        shambase::replace_all(tex, "{dz_v_dust}", dz_v_dust);
-        shambase::replace_all(tex, "{block_count}", block_count);
+        replace_edges_tex_symbols(tex);
+
         shambase::replace_all(tex, "{block_size}", sham::format("{}", block_size));
         shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
 

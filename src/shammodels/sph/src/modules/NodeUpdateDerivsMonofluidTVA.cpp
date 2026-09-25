@@ -160,17 +160,6 @@ void shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>::
 template<class Tvec, template<class> class SPHKernel>
 std::string shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>::_impl_get_tex()
     const {
-    auto gpart_mass  = get_ro_edge_base(0).get_tex_symbol();
-    auto part_counts = get_ro_edge_base(1).get_tex_symbol();
-    auto xyz         = get_ro_edge_base(3).get_tex_symbol();
-    auto hpart       = get_ro_edge_base(4).get_tex_symbol();
-    auto vxyz        = get_ro_edge_base(5).get_tex_symbol();
-    auto omega       = get_ro_edge_base(6).get_tex_symbol();
-    auto pressure    = get_ro_edge_base(7).get_tex_symbol();
-    auto s_j         = get_ro_edge_base(8).get_tex_symbol();
-    auto Ttilde_sj   = get_ro_edge_base(9).get_tex_symbol();
-    auto ds_j_dt     = get_rw_edge_base(0).get_tex_symbol();
-
     const std::string ndust_str         = std::to_string(ndust);
     const std::string kernel_radius_str = std::to_string(kernel_radius);
 
@@ -210,16 +199,8 @@ std::string shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<Tvec, SPHKern
         $a \in [0,{part_counts})$, $j \in [0,{ndust})$.
     )tex";
 
-    shambase::replace_all(tex, "{gpart_mass}", gpart_mass);
-    shambase::replace_all(tex, "{part_counts}", part_counts);
-    shambase::replace_all(tex, "{xyz}", xyz);
-    shambase::replace_all(tex, "{hpart}", hpart);
-    shambase::replace_all(tex, "{vxyz}", vxyz);
-    shambase::replace_all(tex, "{omega}", omega);
-    shambase::replace_all(tex, "{pressure}", pressure);
-    shambase::replace_all(tex, "{s_j}", s_j);
-    shambase::replace_all(tex, "{Ttilde_sj}", Ttilde_sj);
-    shambase::replace_all(tex, "{ds_j_dt}", ds_j_dt);
+    replace_edges_tex_symbols(tex);
+
     shambase::replace_all(tex, "{ndust}", ndust_str);
     shambase::replace_all(tex, "{Rkern}", kernel_radius_str);
 

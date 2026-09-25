@@ -121,13 +121,6 @@ void IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_evaluate_internal() {
 
 template<class Tvec, class SPHKernel>
 std::string IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_get_tex() const {
-    auto sizes       = get_ro_edge_base(0).get_tex_symbol();
-    auto neigh_cache = get_ro_edge_base(1).get_tex_symbol();
-    auto positions   = get_ro_edge_base(2).get_tex_symbol();
-    auto old_h       = get_ro_edge_base(3).get_tex_symbol();
-    auto new_h       = get_rw_edge_base(0).get_tex_symbol();
-    auto eps_h       = get_rw_edge_base(1).get_tex_symbol();
-
     std::string tex = R"tex(
             Iterate smoothing length and density
 
@@ -151,12 +144,8 @@ std::string IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_get_tex() cons
             Output: ${new_h}$, ${eps_h}$
         )tex";
 
-    shambase::replace_all(tex, "{sizes}", sizes);
-    shambase::replace_all(tex, "{neigh_cache}", neigh_cache);
-    shambase::replace_all(tex, "{positions}", positions);
-    shambase::replace_all(tex, "{old_h}", old_h);
-    shambase::replace_all(tex, "{new_h}", new_h);
-    shambase::replace_all(tex, "{eps_h}", eps_h);
+    replace_edges_tex_symbols(tex);
+
     shambase::replace_all(tex, "{hfact}", sham::format("{}", SPHKernel::hfactd));
     shambase::replace_all(tex, "{Rkern}", sham::format("{}", SPHKernel::Rkern));
 

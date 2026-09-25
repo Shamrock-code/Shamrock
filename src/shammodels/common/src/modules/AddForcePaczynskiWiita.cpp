@@ -53,30 +53,18 @@ namespace shammodels::common::modules {
 
     template<class Tvec>
     inline std::string AddForcePaczynskiWiita<Tvec>::_impl_get_tex() const {
-
-        auto constant_G   = get_ro_edge_base(0).get_tex_symbol();
-        auto constant_c   = get_ro_edge_base(1).get_tex_symbol();
-        auto central_mass = get_ro_edge_base(2).get_tex_symbol();
-        auto central_pos  = get_ro_edge_base(3).get_tex_symbol();
-        auto positions    = get_ro_edge_base(4).get_tex_symbol();
-        auto axyz_ext     = get_rw_edge_base(0).get_tex_symbol();
-
         std::string tex = R"tex(
                  Add force (Paczynski-Wiita potential)
 
                  \begin{align}
                  r_{\text{s}} &= 2 * {constant_G}* {central_mass} / {constant_c}^2\\
-                 r_i &= {positions}_i - {central_pos}_i\\
+                 r_i &= {spans_positions}_i - {central_pos}_i\\
                  r &= \sqrt{\sum r_i^2}\\
-                 {axyz_ext}_i &= -{constant_G} * {central_mass} * r_i / (r * (r - r_{\text{s}})^2)
+                 {spans_accel_ext}_i &= -{constant_G} * {central_mass} * r_i / (r * (r - r_{\text{s}})^2)
                  \end{align}
              )tex";
 
-        shambase::replace_all(tex, "{constant_G}", constant_G);
-        shambase::replace_all(tex, "{central_mass}", central_mass);
-        shambase::replace_all(tex, "{central_pos}", central_pos);
-        shambase::replace_all(tex, "{positions}", positions);
-        shambase::replace_all(tex, "{axyz_ext}", axyz_ext);
+        replace_edges_tex_symbols(tex);
 
         return tex;
     }

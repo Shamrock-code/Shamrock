@@ -141,49 +141,25 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec>
     std::string NodeEulerTimeDerivativeGas<Tvec>::_impl_get_tex() const {
-
-        auto block_count = get_ro_edge_base(0).get_tex_symbol();
-        auto rho         = get_ro_edge_base(1).get_tex_symbol();
-        auto vel         = get_ro_edge_base(2).get_tex_symbol();
-        auto press       = get_ro_edge_base(3).get_tex_symbol();
-        auto grad_rho    = get_ro_edge_base(4).get_tex_symbol();
-        auto dx_v        = get_ro_edge_base(5).get_tex_symbol();
-        auto dy_v        = get_ro_edge_base(6).get_tex_symbol();
-        auto dz_v        = get_ro_edge_base(7).get_tex_symbol();
-        auto grad_P      = get_ro_edge_base(8).get_tex_symbol();
-        auto dt_rho      = get_rw_edge_base(0).get_tex_symbol();
-        auto dt_vel      = get_rw_edge_base(1).get_tex_symbol();
-        auto dt_press    = get_rw_edge_base(2).get_tex_symbol();
-
         std::string tex = R"tex(
             Euler time derivatives of the gas primitive state
 
             \begin{align}
-            {dt_rho}_i &= - \left( {vel}_i \cdot {grad_rho}_i
-                + {rho}_i \left( {dx_v}_{i,x} + {dy_v}_{i,y} + {dz_v}_{i,z} \right) \right) \\
-            {dt_vel}_i &= - \left( {vel}_{i,x} {dx_v}_i + {vel}_{i,y} {dy_v}_i
-                + {vel}_{i,z} {dz_v}_i + \frac{ {grad_P}_i }{ {rho}_i } \right) \\
-            {dt_press}_i &= - \left( \gamma {press}_i
-                \left( {dx_v}_{i,x} + {dy_v}_{i,y} + {dz_v}_{i,z} \right)
-                + {vel}_i \cdot {grad_P}_i \right) \\
-            i &\in [0,{block_count} * N_{\rm cell/block}) \\
+            {spans_dt_rho}_i &= - \left( {spans_vel}_i \cdot {spans_grad_rho}_i
+                + {spans_rho}_i \left( {spans_dx_v}_{i,x} + {spans_dy_v}_{i,y} + {spans_dz_v}_{i,z} \right) \right) \\
+            {spans_dt_vel}_i &= - \left( {spans_vel}_{i,x} {spans_dx_v}_i + {spans_vel}_{i,y} {spans_dy_v}_i
+                + {spans_vel}_{i,z} {spans_dz_v}_i + \frac{ {spans_grad_P}_i }{ {spans_rho}_i } \right) \\
+            {spans_dt_press}_i &= - \left( \gamma {spans_press}_i
+                \left( {spans_dx_v}_{i,x} + {spans_dy_v}_{i,y} + {spans_dz_v}_{i,z} \right)
+                + {spans_vel}_i \cdot {spans_grad_P}_i \right) \\
+            i &\in [0,{sizes} * N_{\rm cell/block}) \\
             \gamma &= {gamma} \\
             N_{\rm cell/block} & = {block_size}
             \end{align}
         )tex";
 
-        shambase::replace_all(tex, "{dt_rho}", dt_rho);
-        shambase::replace_all(tex, "{dt_vel}", dt_vel);
-        shambase::replace_all(tex, "{dt_press}", dt_press);
-        shambase::replace_all(tex, "{rho}", rho);
-        shambase::replace_all(tex, "{vel}", vel);
-        shambase::replace_all(tex, "{press}", press);
-        shambase::replace_all(tex, "{grad_rho}", grad_rho);
-        shambase::replace_all(tex, "{dx_v}", dx_v);
-        shambase::replace_all(tex, "{dy_v}", dy_v);
-        shambase::replace_all(tex, "{dz_v}", dz_v);
-        shambase::replace_all(tex, "{grad_P}", grad_P);
-        shambase::replace_all(tex, "{block_count}", block_count);
+        replace_edges_tex_symbols(tex);
+
         shambase::replace_all(tex, "{gamma}", sham::format("{}", gamma));
         shambase::replace_all(tex, "{block_size}", sham::format("{}", block_size));
 

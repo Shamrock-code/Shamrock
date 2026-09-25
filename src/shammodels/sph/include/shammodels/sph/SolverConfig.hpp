@@ -71,12 +71,18 @@ namespace shammodels::sph {
         /**
          * @brief The CFL condition for the courant factor
          */
-        Tscal cfl_cour;
+        Tscal cfl_cour = 0.3;
 
         /**
          * @brief The CFL condition for the force
          */
-        Tscal cfl_force;
+        Tscal cfl_force = 0.25;
+
+        Tscal _pi = shambase::constants::pi<Tscal>;
+        /**
+         * @brief The CFL condition for the force
+         */
+        Tscal cfl_NIMHD = 1. / (2 * _pi); // as in phantom
 
         /**
          * @brief The CFL multiplier stiffness
@@ -552,7 +558,7 @@ struct shammodels::sph::SolverConfig {
     /// The radius of the sph kernel
     static constexpr Tscal Rkern = Kernel::Rkern;
 
-    Tscal gpart_mass; ///< The mass of each gas particle
+    Tscal gpart_mass{0}; ///< The mass of each gas particle (must be set before use)
 
     bool track_particles_id = false;
 
@@ -651,11 +657,27 @@ struct shammodels::sph::SolverConfig {
     }
 
     /// Enable the ideal MHD hydro solver
-    inline void set_IdealMHD(typename MHDConfig::IdealMHD_constrained_hyper_para v) {
+    inline void set_ideal_mhd(typename MHDConfig::IdealMhdConstrainedHyperPara v) {
         mhd_config.set(v);
     }
 
-    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) { mhd_config.set(v); }
+    inline void set_non_ideal_mhd(typename MHDConfig::NonIdealMHD v) {
+        logger::raw_ln("$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$");
+        logger::raw_ln(" ______   _______  __    _  _______  _______  ______  ");
+        logger::raw_ln("|      | |   _   ||  |  | ||       ||       ||    _ | ");
+        logger::raw_ln("|  _    ||  |_|  ||   |_| ||    ___||    ___||   | ||");
+        logger::raw_ln("| | |   ||       ||       ||   | __ |   |___ |   |_||_");
+        logger::raw_ln("| |_|   ||       ||  _    ||   ||  ||    ___||    __  |");
+        logger::raw_ln("|       ||   _   || | |   ||   |_| ||   |___ |   |  | |");
+        logger::raw_ln("|______| |__| |__||_|  |__||_______||_______||___|  |_|");
+        logger::raw_ln("$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$");
+        logger::raw_ln("The Non-ideal MHD solver is UNDER DEVELOPMENT.");
+        logger::raw_ln("It is. NOT. FULLY. TESTED. YET.");
+        logger::raw_ln("Use at your own risk.");
+        shamrock::experimental_feature_check(
+            "Non-ideal MHD is experimental, please enable experimental features to use it");
+        mhd_config.set(v);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // MHD Config (END)
@@ -1121,20 +1143,23 @@ struct shammodels::sph::SolverConfig {
         return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();
     }
 
+    /// @brief Whether the solver is set for non ideal MHD
+    inline bool do_nimhd() { return mhd_config.do_nimhd(); }
+
     /// @brief Whether the solver has a field for B_on_rho
-    inline bool has_field_B_on_rho() { return mhd_config.has_B_field() && (dim == 3); }
+    inline bool has_field_b_on_rho() { return mhd_config.has_b_field() && (dim == 3); }
 
     /// @brief Whether the solver has a field for psi_on_ch
     inline bool has_field_psi_on_ch() { return mhd_config.has_psi_field(); }
 
     /// @brief Whether the solver has a field for divB
-    inline bool has_field_divB() { return mhd_config.has_divB_field(); }
+    inline bool has_field_div_b() { return mhd_config.has_div_b_field(); }
 
     /// @brief Whether the solver has a field for curlB
-    inline bool has_field_curlB() { return mhd_config.has_curlB_field() && (dim == 3); }
+    inline bool has_field_curl_b() { return mhd_config.has_curl_b_field() && (dim == 3); }
 
     /// @brief Whether the solver has a field for dt divB
-    inline bool has_field_dtdivB() { return mhd_config.has_dtdivB_field(); }
+    inline bool has_field_dtdiv_b() { return mhd_config.has_dtdiv_b_field(); }
 
     /// @brief Whether to store luminosity
     bool compute_luminosity = false;
@@ -1159,6 +1184,7 @@ struct shammodels::sph::SolverConfig {
 
     inline void check_config() {
         dust_config.check_config();
+        mhd_config.check_config();
 
         if (track_particles_id && false /*particle injection when added*/) {
             shamrock::experimental_feature_check(
@@ -1172,6 +1198,11 @@ struct shammodels::sph::SolverConfig {
         if (!self_grav_config.is_none()) {
             shamrock::experimental_feature_check(
                 "Self gravity is experimental, please enable experimental features to use it");
+        }
+
+        if (mhd_config.do_nimhd()) {
+            shamrock::experimental_feature_check(
+                "Non-ideal MHD is experimental, please enable experimental features to use it");
         }
     }
 

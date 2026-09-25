@@ -41,7 +41,10 @@ namespace shamtree {
         };
 
         /// Currently selected dual tree traversal implementation
-        shamalgs::ImplVariantGlobal<Reference, ParallelSelect, ScanMultipass> dtt_impl;
+        shamalgs::ImplVariantGlobal<Reference, ParallelSelect, ScanMultipass> dtt_impl{
+            [](const sham::DeviceScheduler_ptr &, auto &self) {
+                self.set(ScanMultipass{});
+            }};
 
         /// Get list of available dual tree traversal implementations
         std::vector<std::string> get_default_impl_list_clbvh_dual_tree_traversal() {
@@ -64,7 +67,7 @@ namespace shamtree {
 
         /// Select the default implementation for dual tree traversal
         void autoselect_impl_clbvh_dual_tree_traversal(const sham::DeviceScheduler_ptr &dev_sched) {
-            dtt_impl.set(ScanMultipass{});
+            dtt_impl.autoselect(dev_sched);
             shamlog_info_ln(
                 "tree",
                 "defaulting dtt implementation to impl :",

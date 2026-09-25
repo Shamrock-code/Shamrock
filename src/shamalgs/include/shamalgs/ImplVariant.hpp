@@ -28,7 +28,8 @@
  * ImplVariantGlobal builds on top of them to replace the hand-rolled
  * "global variable + enum + name mapping + 3 free functions" pattern used to
  * hold an algorithm's currently selected implementation; see its own doc
- * comment for the two ABI flavors it exposes and how the unset state works.
+ * comment for the config string ABI it exposes, how the unset state works and how the
+ * default implementation is picked (autoselect).
  *
  * Dispatch on the selected implementation is then a plain
  * `std::visit(shambase::overloaded{...}, variant)` instead of a switch.
@@ -36,10 +37,12 @@
 
 #include "shambase/exception.hpp"
 #include "sham/format/format.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include <fmt/ranges.h>
 #include <nlohmann/json.hpp>
 #include <string_view>
 #include <concepts>
+#include <functional>
 #include <optional>
 #include <string>
 #include <utility>
@@ -218,6 +221,12 @@ namespace shamalgs {
 
         /// Select an implementation from a {"implementation": ..., "parameters": ...} json string
         virtual void set(std::string_view config_json) = 0;
+
+        /// Whether an implementation has been selected yet
+        virtual bool is_set() const = 0;
+
+        /// Select the algorithm's default implementation for the device behind `sched`
+        virtual void autoselect(const sham::DeviceScheduler_ptr &sched) = 0;
     };
 
     /**
@@ -231,11 +240,22 @@ namespace shamalgs {
      *   - get_current_config() / get_default_config_list() / set(string_view) : a single
      *     `{"implementation": ..., "parameters": ...}` json string ABI.
      *
-     * No implementation is selected at construction: this class has no notion of a default.
-     * is_set() reports whether one has been picked yet. It is up to each call site to decide
-     * what to do when unset - typically checking is_set() and calling set() with that
-     * algorithm's own default right before dispatching (see e.g.
-     * segmented_sort_in_place.cpp). get() assumes is_set(); get_current_config() is the one
+     * No implementation is selected at construction: is_set() reports whether one has been
+     * picked yet. The rule picking the algorithm's default is however given at construction, as
+     * a callable of signature `void(const sham::DeviceScheduler_ptr &, ImplVariantGlobal &)`
+     * that calls set() on the selector it is handed. autoselect(sched) runs it, so that the
+     * default may depend on the device behind `sched` (see e.g. compute_histogram.hpp), or
+     * ignore it when it is a compile-time choice:
+     *
+     * @code{.cpp}
+     * shamalgs::ImplVariantGlobal<AltA, AltB> my_algo_impl{
+     *     [](const sham::DeviceScheduler_ptr &, auto &self) {
+     *         self.set(AltA{});
+     *     }};
+     * @endcode
+     *
+     * Call sites typically check is_set() and call autoselect() right before dispatching (see
+     * e.g. segmented_sort_in_place.cpp). get() assumes is_set(); get_current_config() is the one
      * exception and safely returns a json null instead of dereferencing an unset selection.
      *
      * @tparam Alts the alternative types, each requiring a
@@ -246,8 +266,20 @@ namespace shamalgs {
         public:
         using Variant = std::variant<Alts...>;
 
+        /// Callable selecting the default implementation, by calling set() on the selector
+        using AutoselectFn
+            = std::function<void(const sham::DeviceScheduler_ptr &, ImplVariantGlobal &)>;
+
+        /// Construct an unset selector, whose default implementation is picked by `fn`
+        explicit ImplVariantGlobal(AutoselectFn fn) : autoselect_fn(std::move(fn)) {}
+
         /// Whether an implementation has been selected yet
-        inline bool is_set() const { return current.has_value(); }
+        inline bool is_set() const override { return current.has_value(); }
+
+        /// Select the algorithm's default implementation for the device behind `sched`
+        inline void autoselect(const sham::DeviceScheduler_ptr &sched) override {
+            autoselect_fn(sched, *this);
+        }
 
         /// Get the currently selected implementation. Requires is_set()
         inline const Variant &get() const { return *current; }
@@ -278,6 +310,7 @@ namespace shamalgs {
 
         private:
         std::optional<Variant> current;
+        AutoselectFn autoselect_fn;
     };
 
 } // namespace shamalgs

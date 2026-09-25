@@ -9,6 +9,7 @@
 
 /**
  * @file ComputeGravWave.cpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Compute the gravitational wave quadrupole. Based on Toscani et. al. 2021.
  *

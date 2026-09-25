@@ -136,6 +136,12 @@ jobs:
             testfile: run_test_ext_forces_accretion.py
           - worldsize: 2
             testfile: run_test_ext_forces_accretion.py
+          - worldsize: 1
+            testfile: mhd_alfven_wave_3d.py
+          - worldsize: 1
+            testfile: mhd_orszag_tang_3d.py
+          - worldsize: 1
+            testfile: mhd_rotor_3d.py
       fail-fast: ${{ inputs.fail_fast }}
 
     timeout-minutes: 60

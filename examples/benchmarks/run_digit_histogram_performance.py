@@ -182,38 +182,33 @@ for case in key_cases:
     plt.show()
 
 # %%
-# Plot the digit histogram performance benchmarks (bandwidth), all key distributions overlaid
-# (color for the digit size, marker for the key distribution).
+# Plot the digit histogram performance benchmarks (bandwidth), one figure per key distribution.
 # The keys are read only once whatever the number of digit places, the histogram itself being
 # negligible in size.
 
-markers = {"zeros": "x", "shuffled iota": "+", "random": "."}
-
-plot_data = {}
 for case in key_cases:
+    plot_data = {}
     for i, radix_bits in enumerate(radix_bits_list):
         Nobj = np.array(particle_counts)
         Bytes = 4 * Nobj  # 1 u32 key read per element (sizeof = 4)
         BW = Bytes / np.array(results[case][radix_bits])
-        plot_data[f"{case} radix_bits={radix_bits}"] = {
+        plot_data[f"radix_bits={radix_bits}"] = {
             "x": particle_counts,
             "y": BW,
             "color": color_cycle[i % len(color_cycle)],
-            "label": f"{case}, radix_bits={radix_bits}",
+            "label": f"radix_bits={radix_bits} (u32)",
             "linestyle": "--",
-            "marker": markers[case],
+            "marker": ".",
         }
 
-make_std_bench_plot(
-    plot_data,
-    xlabel="Number of elements",
-    ylabel="Bandwidth (B.s^-1)",
-    title="digit histogram performance benchmarks",
-    end_label_fmt=lambda y: f"{y / 1e9:.2f} GB.s^-1",
-    min_gap_px=25,
-    legend_ncol=3,
-)
-plt.show()
+    make_std_bench_plot(
+        plot_data,
+        xlabel="Number of elements",
+        ylabel="Bandwidth (B.s^-1)",
+        title=f"digit histogram performance benchmarks ({case} keys)",
+        end_label_fmt=lambda y: f"{y / 1e9:.2f} GB.s^-1",
+    )
+    plt.show()
 
 # %%
 # Plot the histograms of the 4 digit places of 8 bits for each key distribution

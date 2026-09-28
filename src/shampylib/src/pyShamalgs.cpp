@@ -14,11 +14,13 @@
  */
 
 #include "shambase/aliases_float.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/collective/string_histogram.hpp"
 #include "shamalgs/details/random/random.hpp"
 #include "shamalgs/impl_utils.hpp"
 #include "shamalgs/primitives/compute_histogram.hpp"
+#include "shamalgs/primitives/digit_histogram.hpp"
 #include "shamalgs/primitives/is_all_true.hpp"
 #include "shamalgs/primitives/reduction.hpp"
 #include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
@@ -373,6 +375,75 @@ ON_PYTHON_INIT {
             shamalgs::primitives::impl::autoselect_impl_sort_by_key_pow2_len(
                 shamsys::instance::get_compute_scheduler_ptr());
         });
+    }
+
+    { // digit_histogram
+        // dispatch the runtime radix_bits onto the compile time instantiations
+        auto digit_histogram_u32 = [](sham::DeviceBuffer<u32> &buf_key,
+                                      sham::DeviceBuffer<u32> &buf_hist,
+                                      u32 radix_bits,
+                                      u32 len) {
+            auto sched = shamsys::instance::get_compute_scheduler_ptr();
+            switch (radix_bits) {
+            case 1:
+                shamalgs::primitives::digit_histogram<u32, 1>(sched, buf_key, buf_hist, len);
+                break;
+            case 2:
+                shamalgs::primitives::digit_histogram<u32, 2>(sched, buf_key, buf_hist, len);
+                break;
+            case 4:
+                shamalgs::primitives::digit_histogram<u32, 4>(sched, buf_key, buf_hist, len);
+                break;
+            case 8:
+                shamalgs::primitives::digit_histogram<u32, 8>(sched, buf_key, buf_hist, len);
+                break;
+            default:
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
+                    "radix_bits must be one of 1, 2, 4, 8, got radix_bits = {}", radix_bits));
+            }
+        };
+
+        shamalgs_module.def(
+            "digit_histogram",
+            [digit_histogram_u32](sham::DeviceBuffer<u32> &buf_key, u32 radix_bits, u32 len) {
+                sham::DeviceBuffer<u32> buf_hist(0, shamsys::instance::get_compute_scheduler_ptr());
+                digit_histogram_u32(buf_key, buf_hist, radix_bits, len);
+                return buf_hist;
+            },
+            py::arg("buf_key"),
+            py::arg("radix_bits"),
+            py::arg("len"),
+            R"pbdoc(
+    Histograms of every radix digit place of the first ``len`` u32 keys of ``buf_key``.
+
+    Returns a ``DeviceBuffer_u32`` of ``(32 / radix_bits) * 2**radix_bits`` bins, digit place
+    major : ``hist[p * 2**radix_bits + digit]`` counts the keys whose digit ``p`` (bits
+    ``p * radix_bits`` to ``(p + 1) * radix_bits - 1``) equals ``digit``.
+    ``radix_bits`` must be one of 1, 2, 4, 8.
+)pbdoc");
+
+        shamalgs_module.def(
+            "benchmark_digit_histogram",
+            [digit_histogram_u32](sham::DeviceBuffer<u32> &buf_key, u32 radix_bits, u32 len) {
+                sham::DeviceBuffer<u32> buf_hist(0, shamsys::instance::get_compute_scheduler_ptr());
+
+                // warmup, which also allocates buf_hist to its final size
+                digit_histogram_u32(buf_key, buf_hist, radix_bits, len);
+                buf_key.synchronize();
+                buf_hist.synchronize();
+
+                shambase::Timer timer;
+                timer.start();
+
+                digit_histogram_u32(buf_key, buf_hist, radix_bits, len);
+                buf_hist.synchronize();
+
+                timer.stop();
+                return timer.elapsed_sec();
+            },
+            py::arg("buf_key"),
+            py::arg("radix_bits"),
+            py::arg("len"));
     }
 
     { // compute_histogram

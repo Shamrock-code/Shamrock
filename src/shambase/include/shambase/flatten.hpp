@@ -25,8 +25,8 @@
 
 #if !defined(SHAMROCK_DISABLE_FLATTEN_LOOPS) && (defined(__clang__) || defined(__GNUC__))
     /// Force the inlining of every call made from the function body
-    #define SHAM_FLATTEN __attribute__((always_inline, flatten))
+    #define SHAM_ALWAYS_INLINE_FLATTEN __attribute__((always_inline, flatten))
 #else
     /// Force the inlining of every call made from the function body (disabled)
-    #define SHAM_FLATTEN
+    #define SHAM_ALWAYS_INLINE_FLATTEN
 #endif

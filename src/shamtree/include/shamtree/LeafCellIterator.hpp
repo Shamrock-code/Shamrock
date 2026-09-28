@@ -39,7 +39,7 @@ namespace shamtree {
          * with each particle's index as argument.
          */
         template<class Functor_iter>
-        SHAM_FLATTEN inline void for_each_in_leaf_cell(
+        SHAM_ALWAYS_INLINE_FLATTEN inline void for_each_in_leaf_cell(
             const u32 &cell_id, Functor_iter &&func_it) const {
             // loop on particle indexes
             uint min_ids = reduc_index_map[cell_id];

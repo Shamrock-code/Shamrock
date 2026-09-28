@@ -28,6 +28,7 @@ set(Sources
     src/details/reduction/reduction.cpp
     src/details/reduction/groupReduction_usm.cpp
     src/details/reduction/fallbackReduction_usm.cpp
+    src/details/reduction/syclNativeReduction_usm.cpp
     src/serialize.cpp
     src/collective/distributedDataComm.cpp
     src/collective/sparseXchg.cpp

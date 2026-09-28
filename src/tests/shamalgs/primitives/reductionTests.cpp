@@ -76,7 +76,15 @@ NEW_TEST(Unittest, "shamalgs/primitives/reduction/sum", 1) {
 
             f32 result   = shamalgs::primitives::sum(sched, buf, 0, static_cast<u32>(data.size()));
             f32 expected = std::accumulate(data.begin(), data.end(), 0.0f);
-            REQUIRE_EQUAL(result, expected);
+            // Reduction strategies may sum in a different order than std::accumulate (e.g. a
+            // tree reduction), which is not bit-exact for floats. Use the standard worst-case
+            // error bound for summing n floats in any order: (n-1) * eps * sum(|values|).
+            f32 sum_abs = std::accumulate(data.begin(), data.end(), 0.0f, [](f32 a, f32 b) {
+                return a + std::abs(b);
+            });
+            f32 tol
+                = static_cast<f32>(data.size() - 1) * std::numeric_limits<f32>::epsilon() * sum_abs;
+            REQUIRE_FLOAT_EQUAL(result, expected, tol);
         }
 
         {
@@ -87,7 +95,15 @@ NEW_TEST(Unittest, "shamalgs/primitives/reduction/sum", 1) {
 
             f64 result   = shamalgs::primitives::sum(sched, buf, 0, static_cast<u32>(data.size()));
             f64 expected = std::accumulate(data.begin(), data.end(), 0.0);
-            REQUIRE_EQUAL(result, expected);
+            // Reduction strategies may sum in a different order than std::accumulate (e.g. a
+            // tree reduction), which is not bit-exact for floats. Use the standard worst-case
+            // error bound for summing n floats in any order: (n-1) * eps * sum(|values|).
+            f64 sum_abs = std::accumulate(data.begin(), data.end(), 0.0, [](f64 a, f64 b) {
+                return a + std::abs(b);
+            });
+            f64 tol
+                = static_cast<f64>(data.size() - 1) * std::numeric_limits<f64>::epsilon() * sum_abs;
+            REQUIRE_FLOAT_EQUAL(result, expected, tol);
         }
 
         {

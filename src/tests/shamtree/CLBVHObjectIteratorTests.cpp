@@ -16,7 +16,10 @@
 #include "shamtree/CLBVHObjectIterator.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/TreeTraversal.hpp"
+#include "tests/shamtree/tie_order_utils.hpp"
 #include <vector>
+
+using shamtree::test_utils::sort_segments;
 
 using Tmorton = u64;
 using Tvec    = f64_3;
@@ -122,7 +125,9 @@ NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator", 1) {
                     });
             });
 
-        REQUIRE_EQUAL(pcache.index_neigh_map.copy_to_stdvec(), expected_neigh);
+        REQUIRE_EQUAL(
+            sort_segments(pcache.index_neigh_map.copy_to_stdvec(), expected_counts),
+            sort_segments(expected_neigh, expected_counts));
     }
 
     { // find within a box around particles
@@ -226,7 +231,9 @@ NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator", 1) {
                     });
             });
 
-        REQUIRE_EQUAL(pcache.index_neigh_map.copy_to_stdvec(), expected_neigh);
+        REQUIRE_EQUAL(
+            sort_segments(pcache.index_neigh_map.copy_to_stdvec(), expected_counts),
+            sort_segments(expected_neigh, expected_counts));
     }
 }
 
@@ -330,7 +337,9 @@ NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator(one-cell)", 1) {
                     });
             });
 
-        REQUIRE_EQUAL(pcache.index_neigh_map.copy_to_stdvec(), expected_neigh);
+        REQUIRE_EQUAL(
+            sort_segments(pcache.index_neigh_map.copy_to_stdvec(), expected_counts),
+            sort_segments(expected_neigh, expected_counts));
     }
 
     { // find within a box around particles
@@ -434,6 +443,8 @@ NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator(one-cell)", 1) {
                     });
             });
 
-        REQUIRE_EQUAL(pcache.index_neigh_map.copy_to_stdvec(), expected_neigh);
+        REQUIRE_EQUAL(
+            sort_segments(pcache.index_neigh_map.copy_to_stdvec(), expected_counts),
+            sort_segments(expected_neigh, expected_counts));
     }
 }

@@ -19,6 +19,7 @@
 #include "shamalgs/ImplVariant.hpp"
 #include "shamalgs/details/algorithm/bitonicSort.hpp"
 #include "shamalgs/details/algorithm/bitonicSort_updated_usm.hpp"
+#include "shamalgs/primitives/device/details/sort_by_keys_lsd_radix_sort_basic.hpp"
 #include "shamalgs/primitives/device/details/sort_by_keys_std_sort.hpp"
 #include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
 #include "shamcomm/logs.hpp"
@@ -53,6 +54,12 @@ namespace shamalgs::primitives::impl {
     /// Copy the buffers to host, std::sort the zipped key/value pairs, and copy back
     struct StdSort {
         static constexpr std::string_view variant_type_name = "std_sort";
+    };
+
+    /// Stable LSD radix sort parallelized over chunks of the input (unsigned integer keys only,
+    /// falls back to the bitonic sort otherwise), well suited to CPU devices
+    struct LsdRadixSortBasic {
+        static constexpr std::string_view variant_type_name = "lsd_radix_sort_basic";
     };
 
 } // namespace shamalgs::primitives::impl
@@ -94,9 +101,13 @@ namespace shamalgs::primitives {
     /// namespace to control implementation behavior
     namespace impl {
 
-        shamalgs::ImplVariantGlobal<BitonicSort, StdSort> sort_by_key_pow2_len_impl{
-            [](const sham::DeviceScheduler_ptr &, auto &self) {
-                self.set(BitonicSort{});
+        shamalgs::ImplVariantGlobal<BitonicSort, StdSort, LsdRadixSortBasic>
+            sort_by_key_pow2_len_impl{[](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
+                if (dev_sched->ctx->device->prop.type == sham::DeviceType::GPU) {
+                    self.set(BitonicSort{});
+                } else {
+                    self.set(LsdRadixSortBasic{});
+                }
             }};
 
         /// Get list of available sort by key (pow2 len) implementations
@@ -190,6 +201,15 @@ namespace shamalgs::primitives {
                 },
                 [&](impl::StdSort) {
                     device::details::sort_by_keys_std_sort(buf_key, buf_values, len);
+                },
+                [&](impl::LsdRadixSortBasic) {
+                    if constexpr (std::is_unsigned_v<Tkey>) {
+                        device::details::sort_by_keys_lsd_radix_sort_basic(
+                            sched, buf_key, buf_values, len);
+                    } else {
+                        impl::sort_by_key_pow2_len_bitonic_dispatch(
+                            sched, buf_key, buf_values, len, impl::MaxStencilSize::Size16);
+                    }
                 },
             },
             impl::sort_by_key_pow2_len_impl.get());

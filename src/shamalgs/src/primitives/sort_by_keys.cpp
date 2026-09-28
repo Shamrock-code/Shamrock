@@ -18,9 +18,11 @@
 #include "shambase/overloaded.hpp"
 #include "shamalgs/ImplVariant.hpp"
 #include "shamalgs/details/algorithm/batcherOddEvenSort.hpp"
+#include "shamalgs/primitives/device/details/sort_by_keys_lsd_radix_sort_basic.hpp"
 #include "shamalgs/primitives/device/details/sort_by_keys_std_sort.hpp"
 #include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shamcomm/logs.hpp"
+#include <type_traits>
 #include <algorithm>
 #include <vector>
 
@@ -69,10 +71,21 @@ namespace shamalgs::primitives {
             static constexpr std::string_view variant_type_name = "batcher_odd_even";
         };
 
-        shamalgs::ImplVariantGlobal<StdSort, BatcherOddEvenHostSerial, BatcherOddEven>
-            sort_by_keys_impl{[](const sham::DeviceScheduler_ptr &, auto &self) {
-                self.set(StdSort{});
-            }};
+        /// Stable LSD radix sort parallelized over chunks of the input (unsigned integer keys
+        /// only, falls back to the std sort otherwise)
+        struct LsdRadixSortBasic {
+            static constexpr std::string_view variant_type_name = "lsd_radix_sort_basic";
+        };
+
+        shamalgs::
+            ImplVariantGlobal<StdSort, BatcherOddEvenHostSerial, BatcherOddEven, LsdRadixSortBasic>
+                sort_by_keys_impl{[](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
+                    if (dev_sched->ctx->device->prop.type == sham::DeviceType::CPU) {
+                        self.set(LsdRadixSortBasic{});
+                    } else {
+                        self.set(StdSort{});
+                    }
+                }};
 
         /// Get list of available sort by keys implementations
         std::vector<std::string> get_default_impl_list_sort_by_keys() {
@@ -123,6 +136,14 @@ namespace shamalgs::primitives {
                 [&](impl::BatcherOddEven) {
                     algorithm::details::sort_by_key_batcher_odd_even(
                         buf_key.get_dev_scheduler_ptr(), buf_key, buf_values, len);
+                },
+                [&](impl::LsdRadixSortBasic) {
+                    if constexpr (std::is_unsigned_v<Tkey>) {
+                        device::details::sort_by_keys_lsd_radix_sort_basic(
+                            buf_key.get_dev_scheduler_ptr(), buf_key, buf_values, len);
+                    } else {
+                        device::details::sort_by_keys_std_sort(buf_key, buf_values, len);
+                    }
                 },
             },
             impl::sort_by_keys_impl.get());

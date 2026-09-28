@@ -41,11 +41,11 @@ endif()
 # loop helpers inlining
 ######################
 
-option(SHAMROCK_FLATTEN_LOOPS
-       "force the inlining of the functors in the loop helpers (neighbour loops)" On
+option(SHAMROCK_USE_ALWAYS_INLINE_FLATTEN
+       "force inlining of loop helpers and their functors (always_inline + flatten)" On
 )
-if(NOT SHAMROCK_FLATTEN_LOOPS)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_DISABLE_FLATTEN_LOOPS")
+if(NOT SHAMROCK_USE_ALWAYS_INLINE_FLATTEN)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_DISABLE_ALWAYS_INLINE_FLATTEN")
 endif()
 
 ######################

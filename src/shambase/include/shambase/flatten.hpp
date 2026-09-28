@@ -19,11 +19,11 @@
  * accumulators living in memory instead of registers. Inlining does not change the floating
  * point operations performed, only the generated code.
  *
- * Can be disabled by configuring with -DSHAMROCK_FLATTEN_LOOPS=Off (defines
- * SHAMROCK_DISABLE_FLATTEN_LOOPS).
+ * Can be disabled by configuring with -DSHAMROCK_USE_ALWAYS_INLINE_FLATTEN=Off (defines
+ * SHAMROCK_DISABLE_ALWAYS_INLINE_FLATTEN).
  */
 
-#if !defined(SHAMROCK_DISABLE_FLATTEN_LOOPS) && (defined(__clang__) || defined(__GNUC__))
+#if !defined(SHAMROCK_DISABLE_ALWAYS_INLINE_FLATTEN) && (defined(__clang__) || defined(__GNUC__))
     /// Force the inlining of every call made from the function body
     #define SHAM_ALWAYS_INLINE_FLATTEN __attribute__((always_inline, flatten))
 #else

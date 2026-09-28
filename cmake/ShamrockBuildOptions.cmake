@@ -38,7 +38,7 @@ if(SHAMROCK_USE_PROFILING)
 endif()
 
 ######################
-# loop helpers inlining
+# inlining helpers
 ######################
 
 option(SHAMROCK_USE_ALWAYS_INLINE_FLATTEN

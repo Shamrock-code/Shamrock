@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file sort_by_keys_radix_chunked.hpp
+ * @file sort_by_keys_lsd_radix_sort_basic.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Portable LSD radix sort by keys, parallelized over chunks of the input.
  *
@@ -21,10 +21,11 @@
  *  3. every work-item scatters its chunk, in order, to those offsets.
  *
  * The sort is stable. It only uses plain range kernels (no work-group primitives), so it runs on
- * any SYCL backend; it is intended for CPU-like devices where the work-items are few and fat.
+ * any SYCL backend. The chunking is tuned per device type (see below).
  */
 
 #include "shambase/aliases_int.hpp"
+#include "shambase/integer.hpp"
 #include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -37,7 +38,7 @@ namespace shamalgs::primitives::device::details {
 
     /// Stable LSD radix sort of (keys, values) on the first `len` elements (unsigned keys only)
     template<class Tkey, class Tval>
-    inline void sort_by_keys_radix_chunked(
+    inline void sort_by_keys_lsd_radix_sort_basic(
         const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<Tkey> &buf_key,
         sham::DeviceBuffer<Tval> &buf_values,
@@ -56,12 +57,21 @@ namespace shamalgs::primitives::device::details {
             return;
         }
 
-        // chunks of at least 4096 elements, and at most 4096 chunks
-        constexpr u32 min_chunk_size = 4096;
-        constexpr u32 max_chunks     = 4096;
-        u32 nchunks                  = std::max(1u, std::min(max_chunks, len / min_chunk_size));
-        u32 chunk_size               = (len + nchunks - 1) / nchunks;
-        nchunks                      = (len + chunk_size - 1) / chunk_size;
+        // Chunking : nchunks = clamp(len / min_chunk_size, 1, roundup_pow2(compute_units *
+        // chunks_per_cu)). Tuned on a RTX 3070 (GPU) and a Core Ultra 9 285K (CPU, OpenMP backend)
+        // over 1e3 to 1e8 elements (u32 keys) :
+        //  - GPUs want small chunks but no more than ~64 chunks per compute unit, more chunks
+        //    (hence longer scans and more scattered writes) are slower even at 1e8 elements,
+        //  - CPUs want large chunks (per work-item overhead) and ~16 chunks per core, more chunks
+        //    quickly become several times slower.
+        bool is_gpu        = sched->ctx->device->prop.type == sham::DeviceType::GPU;
+        u32 min_chunk_size = is_gpu ? 64 : 4096;
+        u32 chunks_per_cu  = is_gpu ? 64 : 16;
+        u32 compute_units  = std::max(1u, sched->ctx->device->prop.max_compute_units);
+        u32 max_chunks     = shambase::roundup_pow2(compute_units * chunks_per_cu);
+        u32 nchunks        = std::max(1u, std::min(max_chunks, len / min_chunk_size));
+        u32 chunk_size     = (len + nchunks - 1) / nchunks;
+        nchunks            = (len + chunk_size - 1) / chunk_size;
 
         sham::DeviceQueue &q = sched->get_queue();
 

@@ -79,8 +79,12 @@ namespace shamalgs::primitives {
 
         shamalgs::
             ImplVariantGlobal<StdSort, BatcherOddEvenHostSerial, BatcherOddEven, LsdRadixSortBasic>
-                sort_by_keys_impl{[](const sham::DeviceScheduler_ptr &, auto &self) {
-                    self.set(StdSort{});
+                sort_by_keys_impl{[](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
+                    if (dev_sched->ctx->device->prop.type == sham::DeviceType::CPU) {
+                        self.set(LsdRadixSortBasic{});
+                    } else {
+                        self.set(StdSort{});
+                    }
                 }};
 
         /// Get list of available sort by keys implementations

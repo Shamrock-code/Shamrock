@@ -43,6 +43,7 @@ set(Sources
     src/primitives/gen_buffer_index.cpp
     src/primitives/segmented_sort_in_place.cpp
     src/primitives/append_subset_to.cpp
+    src/primitives/compute_histogram.cpp
     src/collective/sparse_exchange.cpp
     src/collective/gather_str.cpp
     src/collective/string_histogram.cpp

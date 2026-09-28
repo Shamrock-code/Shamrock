@@ -53,14 +53,12 @@ namespace shamalgs::primitives {
             static constexpr std::string_view variant_type_name = "gpu_oversubscribe";
         };
 
-        inline shamalgs::ImplVariantGlobal<Reference, NaiveGpu, GpuTeamFetching, GpuOversubscribe>
-            compute_histogram_impl{[](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
-                if (dev_sched->ctx->device->prop.type == sham::DeviceType::GPU) {
-                    self.set(GpuOversubscribe{});
-                } else {
-                    self.set(NaiveGpu{}); // it is portable and fast everywhere
-                }
-            }};
+        /// Implementation selector type for compute_histogram
+        using ComputeHistogramImpl
+            = shamalgs::ImplVariantGlobal<Reference, NaiveGpu, GpuTeamFetching, GpuOversubscribe>;
+
+        /// Implementation selector for compute_histogram (defined in compute_histogram.cpp)
+        extern ComputeHistogramImpl compute_histogram_impl;
 
         /// Get list of available compute_histogram implementations
         inline std::vector<std::string> get_default_impl_list_compute_histogram() {

@@ -38,6 +38,17 @@ if(SHAMROCK_USE_PROFILING)
 endif()
 
 ######################
+# loop helpers inlining
+######################
+
+option(SHAMROCK_FLATTEN_LOOPS
+       "force the inlining of the functors in the loop helpers (neighbour loops)" On
+)
+if(NOT SHAMROCK_FLATTEN_LOOPS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_DISABLE_FLATTEN_LOOPS")
+endif()
+
+######################
 # Summary
 ######################
 

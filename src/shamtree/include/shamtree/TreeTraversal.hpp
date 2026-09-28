@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include "shambase/flatten.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambackends/sycl.hpp"
 #include "shamtree/RadixTree.hpp"
@@ -345,7 +346,7 @@ namespace shamrock::tree {
         }
 
         template<class Functor_iter>
-        inline void for_each_object(u32 idx, Functor_iter &&func_it) const {
+        SHAM_FLATTEN inline void for_each_object(u32 idx, Functor_iter &&func_it) const {
 
             u32 leaf_cell_owner = cell_owner[idx];
             u32 cnt             = neigh_cnt[leaf_cell_owner];
@@ -500,7 +501,7 @@ namespace shamrock::tree {
         // clang-format on
 
         template<class Functor_iter>
-        inline void for_each_object(u32 idx, Functor_iter &&func_it) const {
+        SHAM_FLATTEN inline void for_each_object(u32 idx, Functor_iter &&func_it) const {
 
             u32 cnt          = neigh_cnt[idx];
             u32 offset_start = table_neigh_offset[idx];
@@ -512,7 +513,7 @@ namespace shamrock::tree {
         }
 
         template<class Functor_iter>
-        inline void for_each_object_with_id(u32 idx, Functor_iter &&func_it) const {
+        SHAM_FLATTEN inline void for_each_object_with_id(u32 idx, Functor_iter &&func_it) const {
 
             u32 cnt          = neigh_cnt[idx];
             u32 offset_start = table_neigh_offset[idx];

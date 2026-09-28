@@ -61,6 +61,12 @@ add_subdirectory(shammodels/ramses)
 add_subdirectory(shammodels/sph)
 add_subdirectory(shammodels/gsph)
 
+# Standalone control GUI (not linked against Shamrock yet, fetches GLFW if not found)
+option(SHAMROCK_BUILD_GUI "build the standalone shamrock_gui executable" OFF)
+if(SHAMROCK_BUILD_GUI)
+    add_subdirectory(gui)
+endif()
+
 ######################
 # Shamrock lib & exe targets
 ######################

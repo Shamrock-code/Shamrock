@@ -93,7 +93,6 @@ void shammodels::sph::modules::BuildGhostInterfaceIdTable<Tvec>::_impl_evaluate_
 
     for (auto &[k, v] : send_count_stats) {
         if (v > 0.2) {
-            warn_log += sham::format("\n    patch {} high interf/patch volume: {}", k, v);
             has_warn = true;
         }
     }

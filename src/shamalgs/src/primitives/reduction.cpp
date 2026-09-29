@@ -27,6 +27,7 @@
 #include "shamalgs/details/reduction/groupReduction_usm.hpp"
 #include "shamalgs/details/reduction/reduction.hpp"
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"
+#include "shamalgs/impl_registry.hpp"
 
 namespace shamalgs::primitives::impl {
 
@@ -75,6 +76,9 @@ namespace shamalgs::primitives {
     /// namespace to control implementation behavior
     namespace impl {
 
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view reduction_impl_name = "reduction";
+
         shamalgs::ImplVariantGlobal<
             Fallback
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
@@ -89,6 +93,9 @@ namespace shamalgs::primitives {
                 self.set(Fallback{});
 #endif
             }};
+
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(reduction_impl_name, reduction_impl);
 
         /// Get list of available reduction implementations, as config json strings
         std::vector<std::string> get_default_impl_list_reduction() {

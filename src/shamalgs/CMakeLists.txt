@@ -29,6 +29,7 @@ set(Sources
     src/details/reduction/groupReduction_usm.cpp
     src/details/reduction/fallbackReduction_usm.cpp
     src/serialize.cpp
+    src/impl_registry.cpp
     src/collective/distributedDataComm.cpp
     src/collective/sparseXchg.cpp
     src/collective/are_all_rank_true.cpp

@@ -18,6 +18,7 @@
 #include "shambase/overloaded.hpp"
 #include "shamalgs/ImplVariant.hpp"
 #include "shamalgs/details/algorithm/batcherOddEvenSort.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/device/details/sort_by_keys_lsd_radix_sort_basic.hpp"
 #include "shamalgs/primitives/device/details/sort_by_keys_std_sort.hpp"
 #include "shamalgs/primitives/sort_by_keys.hpp"
@@ -77,6 +78,9 @@ namespace shamalgs::primitives {
             static constexpr std::string_view variant_type_name = "lsd_radix_sort_basic";
         };
 
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view sort_by_keys_impl_name = "sort_by_keys";
+
         shamalgs::
             ImplVariantGlobal<StdSort, BatcherOddEvenHostSerial, BatcherOddEven, LsdRadixSortBasic>
                 sort_by_keys_impl{[](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
@@ -86,6 +90,9 @@ namespace shamalgs::primitives {
                         self.set(StdSort{});
                     }
                 }};
+
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(sort_by_keys_impl_name, sort_by_keys_impl);
 
         /// Get list of available sort by keys implementations
         std::vector<std::string> get_default_impl_list_sort_by_keys() {

@@ -19,6 +19,7 @@
 #include "shamalgs/ImplVariant.hpp"
 #include "shamalgs/details/algorithm/bitonicSort.hpp"
 #include "shamalgs/details/algorithm/bitonicSort_updated_usm.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/device/details/sort_by_keys_lsd_radix_sort_basic.hpp"
 #include "shamalgs/primitives/device/details/sort_by_keys_std_sort.hpp"
 #include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
@@ -101,6 +102,9 @@ namespace shamalgs::primitives {
     /// namespace to control implementation behavior
     namespace impl {
 
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view sort_by_key_pow2_len_impl_name = "sort_by_key_pow2_len";
+
         shamalgs::ImplVariantGlobal<BitonicSort, StdSort, LsdRadixSortBasic>
             sort_by_key_pow2_len_impl{[](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
                 if (dev_sched->ctx->device->prop.type == sham::DeviceType::GPU) {
@@ -109,6 +113,9 @@ namespace shamalgs::primitives {
                     self.set(LsdRadixSortBasic{});
                 }
             }};
+
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(sort_by_key_pow2_len_impl_name, sort_by_key_pow2_len_impl);
 
         /// Get list of available sort by key (pow2 len) implementations
         std::vector<std::string> get_default_impl_list_sort_by_key_pow2_len() {

@@ -10,7 +10,10 @@
 /**
  * @file main.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Shamrock control GUI: for now only an empty GLFW window with an OpenGL 3.3 context.
+ * @brief Shamrock control GUI: for now a Dear ImGui (docking branch) frame loop showing an empty
+ * dock area that fills the window.
+ *
+ * Interactive runs remember the dock arrangement in shamrock_gui_layout.ini.
  *
  * Usage:
  *
@@ -18,6 +21,9 @@
  *
  */
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
 #if defined(__APPLE__)
     #include <OpenGL/gl3.h>
@@ -25,18 +31,29 @@
     #include <GL/gl.h>
 #endif
 
-#include <cstdio>
+namespace sham::gui {
 
-namespace {
-
-    void glfw_error_callback(int error, const char *description) {
-        std::fprintf(stderr, "GLFW error %d: %s\n", error, description);
+    /// Build one frame: a full-screen host window holding the dock area.
+    void gui() {
+        const ImGuiViewport *vp = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(vp->Pos);
+        ImGui::SetNextWindowSize(vp->Size);
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
+                                 | ImGuiWindowFlags_NoSavedSettings
+                                 | ImGuiWindowFlags_NoBringToFrontOnFocus
+                                 | ImGuiWindowFlags_NoScrollWithMouse;
+        // no padding or border, so the dock area covers the whole window
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::Begin("##shamrock_main", nullptr, flags);
+        ImGui::PopStyleVar(2);
+        ImGui::DockSpace(ImGui::GetID("##body_dockspace"), ImVec2(0, 0));
+        ImGui::End();
     }
 
-} // namespace
+} // namespace sham::gui
 
 int main() {
-    glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) {
         return 1;
     }
@@ -52,16 +69,33 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.IniFilename = "shamrock_gui_layout.ini";
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 150");
+
     int fbw = 0, fbh = 0;
     while (!glfwWindowShouldClose(window)) {
-        glfwWaitEvents();
+        glfwPollEvents();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        sham::gui::gui();
+        ImGui::Render();
         glfwGetFramebufferSize(window, &fbw, &fbh);
         glViewport(0, 0, fbw, fbh);
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT);
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
     }
 
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;

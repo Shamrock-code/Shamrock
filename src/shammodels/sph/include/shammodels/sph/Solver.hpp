@@ -243,54 +243,18 @@ namespace shammodels::sph {
         using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
-        inline void gen_ghost_handler(Tscal time_val) {
-
-            using CfgClass = sph::BasicSPHGhostHandlerConfig<Tvec>;
-            using BCConfig = typename CfgClass::Variant;
-
-            using BCFree             = typename CfgClass::Free;
-            using BCPeriodic         = typename CfgClass::Periodic;
-            using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
-
-            using SolverConfigBC           = typename Config::BCConfig;
-            using SolverBCFree             = typename SolverConfigBC::Free;
-            using SolverBCPeriodic         = typename SolverConfigBC::Periodic;
-            using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
-
-            // boundary condition selections
-            if (SolverBCFree *c
-                = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(
-                    GhostHandle{
-                        scheduler(),
-                        BCFree{},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-            } else if (
-                SolverBCPeriodic *c
-                = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(
-                    GhostHandle{
-                        scheduler(),
-                        BCPeriodic{},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-            } else if (
-                SolverBCShearingPeriodic *c
-                = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(
-                    GhostHandle{
-                        scheduler(),
-                        BCShearingPeriodic{
-                            c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-            }
+        inline void gen_ghost_handler() {
+            storage.ghost_handler.set(
+                GhostHandle{scheduler(), storage.patch_rank_owner, storage.xyzh_ghost_layout});
         }
         inline void reset_ghost_handler() { storage.ghost_handler.reset(); }
 
-        /// @brief Builds ghost particle interface cache for inter-patch communication
-        void build_ghost_cache();
+        /**
+         * @brief Builds ghost particle interface cache for inter-patch communication
+         *
+         * @param time_val time at which the boundary conditions are evaluated (shearing box)
+         */
+        void build_ghost_cache(Tscal time_val);
         /// @brief Clears ghost particle cache to free memory
         void clear_ghost_cache();
 

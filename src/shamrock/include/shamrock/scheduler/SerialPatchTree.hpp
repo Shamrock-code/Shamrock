@@ -180,6 +180,17 @@ class SerialPatchTree {
         sycl::queue &queue,
         shamrock::patch::PatchField<T> pfield,
         Func &&reducer) {
+        return make_patch_tree_field(queue, pfield.field_all, std::forward<Func>(reducer));
+    }
+
+    /**
+     * @brief Build a field on the patch tree nodes: leaves take the value of their patch in
+     * `patch_values` (which must contain every patch of the tree), internal nodes the reduction
+     * of their 8 children using `reducer`
+     */
+    template<class T, class Func>
+    inline shamrock::patch::PatchtreeField<T> make_patch_tree_field(
+        sycl::queue &queue, const shambase::DistributedData<T> &patch_values, Func &&reducer) {
         shamrock::patch::PatchtreeField<T> ptfield;
         ptfield.allocate(get_element_count());
 
@@ -190,9 +201,8 @@ class SerialPatchTree {
                 shambase::get_check_ref(ptfield.internal_buf), sycl::write_only, sycl::no_init};
 
             // init reduction
-            std::unordered_map<u64, u64> &idp_to_gid = sched.patch_list.id_patch_to_global_idx;
             for (u64 idx = 0; idx < get_element_count(); idx++) {
-                tree_field[idx] = (lpid[idx] != u64_max) ? pfield.get(lpid[idx]) : T();
+                tree_field[idx] = (lpid[idx] != u64_max) ? patch_values.get(lpid[idx]) : T();
             }
         }
 

@@ -15,6 +15,7 @@ message("-- adding shamrock_gui target")
 
 set(sources src/main.cpp)
 add_executable(shamrock_gui ${sources})
+
 target_link_libraries(shamrock_gui PRIVATE glfw OpenGL::GL)
 # OpenGL is deprecated on macOS (10.14+) but still works; silence the per-call warnings until the
 # app gets a Metal-capable backend.

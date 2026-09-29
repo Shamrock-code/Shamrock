@@ -9,7 +9,7 @@
 # GLFW and OpenGL are set up in cmake/ShamConfigureGUILibs.cmake.
 # For now it only opens an empty window and is not linked against any Shamrock library.
 
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.9...3.10)
 
 message("-- adding shamrock_gui target")
 

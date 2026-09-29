@@ -24,6 +24,13 @@ if(SHAMROCK_BUILD_GUI)
         message(STATUS "GLFW : system (version ${glfw3_VERSION}, ${glfw3_DIR})")
     else()
         message(STATUS "GLFW : FetchContent (tag 3.4)")
+        if(CMAKE_VERSION VERSION_LESS 3.14)
+            message(
+                FATAL_ERROR
+                    "fetching GLFW requires CMake >= 3.14 (FetchContent_MakeAvailable), "
+                    "found ${CMAKE_VERSION}. Install GLFW >= 3.3 (e.g. libglfw3-dev) or update CMake."
+            )
+        endif()
         include(FetchContent)
         set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
         set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)

@@ -20,7 +20,10 @@ if(SHAMROCK_BUILD_GUI)
 
     # use the system package when present, otherwise build it.
     find_package(glfw3 3.3 QUIET)
-    if(NOT glfw3_FOUND)
+    if(glfw3_FOUND)
+        message(STATUS "GLFW : system (version ${glfw3_VERSION}, ${glfw3_DIR})")
+    else()
+        message(STATUS "GLFW : FetchContent (tag 3.4)")
         include(FetchContent)
         set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
         set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)

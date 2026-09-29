@@ -11,6 +11,7 @@
 
 /**
  * @file UpdateDerivs.hpp
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -19,6 +20,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
+#include "shammodels/sph/math/mhd.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
@@ -67,10 +69,28 @@ namespace shammodels::sph::modules {
         using Cfg_MHD = typename Config::MHDConfig;
 
         using NoneMHD     = typename Cfg_MHD::None;
-        using IdealMHD    = typename Cfg_MHD::IdealMHD_constrained_hyper_para;
+        using IdealMHD    = typename Cfg_MHD::IdealMhdConstrainedHyperPara;
         using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
 
-        void update_derivs_MHD(IdealMHD cfg);
+        template<shamrock::sph::mhd::MHDType mhd_mode>
+        void compute_j(Tscal mu_0);
+
+        // void update_derivs_mhd(Cfg_MHD cfg);
+        //  One templated implementation, specialised per MHDType at the call sites below.
+        template<shamrock::sph::mhd::MHDType mhd_mode>
+        void update_derivs_mhd_impl(
+            Tscal sigma_mhd,
+            Tscal alpha_u,
+            Tscal alpha_B,
+            Tscal alpha_AV,
+            Tscal beta_AV,
+            Tscal etaO,
+            Tscal etaH,
+            Tscal etaAD);
+
+        // Thin wrappers that unpack the variant and forward to the template above.
+        void update_derivs_mhd(IdealMHD cfg);
+        void update_derivs_mhd(NonIdealMHD cfg);
     };
 
 } // namespace shammodels::sph::modules

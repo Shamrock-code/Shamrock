@@ -101,7 +101,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             74.899,
@@ -127,6 +128,7 @@
             34.102,
             26.231,
             48.738,
+            null,
             null,
             null,
             null,
@@ -681,6 +683,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -786,7 +793,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             46.863,
@@ -884,7 +892,8 @@
             23.825,
             26.013,
             26.163,
-            26.205
+            26.205,
+            18.136
          ],
          "customdata": [
             [
@@ -1366,6 +1375,11 @@
                "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
                525,
                49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               525,
+               34
             ]
          ],
          "connectgaps": false,
@@ -1471,7 +1485,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             34.783,
@@ -1497,6 +1512,7 @@
             16.457,
             13.086,
             23.414,
+            null,
             null,
             null,
             null,
@@ -2051,6 +2067,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -2156,7 +2177,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             26.429,
@@ -2254,7 +2276,8 @@
             13.043,
             14.485,
             14.023,
-            13.13
+            13.13,
+            10.116
          ],
          "customdata": [
             [
@@ -2736,6 +2759,11 @@
                "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
                40,
                328
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               252
             ]
          ],
          "connectgaps": false,
@@ -2841,7 +2869,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             25.75,
@@ -2867,6 +2896,7 @@
             12.257,
             9.67,
             17.41,
+            null,
             null,
             null,
             null,
@@ -3421,6 +3451,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -3526,7 +3561,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             17.951,
@@ -3552,6 +3588,7 @@
             8.311,
             6.518,
             11.778,
+            null,
             null,
             null,
             null,
@@ -4106,6 +4143,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -4211,7 +4253,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             17.067,
@@ -4309,7 +4352,8 @@
             10.406,
             11.255,
             11.792,
-            11.412
+            11.412,
+            7.83
          ],
          "customdata": [
             [
@@ -4791,6 +4835,11 @@
                "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
                262,
                43
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               262,
+               29
             ]
          ],
          "connectgaps": false,
@@ -4896,7 +4945,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             16.012,
@@ -4926,6 +4976,7 @@
             7.3,
             7.094,
             7.456,
+            null,
             null,
             null,
             null,
@@ -5476,6 +5527,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -5581,7 +5637,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             16.251,
@@ -5607,6 +5664,7 @@
             7.601,
             6.061,
             10.922,
+            null,
             null,
             null,
             null,
@@ -6161,6 +6219,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -6266,7 +6329,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             16.172,
@@ -6364,7 +6428,8 @@
             7.89,
             8.333,
             8.95,
-            7.948
+            7.948,
+            5.218
          ],
          "customdata": [
             [
@@ -6846,6 +6911,11 @@
                "void test_karras_alg&lt;$&gt;()",
                2,
                3974
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               2609
             ]
          ],
          "connectgaps": false,
@@ -6951,7 +7021,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             null,
@@ -7049,7 +7120,8 @@
             8.825,
             9.404,
             9.66,
-            9.545
+            9.545,
+            6.894
          ],
          "customdata": [
             [
@@ -7531,6 +7603,11 @@
                "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
                263,
                36
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               264,
+               26
             ]
          ],
          "connectgaps": false,
@@ -7636,7 +7713,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             null,
@@ -7734,7 +7812,8 @@
             10.636,
             11.384,
             11.47,
-            11.097
+            11.097,
+            8.007
          ],
          "customdata": [
             [
@@ -8216,6 +8295,11 @@
                "shammodels::sph::Solver&lt;$&gt;::init_solver_graph()",
                6,
                1849
+            ],
+            [
+               "shammodels::sph::Solver&lt;$&gt;::init_solver_graph()",
+               6,
+               1334
             ]
          ],
          "connectgaps": false,
@@ -8321,13 +8405,15 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             null,
             null,
             null,
             10.013,
+            null,
             null,
             null,
             null,
@@ -8901,6 +8987,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -9006,7 +9097,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             null,
@@ -9104,7 +9196,8 @@
             8.033,
             8.972,
             9.396,
-            9.038
+            9.038,
+            6.362
          ],
          "customdata": [
             [
@@ -9586,6 +9679,11 @@
                "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, unsigned int)",
                185,
                48
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, unsigned int)",
+               185,
+               34
             ]
          ],
          "connectgaps": false,
@@ -9691,7 +9789,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             null,
@@ -9711,6 +9810,7 @@
             null,
             null,
             9.176,
+            null,
             null,
             null,
             null,
@@ -10271,6 +10371,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -10376,7 +10481,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             null,
@@ -10474,7 +10580,8 @@
             7.747,
             8.53,
             8.65,
-            8.351
+            8.351,
+            6.251
          ],
          "customdata": [
             [
@@ -10956,6 +11063,11 @@
                "shammodels::sph::Solver&lt;$&gt;::evolve_once()",
                6,
                1391
+            ],
+            [
+               "shammodels::sph::Solver&lt;$&gt;::evolve_once()",
+               6,
+               1041
             ]
          ],
          "connectgaps": false,
@@ -11061,7 +11173,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             null,
@@ -11159,7 +11272,8 @@
             7.148,
             7.858,
             8.117,
-            8.083
+            8.083,
+            5.58
          ],
          "customdata": [
             [
@@ -11641,6 +11755,11 @@
                "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
                159,
                50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               159,
+               35
             ]
          ],
          "connectgaps": false,
@@ -11746,7 +11865,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             null,
@@ -11844,7 +11964,8 @@
             6.622,
             7.026,
             7.847,
-            7.404
+            7.404,
+            5.292
          ],
          "customdata": [
             [
@@ -12326,6 +12447,11 @@
                "void test_comm&lt;$&gt;()",
                60,
                123
+            ],
+            [
+               "void test_comm&lt;$&gt;()",
+               60,
+               88
             ]
          ],
          "connectgaps": false,
@@ -12431,7 +12557,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             null,
@@ -12485,6 +12612,7 @@
             null,
             null,
             6.154,
+            null,
             null,
             null,
             null,
@@ -12786,6 +12914,11 @@
                "std::shared_ptr&lt;$&gt; hipsycl::sycl::queue::execute_submission&lt;$&gt;(hipsycl::sycl::vec&lt;$&gt;, hipsycl::sycl::handler&amp;)",
                632,
                9
+            ],
+            [
+               null,
+               null,
+               null
             ],
             [
                null,
@@ -13116,7 +13249,8 @@
             "2026-09-28T09:21:27Z",
             "2026-09-28T23:56:02Z",
             "2026-09-29T03:09:38Z",
-            "2026-09-29T05:09:20Z"
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z"
          ],
          "y": [
             null,
@@ -13153,6 +13287,7 @@
             null,
             null,
             4.865,
+            null,
             null,
             null,
             null,
@@ -13386,6 +13521,11 @@
                "pybind11::cpp_function::initialize_generic(std::unique_ptr&lt;$&gt;&amp;&amp;, char const*, std::type_info const* const*, unsigned long)",
                39,
                124
+            ],
+            [
+               null,
+               null,
+               null
             ],
             [
                null,

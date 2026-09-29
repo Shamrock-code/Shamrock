@@ -18,6 +18,7 @@
  */
 
 #include "shambackends/vec.hpp"
+#include "shamrock/experimental_features.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
 #include <variant>
@@ -39,11 +40,22 @@ struct shammodels::sph::MHDConfig {
     struct IdealMHD_constrained_hyper_para {
         Tscal sigma_mhd = 0.1;
         Tscal alpha_u   = 1.;
+        Tscal alpha_B   = 1.;
+        Tscal alpha_AV  = 1.;
+        Tscal beta_AV   = 1.;
     };
 
     struct NonIdealMHD {
         Tscal sigma_mhd = 0.1;
         Tscal alpha_u   = 1.;
+        Tscal alpha_B   = 1.;
+        Tscal alpha_AV  = 1.;
+        Tscal beta_AV   = 1.;
+        Tscal etaO      = 1.;
+        Tscal etaH      = 1.;
+        Tscal etaAD     = 1.;
+
+        bool eta_fields = false;
     };
 
     // how to set a new state of a variant as a dummy:
@@ -52,57 +64,90 @@ struct shammodels::sph::MHDConfig {
     //-> question your life choices
     using Variant = std::variant<None, IdealMHD_constrained_hyper_para, NonIdealMHD>;
 
-    Variant config = None{};
+    Variant configMHD = None{};
 
-    void set(Variant v) { config = v; }
+    void set(Variant v) { configMHD = v; }
+
+    inline bool do_NIMHD() {
+        bool is_NIMHD = bool(std::get_if<NonIdealMHD>(&configMHD));
+        return is_NIMHD;
+    }
 
     inline bool has_B_field() {
-        bool is_B = bool(std::get_if<IdealMHD_constrained_hyper_para>(&config))
-                    || bool(std::get_if<NonIdealMHD>(&config));
+        bool is_B = bool(std::get_if<IdealMHD_constrained_hyper_para>(&configMHD))
+                    || bool(std::get_if<NonIdealMHD>(&configMHD));
         return is_B;
     }
 
     inline bool has_psi_field() {
-        bool is_psi = bool(std::get_if<IdealMHD_constrained_hyper_para>(&config))
-                      || bool(std::get_if<NonIdealMHD>(&config));
+        bool is_psi = bool(std::get_if<IdealMHD_constrained_hyper_para>(&configMHD))
+                      || bool(std::get_if<NonIdealMHD>(&configMHD));
         return is_psi;
     }
 
     inline bool has_divB_field() {
-        bool is_divB = bool(std::get_if<IdealMHD_constrained_hyper_para>(&config));
+        bool is_divB = bool(std::get_if<IdealMHD_constrained_hyper_para>(&configMHD));
         return is_divB;
     }
 
     inline bool has_curlB_field() {
-        bool is_curlB = bool(std::get_if<NonIdealMHD>(&config));
+        bool is_curlB = bool(std::get_if<NonIdealMHD>(&configMHD));
         return is_curlB;
     }
 
+    inline bool has_field_eta() {
+        NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD);
+        return v && v->eta_fields;
+    }
+
     inline bool has_dtdivB_field() {
-        bool is_dtdivB = bool(std::get_if<NonIdealMHD>(&config));
+        bool is_dtdivB = bool(std::get_if<NonIdealMHD>(&configMHD));
         return is_dtdivB;
     }
 
     inline void print_status() {
-        logger::raw_ln("--- MHD config");
+        logger::raw_ln("--- MHD configMHD");
 
-        if (None *v = std::get_if<None>(&config)) {
+        if (None *v = std::get_if<None>(&configMHD)) {
             logger::raw_ln("  Config MHD Type : None (No MHD)");
         } else if (
             IdealMHD_constrained_hyper_para *v
-            = std::get_if<IdealMHD_constrained_hyper_para>(&config)) {
+            = std::get_if<IdealMHD_constrained_hyper_para>(&configMHD)) {
             logger::raw_ln("  Config MHD  : Ideal MHD, constrained hyperbolic/parabolic treatment");
             logger::raw_ln("  sigma_mhd  =", v->sigma_mhd);
-        } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&config)) {
+            logger::raw_ln("  alpha_B    =", v->alpha_B);
+            logger::raw_ln("  alpha_AV   =", v->alpha_AV);
+            logger::raw_ln("  beta_AV    =", v->beta_AV);
+        } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD)) {
             logger::raw_ln("  Config MHD Type : Non Ideal MHD");
             logger::raw_ln("  sigma_mhd   =", v->sigma_mhd);
+            logger::raw_ln("  alpha_B     =", v->alpha_B);
+            logger::raw_ln("  alpha_AV    =", v->alpha_AV);
+            logger::raw_ln("  beta_AV     =", v->beta_AV);
+            if (v->eta_fields) {
+                logger::raw_ln("  etaO/etaH/etaAD : set per-particle (eta_o/eta_h/eta_ad fields)");
+            } else {
+                logger::raw_ln("  etaO        =", v->etaO);
+                logger::raw_ln("  etaH        =", v->etaH);
+                logger::raw_ln("  etaAD       =", v->etaAD);
+            }
         } else {
             shambase::throw_unimplemented();
         }
 
-        logger::raw_ln("--- MHD config (deduced)");
+        logger::raw_ln("--- MHD configMHD (deduced)");
 
         logger::raw_ln("-------------");
+    }
+
+    inline void check_config() {
+
+        if (do_NIMHD()) {
+
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>("Non Ideal MHD is experimental");
+            }
+        }
     }
 };
 
@@ -122,23 +167,33 @@ namespace shammodels::sph {
         using IMHD        = typename T::IdealMHD_constrained_hyper_para;
         using NonIdealMHD = typename T::NonIdealMHD;
 
-        // Write the config type into the JSON object
-        if (const None *v = std::get_if<None>(&p.config)) {
+        // Write the configMHD type into the JSON object
+        if (const None *v = std::get_if<None>(&p.configMHD)) {
             j = {
                 {"mhd_type", "none"},
             };
-        } else if (const IMHD *v = std::get_if<IMHD>(&p.config)) {
+        } else if (const IMHD *v = std::get_if<IMHD>(&p.configMHD)) {
             j = {
                 {"mhd_type", "ideal_mhd_constrained_hyper_para"},
                 {"sigma_mhd", v->sigma_mhd},
                 {"alpha_u", v->alpha_u},
+                {"alpha_B", v->alpha_B},
+                {"alpha_AV", v->alpha_AV},
+                {"beta_AV", v->beta_AV},
             };
-        } else if (const NonIdealMHD *v = std::get_if<NonIdealMHD>(&p.config)) {
+        } else if (const NonIdealMHD *v = std::get_if<NonIdealMHD>(&p.configMHD)) {
             // Write the shear base, direction, and speed into the JSON object
             j = {
                 {"mhd_type", "non_ideal_mhd"},
                 {"sigma_mhd", v->sigma_mhd},
                 {"alpha_u", v->alpha_u},
+                {"alpha_B", v->alpha_B},
+                {"alpha_AV", v->alpha_AV},
+                {"beta_AV", v->beta_AV},
+                {"etaO", v->etaO},
+                {"etaH", v->etaH},
+                {"etaAD", v->etaAD},
+                {"eta_fields", v->eta_fields},
             };
         } else {
             shambase::throw_unimplemented();
@@ -162,7 +217,7 @@ namespace shammodels::sph {
             shambase::throw_with_loc<std::runtime_error>("no field mhd_type is found in this json");
         }
 
-        // Read the config type from the JSON object
+        // Read the configMHD type from the JSON object
         std::string mhd_type;
         j.at("mhd_type").get_to(mhd_type);
 
@@ -170,7 +225,7 @@ namespace shammodels::sph {
         using IMHD        = typename T::IdealMHD_constrained_hyper_para;
         using NonIdealMHD = typename T::NonIdealMHD;
 
-        // Set the BCConfig based on the config type
+        // Set the BCConfig based on the configMHD type
         if (mhd_type == "none") {
             p.set(None{});
         } else if (mhd_type == "ideal_mhd_constrained_hyper_para") {
@@ -178,12 +233,22 @@ namespace shammodels::sph {
                 IMHD{
                     j.at("sigma_mhd").get<Tscal>(),
                     j.at("alpha_u").get<Tscal>(),
+                    j.at("alpha_B").get<Tscal>(),
+                    j.at("alpha_AV").get<Tscal>(),
+                    j.at("beta_AV").get<Tscal>(),
                 });
         } else if (mhd_type == "non_ideal_mhd") {
             p.set(
                 NonIdealMHD{
                     j.at("sigma_mhd").get<Tscal>(),
                     j.at("alpha_u").get<Tscal>(),
+                    j.at("alpha_B").get<Tscal>(),
+                    j.at("alpha_AV").get<Tscal>(),
+                    j.at("beta_AV").get<Tscal>(),
+                    j.at("etaO").get<Tscal>(),
+                    j.at("etaH").get<Tscal>(),
+                    j.at("etaAD").get<Tscal>(),
+                    j.value("eta_fields", false),
                 });
         } else {
             shambase::throw_unimplemented("wtf !");

@@ -45,10 +45,10 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
 
-    bool has_B_field     = solver_config.has_field_B_on_rho();
-    const u32 iB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : -1;
-    const u32 idB_on_rho = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : -1;
-    const u32 idrho_dt   = (has_B_field) ? pdl.get_field_idx<Tscal>("drho/dt") : -1;
+    bool has_b_field     = solver_config.has_field_b_on_rho();
+    const u32 iB_on_rho  = (has_b_field) ? pdl.get_field_idx<Tvec>("B/rho") : -1;
+    const u32 idB_on_rho = (has_b_field) ? pdl.get_field_idx<Tvec>("dB/rho") : -1;
+    const u32 idrho_dt   = (has_b_field) ? pdl.get_field_idx<Tscal>("drho/dt") : -1;
 
     std::string cv_checks = "conservation infos :\n";
 
@@ -133,7 +133,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
                 de[item] = pmass * (sycl::dot(v[item], a[item]) + du[item]);
             });
 
-        if (has_B_field) {
+        if (has_b_field) {
             PatchDataField<Tvec> &field_B_on_rho  = pdat.get_field<Tvec>(iB_on_rho);
             PatchDataField<Tvec> &field_dB_on_rho = pdat.get_field<Tvec>(idB_on_rho);
             PatchDataField<Tscal> &field_drho_dt  = pdat.get_field<Tscal>(idrho_dt);

@@ -13,7 +13,7 @@
  * @file Solver.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -154,7 +154,12 @@ namespace shammodels::sph {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel             = SPHKernel<Tscal>;
 
-        using Config = SolverConfig<Tvec, SPHKernel>;
+        using Config  = SolverConfig<Tvec, SPHKernel>;
+        using Cfg_MHD = typename Config::MHDConfig;
+
+        using NoneMHD     = typename Cfg_MHD::None;
+        using IdealMHD    = typename Cfg_MHD::IdealMhdConstrainedHyperPara;
+        using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
 
         using u_morton = typename Config::u_morton;
 
@@ -323,6 +328,9 @@ namespace shammodels::sph {
         /// @brief Updates artificial viscosity coefficients for shock capturing
         void update_artificial_viscosity(Tscal dt);
 
+        /// @brief Updates the magnetic current field (for NIMHD)
+        void update_j();
+
         /// @brief Initializes data layout for ghost particle fields
         void init_ghost_layout();
 
@@ -341,6 +349,7 @@ namespace shammodels::sph {
         void prepare_corrector();
         /// @brief Updates time derivatives and applies external forces
         void update_derivs(Tscal dt_hydro);
+
         /**
          * @brief
          *

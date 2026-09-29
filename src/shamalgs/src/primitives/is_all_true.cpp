@@ -18,6 +18,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/overloaded.hpp"
 #include "shamalgs/ImplVariant.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/group_op.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -205,10 +206,16 @@ namespace shamalgs::primitives {
     /// namespace to control implementation behavior
     namespace impl {
 
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view is_all_true_impl_name = "is_all_true";
+
         shamalgs::ImplVariantGlobal<Host, SumReduction, AtomicEarlyExit> is_all_true_impl{
             [](const sham::DeviceScheduler_ptr &, auto &self) {
                 self.set(Host{});
             }};
+
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(is_all_true_impl_name, is_all_true_impl);
 
         /// Get list of available is_all_true implementations, as config json strings
         std::vector<std::string> get_default_impl_list_is_all_true() {

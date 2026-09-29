@@ -16,6 +16,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/overloaded.hpp"
 #include "shamalgs/ImplVariant.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamtree/details/dtt_parallel_select.hpp"
 #include "shamtree/details/dtt_reference.hpp"
 #include "shamtree/details/dtt_scan_multipass.hpp"
@@ -40,11 +41,17 @@ namespace shamtree {
             static constexpr std::string_view variant_type_name = "scan_multipass";
         };
 
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view dtt_impl_name = "clbvh_dual_tree_traversal";
+
         /// Currently selected dual tree traversal implementation
         shamalgs::ImplVariantGlobal<Reference, ParallelSelect, ScanMultipass> dtt_impl{
             [](const sham::DeviceScheduler_ptr &, auto &self) {
                 self.set(ScanMultipass{});
             }};
+
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(dtt_impl_name, dtt_impl);
 
         /// Get list of available dual tree traversal implementations
         std::vector<std::string> get_default_impl_list_clbvh_dual_tree_traversal() {

@@ -21,6 +21,7 @@
 #include "shamalgs/ImplVariant.hpp"
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/EventList.hpp"
 #include <numeric>
@@ -136,6 +137,10 @@ namespace shamalgs::primitives {
         };
 #endif
 
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view scan_exclusive_sum_in_place_impl_name
+            = "scan_exclusive_sum_in_place";
+
         shamalgs::ImplVariantGlobal<
             StdScan
 #ifdef __ACPP__
@@ -166,6 +171,10 @@ namespace shamalgs::primitives {
     #endif
 #endif
             }};
+
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(
+            scan_exclusive_sum_in_place_impl_name, scan_exclusive_sum_in_place_impl);
 
         /// Get list of available scan_exclusive_sum_in_place implementations
         std::vector<std::string> get_default_impl_list_scan_exclusive_sum_in_place() {

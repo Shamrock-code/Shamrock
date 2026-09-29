@@ -258,6 +258,9 @@ namespace shamalgs {
      * e.g. segmented_sort_in_place.cpp). get() assumes is_set(); get_current_config() is the one
      * exception and safely returns a json null instead of dereferencing an unset selection.
      *
+     * Instances are registered by name in shamalgs::impl_registry (which stores their address),
+     * so they are neither copyable nor movable.
+     *
      * @tparam Alts the alternative types, each requiring a
      * `static constexpr std::string_view variant_type_name`
      */
@@ -271,7 +274,18 @@ namespace shamalgs {
             = std::function<void(const sham::DeviceScheduler_ptr &, ImplVariantGlobal &)>;
 
         /// Construct an unset selector, whose default implementation is picked by `fn`
-        explicit ImplVariantGlobal(AutoselectFn fn) : autoselect_fn(std::move(fn)) {}
+        explicit ImplVariantGlobal(AutoselectFn fn) : autoselect_fn(std::move(fn)) {
+            if (!autoselect_fn) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "ImplVariantGlobal requires a non-empty autoselect function");
+            }
+        }
+
+        // Registered by address in shamalgs::impl_registry, so neither copyable nor movable
+        ImplVariantGlobal(const ImplVariantGlobal &)            = delete;
+        ImplVariantGlobal &operator=(const ImplVariantGlobal &) = delete;
+        ImplVariantGlobal(ImplVariantGlobal &&)                 = delete;
+        ImplVariantGlobal &operator=(ImplVariantGlobal &&)      = delete;
 
         /// Whether an implementation has been selected yet
         inline bool is_set() const override { return current.has_value(); }

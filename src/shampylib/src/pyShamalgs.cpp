@@ -18,6 +18,7 @@
 #include "shambase/time.hpp"
 #include "shamalgs/collective/string_histogram.hpp"
 #include "shamalgs/details/random/random.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/impl_utils.hpp"
 #include "shamalgs/primitives/compute_histogram.hpp"
 #include "shamalgs/primitives/digit_histogram.hpp"
@@ -107,6 +108,87 @@ ON_PYTHON_INIT {
             return shamalgs::random::mock_buffer_usm<f64_3>(
                 shamsys::instance::get_compute_scheduler_ptr(), seed, len, min_bound, max_bound);
         });
+
+    { // implementation registry
+        shamalgs_module.def(
+            "get_registered_algs",
+            &shamalgs::impl_registry::get_registered_algs,
+            R"pbdoc(
+    Get the names of every algorithm with a selectable implementation, sorted.
+
+    Each name can be passed as ``alg`` to the other implementation selection functions of this
+    module (``get_default_impl_list``, ``get_current_impl``, ``is_impl_set``, ``set_impl`` and
+    ``autoselect_impl``).
+            )pbdoc");
+
+        shamalgs_module.def(
+            "get_default_impl_list",
+            &shamalgs::impl_registry::get_default_impl_list,
+            py::arg("alg"),
+            R"pbdoc(
+    Get the list of available implementations of the algorithm ``alg``.
+
+    Each implementation is a JSON string
+    ``{"implementation": "<name>", "parameters": {...}}`` that can be passed to ``set_impl``.
+
+    Raises an exception if no algorithm is registered under ``alg``.
+            )pbdoc");
+
+        shamalgs_module.def(
+            "get_current_impl",
+            &shamalgs::impl_registry::get_current_impl,
+            py::arg("alg"),
+            R"pbdoc(
+    Get the current implementation of the algorithm ``alg``.
+
+    The implementation is returned as a JSON string
+    ``{"implementation": "<name>", "parameters": {...}}``, or ``"null"`` if none is selected yet.
+
+    Raises an exception if no algorithm is registered under ``alg``.
+            )pbdoc");
+
+        shamalgs_module.def(
+            "is_impl_set",
+            &shamalgs::impl_registry::is_impl_set,
+            py::arg("alg"),
+            R"pbdoc(
+    Whether an implementation of the algorithm ``alg`` is selected.
+
+    An unset algorithm selects its default implementation on first use, or through
+    ``autoselect_impl``.
+
+    Raises an exception if no algorithm is registered under ``alg``.
+            )pbdoc");
+
+        shamalgs_module.def(
+            "set_impl",
+            &shamalgs::impl_registry::set_impl,
+            py::arg("alg"),
+            py::arg("impl"),
+            R"pbdoc(
+    Select the implementation ``impl`` of the algorithm ``alg``.
+
+    ``impl`` is a JSON string ``{"implementation": "<name>", "parameters": {...}}``, typically
+    one of the entries of ``get_default_impl_list(alg)``.
+
+    Raises an exception if no algorithm is registered under ``alg``, or if ``impl`` is not a
+    valid implementation of it.
+            )pbdoc");
+
+        shamalgs_module.def(
+            "autoselect_impl",
+            [](const std::string &alg) {
+                shamalgs::impl_registry::autoselect_impl(
+                    alg, shamsys::instance::get_compute_scheduler_ptr());
+            },
+            py::arg("alg"),
+            R"pbdoc(
+    Select the default implementation of the algorithm ``alg`` for the compute device.
+
+    Requires the devices to be initialized (``shamrock.sys.init(...)`` in library mode), and
+    raises an exception otherwise, or if no algorithm is registered under ``alg``.
+            )pbdoc");
+    }
 
     { // is_all_true
 

@@ -81,7 +81,7 @@ model.init_scheduler(scheduler_split_val, scheduler_merge_val)
 model.resize_simulation_box(bmin, bmax)
 
 setup = model.get_setup()
-gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
+gen = setup.make_generator_lattice_hcp(dr, bmin, bmax, init_h_factor=1.0)
 setup.apply_setup(gen, insert_step=scheduler_split_val)
 
 

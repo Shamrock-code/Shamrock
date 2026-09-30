@@ -103,16 +103,16 @@ def run_performance_sweep():
 
 # %%
 # List current implementation
-if not shamrock.algs.is_impl_set_sort_by_keys():
-    shamrock.algs.autoselect_impl_sort_by_keys()
+if not shamrock.algs.is_impl_set("sort_by_keys"):
+    shamrock.algs.autoselect_impl("sort_by_keys")
 
-current_impl = shamrock.algs.get_current_impl_sort_by_keys()
+current_impl = shamrock.algs.get_current_impl("sort_by_keys")
 
 print(current_impl)
 
 # %%
 # List all implementations available
-all_default_impls = shamrock.algs.get_default_impl_list_sort_by_keys()
+all_default_impls = shamrock.algs.get_default_impl_list("sort_by_keys")
 
 print(all_default_impls)
 
@@ -122,7 +122,7 @@ print(all_default_impls)
 results_by_impl = {}
 
 for impl in all_default_impls:
-    shamrock.algs.set_impl_sort_by_keys(impl)
+    shamrock.algs.set_impl("sort_by_keys", impl)
 
     impl_name = impl_display_name(impl)
 
@@ -190,16 +190,16 @@ def run_performance_sweep_pow2_len():
 
 # %%
 # List current implementation
-if not shamrock.algs.is_impl_set_sort_by_key_pow2_len():
-    shamrock.algs.autoselect_impl_sort_by_key_pow2_len()
+if not shamrock.algs.is_impl_set("sort_by_key_pow2_len"):
+    shamrock.algs.autoselect_impl("sort_by_key_pow2_len")
 
-current_impl_pow2_len = shamrock.algs.get_current_impl_sort_by_key_pow2_len()
+current_impl_pow2_len = shamrock.algs.get_current_impl("sort_by_key_pow2_len")
 
 print(current_impl_pow2_len)
 
 # %%
 # List all implementations available
-all_default_impls_pow2_len = shamrock.algs.get_default_impl_list_sort_by_key_pow2_len()
+all_default_impls_pow2_len = shamrock.algs.get_default_impl_list("sort_by_key_pow2_len")
 
 print(all_default_impls_pow2_len)
 
@@ -209,7 +209,7 @@ print(all_default_impls_pow2_len)
 results_by_impl_pow2_len = {}
 
 for impl in all_default_impls_pow2_len:
-    shamrock.algs.set_impl_sort_by_key_pow2_len(impl)
+    shamrock.algs.set_impl("sort_by_key_pow2_len", impl)
 
     impl_name = impl_display_name(impl)
 

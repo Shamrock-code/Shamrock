@@ -19,41 +19,55 @@ to an existing one.
 
 ## User side (Python)
 
-For every algorithm that supports it, three functions are exposed on the Python bindings, under
-`shamrock.algs` for `shamalgs` primitives and `shamrock.tree` for `shamtree`'s dual tree
-traversal:
+Every algorithm that supports implementation selection is registered under a name (e.g.
+`"reduction"`, `"scan_exclusive_sum_in_place"`, `"clbvh_dual_tree_traversal"`). The following
+six functions are exposed under `shamrock.algs`, and all except `get_registered_algs` take that
+name as their first argument `alg`:
 
-- `get_default_impl_list_<algo>()` — the list of available implementations.
-- `get_current_impl_<algo>()` — the implementation currently selected.
-- `set_impl_<algo>(...)` — select an implementation.
-- `is_impl_set_<algo>()` — whether an implementation has been selected yet.
-- `autoselect_impl_<algo>()` — select the algorithm's default implementation.
+- `get_registered_algs()`: the sorted list of registered algorithm names.
+- `get_default_impl_list(alg)`: the list of available implementations.
+- `get_current_impl(alg)`: the implementation currently selected.
+- `set_impl(alg, impl)`: select an implementation.
+- `is_impl_set(alg)`: whether an implementation has been selected yet.
+- `autoselect_impl(alg)`: select the algorithm's default implementation.
 
-Implementations are plain JSON config strings of the form
-`{"implementation": "<name>", "parameters": {...}}`. `set_impl_<algo>` takes that whole string
-back.
-
-`is_impl_set_<algo>` / `autoselect_impl_<algo>` matter because an `ImplVariantGlobal` starts
-unset: algorithms only pick their default the first time they actually run, so
-`get_current_impl_<algo>()` returns `"null"` until then, unless you call
-`autoselect_impl_<algo>()` yourself first. From Python, the default is picked for the compute
-device (`shamsys::instance::get_compute_scheduler_ptr()`).
+An unknown `alg` raises an exception whose message lists the registered names. The same
+functions cover every algorithm, including `shamtree`'s dual tree traversal.
 
 ```python
 import shamrock
 
-current = shamrock.algs.get_current_impl_scan_exclusive_sum_in_place()
+print(shamrock.algs.get_registered_algs())
+# ['clbvh_dual_tree_traversal', 'compute_histogram', 'is_all_true', 'reduction', ...]
+```
+
+Implementations are plain JSON config strings of the form
+`{"implementation": "<name>", "parameters": {...}}`. `set_impl` takes that whole string back.
+
+`is_impl_set` and `autoselect_impl` matter because an algorithm starts with no implementation
+selected: it only picks its default the first time it actually runs, so `get_current_impl(alg)`
+returns `"null"` until then, unless you call `autoselect_impl(alg)` yourself first. From Python,
+the default is picked for the compute device (`shamsys::instance::get_compute_scheduler_ptr()`),
+so `autoselect_impl` requires the devices to be initialized (`shamrock.sys.init(...)` in library
+mode). The other functions also work before that.
+
+```python
+import shamrock
+
+current = shamrock.algs.get_current_impl("scan_exclusive_sum_in_place")
 print(current)
 # null (nothing selected yet, and the algorithm hasn't run)
 
 # two ways of selecting an implementation manually:
 
 # 1. pick a specific one
-shamrock.algs.set_impl_scan_exclusive_sum_in_place('{"implementation":"std_scan","parameters":{}}')
+shamrock.algs.set_impl(
+    "scan_exclusive_sum_in_place", '{"implementation":"std_scan","parameters":{}}'
+)
 
 # 2. or fall back to the algorithm's own default
-if not shamrock.algs.is_impl_set_scan_exclusive_sum_in_place():
-    shamrock.algs.autoselect_impl_scan_exclusive_sum_in_place()
+if not shamrock.algs.is_impl_set("scan_exclusive_sum_in_place"):
+    shamrock.algs.autoselect_impl("scan_exclusive_sum_in_place")
 ```
 
 If you want to test something against every available implementation, do:
@@ -62,8 +76,8 @@ If you want to test something against every available implementation, do:
 import json
 import shamrock
 
-for impl in shamrock.algs.get_default_impl_list_scan_exclusive_sum_in_place():
-    shamrock.algs.set_impl_scan_exclusive_sum_in_place(impl)
+for impl in shamrock.algs.get_default_impl_list("scan_exclusive_sum_in_place"):
+    shamrock.algs.set_impl("scan_exclusive_sum_in_place", impl)
     name = json.loads(impl)["implementation"]
     print(f"running with {name}")
     # ...

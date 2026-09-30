@@ -92,13 +92,16 @@ def run_performance_sweep_balanced():
 
 # %%
 # List current implementation
-current_impl = shamrock.algs.get_current_impl_segmented_sort_in_place()
+if not shamrock.algs.is_impl_set("segmented_sort_in_place"):
+    shamrock.algs.autoselect_impl("segmented_sort_in_place")
+
+current_impl = shamrock.algs.get_current_impl("segmented_sort_in_place")
 
 print(current_impl)
 
 # %%
 # List all implementations available
-all_default_impls = shamrock.algs.get_default_impl_list_segmented_sort_in_place()
+all_default_impls = shamrock.algs.get_default_impl_list("segmented_sort_in_place")
 
 print(all_default_impls)
 
@@ -107,7 +110,7 @@ print(all_default_impls)
 
 dic_bench = {}
 for impl in all_default_impls:
-    shamrock.algs.set_impl_segmented_sort_in_place(impl)
+    shamrock.algs.set_impl("segmented_sort_in_place", impl)
 
     impl_name = json.loads(impl)["implementation"]
 

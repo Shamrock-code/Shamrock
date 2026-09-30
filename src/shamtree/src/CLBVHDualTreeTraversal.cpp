@@ -101,7 +101,7 @@ namespace shamtree {
         using ImplSca = details::DTTScanMultipass<Tmorton, Tvec, dim>;
 
         if (!impl::dtt_impl.is_set()) {
-            impl::autoselect_impl_clbvh_dual_tree_traversal(dev_sched);
+            shamalgs::impl_registry::autoselect_impl(impl::dtt_impl_name, dev_sched);
         }
 
         bool ord  = ordered_result;

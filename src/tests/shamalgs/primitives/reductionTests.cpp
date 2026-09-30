@@ -7,6 +7,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -152,20 +153,20 @@ NEW_TEST(Unittest, "shamalgs/primitives/reduction/sum", 1) {
         }
     };
 
-    if (!shamalgs::primitives::impl::is_impl_set_reduction()) {
-        shamalgs::primitives::impl::autoselect_impl_reduction(
-            shamsys::instance::get_compute_scheduler_ptr());
+    if (!shamalgs::impl_registry::is_impl_set("reduction")) {
+        shamalgs::impl_registry::autoselect_impl(
+            "reduction", shamsys::instance::get_compute_scheduler_ptr());
     }
-    auto current_impl = shamalgs::primitives::impl::get_current_impl_reduction();
+    auto current_impl = shamalgs::impl_registry::get_current_impl("reduction");
 
-    for (const std::string &impl : shamalgs::primitives::impl::get_default_impl_list_reduction()) {
-        shamalgs::primitives::impl::set_impl_reduction(impl);
+    for (const std::string &impl : shamalgs::impl_registry::get_default_impl_list("reduction")) {
+        shamalgs::impl_registry::set_impl("reduction", impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_reduction(current_impl);
+    shamalgs::impl_registry::set_impl("reduction", current_impl);
 }
 
 NEW_TEST(Unittest, "shamalgs/primitives/reduction/min", 1) {
@@ -301,20 +302,20 @@ NEW_TEST(Unittest, "shamalgs/primitives/reduction/min", 1) {
         }
     };
 
-    if (!shamalgs::primitives::impl::is_impl_set_reduction()) {
-        shamalgs::primitives::impl::autoselect_impl_reduction(
-            shamsys::instance::get_compute_scheduler_ptr());
+    if (!shamalgs::impl_registry::is_impl_set("reduction")) {
+        shamalgs::impl_registry::autoselect_impl(
+            "reduction", shamsys::instance::get_compute_scheduler_ptr());
     }
-    auto current_impl = shamalgs::primitives::impl::get_current_impl_reduction();
+    auto current_impl = shamalgs::impl_registry::get_current_impl("reduction");
 
-    for (const std::string &impl : shamalgs::primitives::impl::get_default_impl_list_reduction()) {
-        shamalgs::primitives::impl::set_impl_reduction(impl);
+    for (const std::string &impl : shamalgs::impl_registry::get_default_impl_list("reduction")) {
+        shamalgs::impl_registry::set_impl("reduction", impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_reduction(current_impl);
+    shamalgs::impl_registry::set_impl("reduction", current_impl);
 }
 
 NEW_TEST(Unittest, "shamalgs/primitives/reduction/max", 1) {
@@ -450,20 +451,20 @@ NEW_TEST(Unittest, "shamalgs/primitives/reduction/max", 1) {
         }
     };
 
-    if (!shamalgs::primitives::impl::is_impl_set_reduction()) {
-        shamalgs::primitives::impl::autoselect_impl_reduction(
-            shamsys::instance::get_compute_scheduler_ptr());
+    if (!shamalgs::impl_registry::is_impl_set("reduction")) {
+        shamalgs::impl_registry::autoselect_impl(
+            "reduction", shamsys::instance::get_compute_scheduler_ptr());
     }
-    auto current_impl = shamalgs::primitives::impl::get_current_impl_reduction();
+    auto current_impl = shamalgs::impl_registry::get_current_impl("reduction");
 
-    for (const std::string &impl : shamalgs::primitives::impl::get_default_impl_list_reduction()) {
-        shamalgs::primitives::impl::set_impl_reduction(impl);
+    for (const std::string &impl : shamalgs::impl_registry::get_default_impl_list("reduction")) {
+        shamalgs::impl_registry::set_impl("reduction", impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_reduction(current_impl);
+    shamalgs::impl_registry::set_impl("reduction", current_impl);
 }
 
 NEW_TEST(Unittest, "shamalgs/primitives/reduction/edge_cases", 1) {
@@ -656,18 +657,18 @@ NEW_TEST(Unittest, "shamalgs/primitives/reduction/edge_cases", 1) {
         }
     };
 
-    if (!shamalgs::primitives::impl::is_impl_set_reduction()) {
-        shamalgs::primitives::impl::autoselect_impl_reduction(
-            shamsys::instance::get_compute_scheduler_ptr());
+    if (!shamalgs::impl_registry::is_impl_set("reduction")) {
+        shamalgs::impl_registry::autoselect_impl(
+            "reduction", shamsys::instance::get_compute_scheduler_ptr());
     }
-    auto current_impl = shamalgs::primitives::impl::get_current_impl_reduction();
+    auto current_impl = shamalgs::impl_registry::get_current_impl("reduction");
 
-    for (const std::string &impl : shamalgs::primitives::impl::get_default_impl_list_reduction()) {
-        shamalgs::primitives::impl::set_impl_reduction(impl);
+    for (const std::string &impl : shamalgs::impl_registry::get_default_impl_list("reduction")) {
+        shamalgs::impl_registry::set_impl("reduction", impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_reduction(current_impl);
+    shamalgs::impl_registry::set_impl("reduction", current_impl);
 }

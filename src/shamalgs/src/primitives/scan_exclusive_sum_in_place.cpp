@@ -226,7 +226,8 @@ namespace shamalgs::primitives {
         }
 
         if (!impl::scan_exclusive_sum_in_place_impl.is_set()) {
-            impl::autoselect_impl_scan_exclusive_sum_in_place(buf1.get_dev_scheduler_ptr());
+            shamalgs::impl_registry::autoselect_impl(
+                impl::scan_exclusive_sum_in_place_impl_name, buf1.get_dev_scheduler_ptr());
         }
 
         std::visit(

@@ -1,0 +1,67 @@
+name: on PR closed
+
+# Cancel any "on PR" run still queued or in progress for a PR once it gets
+# closed (or merged). The concurrency group of on_pr.yml only cancels a run
+# when a newer one starts, so a closed PR would otherwise keep burning runners.
+# This matters in particular for the Mergify merge queue: Mergify closes its
+# draft `mergify/merge-queue/*` PR when a batch is dequeued or merged, and the
+# full CI started on it would keep running to completion.
+#
+# pull_request_target is used so that the token can cancel runs even for PRs
+# opened from forks. No code from the PR is checked out or executed here.
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  actions: write
+
+jobs:
+  cancel_pr_runs:
+    name: Cancel running "on PR" workflows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          # Empty if the head repository (fork) was deleted.
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          set -euo pipefail
+          export GH_PAGER=cat
+
+          # Runs of the PR are matched on head branch + head repository, so a
+          # same-named branch from another fork is not affected. Fall back on
+          # the head sha when the head repository is gone.
+          list_runs() {
+            gh api -X GET "repos/$GH_REPO/actions/workflows/on_pr.yml/runs" \
+              -f event=pull_request -f branch="$HEAD_REF" -f status="$1" -f per_page=100 \
+              --jq '.workflow_runs[]
+                | select(
+                    (env.HEAD_REPO != "" and .head_repository.full_name == env.HEAD_REPO)
+                    or .head_sha == env.HEAD_SHA)
+                | .id'
+          }
+
+          run_ids="$(
+            for status in requested pending waiting queued in_progress; do
+              list_runs "$status"
+            done | sort -u
+          )"
+
+          if [ -z "$run_ids" ]; then
+            echo "No running \"on PR\" workflow for PR #$PR_NUMBER ($HEAD_REPO:$HEAD_REF)."
+            exit 0
+          fi
+
+          for id in $run_ids; do
+            echo "Cancelling run https://github.com/$GH_REPO/actions/runs/$id"
+            # A run may complete between listing and cancelling (409), do not fail.
+            gh api -X POST "repos/$GH_REPO/actions/runs/$id/cancel" \
+              || echo "::warning::Could not cancel run $id"
+          done

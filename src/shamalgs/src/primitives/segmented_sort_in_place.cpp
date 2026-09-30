@@ -174,7 +174,8 @@ namespace shamalgs::primitives {
         }
 
         if (!impl::segmented_sort_in_place_impl.is_set()) {
-            impl::autoselect_impl_segmented_sort_in_place(buf.get_dev_scheduler_ptr());
+            shamalgs::impl_registry::autoselect_impl(
+                impl::segmented_sort_in_place_impl_name, buf.get_dev_scheduler_ptr());
         }
 
         std::visit(

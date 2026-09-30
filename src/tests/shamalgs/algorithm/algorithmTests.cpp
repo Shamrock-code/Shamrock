@@ -8,6 +8,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/algorithm.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -23,21 +24,21 @@ NEW_TEST(Unittest, "shamalgs/algorithm/sort_by_key_pow2_len(usm)", 1) {
     TestSortByKeyUSM<u32, u32> test((TestSortByKeyUSM<u32, u32>::vFunctionCall)
                                         shamalgs::algorithm::sort_by_key_pow2_len<u32, u32>);
 
-    if (!shamalgs::primitives::impl::is_impl_set_sort_by_key_pow2_len()) {
-        shamalgs::primitives::impl::autoselect_impl_sort_by_key_pow2_len(
-            shamsys::instance::get_compute_scheduler_ptr());
+    if (!shamalgs::impl_registry::is_impl_set("sort_by_key_pow2_len")) {
+        shamalgs::impl_registry::autoselect_impl(
+            "sort_by_key_pow2_len", shamsys::instance::get_compute_scheduler_ptr());
     }
-    auto current_impl = shamalgs::primitives::impl::get_current_impl_sort_by_key_pow2_len();
+    auto current_impl = shamalgs::impl_registry::get_current_impl("sort_by_key_pow2_len");
 
     for (const std::string &impl :
-         shamalgs::primitives::impl::get_default_impl_list_sort_by_key_pow2_len()) {
-        shamalgs::primitives::impl::set_impl_sort_by_key_pow2_len(impl);
+         shamalgs::impl_registry::get_default_impl_list("sort_by_key_pow2_len")) {
+        shamalgs::impl_registry::set_impl("sort_by_key_pow2_len", impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test.check();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_sort_by_key_pow2_len(current_impl);
+    shamalgs::impl_registry::set_impl("sort_by_key_pow2_len", current_impl);
 }
 
 NEW_TEST(Benchmark, "shamalgs/algorithm/sort_by_key_pow2_len:benchmark", 1) {

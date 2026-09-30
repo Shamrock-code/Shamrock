@@ -14,6 +14,16 @@ option(SHAMROCK_BUILD_GUI "build the standalone shamrock_gui executable" Off)
 message(STATUS "SHAMROCK_BUILD_GUI : ${SHAMROCK_BUILD_GUI}")
 
 if(SHAMROCK_BUILD_GUI)
+    # Dear ImGui is always fetched.
+    if(CMAKE_VERSION VERSION_LESS 3.14)
+        message(
+            FATAL_ERROR
+                "the GUI fetches its dependencies with FetchContent_MakeAvailable, which requires "
+                "CMake >= 3.14, found ${CMAKE_VERSION}. Update CMake or build without the GUI."
+        )
+    endif()
+    include(FetchContent)
+
     ###############################################################################
     ### GLFW
     ###############################################################################
@@ -24,14 +34,6 @@ if(SHAMROCK_BUILD_GUI)
         message(STATUS "GLFW : system (version ${glfw3_VERSION}, ${glfw3_DIR})")
     else()
         message(STATUS "GLFW : FetchContent (tag 3.4)")
-        if(CMAKE_VERSION VERSION_LESS 3.14)
-            message(
-                FATAL_ERROR
-                    "fetching GLFW requires CMake >= 3.14 (FetchContent_MakeAvailable), "
-                    "found ${CMAKE_VERSION}. Install GLFW >= 3.3 (e.g. libglfw3-dev) or update CMake."
-            )
-        endif()
-        include(FetchContent)
         set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
         set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
         set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -51,4 +53,17 @@ if(SHAMROCK_BUILD_GUI)
     # Prefer GLVND (CMP0072 NEW default), set explicitly as the root project uses CMake 3.10 policies
     set(OpenGL_GL_PREFERENCE GLVND)
     find_package(OpenGL REQUIRED)
+
+    ###############################################################################
+    ### Dear ImGui (docking)
+    ###############################################################################
+
+    # Docking build of the Dear ImGui version used by imgui-bundle 1.92.900.
+    FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        GIT_TAG v1.92.9-docking
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(imgui)
 endif()

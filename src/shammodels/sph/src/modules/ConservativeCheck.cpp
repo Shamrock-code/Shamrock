@@ -114,6 +114,10 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
     Tscal pmass  = gpart_mass;
     Tscal tmp_de = 0;
+
+    // only fetched when needed, get_constant_mu_0 warns if the unit system is not set
+    Tscal const mu_0 = (has_B_field) ? solver_config.get_constant_mu_0() : Tscal{};
+
     scheduler().for_each_patchdata_nonempty([&, pmass](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataField<Tvec> &field_v      = pdat.get_field<Tvec>(ivxyz);
         PatchDataField<Tscal> &field_du    = pdat.get_field<Tscal>(iduint);
@@ -121,8 +125,6 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
         PatchDataField<Tscal> &field_hpart = pdat.get_field<Tscal>(ihpart);
 
         sham::DeviceBuffer<Tscal> temp_de(pdat.get_obj_cnt(), dev_sched);
-
-        Tscal const mu_0 = solver_config.get_constant_mu_0();
 
         sham::kernel_call(
             q,

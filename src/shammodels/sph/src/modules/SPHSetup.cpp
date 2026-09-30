@@ -50,13 +50,13 @@
 template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
     SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp(
-        Tscal dr, std::pair<Tvec, Tvec> box, bool discontinuous) {
+        Tscal dr, std::pair<Tvec, Tvec> box, bool discontinuous, Tscal init_h_factor) {
     if (discontinuous) {
         return std::shared_ptr<ISPHSetupNode>(
-            new GeneratorLatticeHCP<Tvec, true>(context, dr, box));
+            new GeneratorLatticeHCP<Tvec, true>(context, dr, box, init_h_factor));
     } else {
         return std::shared_ptr<ISPHSetupNode>(
-            new GeneratorLatticeHCP<Tvec, false>(context, dr, box));
+            new GeneratorLatticeHCP<Tvec, false>(context, dr, box, init_h_factor));
     }
 }
 

@@ -45,9 +45,23 @@ namespace shammodels::sph::modules {
         ShamrockCtx &context;
         Tscal dr;
         shammath::AABB<Tvec> box;
+        Tscal init_h_factor;
 
         LatticeIter generator;
 
+        public:
+        /**
+         * @brief Default ratio between the initial smoothing length and dr
+         *
+         * Neighbours in the lattice are 2 dr apart, so each particle occupies a volume
+         * (2 dr)^3 / sqrt(2) = 4 sqrt(2) dr^3. With rho = m (hfact / h)^3 the equilibrium
+         * smoothing length is h = hfact (4 sqrt(2))^(1/3) dr = hfact 2^(5/6) dr.
+         * The default is 2^(5/6), which is the equilibrium value for hfact = 1, the smallest
+         * hfact of all the SPH kernels, so the initial guess never exceeds the equilibrium.
+         */
+        static constexpr Tscal default_init_h_factor = 1.7817974362806785; // 2^(5/6)
+
+        private:
         static auto init_gen(Tscal dr, std::pair<Tvec, Tvec> box) {
 
             auto [idxs_min, idxs_max] = Lattice::get_box_index_bounds(dr, box.first, box.second);
@@ -56,8 +70,13 @@ namespace shammodels::sph::modules {
         };
 
         public:
-        GeneratorLatticeHCP(ShamrockCtx &context, Tscal dr, std::pair<Tvec, Tvec> box)
-            : context(context), dr(dr), box(box), generator(init_gen(dr, box)) {}
+        GeneratorLatticeHCP(
+            ShamrockCtx &context,
+            Tscal dr,
+            std::pair<Tvec, Tvec> box,
+            Tscal init_h_factor = default_init_h_factor)
+            : context(context), dr(dr), box(box), init_h_factor(init_h_factor),
+              generator(init_gen(dr, box)) {}
 
         bool is_done() { return generator.is_done(); }
 
@@ -116,7 +135,7 @@ namespace shammodels::sph::modules {
                 {
                     PatchDataField<Tscal> &f
                         = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("hpart"));
-                    f.override(dr);
+                    f.override(init_h_factor * dr);
                 }
             }
             return tmp;

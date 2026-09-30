@@ -17,6 +17,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include <functional>
 #include <map>
 #include <stdexcept>
@@ -90,15 +91,19 @@ namespace shamalgs::impl_registry {
 
     void set_impl(std::string_view alg, std::string_view impl) {
         get_impl(alg).set(impl);
-        shamlog_info_ln("algs", "setting", alg, "implementation to impl :", impl);
+        if (shamcomm::world_rank() == 0) {
+            shamlog_info_ln("algs", "setting", alg, "implementation to impl :", impl);
+        }
     }
 
     void autoselect_impl(std::string_view alg, const sham::DeviceScheduler_ptr &sched) {
         IImplVariant &impl = get_impl(alg);
         shambase::get_check_ref(sched);
         impl.autoselect(sched);
-        shamlog_info_ln(
-            "algs", "defaulting", alg, "implementation to impl :", impl.get_current_config());
+        if (shamcomm::world_rank() == 0) {
+            shamlog_info_ln(
+                "algs", "defaulting", alg, "implementation to impl :", impl.get_current_config());
+        }
     }
 
 } // namespace shamalgs::impl_registry

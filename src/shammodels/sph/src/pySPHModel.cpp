@@ -582,13 +582,27 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     py::class_<TSPHSetup>(m, setup_name.c_str())
         .def(
             "make_generator_lattice_hcp",
-            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max, bool discontinuous) {
-                return self.make_generator_lattice_hcp(dr, {box_min, box_max}, discontinuous);
+            [](TSPHSetup &self,
+               Tscal dr,
+               Tvec box_min,
+               Tvec box_max,
+               bool discontinuous,
+               Tscal init_h_factor) {
+                return self.make_generator_lattice_hcp(
+                    dr, {box_min, box_max}, discontinuous, init_h_factor);
             },
             py::arg("dr"),
             py::arg("box_min"),
             py::arg("box_max"),
-            py::arg("discontinuous") = true)
+            py::arg("discontinuous") = true,
+            py::arg("init_h_factor") = modules::GeneratorLatticeHCP<Tvec>::default_init_h_factor,
+            R"==(
+    Generate particles on a HCP lattice of parameter dr (neighbours are 2 dr apart)
+
+    The initial smoothing length is set to init_h_factor * dr. The default 2^(5/6)
+    is the equilibrium smoothing length for hfact = 1 (the smallest hfact of all
+    the SPH kernels), so the initial guess never exceeds the equilibrium value.
+)==")
         .def(
             "make_generator_lattice_cubic",
             [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {

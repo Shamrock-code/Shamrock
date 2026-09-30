@@ -74,7 +74,9 @@ for N_target_base in [32e6]:
     model.resize_simulation_box(bmin, bmax)
 
     setup = model.get_setup()
-    gen = setup.make_generator_lattice_hcp(dr, bmin, bmax, discontinuous=False)
+    gen = setup.make_generator_lattice_hcp(
+        dr, bmin, bmax, discontinuous=False, init_h_factor=2.1402
+    )
 
     # Kind of optimized for Aurora
     setup.apply_setup(

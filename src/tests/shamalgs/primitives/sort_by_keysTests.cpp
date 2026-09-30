@@ -7,6 +7,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -231,19 +232,18 @@ NEW_TEST(Unittest, "shamalgs/primitives/sort_by_keys", 1) {
         }
     };
 
-    if (!shamalgs::primitives::impl::is_impl_set_sort_by_keys()) {
-        shamalgs::primitives::impl::autoselect_impl_sort_by_keys(
-            shamsys::instance::get_compute_scheduler_ptr());
+    if (!shamalgs::impl_registry::is_impl_set("sort_by_keys")) {
+        shamalgs::impl_registry::autoselect_impl(
+            "sort_by_keys", shamsys::instance::get_compute_scheduler_ptr());
     }
-    auto current_impl = shamalgs::primitives::impl::get_current_impl_sort_by_keys();
+    auto current_impl = shamalgs::impl_registry::get_current_impl("sort_by_keys");
 
-    for (const std::string &impl :
-         shamalgs::primitives::impl::get_default_impl_list_sort_by_keys()) {
-        shamalgs::primitives::impl::set_impl_sort_by_keys(impl);
+    for (const std::string &impl : shamalgs::impl_registry::get_default_impl_list("sort_by_keys")) {
+        shamalgs::impl_registry::set_impl("sort_by_keys", impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_sort_by_keys(current_impl);
+    shamalgs::impl_registry::set_impl("sort_by_keys", current_impl);
 }

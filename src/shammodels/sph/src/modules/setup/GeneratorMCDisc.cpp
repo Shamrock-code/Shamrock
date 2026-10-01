@@ -16,10 +16,54 @@
  */
 
 #include "shambase/constants.hpp"
+#include "shambase/exception.hpp"
+#include "sham/format/format.hpp"
 #include "shamalgs/collective/indexing.hpp"
 #include "shamalgs/random.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
+
+template<class Tvec, template<class> class SPHKernel>
+auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::compute_fmax()
+    -> Tscal {
+    // f_func is not necessarily monotonic so the rejection sampling
+    // envelope has to be the max over the whole range, not f_func(r_out)
+
+    // dichotomic search of the max of f_func (assumed unimodal) on [r_in, r_out]
+    constexpr Tscal rel_tol = 1e-8;
+    constexpr u32 max_iter  = 200;
+
+    Tscal a = r_in;
+    Tscal b = r_out;
+
+    Tscal f_prev = sycl::fmax(f_func(a), f_func(b));
+    Tscal f_est  = f_prev;
+
+    for (u32 iter = 0; iter < max_iter; iter++) {
+        Tscal m     = (a + b) / 2;
+        Tscal delta = (b - a) * Tscal(1e-3);
+
+        Tscal f1 = f_func(m - delta);
+        Tscal f2 = f_func(m + delta);
+
+        // keep the half containing the max
+        if (f1 < f2) {
+            a = m - delta;
+        } else {
+            b = m + delta;
+        }
+
+        f_est = sycl::fmax(f1, f2);
+
+        if (sycl::fabs(f_est - f_prev) <= rel_tol * sycl::fabs(f_est)) {
+            break;
+        }
+        f_prev = f_est;
+    }
+
+    // the max may sit on the boundary if f_func is monotonic
+    return sycl::fmax(f_est, sycl::fmax(f_func(r_in), f_func(r_out)));
+}
 
 template<class Tvec, template<class> class SPHKernel>
 auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::next(u64 seed)
@@ -27,13 +71,23 @@ auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::n
 
     std::mt19937_64 eng_local(seed); // ensure that 1 part = 1 random draw
 
-    Tscal fmax = f_func(r_out);
-
     auto find_r = [&]() {
         while (true) {
             Tscal u2 = shamalgs::primitives::mock_value<Tscal>(eng_local, 0, fmax);
             Tscal r  = shamalgs::primitives::mock_value<Tscal>(eng_local, r_in, r_out);
-            if (u2 < f_func(r)) {
+            Tscal f  = f_func(r);
+            // fmax is only converged to a relative 1e-8, so allow for slight overshoots.
+            // A larger one means the max was missed (f_func not unimodal) and the sampled
+            // distribution would be silently biased
+            if (f > fmax * Tscal(1 + 1e-6)) {
+                throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
+                    "GeneratorMCDisc: r * sigma_profile(r) = {} at r = {} exceeds the "
+                    "rejection sampling bound fmax = {}",
+                    f,
+                    r,
+                    fmax));
+            }
+            if (u2 < f) {
                 return r;
             }
         }

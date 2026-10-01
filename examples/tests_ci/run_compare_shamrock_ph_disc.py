@@ -139,7 +139,7 @@ DISC_SETUP = """
              isetgas =           0    ! how to set gas density profile (0=total disc mass,1=mass within annulus,2=surface density normalisation,3=surface density at reference radius,4=minimum Toomre Q,5=minimum Toomre Q and Lstar)
           sigma_file =           F    ! reading gas profile from file sigma_grid.dat
            itapergas =           F    ! exponentially taper the outer disc profile
-          ismoothgas =           T    ! smooth inner disc
+          ismoothgas =           F    ! smooth inner disc
                iwarp =           F    ! warp disc
                 iecc =           F    ! eccentric disc
                 R_in =       1.000    ! inner radius
@@ -189,7 +189,11 @@ def run_shamrock_disc():
     ctx.pdata_layout_new()
     model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
 
-    alpha_AV = 0.0765404518492
+    # value computed by phantomsetup (disc.in) to match alphaSS = 0.005 for this disc.
+    # Phantom's inner disc smoothing (ismoothgas) is disabled in DISC_SETUP since
+    # sigma_profile is a pure power law, smoothing would multiply phantom's sigma by
+    # (1 - sqrt(R_in/R)) (and change this alpha_AV, 0.0765404518492 with smoothing)
+    alpha_AV = 0.0720465895826
     alpha_u = 1.0
     beta_AV = 2.0
     C_cour = 0.3

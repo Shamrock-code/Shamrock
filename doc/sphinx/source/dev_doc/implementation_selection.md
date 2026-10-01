@@ -105,8 +105,9 @@ Use `shamalgs::ImplVariantGlobal`, documented in detail in
 `std::visit`. Skeleton, following `scan_exclusive_sum_in_place.cpp` as a reference:
 
 ```cpp
-#include "shamalgs/ImplVariant.hpp"
 #include "shambase/overloaded.hpp"
+#include "shamalgs/ImplVariant.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 
 namespace shamalgs::primitives {
@@ -121,6 +122,9 @@ namespace shamalgs::primitives {
             static constexpr std::string_view variant_type_name = "alt_b";
         };
 
+        /// Registry name, shared by the registration and the dispatch site(s)
+        constexpr std::string_view my_algo_impl_name = "my_algo";
+
         /// The lambda picks the default implementation, it may inspect the device behind
         /// the scheduler or ignore it
         shamalgs::ImplVariantGlobal<AltA, AltB> my_algo_impl{
@@ -128,26 +132,15 @@ namespace shamalgs::primitives {
                 self.set(AltA{});
             }};
 
-        std::vector<std::string> get_default_impl_list_my_algo() {
-            return my_algo_impl.get_default_config_list();
-        }
-
-        std::string get_current_impl_my_algo() { return my_algo_impl.get_current_config(); }
-
-        bool is_impl_set_my_algo() { return my_algo_impl.is_set(); }
-
-        void set_impl_my_algo(const std::string &impl) { my_algo_impl.set(impl); }
-
-        /// Called lazily on first use if no implementation was selected yet
-        void autoselect_impl_my_algo(const sham::DeviceScheduler_ptr &dev_sched) {
-            my_algo_impl.autoselect(dev_sched);
-        }
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(my_algo_impl_name, my_algo_impl);
 
     } // namespace impl
 
     void my_algo(const sham::DeviceScheduler_ptr &dev_sched, ...) {
+        // Lazy default on first use, if no implementation was selected yet
         if (!impl::my_algo_impl.is_set()) {
-            impl::autoselect_impl_my_algo(dev_sched);
+            shamalgs::impl_registry::autoselect_impl(impl::my_algo_impl_name, dev_sched);
         }
 
         std::visit(
@@ -169,31 +162,49 @@ of the non-template `shamalgs::IImplVariant` interface, so code holding a select
 also check and fill it in. The lazy-default pattern above (check `is_set()`, autoselect right
 before dispatching) is what every algorithm currently does.
 
-`autoselect_impl_<algo>` always takes the `sham::DeviceScheduler_ptr` the algorithm runs on, and
-forwards it to the selector's `autoselect`. Most lambdas ignore it, because the default only
-depends on compile-time information (a `#ifdef` backend/platform check, e.g.
-`scan_exclusive_sum_in_place`'s). When the default depends on the device, the lambda looks at it.
-`compute_histogram` does this: a GPU device picks a different default than a CPU one.
+`SHAMALGS_REGISTER_IMPL` (`shamalgs/include/shamalgs/impl_registry.hpp`) registers the selector
+in `shamalgs::impl_registry` under its name, at static initialization. Put it at namespace scope
+in the `.cpp` file, right after the selector's definition: objects of one translation unit are
+initialized in definition order, so the selector is already constructed when it registers.
+Registering the same name twice throws. The selector must be a non-`inline` global defined in a
+single `.cpp` file (declare it `extern` in the header if a header-only dispatch needs it, as
+`compute_histogram.hpp` does), and `ImplVariantGlobal` is neither copyable nor movable since the
+registry stores its address. The registry then reads and changes the selection of every
+algorithm by name, purely through `IImplVariant`; it is also what the Python bindings and the
+unit tests use, so an algorithm needs no selection function of its own.
+
+Dispatch sites keep the direct `is_set()` / `get()` access on the typed global, which
+`std::visit` needs, but autoselect through `shamalgs::impl_registry::autoselect_impl` rather than
+calling `my_algo_impl.autoselect(...)` directly, so that every default selection goes through
+the registry (which also logs it). The registry lookup only happens on first use.
+
+`autoselect_impl` always takes the `sham::DeviceScheduler_ptr` the algorithm runs on, and
+forwards it to the selector's `autoselect` (it throws if the scheduler is null). Most lambdas
+ignore it, because the default only depends on compile-time information (a `#ifdef`
+backend/platform check, e.g. `scan_exclusive_sum_in_place`'s). When the default depends on the
+device, the lambda looks at it. `compute_histogram` does this: a GPU device picks a different
+default than a CPU one (`compute_histogram.cpp`).
 
 ```cpp
-inline shamalgs::ImplVariantGlobal<Reference, NaiveGpu, GpuTeamFetching, GpuOversubscribe>
-    compute_histogram_impl{[](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
+ComputeHistogramImpl compute_histogram_impl{
+    [](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
         if (dev_sched->ctx->device->prop.type == sham::DeviceType::GPU) {
             self.set(GpuOversubscribe{});
         } else {
             self.set(NaiveGpu{});
         }
     }};
+
+SHAMALGS_REGISTER_IMPL(compute_histogram_impl_name, compute_histogram_impl);
 ```
 
 The dispatching function passes its own scheduler (or `buf.get_dev_scheduler_ptr()` when it only
-gets buffers). The Python binding and unit tests supply the compute scheduler explicitly:
+gets buffers). The Python binding `shamrock.algs.autoselect_impl(alg)` and the unit tests supply
+the compute scheduler explicitly:
 
 ```cpp
-shamalgs_module.def("autoselect_impl_compute_histogram", []() {
-    shamalgs::primitives::impl::autoselect_impl_compute_histogram(
-        shamsys::instance::get_compute_scheduler_ptr());
-});
+shamalgs::impl_registry::autoselect_impl(
+    "compute_histogram", shamsys::instance::get_compute_scheduler_ptr());
 ```
 
 An alternative with tunable fields specializes `shamalgs::ImplVariantParams<Alt>` to control how
@@ -203,7 +214,7 @@ those fields serialize to/from the `"parameters"` JSON — see the doc comment a
 
 ### Exposing more than one default per alternative
 
-By default, `get_default_impl_list_<algo>()` lists exactly one instance per alternative type
+By default, `get_default_impl_list(alg)` lists exactly one instance per alternative type
 (the default-constructed one). An alternative with tunable fields can opt into listing several
 of its own instances instead — e.g. the same kernel at a few different group sizes — by adding a
 static `variant_custom_defaults()` method returning a `std::vector<Alt>`:
@@ -227,21 +238,25 @@ tells them apart in the resulting config strings, so any code keying results off
 `json.loads(impl)["implementation"]` alone (see the benchmark script note below) needs to fold
 `"parameters"` into the key too, or entries collide.
 
-Once the selector and dispatch are in place, wire it up end to end:
+Once the selector, its registration and the dispatch are in place, wire it up end to end:
 
-1. Header: declare `get_default_impl_list_<algo>`, `get_current_impl_<algo>`,
-   `set_impl_<algo>`, `is_impl_set_<algo>` and
-   `autoselect_impl_<algo>(const sham::DeviceScheduler_ptr &)` in the algorithm's `impl`
-   namespace.
-2. Python bindings (`shampylib/src/pyShamalgs.cpp` or `pyShamtree.cpp`): expose all the
-   user-facing functions declared in the header under the relevant submodule.
-3. Unit test: loop over `get_default_impl_list_<algo>()`, calling `set_impl_<algo>` before each
-   run, then restore the implementation that was active before the loop.
-4. Benchmark script (`examples/benchmarks/`, if one exists for the algorithm): same loop,
-   extracting the implementation's display name with `json.loads(impl)["implementation"]`; call
-   `autoselect_impl_<algo>()` first when `is_impl_set_<algo>()` is `False`.
+1. Header: nothing to declare for implementation selection. The selector, its name constant and
+   its registration all live in the `.cpp` file (only a header-only dispatch, like
+   `compute_histogram`'s, needs the selector declared `extern` and the name constant in the
+   header).
+2. Python bindings: nothing to add. `shamrock.algs.get_registered_algs()` lists the new name, and
+   the name-keyed functions of `shamrock.algs` already cover it.
+3. Unit test: autoselect if `shamalgs::impl_registry::is_impl_set("<algo>")` is `false`, save
+   `get_current_impl("<algo>")`, loop over `get_default_impl_list("<algo>")` calling
+   `set_impl("<algo>", impl)` before each run, then restore the saved implementation.
+4. Benchmark script (`examples/benchmarks/`, if one exists for the algorithm): same loop through
+   `shamrock.algs`, extracting the implementation's display name with
+   `json.loads(impl)["implementation"]`; call `shamrock.algs.autoselect_impl("<algo>")` first
+   when `shamrock.algs.is_impl_set("<algo>")` is `False`.
 
 ## Related files
 
 - `shamalgs/include/shamalgs/ImplVariant.hpp` — authoritative reference for
   `ImplVariantGlobal`'s API.
+- `shamalgs/include/shamalgs/impl_registry.hpp` — the name-keyed registry and
+  `SHAMALGS_REGISTER_IMPL`.

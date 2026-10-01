@@ -17,7 +17,6 @@
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambase/StlContainerConversion.hpp"
 #include "shambase/exception.hpp"
-#include "shambase/logs/loglevels.hpp"
 #include "shambase/overloaded.hpp"
 #include "fmt/std.h"
 #include "shamalgs/ImplVariant.hpp"
@@ -96,32 +95,6 @@ namespace shamalgs::primitives {
 
         // Must come after the global it registers: same TU, so it is initialized after it
         SHAMALGS_REGISTER_IMPL(reduction_impl_name, reduction_impl);
-
-        /// Get list of available reduction implementations, as config json strings
-        std::vector<std::string> get_default_impl_list_reduction() {
-            return reduction_impl.get_default_config_list();
-        }
-
-        /// Get the current implementation for reduction, as a config json string
-        std::string get_current_impl_reduction() { return reduction_impl.get_current_config(); }
-
-        /// Check if an implementation has been selected for reduction
-        bool is_impl_set_reduction() { return reduction_impl.is_set(); }
-
-        /// Set the implementation for reduction, from a config json string
-        void set_impl_reduction(const std::string &impl) {
-            shamlog_info_ln("algs", "setting reduction implementation to impl :", impl);
-            reduction_impl.set(impl);
-        }
-
-        /// Select the default implementation for reduction
-        void autoselect_impl_reduction(const sham::DeviceScheduler_ptr &dev_sched) {
-            reduction_impl.autoselect(dev_sched);
-            shamlog_info_ln(
-                "algs",
-                "defaulting reduction implementation to impl :",
-                get_current_impl_reduction());
-        }
 
     } // namespace impl
 

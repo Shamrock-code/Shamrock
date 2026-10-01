@@ -25,7 +25,6 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/kernel_call.hpp"
-#include "shamcomm/logs.hpp"
 #include <shambackends/sycl.hpp>
 #include <optional>
 #include <stdexcept>
@@ -63,34 +62,6 @@ namespace shamalgs::primitives {
 
         /// Registry name, shared by its registration and the dispatch site(s)
         constexpr std::string_view compute_histogram_impl_name = "compute_histogram";
-
-        /// Get list of available compute_histogram implementations
-        inline std::vector<std::string> get_default_impl_list_compute_histogram() {
-            return compute_histogram_impl.get_default_config_list();
-        }
-
-        /// Get the current implementation for compute_histogram
-        inline std::string get_current_impl_compute_histogram() {
-            return compute_histogram_impl.get_current_config();
-        }
-
-        /// Check if an implementation has been selected for compute_histogram
-        inline bool is_impl_set_compute_histogram() { return compute_histogram_impl.is_set(); }
-
-        /// Set the implementation for compute_histogram
-        inline void set_impl_compute_histogram(const std::string &impl) {
-            shamlog_info_ln("algs", "setting compute_histogram implementation to impl :", impl);
-            compute_histogram_impl.set(impl);
-        }
-
-        /// Select the default implementation for compute_histogram
-        inline void autoselect_impl_compute_histogram(const sham::DeviceScheduler_ptr &dev_sched) {
-            compute_histogram_impl.autoselect(dev_sched);
-            shamlog_info_ln(
-                "algs",
-                "defaulting compute_histogram implementation to impl :",
-                get_current_impl_compute_histogram());
-        }
 
         template<class T, class Tbins, class... Targs, class Tfunctor>
         inline void compute_histogram_reference(

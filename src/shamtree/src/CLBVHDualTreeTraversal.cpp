@@ -53,34 +53,6 @@ namespace shamtree {
         // Must come after the global it registers: same TU, so it is initialized after it
         SHAMALGS_REGISTER_IMPL(dtt_impl_name, dtt_impl);
 
-        /// Get list of available dual tree traversal implementations
-        std::vector<std::string> get_default_impl_list_clbvh_dual_tree_traversal() {
-            return dtt_impl.get_default_config_list();
-        }
-
-        /// Get the current implementation for dual tree traversal
-        std::string get_current_impl_clbvh_dual_tree_traversal_impl() {
-            return dtt_impl.get_current_config();
-        }
-
-        /// Check if an implementation has been selected for dual tree traversal
-        bool is_impl_set_clbvh_dual_tree_traversal() { return dtt_impl.is_set(); }
-
-        /// Set the implementation for dual tree traversal
-        void set_impl_clbvh_dual_tree_traversal(const std::string &impl) {
-            shamlog_info_ln("tree", "setting dtt implementation to impl :", impl);
-            dtt_impl.set(impl);
-        }
-
-        /// Select the default implementation for dual tree traversal
-        void autoselect_impl_clbvh_dual_tree_traversal(const sham::DeviceScheduler_ptr &dev_sched) {
-            dtt_impl.autoselect(dev_sched);
-            shamlog_info_ln(
-                "tree",
-                "defaulting dtt implementation to impl :",
-                get_current_impl_clbvh_dual_tree_traversal_impl());
-        }
-
     } // namespace impl
 
     template<class Tmorton, class Tvec, u32 dim>

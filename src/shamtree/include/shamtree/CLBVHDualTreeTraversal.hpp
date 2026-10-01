@@ -21,8 +21,6 @@
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/vec.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
-#include <string>
-#include <vector>
 
 namespace shamtree {
 
@@ -61,25 +59,5 @@ namespace shamtree {
         shambase::VecComponent<Tvec> theta_crit,
         bool ordered_result      = false,
         bool allow_leaf_lowering = false);
-
-    /// namespace to control implementation behavior
-    namespace impl {
-
-        /// Get list of available dual tree traversal implementations, as config json strings
-        std::vector<std::string> get_default_impl_list_clbvh_dual_tree_traversal();
-
-        /// Get the current implementation for dual tree traversal, as a config json string
-        std::string get_current_impl_clbvh_dual_tree_traversal_impl();
-
-        /// Check if an implementation has been selected for dual tree traversal
-        bool is_impl_set_clbvh_dual_tree_traversal();
-
-        /// Set the implementation for dual tree traversal, from a config json string
-        void set_impl_clbvh_dual_tree_traversal(const std::string &impl);
-
-        /// Select the default implementation for dual tree traversal
-        void autoselect_impl_clbvh_dual_tree_traversal(const sham::DeviceScheduler_ptr &dev_sched);
-
-    } // namespace impl
 
 } // namespace shamtree

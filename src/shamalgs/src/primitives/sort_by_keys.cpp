@@ -22,7 +22,6 @@
 #include "shamalgs/primitives/device/details/sort_by_keys_lsd_radix_sort_basic.hpp"
 #include "shamalgs/primitives/device/details/sort_by_keys_std_sort.hpp"
 #include "shamalgs/primitives/sort_by_keys.hpp"
-#include "shamcomm/logs.hpp"
 #include <type_traits>
 #include <algorithm>
 #include <vector>
@@ -93,34 +92,6 @@ namespace shamalgs::primitives {
 
         // Must come after the global it registers: same TU, so it is initialized after it
         SHAMALGS_REGISTER_IMPL(sort_by_keys_impl_name, sort_by_keys_impl);
-
-        /// Get list of available sort by keys implementations
-        std::vector<std::string> get_default_impl_list_sort_by_keys() {
-            return sort_by_keys_impl.get_default_config_list();
-        }
-
-        /// Get the current implementation for sort by keys
-        std::string get_current_impl_sort_by_keys() {
-            return sort_by_keys_impl.get_current_config();
-        }
-
-        /// Check if an implementation has been selected for sort by keys
-        bool is_impl_set_sort_by_keys() { return sort_by_keys_impl.is_set(); }
-
-        /// Set the implementation for sort by keys
-        void set_impl_sort_by_keys(const std::string &impl) {
-            shamlog_info_ln("algs", "setting sort by keys implementation to impl :", impl);
-            sort_by_keys_impl.set(impl);
-        }
-
-        /// Select the default implementation for sort by keys
-        void autoselect_impl_sort_by_keys(const sham::DeviceScheduler_ptr &dev_sched) {
-            sort_by_keys_impl.autoselect(dev_sched);
-            shamlog_info_ln(
-                "algs",
-                "defaulting sort by keys implementation to impl :",
-                get_current_impl_sort_by_keys());
-        }
 
     } // namespace impl
 

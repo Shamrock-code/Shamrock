@@ -234,17 +234,20 @@ namespace shamalgs {
      * + 3 free functions" implementation-selection pattern.
      *
      * Holds the currently selected implementation as a std::variant<Alts...> and exposes it
-     * through a single config json string ABI, so that an algorithm's
-     * get_default_impl_list_X / get_current_impl_X / set_impl_X free functions become
-     * one-liners:
+     * through the type-erased IImplVariant interface:
      *   - get_current_config() / get_default_config_list() / set(string_view) : a single
      *     `{"implementation": ..., "parameters": ...}` json string ABI.
+     *   - is_set() / autoselect(sched) : the unset state and the default selection.
+     *
+     * Each instance is registered by name in shamalgs::impl_registry (see impl_registry.hpp),
+     * which exposes every algorithm's selection through that interface, so no per-algorithm free
+     * function or Python binding is needed.
      *
      * No implementation is selected at construction: is_set() reports whether one has been
      * picked yet. The rule picking the algorithm's default is however given at construction, as
      * a callable of signature `void(const sham::DeviceScheduler_ptr &, ImplVariantGlobal &)`
      * that calls set() on the selector it is handed. autoselect(sched) runs it, so that the
-     * default may depend on the device behind `sched` (see e.g. compute_histogram.hpp), or
+     * default may depend on the device behind `sched` (see e.g. compute_histogram.cpp), or
      * ignore it when it is a compile-time choice:
      *
      * @code{.cpp}
@@ -254,8 +257,9 @@ namespace shamalgs {
      *     }};
      * @endcode
      *
-     * Call sites typically check is_set() and call autoselect() right before dispatching (see
-     * e.g. segmented_sort_in_place.cpp). get() assumes is_set(); get_current_config() is the one
+     * Call sites typically check is_set() and, when unset, call
+     * shamalgs::impl_registry::autoselect_impl right before dispatching (see e.g.
+     * segmented_sort_in_place.cpp). get() assumes is_set(); get_current_config() is the one
      * exception and safely returns a json null instead of dereferencing an unset selection.
      *
      * Instances are registered by name in shamalgs::impl_registry (which stores their address),

@@ -22,9 +22,6 @@
  */
 
 #include "shambackends/DeviceBuffer.hpp"
-#include "shambackends/DeviceScheduler.hpp"
-#include <string>
-#include <vector>
 
 namespace shamalgs::primitives {
 
@@ -49,25 +46,5 @@ namespace shamalgs::primitives {
     template<class Tkey, class Tval>
     void sort_by_keys(
         sham::DeviceBuffer<Tkey> &buf_key, sham::DeviceBuffer<Tval> &buf_values, u32 len);
-
-    /// namespace to control implementation behavior
-    namespace impl {
-
-        /// Get list of available sort by keys implementations, as config json strings
-        std::vector<std::string> get_default_impl_list_sort_by_keys();
-
-        /// Get the current implementation for sort by keys, as a config json string
-        std::string get_current_impl_sort_by_keys();
-
-        /// Check if an implementation has been selected for sort by keys
-        bool is_impl_set_sort_by_keys();
-
-        /// Set the implementation for sort by keys, from a config json string
-        void set_impl_sort_by_keys(const std::string &impl);
-
-        /// Select the default implementation for sort by keys
-        void autoselect_impl_sort_by_keys(const sham::DeviceScheduler_ptr &dev_sched);
-
-    } // namespace impl
 
 } // namespace shamalgs::primitives

@@ -217,32 +217,6 @@ namespace shamalgs::primitives {
         // Must come after the global it registers: same TU, so it is initialized after it
         SHAMALGS_REGISTER_IMPL(is_all_true_impl_name, is_all_true_impl);
 
-        /// Get list of available is_all_true implementations, as config json strings
-        std::vector<std::string> get_default_impl_list_is_all_true() {
-            return is_all_true_impl.get_default_config_list();
-        }
-
-        /// Get the current implementation for is_all_true, as a config json string
-        std::string get_current_impl_is_all_true() { return is_all_true_impl.get_current_config(); }
-
-        /// Check if an implementation has been selected for is_all_true
-        bool is_impl_set_is_all_true() { return is_all_true_impl.is_set(); }
-
-        /// Set the implementation for is_all_true, from a config json string
-        void set_impl_is_all_true(const std::string &impl) {
-            shamlog_info_ln("algs", "setting is_all_true implementation to impl :", impl);
-            is_all_true_impl.set(impl);
-        }
-
-        /// Select the default implementation for is_all_true
-        void autoselect_impl_is_all_true(const sham::DeviceScheduler_ptr &dev_sched) {
-            is_all_true_impl.autoselect(dev_sched);
-            shamlog_info_ln(
-                "algs",
-                "defaulting is_all_true implementation to impl :",
-                get_current_impl_is_all_true());
-        }
-
     } // namespace impl
 
     template<class T>

@@ -25,9 +25,7 @@
  */
 
 #include "shambackends/DeviceBuffer.hpp"
-#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
-#include <string>
 #include <vector>
 
 namespace shamalgs::primitives {
@@ -101,25 +99,5 @@ namespace shamalgs::primitives {
      */
     template<class T>
     bool is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt);
-
-    /// namespace to control implementation behavior
-    namespace impl {
-
-        /// Get list of available is_all_true implementations, as config json strings
-        std::vector<std::string> get_default_impl_list_is_all_true();
-
-        /// Get the current implementation for is_all_true, as a config json string
-        std::string get_current_impl_is_all_true();
-
-        /// Check if an implementation has been selected for is_all_true
-        bool is_impl_set_is_all_true();
-
-        /// Set the implementation for is_all_true, from a config json string
-        void set_impl_is_all_true(const std::string &impl);
-
-        /// Select the default implementation for is_all_true
-        void autoselect_impl_is_all_true(const sham::DeviceScheduler_ptr &dev_sched);
-
-    } // namespace impl
 
 } // namespace shamalgs::primitives

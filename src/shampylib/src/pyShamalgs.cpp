@@ -205,27 +205,6 @@ ON_PYTHON_INIT {
             timer.stop();
             return timer.elapsed_sec();
         });
-
-        shamalgs_module.def("set_impl_is_all_true", [](const std::string &impl) {
-            shamalgs::primitives::impl::set_impl_is_all_true(impl);
-        });
-
-        shamalgs_module.def("get_current_impl_is_all_true", []() {
-            return shamalgs::primitives::impl::get_current_impl_is_all_true();
-        });
-
-        shamalgs_module.def("get_default_impl_list_is_all_true", []() {
-            return shamalgs::primitives::impl::get_default_impl_list_is_all_true();
-        });
-
-        shamalgs_module.def("is_impl_set_is_all_true", []() {
-            return shamalgs::primitives::impl::is_impl_set_is_all_true();
-        });
-
-        shamalgs_module.def("autoselect_impl_is_all_true", []() {
-            shamalgs::primitives::impl::autoselect_impl_is_all_true(
-                shamsys::instance::get_compute_scheduler_ptr());
-        });
     }
 
     { // reductions
@@ -253,27 +232,6 @@ ON_PYTHON_INIT {
             timer.stop();
             return timer.elapsed_sec();
         });
-
-        shamalgs_module.def("set_impl_reduction", [](const std::string &impl) {
-            shamalgs::primitives::impl::set_impl_reduction(impl);
-        });
-
-        shamalgs_module.def("get_current_impl_reduction", []() {
-            return shamalgs::primitives::impl::get_current_impl_reduction();
-        });
-
-        shamalgs_module.def("get_default_impl_list_reduction", []() {
-            return shamalgs::primitives::impl::get_default_impl_list_reduction();
-        });
-
-        shamalgs_module.def("is_impl_set_reduction", []() {
-            return shamalgs::primitives::impl::is_impl_set_reduction();
-        });
-
-        shamalgs_module.def("autoselect_impl_reduction", []() {
-            shamalgs::primitives::impl::autoselect_impl_reduction(
-                shamsys::instance::get_compute_scheduler_ptr());
-        });
     }
 
     { // scan_exclusive_sum_in_place
@@ -293,27 +251,6 @@ ON_PYTHON_INIT {
                 timer.stop();
                 return timer.elapsed_sec();
             });
-
-        shamalgs_module.def("set_impl_scan_exclusive_sum_in_place", [](const std::string &impl) {
-            shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(impl);
-        });
-
-        shamalgs_module.def("get_current_impl_scan_exclusive_sum_in_place", []() {
-            return shamalgs::primitives::impl::get_current_impl_scan_exclusive_sum_in_place();
-        });
-
-        shamalgs_module.def("get_default_impl_list_scan_exclusive_sum_in_place", []() {
-            return shamalgs::primitives::impl::get_default_impl_list_scan_exclusive_sum_in_place();
-        });
-
-        shamalgs_module.def("is_impl_set_scan_exclusive_sum_in_place", []() {
-            return shamalgs::primitives::impl::is_impl_set_scan_exclusive_sum_in_place();
-        });
-
-        shamalgs_module.def("autoselect_impl_scan_exclusive_sum_in_place", []() {
-            shamalgs::primitives::impl::autoselect_impl_scan_exclusive_sum_in_place(
-                shamsys::instance::get_compute_scheduler_ptr());
-        });
     }
 
     { // segmented_sort_in_place
@@ -342,18 +279,6 @@ ON_PYTHON_INIT {
                 timer.stop();
                 return timer.elapsed_sec();
             });
-
-        shamalgs_module.def("set_impl_segmented_sort_in_place", [](const std::string &impl) {
-            shamalgs::primitives::impl::set_impl_segmented_sort_in_place(impl);
-        });
-
-        shamalgs_module.def("get_current_impl_segmented_sort_in_place", []() {
-            return shamalgs::primitives::impl::get_current_impl_segmented_sort_in_place();
-        });
-
-        shamalgs_module.def("get_default_impl_list_segmented_sort_in_place", []() {
-            return shamalgs::primitives::impl::get_default_impl_list_segmented_sort_in_place();
-        });
     }
 
     { // sort_by_keys
@@ -382,27 +307,6 @@ ON_PYTHON_INIT {
                 timer.stop();
                 return timer.elapsed_sec();
             });
-
-        shamalgs_module.def("set_impl_sort_by_keys", [](const std::string &impl) {
-            shamalgs::primitives::impl::set_impl_sort_by_keys(impl);
-        });
-
-        shamalgs_module.def("get_current_impl_sort_by_keys", []() {
-            return shamalgs::primitives::impl::get_current_impl_sort_by_keys();
-        });
-
-        shamalgs_module.def("get_default_impl_list_sort_by_keys", []() {
-            return shamalgs::primitives::impl::get_default_impl_list_sort_by_keys();
-        });
-
-        shamalgs_module.def("is_impl_set_sort_by_keys", []() {
-            return shamalgs::primitives::impl::is_impl_set_sort_by_keys();
-        });
-
-        shamalgs_module.def("autoselect_impl_sort_by_keys", []() {
-            shamalgs::primitives::impl::autoselect_impl_sort_by_keys(
-                shamsys::instance::get_compute_scheduler_ptr());
-        });
     }
 
     { // sort_by_key_pow2_len
@@ -436,27 +340,6 @@ ON_PYTHON_INIT {
                 timer.stop();
                 return timer.elapsed_sec();
             });
-
-        shamalgs_module.def("set_impl_sort_by_key_pow2_len", [](const std::string &impl) {
-            shamalgs::primitives::impl::set_impl_sort_by_key_pow2_len(impl);
-        });
-
-        shamalgs_module.def("get_current_impl_sort_by_key_pow2_len", []() {
-            return shamalgs::primitives::impl::get_current_impl_sort_by_key_pow2_len();
-        });
-
-        shamalgs_module.def("get_default_impl_list_sort_by_key_pow2_len", []() {
-            return shamalgs::primitives::impl::get_default_impl_list_sort_by_key_pow2_len();
-        });
-
-        shamalgs_module.def("is_impl_set_sort_by_key_pow2_len", []() {
-            return shamalgs::primitives::impl::is_impl_set_sort_by_key_pow2_len();
-        });
-
-        shamalgs_module.def("autoselect_impl_sort_by_key_pow2_len", []() {
-            shamalgs::primitives::impl::autoselect_impl_sort_by_key_pow2_len(
-                shamsys::instance::get_compute_scheduler_ptr());
-        });
     }
 
     { // digit_histogram
@@ -526,30 +409,6 @@ ON_PYTHON_INIT {
             py::arg("buf_key"),
             py::arg("radix_bits"),
             py::arg("len"));
-    }
-
-    { // compute_histogram
-
-        shamalgs_module.def("set_impl_compute_histogram", [](const std::string &impl) {
-            shamalgs::primitives::impl::set_impl_compute_histogram(impl);
-        });
-
-        shamalgs_module.def("get_current_impl_compute_histogram", []() {
-            return shamalgs::primitives::impl::get_current_impl_compute_histogram();
-        });
-
-        shamalgs_module.def("get_default_impl_list_compute_histogram", []() {
-            return shamalgs::primitives::impl::get_default_impl_list_compute_histogram();
-        });
-
-        shamalgs_module.def("is_impl_set_compute_histogram", []() {
-            return shamalgs::primitives::impl::is_impl_set_compute_histogram();
-        });
-
-        shamalgs_module.def("autoselect_impl_compute_histogram", []() {
-            shamalgs::primitives::impl::autoselect_impl_compute_histogram(
-                shamsys::instance::get_compute_scheduler_ptr());
-        });
     }
 
     shamalgs_module.def(

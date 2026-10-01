@@ -176,38 +176,6 @@ namespace shamalgs::primitives {
         SHAMALGS_REGISTER_IMPL(
             scan_exclusive_sum_in_place_impl_name, scan_exclusive_sum_in_place_impl);
 
-        /// Get list of available scan_exclusive_sum_in_place implementations
-        std::vector<std::string> get_default_impl_list_scan_exclusive_sum_in_place() {
-            return scan_exclusive_sum_in_place_impl.get_default_config_list();
-        }
-
-        /// Get the current implementation for scan_exclusive_sum_in_place
-        std::string get_current_impl_scan_exclusive_sum_in_place() {
-            return scan_exclusive_sum_in_place_impl.get_current_config();
-        }
-
-        /// Check if an implementation has been selected for scan_exclusive_sum_in_place
-        bool is_impl_set_scan_exclusive_sum_in_place() {
-            return scan_exclusive_sum_in_place_impl.is_set();
-        }
-
-        /// Set the implementation for scan_exclusive_sum_in_place
-        void set_impl_scan_exclusive_sum_in_place(const std::string &impl) {
-            shamlog_info_ln(
-                "algs", "setting scan_exclusive_sum_in_place implementation to impl :", impl);
-            scan_exclusive_sum_in_place_impl.set(impl);
-        }
-
-        /// Select the default implementation for scan_exclusive_sum_in_place
-        void autoselect_impl_scan_exclusive_sum_in_place(
-            const sham::DeviceScheduler_ptr &dev_sched) {
-            scan_exclusive_sum_in_place_impl.autoselect(dev_sched);
-            shamlog_info_ln(
-                "algs",
-                "defaulting scan_exclusive_sum_in_place implementation to impl :",
-                get_current_impl_scan_exclusive_sum_in_place());
-        }
-
     } // namespace impl
 
     template<class T>

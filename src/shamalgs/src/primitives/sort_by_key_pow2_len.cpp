@@ -23,7 +23,6 @@
 #include "shamalgs/primitives/device/details/sort_by_keys_lsd_radix_sort_basic.hpp"
 #include "shamalgs/primitives/device/details/sort_by_keys_std_sort.hpp"
 #include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
-#include "shamcomm/logs.hpp"
 
 namespace shamalgs::primitives::impl {
 
@@ -116,35 +115,6 @@ namespace shamalgs::primitives {
 
         // Must come after the global it registers: same TU, so it is initialized after it
         SHAMALGS_REGISTER_IMPL(sort_by_key_pow2_len_impl_name, sort_by_key_pow2_len_impl);
-
-        /// Get list of available sort by key (pow2 len) implementations
-        std::vector<std::string> get_default_impl_list_sort_by_key_pow2_len() {
-            return sort_by_key_pow2_len_impl.get_default_config_list();
-        }
-
-        /// Get the current implementation for sort by key (pow2 len)
-        std::string get_current_impl_sort_by_key_pow2_len() {
-            return sort_by_key_pow2_len_impl.get_current_config();
-        }
-
-        /// Check if an implementation has been selected for sort by key (pow2 len)
-        bool is_impl_set_sort_by_key_pow2_len() { return sort_by_key_pow2_len_impl.is_set(); }
-
-        /// Set the implementation for sort by key (pow2 len)
-        void set_impl_sort_by_key_pow2_len(const std::string &impl) {
-            shamlog_info_ln(
-                "algs", "setting sort by key (pow2 len) implementation to impl :", impl);
-            sort_by_key_pow2_len_impl.set(impl);
-        }
-
-        /// Select the default implementation for sort by key (pow2 len)
-        void autoselect_impl_sort_by_key_pow2_len(const sham::DeviceScheduler_ptr &dev_sched) {
-            sort_by_key_pow2_len_impl.autoselect(dev_sched);
-            shamlog_info_ln(
-                "algs",
-                "defaulting sort by key (pow2 len) implementation to impl :",
-                get_current_impl_sort_by_key_pow2_len());
-        }
 
         /// Dispatch to the updated USM bitonic sort kernel, picking its MaxStencilSize
         /// non-type template parameter at runtime from the enum value stored in BitonicSort

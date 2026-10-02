@@ -14,143 +14,6 @@
  *
  */
 
-/*
-
-Test code for godbolt
-
-
-#include <iostream>
-#include <vector>
-
-namespace sycl{
-    template<class T>
-    struct vec{
-        T _x,_y,_z;
-
-        inline T & x(){
-            return _x;
-        }
-
-        inline T & y(){
-            return _y;
-        }
-        inline T & z(){
-            return _z;
-        }
-    };
-}
-
-
-using i32 = int;
-using i32_3 = sycl::vec<i32>;
-
-template<class T>
-struct ShiftInfo{
-    sycl::vec<T> shift;
-    sycl::vec<T> shift_speed;
-};
-
-template<class T>
-struct ShearPeriodicInfo{
-    i32_3 shear_base;
-    i32_3 shear_dir;
-    T shear_value;
-    T shear_speed;
-};
-
-template<class T>
-inline ShiftInfo<T> compute_shift_infos(
-    i32_3 ioff, ShearPeriodicInfo<T> shear, sycl::vec<T> bsize
-    ){
-
-    i32 dx = ioff.x()*shear.shear_base.x();
-    i32 dy = ioff.y()*shear.shear_base.y();
-    i32 dz = ioff.z()*shear.shear_base.z();
-
-    i32 d = dx + dy + dz;
-
-    sycl::vec<T> shift = {
-        (d*shear.shear_dir.x())*shear.shear_value + bsize.x()*ioff.x(),
-        (d*shear.shear_dir.y())*shear.shear_value + bsize.y()*ioff.y() ,
-        (d*shear.shear_dir.z())*shear.shear_value + bsize.z()*ioff.z()
-    };
-    sycl::vec<T> shift_speed = {
-        (d*shear.shear_dir.x())*shear.shear_speed,
-        (d*shear.shear_dir.y())*shear.shear_speed,
-        (d*shear.shear_dir.z())*shear.shear_speed
-    };
-
-    return {shift,shift_speed};
-}
-
-template<class T>
-inline void for_each_patch_shift(ShearPeriodicInfo<T> shearinfo, sycl::vec<T> bsize){
-
-    i32_3 loop_offset = {0,0,0};
-
-    std::vector<i32_3> list_possible;
-
-
-    i32 repetition_x = 1;
-    i32 repetition_y = 1;
-    i32 repetition_z = 1;
-
-
-
-    for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
-        for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
-            for (i32 zoff = -repetition_z; zoff <= repetition_z; zoff++) {
-
-
-                i32 dx = xoff*shearinfo.shear_base.x();
-                i32 dy = yoff*shearinfo.shear_base.y();
-                i32 dz = zoff*shearinfo.shear_base.z();
-
-                i32 d = dx + dy + dz;
-
-                i32 df = -int(d * shearinfo.shear_value);
-
-                i32_3 off_d = {
-                    shearinfo.shear_dir.x()*df,
-                    shearinfo.shear_dir.y()*df,
-                    shearinfo.shear_dir.z()*df
-                };
-
-                list_possible.push_back({xoff+off_d.x(),yoff+off_d.y(),zoff+off_d.z()});
-            }
-        }
-    }
-
-    for(i32_3 off : list_possible){
-
-        auto shift = compute_shift_infos(off,shearinfo,bsize);
-
-        std::cout <<
-            off.x() << " " << off.y() << " " << off.z() << " | " <<
-            shift.shift.x() << " " << shift.shift.y() << " " << shift.shift.z() << " "<<std::endl;
-    }
-
-
-
-}
-
-
-int main(){
-
-    ShearPeriodicInfo<float> shear{
-        {1,0,0},
-        {0,0,1},
-        13.5,
-        1
-    };
-
-    for_each_patch_shift(shear, {1,1,1});
-
-}
-
-
-*/
-
 #include "shambase/exception.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/collective/gather_str.hpp"
@@ -158,105 +21,16 @@ int main(){
 #include "shamcomm/worldInfo.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/modules/BuildGhostInterfaceIdTable.hpp"
+#include "shammodels/sph/modules/FindGhostInterfaces.hpp"
 #include "shamrock/solvergraph/DDSharedScalar.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/PatchtreeFieldEdge.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SerialPatchTreeEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include <functional>
 #include <vector>
-
-template<class T>
-struct ShiftInfo {
-    sycl::vec<T, 3> shift;
-    sycl::vec<T, 3> shift_speed;
-};
-
-template<class T>
-using ShearPeriodicInfo =
-    typename shammodels::sph::BasicSPHGhostHandlerConfig<sycl::vec<T, 3>>::ShearingPeriodic;
-
-template<class T>
-inline ShiftInfo<T> compute_shift_infos(
-    i32_3 ioff, ShearPeriodicInfo<T> shear, sycl::vec<T, 3> bsize) {
-
-    i32 dx = ioff.x() * shear.shear_base.x();
-    i32 dy = ioff.y() * shear.shear_base.y();
-    i32 dz = ioff.z() * shear.shear_base.z();
-
-    i32 d = dx + dy + dz;
-
-    sycl::vec<T, 3> shift
-        = {(d * shear.shear_dir.x()) * shear.shear_value + bsize.x() * ioff.x(),
-           (d * shear.shear_dir.y()) * shear.shear_value + bsize.y() * ioff.y(),
-           (d * shear.shear_dir.z()) * shear.shear_value + bsize.z() * ioff.z()};
-    sycl::vec<T, 3> shift_speed
-        = {(d * shear.shear_dir.x()) * shear.shear_speed,
-           (d * shear.shear_dir.y()) * shear.shear_speed,
-           (d * shear.shear_dir.z()) * shear.shear_speed};
-
-    return {shift, shift_speed};
-}
-
-template<class T>
-inline void for_each_patch_shift(
-    ShearPeriodicInfo<T> shearinfo,
-    sycl::vec<T, 3> bsize,
-    std::function<void(i32_3, ShiftInfo<T>)> funct) {
-
-    i32_3 loop_offset = {0, 0, 0};
-
-    std::vector<i32_3> list_possible;
-
-    // logger::raw_ln("testing :",shearinfo.shear_value,shearinfo.shear_dir, shearinfo.shear_base);
-
-    // a bit of dirty fix doesn't hurt
-    // this should be done in a better way a some point
-    i32 repetition_x = 1 + sham::abs(shearinfo.shear_dir.x());
-    i32 repetition_y = 1 + sham::abs(shearinfo.shear_dir.y());
-    i32 repetition_z = 1 + sham::abs(shearinfo.shear_dir.z());
-
-    T sz = bsize.x() * shearinfo.shear_dir.x() + bsize.y() * shearinfo.shear_dir.y()
-           + bsize.z() * shearinfo.shear_dir.z();
-
-    for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
-        for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
-            for (i32 zoff = -repetition_z; zoff <= repetition_z; zoff++) {
-
-                i32 dx = xoff * shearinfo.shear_base.x();
-                i32 dy = yoff * shearinfo.shear_base.y();
-                i32 dz = zoff * shearinfo.shear_base.z();
-
-                i32 d = dx + dy + dz;
-
-                i32 df = -int(d * shearinfo.shear_value / sz);
-
-                i32_3 off_d
-                    = {shearinfo.shear_dir.x() * df,
-                       shearinfo.shear_dir.y() * df,
-                       shearinfo.shear_dir.z() * df};
-
-                // on redhat based systems stl vector freaks out
-                // because iterator to back does *(end() - 1)
-                // the issue is that the compiler gets confused
-                // by the sycl::vec defining the - operator
-                // creating the ambiguity and ...
-                // ultimatly the compiler shitting itself
-                list_possible.resize(list_possible.size() + 1);
-                list_possible[list_possible.size() - 1]
-                    = i32_3{xoff + off_d.x(), yoff + off_d.y(), zoff + off_d.z()};
-            }
-        }
-    }
-
-    // logger::raw_ln("trying", list_possible.size(), "patches ghosts");
-
-    for (i32_3 off : list_possible) {
-
-        auto shift = compute_shift_infos(off, shearinfo, bsize);
-
-        // logger::raw_ln("check :",off,shift.shift, shift.shift_speed);
-
-        funct(off, shift);
-    }
-}
 
 using namespace shammodels::sph;
 
@@ -269,246 +43,82 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
-    using namespace shammath;
+    using namespace shamrock::solvergraph;
 
-    i32 repetition_x = 1;
-    i32 repetition_y = 1;
-    i32 repetition_z = 1;
-
-    shamrock::patch::SimulationBoxInfo &sim_box = sched.get_sim_box();
-
+    // ----------------------------------------------------------------------------------------
+    // temporary wrapper to slowly migrate to the new solvergraph
+    SimulationBoxInfo &sim_box                  = sched.get_sim_box();
     PatchCoordTransform<vec> patch_coord_transf = sim_box.get_patch_transform<vec>();
-    vec bsize                                   = sim_box.get_bounding_box_size<vec>();
+    auto [bmin, bmax]                           = sim_box.get_bounding_box<vec>();
 
-    GeneratorMap interf_map;
+    auto sim_box_edge   = std::make_shared<ScalarEdge<shammath::AABB<vec>>>("", "");
+    sim_box_edge->value = shammath::AABB<vec>(bmin, bmax);
 
-    using CfgClass = sph::BasicSPHGhostHandlerConfig<vec>;
-    using BCConfig = typename CfgClass::Variant;
+    auto patch_tree_edge        = std::make_shared<SerialPatchTreeRefEdge<vec>>("", "");
+    patch_tree_edge->patch_tree = std::ref(sptree);
 
-    using BCFree             = typename CfgClass::Free;
+    // sycl buffers have reference semantics, this copy shares the storage of the tree field
+    auto interact_radius_tree = std::make_shared<PatchtreeFieldEdge<flt>>("", "");
+    interact_radius_tree->patchtree_field.internal_buf = std::make_unique<sycl::buffer<flt>>(
+        shambase::get_check_ref(int_range_max_tree.internal_buf));
+
+    // borrow the per patch field (O(1) move instead of a copy over all global patches), it is
+    // moved back once the node has been evaluated
+    auto interact_radius    = std::make_shared<ScalarsEdge<flt>>("", "");
+    interact_radius->values = std::move(int_range_max.field_all);
+
+    auto local_patch_boxes = std::make_shared<ScalarsEdge<shammath::CoordRange<vec>>>("", "");
+    sched.for_each_local_patch([&](const Patch &p) {
+        local_patch_boxes->values.add_obj(p.id_patch, patch_coord_transf.to_obj_coord(p));
+    });
+
+    auto interface_infos = std::make_shared<DDSharedScalar<InterfaceBuildInfos>>("", "");
+
+    using CfgClass           = sph::BasicSPHGhostHandlerConfig<vec>;
     using BCPeriodic         = typename CfgClass::Periodic;
     using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
 
-    shambase::Timer base_timer;
-    base_timer.start();
-
     if (BCPeriodic *cfg = std::get_if<BCPeriodic>(&ghost_config)) {
-        sycl::host_accessor acc_tf{
-            shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
-
-        for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
-            for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
-                for (i32 zoff = -repetition_z; zoff <= repetition_z; zoff++) {
-
-                    // sender translation
-                    vec periodic_offset = vec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
-
-                    sycl::host_accessor tree{
-                        shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
-                    sycl::host_accessor lpid{
-                        shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
-
-#pragma omp parallel for
-                    for (u32 i = 0; i < sched.patch_list.local.size(); i++) {
-                        const shamrock::patch::Patch &psender = sched.patch_list.local[i];
-                        if (!psender.is_err_mode()) {
-                            CoordRange<vec> sender_bsize = patch_coord_transf.to_obj_coord(psender);
-                            CoordRange<vec> sender_bsize_off
-                                = sender_bsize.add_offset(periodic_offset);
-
-                            flt sender_volume = sender_bsize.get_volume();
-
-                            flt sender_h_max = int_range_max.get(psender.id_patch);
-
-                            using PtNode = typename SerialPatchTree<vec>::PtNode;
-
-                            sptree.host_for_each_leafs_internal(
-                                [&](u64 tree_id, PtNode n) {
-                                    flt receiv_h_max = acc_tf[tree_id];
-                                    CoordRange<vec> receiv_exp{
-                                        n.box_min - receiv_h_max, n.box_max + receiv_h_max};
-
-                                    return receiv_exp.get_intersect(sender_bsize_off)
-                                        .is_not_empty();
-                                },
-                                [&](u64 id_found, PtNode n) {
-                                    if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0)
-                                        && (zoff == 0)) {
-                                        return;
-                                    }
-
-                                    CoordRange<vec> receiv_exp
-                                        = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
-                                            int_range_max.get(id_found));
-
-                                    CoordRange<vec> interf_volume = sender_bsize.get_intersect(
-                                        receiv_exp.add_offset(-periodic_offset));
-
-#pragma omp critical
-                                    interf_map.add_obj(
-                                        psender.id_patch,
-                                        id_found,
-                                        {periodic_offset,
-                                         {0, 0, 0},
-                                         {xoff, yoff, zoff},
-                                         interf_volume,
-                                         interf_volume.get_volume() / sender_volume});
-                                },
-                                tree,
-                                lpid);
-                        }
-                    }
-                }
-            }
-        }
+        modules::FindGhostInterfacesPeriodic<vec> node;
+        node.set_edges(
+            sim_box_edge,
+            patch_tree_edge,
+            interact_radius_tree,
+            interact_radius,
+            local_patch_boxes,
+            interface_infos);
+        node.evaluate();
     } else if (BCShearingPeriodic *cfg = std::get_if<BCShearingPeriodic>(&ghost_config)) {
-        sycl::host_accessor acc_tf{
-            shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
+        auto time  = IDataEdge<flt>::make_shared("", "");
+        time->data = cfg->time;
 
-        for_each_patch_shift<flt>(*cfg, bsize, [&](i32_3 ioff, ShiftInfo<flt> shift) {
-            i32 xoff = ioff.x();
-            i32 yoff = ioff.y();
-            i32 zoff = ioff.z();
-
-            vec offset = shift.shift;
-
-            sycl::host_accessor tree{
-                shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
-            sycl::host_accessor lpid{
-                shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
-
-#pragma omp parallel for
-            for (u32 i = 0; i < sched.patch_list.local.size(); i++) {
-                const shamrock::patch::Patch &psender = sched.patch_list.local[i];
-                if (!psender.is_err_mode()) {
-
-                    CoordRange<vec> sender_bsize     = patch_coord_transf.to_obj_coord(psender);
-                    CoordRange<vec> sender_bsize_off = sender_bsize.add_offset(offset);
-
-                    flt sender_volume = sender_bsize.get_volume();
-
-                    flt sender_h_max = int_range_max.get(psender.id_patch);
-
-                    using PtNode = typename SerialPatchTree<vec>::PtNode;
-
-                    sptree.host_for_each_leafs_internal(
-                        [&](u64 tree_id, PtNode n) {
-                            flt receiv_h_max = acc_tf[tree_id];
-                            CoordRange<vec> receiv_exp{
-                                n.box_min - receiv_h_max, n.box_max + receiv_h_max};
-
-                            return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
-                        },
-                        [&](u64 id_found, PtNode n) {
-                            if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0)
-                                && (zoff == 0)) {
-                                return;
-                            }
-
-                            CoordRange<vec> receiv_exp
-                                = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
-                                    int_range_max.get(id_found));
-
-                            CoordRange<vec> interf_volume
-                                = sender_bsize.get_intersect(receiv_exp.add_offset(-offset));
-
-#pragma omp critical
-                            interf_map.add_obj(
-                                psender.id_patch,
-                                id_found,
-                                {offset,
-                                 shift.shift_speed,
-                                 {xoff, yoff, zoff},
-                                 interf_volume,
-                                 interf_volume.get_volume() / sender_volume});
-
-                            // logger::raw_ln("found :",offset, shift.shift_speed, vec{xoff, yoff,
-                            // zoff});
-                        },
-                        tree,
-                        lpid);
-                }
-            }
-        });
-
+        modules::FindGhostInterfacesShearingPeriodic<vec> node(
+            cfg->shear_base, cfg->shear_dir, cfg->shear_speed);
+        node.set_edges(
+            sim_box_edge,
+            patch_tree_edge,
+            interact_radius_tree,
+            interact_radius,
+            local_patch_boxes,
+            time,
+            interface_infos);
+        node.evaluate();
     } else {
-        sycl::host_accessor acc_tf{
-            shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
-        // sender translation
-        vec periodic_offset = vec{0, 0, 0};
-
-        sycl::host_accessor tree{shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
-        sycl::host_accessor lpid{
-            shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
-
-#pragma omp parallel for
-        for (u32 i = 0; i < sched.patch_list.local.size(); i++) {
-            const shamrock::patch::Patch &psender = sched.patch_list.local[i];
-            if (!psender.is_err_mode()) {
-                CoordRange<vec> sender_bsize     = patch_coord_transf.to_obj_coord(psender);
-                CoordRange<vec> sender_bsize_off = sender_bsize.add_offset(periodic_offset);
-
-                flt sender_volume = sender_bsize.get_volume();
-
-                flt sender_h_max = int_range_max.get(psender.id_patch);
-
-                using PtNode = typename SerialPatchTree<vec>::PtNode;
-
-                sptree.host_for_each_leafs_internal(
-                    [&](u64 tree_id, PtNode n) {
-                        flt receiv_h_max = acc_tf[tree_id];
-                        CoordRange<vec> receiv_exp{
-                            n.box_min - receiv_h_max, n.box_max + receiv_h_max};
-
-                        return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
-                    },
-                    [&](u64 id_found, PtNode n) {
-                        if (id_found == psender.id_patch) {
-                            return;
-                        }
-
-                        CoordRange<vec> receiv_exp
-                            = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
-                                int_range_max.get(id_found));
-
-                        CoordRange<vec> interf_volume
-                            = sender_bsize.get_intersect(receiv_exp.add_offset(-periodic_offset));
-
-#pragma omp critical
-                        interf_map.add_obj(
-                            psender.id_patch,
-                            id_found,
-                            {periodic_offset,
-                             {0, 0, 0},
-                             {0, 0, 0},
-                             interf_volume,
-                             interf_volume.get_volume() / sender_volume});
-                    },
-                    tree,
-                    lpid);
-            }
-        }
+        modules::FindGhostInterfacesFree<vec> node;
+        node.set_edges(
+            sim_box_edge,
+            patch_tree_edge,
+            interact_radius_tree,
+            interact_radius,
+            local_patch_boxes,
+            interface_infos);
+        node.evaluate();
     }
 
-    base_timer.stop();
+    int_range_max.field_all = std::move(interact_radius->values);
+    // ----------------------------------------------------------------------------------------
 
-    // f64 worse_time = shamalgs::collective::allreduce_max(base_timer.elasped_sec());
-    //  if (shamcomm::world_rank() == 0) {
-    //      shamlog_info_ln(
-    //          "BasicSPHGhosts",
-    //          "find_interfaces time:",
-    //          base_timer.get_time_str(),
-    //          "worse time:",
-    //          worse_time);
-    //  }
-
-    // interf_map.for_each([](u64 sender, u64 receiver, InterfaceBuildInfos build){
-    //     logger::raw_ln("found interface
-    //     :",sender,"->",receiver,"ratio:",build.volume_ratio,
-    //     "volume:",build.cut_volume.lower,build.cut_volume.upper);
-    // });
-
-    return interf_map;
+    return std::move(interface_infos->values);
 }
 
 template<class vec>

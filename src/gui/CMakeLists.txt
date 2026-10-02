@@ -33,7 +33,10 @@ if(APPLE)
     target_compile_definitions(shamrock_gui_imgui PUBLIC GL_SILENCE_DEPRECATION)
 endif()
 
-set(sources src/main.cpp)
+set(sources src/main.cpp src/screenshot.cpp)
 add_executable(shamrock_gui ${sources})
 
+target_include_directories(
+    shamrock_gui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${stb_SOURCE_DIR}
+)
 target_link_libraries(shamrock_gui PRIVATE shamrock_gui_imgui)

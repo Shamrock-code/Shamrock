@@ -14,7 +14,7 @@ option(SHAMROCK_BUILD_GUI "build the standalone shamrock_gui executable" Off)
 message(STATUS "SHAMROCK_BUILD_GUI : ${SHAMROCK_BUILD_GUI}")
 
 if(SHAMROCK_BUILD_GUI)
-    # Dear ImGui is always fetched.
+    # the FetchContent_Declare / FetchContent_MakeAvailable calls below require CMake >= 3.14.
     if(CMAKE_VERSION VERSION_LESS 3.14)
         message(
             FATAL_ERROR
@@ -66,4 +66,17 @@ if(SHAMROCK_BUILD_GUI)
         GIT_SHALLOW TRUE
     )
     FetchContent_MakeAvailable(imgui)
+
+    ###############################################################################
+    ### stb
+    ###############################################################################
+
+    # stb_image_write, used to save --screenshot PNGs.
+    FetchContent_Declare(
+        stb
+        GIT_REPOSITORY https://github.com/nothings/stb.git
+        GIT_TAG master
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(stb)
 endif()

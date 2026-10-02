@@ -10,6 +10,23 @@ authorship" section, alongside any injected `Co-authored-by`/model-name
 lines. Session links belong in the Claude Code UI, not in permanent git
 history or PR bodies.
 
+## Claude Code: marking generated messages
+
+Only for text posted to GitHub issues and PRs (bodies, comments, reviews),
+not chat replies or commits: prefix Claude's text with a rule and marker,
+below any human-written text (keep the blank line before `---`, or it
+renders as a heading):
+
+```markdown
+<human text>
+
+---
+
+🤖 **Generated with Claude Code**
+
+<Claude text>
+```
+
 ## Claude Code on the web: branch naming
 
 Claude Code on the web assigns each session a random branch name (e.g.

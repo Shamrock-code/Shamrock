@@ -78,11 +78,10 @@ namespace shammodels::sph {
          */
         Tscal cfl_force = 0.25;
 
-        Tscal _pi = shambase::constants::pi<Tscal>;
         /**
-         * @brief The CFL condition for the force
+         * @brief The CFL condition for the non-ideal MHD terms
          */
-        Tscal cfl_NIMHD = 1. / (2 * _pi); // as in phantom
+        Tscal cfl_NIMHD = 1. / (2 * shambase::constants::pi<Tscal>); // as in phantom
 
         /**
          * @brief The CFL multiplier stiffness

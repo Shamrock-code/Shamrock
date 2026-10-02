@@ -29,6 +29,7 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include "shammodels/gsph/solvergraph/GhostHandlerEdge.hpp"
+#include "shammodels/sph/SinkPartStruct.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -135,6 +136,8 @@ namespace shammodels::gsph {
         /// Old derivatives for predictor-corrector integration
         Component<shamrock::ComputeField<Tvec>> old_axyz;
         Component<shamrock::ComputeField<Tscal>> old_duint;
+
+        Component<std::vector<sph::SinkParticle<Tvec>>> sinks;
 
         /// Timing statistics
         struct Timings {

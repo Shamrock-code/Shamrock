@@ -8,39 +8,11 @@ Showcase smoothing length iteration algorithlm
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shamrock.utils.numba_helper import maybe_njit
 
 import shamrock
 
 rng = np.random.default_rng()
-
-
-def compute_sums(pmass, id_a, h_a, W, dhW, positions: np.ndarray):
-    rho_sum = 0
-    sumdWdh = 0
-
-    for j in range(positions.shape[0]):
-        dr = positions[id_a, :] - positions[j, :]
-        rab2 = dr.dot(dr)
-
-        rab = np.sqrt(rab2)
-        rho_sum += pmass * W(rab, h_a)
-        sumdWdh += pmass * dhW(rab, h_a)
-
-    return rho_sum, sumdWdh
-
-
-def count_neighbors(id_a, h_a, W, positions: np.ndarray):
-    count = 0
-
-    for j in range(positions.shape[0]):
-        dr = positions[id_a, :] - positions[j, :]
-        rab2 = dr.dot(dr)
-
-        rab = np.sqrt(rab2)
-        if W(rab, h_a) > 0:
-            count += 1
-
-    return count
 
 
 def W(r, h):
@@ -51,9 +23,43 @@ def dhW(r, h):
     return shamrock.math.sphkernel.M4_dhW3d(r, h)
 
 
+W = maybe_njit(W)
+dhW = maybe_njit(dhW)
+
+# W and dhW are bound to scalar C++ kernels (shamrock.math.sphkernel.*), so they
+# can't be called directly on arrays: np.vectorize applies them elementwise.
+W_vec = np.vectorize(W)
+dhW_vec = np.vectorize(dhW)
+
+
+def compute_sums(pmass, id_a, h_a, positions: np.ndarray):
+    dr = positions[id_a, :] - positions
+    rab = np.sqrt(np.sum(dr * dr, axis=1))
+
+    rho_sum = pmass * np.sum(W_vec(rab, h_a))
+    sumdWdh = pmass * np.sum(dhW_vec(rab, h_a))
+
+    return rho_sum, sumdWdh
+
+
+compute_sums = maybe_njit(compute_sums)
+
+
+def count_neighbors(id_a, h_a, W, positions: np.ndarray):
+    dr = positions[id_a, :] - positions
+    rab = np.sqrt(np.sum(dr * dr, axis=1))
+
+    return int(np.count_nonzero(np.vectorize(W)(rab, h_a) > 0))
+
+
+count_neighbors = maybe_njit(count_neighbors)
+
+
 def rho_h(m, h, hfact):
     return m * (hfact / h) * (hfact / h) * (hfact / h)
 
+
+rho_h = maybe_njit(rho_h)
 
 hfact = 1.2  # shamrock.math.sphkernel.hfactd
 
@@ -94,12 +100,12 @@ def plot_f_df_kernel():
     plt.show()
 
 
-def newton_iterate_new_h(h_a, positions, state_vars: dict):
+def newton_iterate_new_h(h_a, positions, cycle_state_vars: dict, outer_state_vars: dict):
     """One Newton-Raphson sweep, reproducing the per-particle branch of
     IterateSmoothingLengthDensity.cpp (src/shammodels/sph/src/modules/
     IterateSmoothingLengthDensity.cpp:52-119).
 
-    state_vars["ha_0"] is h_old: the h value at the start of the current
+    cycle_state_vars["ha_0"] is h_old: the h value at the start of the current
     subcycle (reset by the caller each time sph_prestep would rebuild the
     ghost zone), NOT the previous Newton iterate.
 
@@ -107,10 +113,10 @@ def newton_iterate_new_h(h_a, positions, state_vars: dict):
     mean "new_h would exceed ha_0 * h_evol_max (htol_up_coarse_cycle)": the
     caller must treat this as sph_prestep does and start a fresh subcycle.
     """
-    ha_0 = state_vars["ha_0"]
+    ha_0 = cycle_state_vars["ha_0"]
 
     rho_ha = rho_h(pmass, h_a, hfact)
-    rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, W, dhW, positions)
+    rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, positions)
     f_iter, df_iter = f_df(rho_ha, rho_sum, sumdWdh, h_a)
     new_h = h_a - f_iter / df_iter
 
@@ -130,7 +136,9 @@ def newton_iterate_new_h(h_a, positions, state_vars: dict):
     return new_h, eps
 
 
-def newton_iterate_new_h_neigh_lim(h_a, positions, state_vars: dict, trigger_threshold=500):
+def newton_iterate_new_h_neigh_lim(
+    h_a, positions, cycle_state_vars: dict, outer_state_vars: dict, trigger_threshold=500
+):
     """One Newton-Raphson sweep with a neighbor-count safety limiter,
     reproducing the per-particle branch of IterateSmoothingLengthDensityNeighLim.cpp
     (src/shammodels/sph/src/modules/IterateSmoothingLengthDensityNeighLim.cpp:59-148).
@@ -145,7 +153,7 @@ def newton_iterate_new_h_neigh_lim(h_a, positions, state_vars: dict, trigger_thr
         count over trigger_threshold and the raw Newton step wants to grow
         h_a, leave h_a unchanged and also report eps=0.
     """
-    ha_0 = state_vars["ha_0"]
+    ha_0 = cycle_state_vars["ha_0"]
 
     h_max_evol_m = 1.0 / h_evol_iter_max
     h_max_evol_p = h_evol_iter_max
@@ -154,7 +162,7 @@ def newton_iterate_new_h_neigh_lim(h_a, positions, state_vars: dict, trigger_thr
     count_within_next = count_neighbors(id_a, h_a * h_max_evol_p, W, positions)
 
     rho_ha = rho_h(pmass, h_a, hfact)
-    rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, W, dhW, positions)
+    rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, positions)
     f_iter, df_iter = f_df(rho_ha, rho_sum, sumdWdh, h_a)
     new_h = h_a - f_iter / df_iter
 
@@ -178,11 +186,281 @@ def newton_iterate_new_h_neigh_lim(h_a, positions, state_vars: dict, trigger_thr
     return new_h, eps
 
 
+def newton_iterate_new_h_poslim(h_a, positions, cycle_state_vars: dict, outer_state_vars: dict):
+    """
+    Derivative based limiter on top of normal NR
+    """
+    ha_0 = cycle_state_vars["ha_0"]
+
+    rho_ha = rho_h(pmass, h_a, hfact)
+    rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, positions)
+    f_iter, df_iter = f_df(rho_ha, rho_sum, sumdWdh, h_a)
+    new_h = h_a - f_iter / df_iter
+
+    # per-iteration clamp (htol_up_fine_cycle), relative to the previous iterate h_a
+    h_max_evol_m = 1.0 / h_evol_iter_max
+    h_max_evol_p = h_evol_iter_max
+    new_h = max(new_h, h_a * h_max_evol_m)
+    new_h = min(new_h, h_a * h_max_evol_p)
+
+    # Check if the state is potentially diverging, if yes go down until it converges again
+    if f_iter > 0 and f_iter / df_iter < 0:
+        new_h = h_a * h_max_evol_m
+
+    # per-subcycle clamp (htol_up_coarse_cycle), relative to ha_0 (h at subcycle start)
+    if new_h < ha_0 * h_evol_max:
+        eps = abs(new_h - h_a) / ha_0
+    else:
+        new_h = ha_0 * h_evol_max
+        eps = -1.0
+
+    return new_h, eps
+
+
+def newton_iterate_new_h_neigh_lim_poslim(
+    h_a, positions, cycle_state_vars: dict, outer_state_vars: dict, trigger_threshold=500
+):
+    """
+    Hybrid of derivative limiter + neigh lim
+    """
+    ha_0 = cycle_state_vars["ha_0"]
+
+    h_max_evol_m = 1.0 / h_evol_iter_max
+    h_max_evol_p = h_evol_iter_max
+
+    count_within = count_neighbors(id_a, h_a, W, positions)
+    count_within_next = count_neighbors(id_a, h_a * h_max_evol_p, W, positions)
+
+    rho_ha = rho_h(pmass, h_a, hfact)
+    rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, positions)
+    f_iter, df_iter = f_df(rho_ha, rho_sum, sumdWdh, h_a)
+    new_h = h_a - f_iter / df_iter
+
+    # per-iteration clamp (htol_up_fine_cycle), relative to the previous iterate h_a
+    new_h = max(new_h, h_a * h_max_evol_m)
+    new_h = min(new_h, h_a * h_max_evol_p)
+
+    # Check if the state is potentially diverging, if yes go down until it converges again
+    if f_iter > 0 and f_iter / df_iter < 0:
+        new_h = h_a * h_max_evol_m
+
+    if count_within > trigger_threshold:
+        new_h = h_max_evol_m * h_a
+
+    if count_within_next > trigger_threshold and new_h > h_a:
+        return h_a, 0.0
+
+    # per-subcycle clamp (htol_up_coarse_cycle), relative to ha_0 (h at subcycle start)
+    if new_h < ha_0 * h_evol_max:
+        eps = abs(new_h - h_a) / ha_0
+    else:
+        new_h = ha_0 * h_evol_max
+        eps = -1.0
+
+    return new_h, eps
+
+
+def bisect_iterate_new_h(h_a, positions, cycle_state_vars: dict, outer_state_vars: dict):
+
+    # Normally the allocation are done before but this simlulator only prepares ha_0
+    if "lo" not in cycle_state_vars:
+        cycle_state_vars["lo"] = 0
+        cycle_state_vars["hi"] = np.inf
+
+    h_max_evol_m = 1.0 / h_evol_iter_max
+    h_max_evol_p = h_evol_iter_max
+    ha_0 = cycle_state_vars["ha_0"]
+    lo = cycle_state_vars["lo"]
+    hi = cycle_state_vars["hi"]
+
+    rho_ha = rho_h(pmass, h_a, hfact)
+    rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, positions)
+    f_iter, df_iter = f_df(rho_ha, rho_sum, sumdWdh, h_a)
+
+    if f_iter < 0:
+        lo = h_a
+    else:
+        hi = h_a
+
+    new_h = (lo + hi) / 2
+
+    # per-iteration clamp (htol_up_fine_cycle), relative to the previous iterate h_a
+    new_h = max(new_h, h_a * h_max_evol_m)
+    new_h = min(new_h, h_a * h_max_evol_p)
+
+    cycle_state_vars["lo"] = lo
+    cycle_state_vars["hi"] = hi
+
+    # per-subcycle clamp (htol_up_coarse_cycle), relative to ha_0 (h at subcycle start)
+    if new_h < ha_0 * h_evol_max:
+        eps = abs(new_h - h_a) / ha_0
+    else:
+        new_h = ha_0 * h_evol_max
+        eps = -1.0
+
+    return new_h, eps
+
+
+def bisect_iterate_new_h_neigh_lim(h_a, positions, cycle_state_vars: dict, outer_state_vars: dict):
+
+    # Normally the allocation are done before but this simlulator only prepares ha_0
+    if "lo" not in cycle_state_vars:
+        cycle_state_vars["lo"] = 0
+        cycle_state_vars["hi"] = np.inf
+
+    h_max_evol_m = 0.5
+    h_max_evol_p = h_evol_iter_max
+    ha_0 = cycle_state_vars["ha_0"]
+    lo = cycle_state_vars["lo"]
+    hi = cycle_state_vars["hi"]
+
+    rho_ha = rho_h(pmass, h_a, hfact)
+    rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, positions)
+    count_within = count_neighbors(id_a, h_a, W, positions)
+    f_iter, df_iter = f_df(rho_ha, rho_sum, sumdWdh, h_a)
+
+    is_upper_bound = f_iter > 0 or count_within > 500
+
+    if is_upper_bound:
+        hi = h_a
+    else:
+        lo = h_a
+
+    new_h = (lo + hi) / 2
+
+    # per-iteration clamp (htol_up_fine_cycle), relative to the previous iterate h_a
+    new_h = max(new_h, h_a * h_max_evol_m)
+    new_h = min(new_h, h_a * h_max_evol_p)
+
+    cycle_state_vars["lo"] = lo
+    cycle_state_vars["hi"] = hi
+
+    # per-subcycle clamp (htol_up_coarse_cycle), relative to ha_0 (h at subcycle start)
+    if new_h < ha_0 * h_evol_max:
+        eps = abs(new_h - h_a) / ha_0
+    else:
+        new_h = ha_0 * h_evol_max
+        eps = -1.0
+
+    return new_h, eps
+
+
+def bisect_NR_iterate_new_h(h_a, positions, cycle_state_vars: dict, outer_state_vars: dict):
+
+    # Normally the allocation are done before but this simlulator only prepares ha_0
+    if "lo" not in outer_state_vars:
+        outer_state_vars["lo"] = 0
+        outer_state_vars["hi"] = np.inf
+
+    h_max_evol_m = 0.5
+    h_max_evol_p = h_evol_iter_max
+    ha_0 = cycle_state_vars["ha_0"]
+    lo = outer_state_vars["lo"]
+    hi = outer_state_vars["hi"]
+
+    h_a_next_min = h_a * h_max_evol_m
+    h_a_next_max = h_a * h_max_evol_p
+
+    rho_ha = rho_h(pmass, h_a, hfact)
+    rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, positions)
+    f_iter, df_iter = f_df(rho_ha, rho_sum, sumdWdh, h_a)
+    new_h_nr = h_a - f_iter / df_iter
+
+    accept_nr = max(lo, h_a_next_min) < new_h_nr < min(hi, h_a_next_max)
+
+    if f_iter < 0:
+        lo = max(h_a, lo)
+    else:
+        hi = min(h_a, hi)
+
+    if accept_nr:
+        new_h = new_h_nr
+    else:
+        new_h = (lo + hi) / 2
+
+    # per-iteration clamp (htol_up_fine_cycle), relative to the previous iterate h_a
+    new_h = max(new_h, h_a_next_min)
+    new_h = min(new_h, h_a_next_max)
+
+    outer_state_vars["lo"] = lo
+    outer_state_vars["hi"] = hi
+
+    # per-subcycle clamp (htol_up_coarse_cycle), relative to ha_0 (h at subcycle start)
+    if new_h < ha_0 * h_evol_max:
+        eps = abs(new_h - h_a) / ha_0
+    else:
+        new_h = ha_0 * h_evol_max
+        eps = -1.0
+
+    return new_h, eps
+
+
+def bisect_NR_iterate_new_h_neigh_lim(
+    h_a, positions, cycle_state_vars: dict, outer_state_vars: dict
+):
+
+    # Normally the allocation are done before but this simlulator only prepares ha_0
+    if "lo" not in outer_state_vars:
+        outer_state_vars["lo"] = 0
+        outer_state_vars["hi"] = np.inf
+
+    h_max_evol_m = 1.0 / h_evol_iter_max
+    h_max_evol_p = h_evol_iter_max
+    ha_0 = cycle_state_vars["ha_0"]
+    lo = outer_state_vars["lo"]
+    hi = outer_state_vars["hi"]
+
+    h_a_next_min = h_a * h_max_evol_m
+    h_a_next_max = h_a * h_max_evol_p
+
+    rho_ha = rho_h(pmass, h_a, hfact)
+    rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, positions)
+    count_within = count_neighbors(id_a, h_a, W, positions)
+    f_iter, df_iter = f_df(rho_ha, rho_sum, sumdWdh, h_a)
+    new_h_nr = h_a - f_iter / df_iter
+
+    accept_nr = max(lo, h_a_next_min) < new_h_nr < min(hi, h_a_next_max) and count_within < 500
+
+    is_upper_bound = f_iter > 0 or count_within > 500
+
+    if is_upper_bound:
+        hi = h_a
+    else:
+        lo = h_a
+
+    if accept_nr:
+        new_h = new_h_nr
+    else:
+        new_h = (lo + hi) / 2
+
+    print(f"h_a = {h_a} lo = {lo} hi = {hi} new_h_nr = {new_h_nr} count_within = {count_within}")
+
+    # per-iteration clamp (htol_up_fine_cycle), relative to the previous iterate h_a
+    new_h = max(new_h, h_a_next_min)
+    new_h = min(new_h, h_a_next_max)
+
+    outer_state_vars["lo"] = lo
+    outer_state_vars["hi"] = hi
+
+    # per-subcycle clamp (htol_up_coarse_cycle), relative to ha_0 (h at subcycle start)
+    if new_h < ha_0 * h_evol_max:
+        eps = abs(new_h - h_a) / ha_0
+    else:
+        new_h = ha_0 * h_evol_max
+        eps = -1.0
+
+    return new_h, eps
+
+
 algs = {
     "Newton": newton_iterate_new_h,
     "Newton (neigh lim)": newton_iterate_new_h_neigh_lim,
-    # "Bisection": bisect_iterate_new_h,
-    # "Bisection + NR": bisect_NR_iterate_new_h,
+    # "Newton (ceil)": newton_iterate_new_h_poslim,
+    # "Newton (neigh lim + ceil)": newton_iterate_new_h_neigh_lim_poslim,
+    "Bisection": bisect_iterate_new_h,
+    # "Bisection (neigh_lim)": bisect_iterate_new_h_neigh_lim,
+    "Bisection + NR": bisect_NR_iterate_new_h,
+    "Bisection + NR (neigh lim)": bisect_NR_iterate_new_h_neigh_lim,
 }
 
 
@@ -201,20 +479,22 @@ def simulate_h_iter(init_h_a, positions: np.ndarray, id_a: int, pmass: float, it
     subcycle_end_indices = []
     converged = False
 
+    outer_state_vars = {}
+
     # outer loop: sph_prestep's ghost-zone-rebuild subcycle
     # (src/shammodels/sph/src/Solver.cpp:1235, hstep_cnt < h_max_subcycles_count)
     for hstep_cnt in range(h_max_subcycles_count):
         # each subcycle resets h_old to the current h (Solver.cpp:1245)
-        state_vars = {"ha_0": h_a}
+        cycle_state_vars = {"ha_0": h_a}
 
         # inner loop: LoopSmoothingLengthIter's Newton sweep count
         # (LoopSmoothingLengthIter.cpp:31, iter_h < h_iter_per_subcycles)
         for iter_h in range(h_iter_per_subcycles):
-            h_a, eps = iterate_new_h(h_a, positions, state_vars)
+            h_a, eps = iterate_new_h(h_a, positions, cycle_state_vars, outer_state_vars)
             history_h_a.append(h_a)
 
             rho_ha = rho_h(pmass, h_a, hfact)
-            rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, W, dhW, positions)
+            rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a, positions)
             f_iter, df_iter = f_df(rho_ha, rho_sum, sumdWdh, h_a)
             history_f.append(f_iter)
             history_df.append(df_iter)
@@ -233,7 +513,7 @@ def simulate_h_iter(init_h_a, positions: np.ndarray, id_a: int, pmass: float, it
         # per-subcycle clamp (htol_up_coarse_cycle): whatever the inner Newton
         # loop did, h_a can never end a subcycle above ha_0 * h_evol_max
         # (Solver.cpp:1235-1425, ha_0 is h_old reset at the top of each hstep_cnt).
-        ha_0 = state_vars["ha_0"]
+        ha_0 = cycle_state_vars["ha_0"]
         assert h_a <= h_evol_max * ha_0, (
             f"h_a = {h_a} is larger than h_evol_max * ha_0 = {h_evol_max * ha_0}"
         )
@@ -303,7 +583,19 @@ def analyse_h_convergence(
         history_neigh_count[-1] for _, _, _, history_neigh_count, _, _ in histories
     ]
 
-    return histories, found_h_a, iteration_counts, final_f_values, final_neigh_counts
+    # number of outer ghost-zone-rebuild subcycles run (each one is an MPI cycle)
+    subcycle_counts = [
+        len(subcycle_end_indices) for _, _, _, _, _, subcycle_end_indices in histories
+    ]
+
+    return (
+        histories,
+        found_h_a,
+        iteration_counts,
+        final_f_values,
+        final_neigh_counts,
+        subcycle_counts,
+    )
 
 
 def plot_h_convergence(histories, found_h_a, axs):
@@ -358,7 +650,7 @@ def plot_rho_f_df(h_a_test):
 
     for i in range(h_a_test.shape[0]):
         rho_ha = rho_h(pmass, h_a_test[i], hfact)
-        rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a_test[i], W, dhW, positions)
+        rho_sum, sumdWdh = compute_sums(pmass, id_a, h_a_test[i], positions)
         rho_sum_values[i] = rho_sum
         rho_h_values[i] = rho_ha
         f_values[i], df_values[i] = f_df(rho_ha, rho_sum, sumdWdh, h_a_test[i])
@@ -387,31 +679,43 @@ def compare_algs_h_convergence(test_h_values, algs):
         fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
         fig.suptitle(name)
 
-        histories, found_h_a, iteration_counts, final_f_values, final_neigh_counts = (
-            analyse_h_convergence(positions, id_a, pmass, alg, test_h_values)
-        )
+        (
+            histories,
+            found_h_a,
+            iteration_counts,
+            final_f_values,
+            final_neigh_counts,
+            subcycle_counts,
+        ) = analyse_h_convergence(positions, id_a, pmass, alg, test_h_values)
 
         plot_h_convergence(histories, found_h_a, axs)
 
         # histories may hold one more entry than test_h_values (the extra run
         # seeded at found_h_a), so derive the x-axis from histories itself
         init_h_a_values = [entry[0] for entry in histories]
-        results[name] = (init_h_a_values, iteration_counts, final_f_values, final_neigh_counts)
+        results[name] = (
+            init_h_a_values,
+            iteration_counts,
+            final_f_values,
+            final_neigh_counts,
+            subcycle_counts,
+        )
 
         plt.tight_layout()
 
-    fig, axs = plt.subplots(3, 1, figsize=(10, 12))
+    fig, axs = plt.subplots(4, 1, figsize=(10, 16))
     fig.suptitle("Algorithm comparison")
 
     bar_width = 0.8 / len(results)
     for i, (
         name,
-        (init_h_a_values, iteration_counts, final_f_values, final_neigh_counts),
+        (init_h_a_values, iteration_counts, final_f_values, final_neigh_counts, subcycle_counts),
     ) in enumerate(results.items()):
         x = np.arange(len(init_h_a_values)) + i * bar_width
         axs[0].bar(x, iteration_counts, width=bar_width, label=name)
-        axs[1].bar(x, final_f_values, width=bar_width, label=name)
-        axs[2].bar(x, final_neigh_counts, width=bar_width, label=name)
+        axs[1].bar(x, subcycle_counts, width=bar_width, label=name)
+        axs[2].bar(x, final_f_values, width=bar_width, label=name)
+        axs[3].bar(x, final_neigh_counts, width=bar_width, label=name)
 
     first_init_h_a_values = next(iter(results.values()))[0]
     xticks = np.arange(len(first_init_h_a_values)) + bar_width * (len(results) - 1) / 2
@@ -425,21 +729,29 @@ def compare_algs_h_convergence(test_h_values, algs):
     axs[0].set_title("Convergence speed")
     axs[0].legend()
 
-    axs[1].set_yscale("symlog", linthresh=1e-14)
+    axs[1].set_yscale("log")
     axs[1].set_xticks(xticks)
     axs[1].set_xticklabels(xticklabels)
     axs[1].set_xlabel("init_h_a")
-    axs[1].set_ylabel(r"$f(h_a)$")
-    axs[1].set_title("Residual at convergence")
+    axs[1].set_ylabel("subcycle count")
+    axs[1].set_title("MPI cycles (ghost-zone-rebuild subcycles)")
     axs[1].legend()
 
-    axs[2].set_yscale("log")
+    axs[2].set_yscale("symlog", linthresh=1e-14)
     axs[2].set_xticks(xticks)
     axs[2].set_xticklabels(xticklabels)
     axs[2].set_xlabel("init_h_a")
-    axs[2].set_ylabel("neighbor count")
-    axs[2].set_title("Neighbor count at convergence")
+    axs[2].set_ylabel(r"$f(h_a)$")
+    axs[2].set_title("Residual at convergence")
     axs[2].legend()
+
+    axs[3].set_yscale("log")
+    axs[3].set_xticks(xticks)
+    axs[3].set_xticklabels(xticklabels)
+    axs[3].set_xlabel("init_h_a")
+    axs[3].set_ylabel("neighbor count")
+    axs[3].set_title("Neighbor count at convergence")
+    axs[3].legend()
 
     plt.tight_layout()
 
@@ -488,7 +800,7 @@ def generate_random_distrib_giantpart(Nside):
             for iz in range(Nside):
                 positions.append(rng.random(3))
 
-    positions.append((10, 0, 0))
+    positions.append((2, 0, 0))
     id_a = len(positions) - 1
 
     positions = np.array(positions)
@@ -549,7 +861,7 @@ plt.show()
 # Random distrib (giant particle)
 # --------------------------------
 
-positions, id_a = generate_random_distrib_giantpart(Nside=10)
+positions, id_a = generate_random_distrib_giantpart(Nside=20)
 pmass = 1.0 / 1000.0
 
 # %%

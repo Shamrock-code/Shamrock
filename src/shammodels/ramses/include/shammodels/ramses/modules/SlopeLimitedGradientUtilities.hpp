@@ -223,7 +223,6 @@ namespace {
 
         using Tscal            = shambase::VecComponent<Tvec>;
         auto cur_cell_block_id = cell_global_id / block_size;
-
         auto get_gradient_dir = [&](auto &graph_links, Direction dir) -> shammath::ConsState<Tvec> {
             Tscal acc_rho         = shambase::VectorProperties<Tscal>::get_zero();
             Tscal acc_rhoe        = shambase::VectorProperties<Tscal>::get_zero();
@@ -267,31 +266,6 @@ namespace {
             }
             return res;
         };
-
-        auto get_avg_neigh = [&](auto &graph_links) -> shammath::ConsState<Tvec> {
-            Tscal acc_rho    = shambase::VectorProperties<Tscal>::get_zero();
-            Tscal acc_rhoe   = shambase::VectorProperties<Tscal>::get_zero();
-            Tvec acc_rho_vel = shambase::VectorProperties<Tvec>::get_zero();
-            u32 cnt          = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
-                acc_rho += field_access_rho(id_b);
-                acc_rho_vel += field_access_rho_vel(id_b);
-                acc_rhoe += field_access_rhoe(id_b);
-            });
-
-            shammath::ConsState<Tvec> res
-                = {shambase::VectorProperties<Tscal>::get_zero(),
-                   shambase::VectorProperties<Tscal>::get_zero(),
-
-                   {shambase::VectorProperties<Tscal>::get_zero(),
-                    shambase::VectorProperties<Tscal>::get_zero(),
-                    shambase::VectorProperties<Tscal>::get_zero()}};
-            if (cnt > 0) {
-                res = {acc_rho, acc_rhoe, acc_rho_vel};
-                res *= 1. / cnt;
-            }
-            return res;
-        };
-
         shammath::ConsState<Tvec> delta_xp = get_gradient_dir(graph_iter_xp, Direction::xp);
         shammath::ConsState<Tvec> delta_xm = get_gradient_dir(graph_iter_xm, Direction::xm);
         shammath::ConsState<Tvec> delta_yp = get_gradient_dir(graph_iter_yp, Direction::yp);

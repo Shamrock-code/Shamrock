@@ -737,7 +737,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     enforce_two_to_one_refinement_new(
-        shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags) {
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &dd_refine_flags) {
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -890,10 +890,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    enforce_two_to_one_derefinement_new(
-        shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags,
-        shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags) {
-
+    check_geometrical_validity(
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &dd_refine_flags,
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &dd_derefine_flags) {
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
@@ -905,32 +904,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         u32 obj_cnt = pdat.get_obj_cnt();
 
-        // blocks graph in each direction for the current patch
-        AMRGraph &block_graph_neighs_xp = shambase::get_check_ref(storage.block_graph_edge)
-                                              .get_refs_dir(Direction_::xp)
-                                              .get(id_patch);
-        AMRGraph &block_graph_neighs_xm = shambase::get_check_ref(storage.block_graph_edge)
-                                              .get_refs_dir(Direction_::xm)
-                                              .get(id_patch);
-        AMRGraph &block_graph_neighs_yp = shambase::get_check_ref(storage.block_graph_edge)
-                                              .get_refs_dir(Direction_::yp)
-                                              .get(id_patch);
-        AMRGraph &block_graph_neighs_ym = shambase::get_check_ref(storage.block_graph_edge)
-                                              .get_refs_dir(Direction_::ym)
-                                              .get(id_patch);
-        AMRGraph &block_graph_neighs_zp = shambase::get_check_ref(storage.block_graph_edge)
-                                              .get_refs_dir(Direction_::zp)
-                                              .get(id_patch);
-        AMRGraph &block_graph_neighs_zm = shambase::get_check_ref(storage.block_graph_edge)
-                                              .get_refs_dir(Direction_::zm)
-                                              .get(id_patch);
-        // get the current buffer of block levels in the current patch
-        sham::DeviceBuffer<TgridUint> &buf_amr_block_levels
-            = shambase::get_check_ref(storage.amr_block_levels).get_buf(id_patch);
-
-        ////////////////////////////////////////////////////////////////
-        ///////////////////////////////////////////////////////////////
-
         auto dev_buf_deref_0
             = shamalgs::numeric::stream_compact(dev_sched, patch_derefine_flag, obj_cnt);
 
@@ -939,6 +912,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             ": ",
             dev_buf_deref_0.get_size(),
             "\n");
+
         ////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////
         // keep derefine flags on only if the eight cells want to merge and if they can
@@ -946,9 +920,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 
         sham::EventList depends_list;
-        auto acc_min        = buf_cell_min.get_read_access(depends_list);
-        auto acc_max        = buf_cell_max.get_read_access(depends_list);
-        auto acc_amr_levels = buf_amr_block_levels.get_read_access(depends_list);
+        auto acc_min = buf_cell_min.get_read_access(depends_list);
+        auto acc_max = buf_cell_max.get_read_access(depends_list);
 
         auto acc_merge_flag  = patch_derefine_flag.get_write_access(depends_list);
         auto acc_refine_flag = patch_refine_flag.get_read_access(depends_list);
@@ -958,8 +931,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 u32 id = gid.get_linear_id();
 
                 std::array<BlockCoord, split_count> blocks;
-                bool do_merge       = true;
-                bool all_same_level = true;
+                bool do_merge = true;
 
                 // This avoid the case where we are in the last block of the buffer to
                 // avoid the out-of-bound read
@@ -999,8 +971,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     for (u32 b_lid = 0; b_lid < split_count; b_lid++) {
                         blocks[b_lid]     = BlockCoord{acc_min[id + b_lid], acc_max[id + b_lid]};
                         all_want_to_merge = all_want_to_merge && acc_merge_flag[id + b_lid];
-                        all_same_level
-                            = all_same_level && (acc_amr_levels[id] == acc_amr_levels[id + b_lid]);
                     }
 
                     BlockCoord merged                            = BlockCoord::get_merge(blocks);
@@ -1010,7 +980,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                                    && sham::equals(blocks[lid].bmax, splitted[lid].bmax);
                     }
 
-                    do_merge = do_merge && all_want_to_merge && all_same_level;
+                    do_merge = do_merge && all_want_to_merge;
                     if (acc_refine_flag[id] && do_merge) {
                         do_merge = false;
                     }
@@ -1023,12 +993,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         });
         buf_cell_min.complete_event_state(e);
         buf_cell_max.complete_event_state(e);
-        buf_amr_block_levels.complete_event_state(e);
         patch_derefine_flag.complete_event_state(e);
         patch_refine_flag.complete_event_state(e);
 
-        ///////////////////////////////////////////////////
-        //////////////////////////////////////////////////
         auto buf_derefine_1
             = shamalgs::numeric::stream_compact(dev_sched, patch_derefine_flag, obj_cnt);
         logger::raw_ln(
@@ -1037,8 +1004,56 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             "\t : ",
             buf_derefine_1.get_size(),
             "\n");
-        /////////////////////////////////////////////////
-        ////////////////////////////////////////////////
+    });
+}
+
+/**
+ * @brief check and enforce 2:1 rule for derefinement
+ * @tparam Tvec
+ * @tparam TgridVec
+ * @param dd_derefine_flags
+ * @param dd_refine_flags
+ */
+
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+    enforce_two_to_one_derefinement_new(
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &dd_derefine_flags,
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &dd_refine_flags) {
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        u64 id_patch         = cur_p.id_patch;
+
+        sham::DeviceBuffer<u32> &patch_derefine_flag = dd_derefine_flags.get(id_patch);
+        sham::DeviceBuffer<u32> &patch_refine_flag   = dd_refine_flags.get(id_patch);
+
+        u32 obj_cnt = pdat.get_obj_cnt();
+
+        // blocks graph in each direction for the current patch
+        AMRGraph &block_graph_neighs_xp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::xp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_xm = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::xm)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_yp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::yp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_ym = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::ym)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_zp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::zp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_zm = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::zm)
+                                              .get(id_patch);
+        // get the current buffer of block levels in the current patch
+        sham::DeviceBuffer<TgridUint> &buf_amr_block_levels
+            = shambase::get_check_ref(storage.amr_block_levels).get_buf(id_patch);
 
         //     ////////////////////////////////////////////////////////////////////////////////////
         //     // //                         enforce 2:1 at parent level
@@ -1152,7 +1167,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 break;
             }
         }
-
         // copy back to ..
         patch_derefine_flag_old.copy_range(0, obj_cnt, patch_derefine_flag);
 
@@ -1162,7 +1176,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         // perform stream compactions on the derefinement flags
         auto buf_derefine
             = shamalgs::numeric::stream_compact(dev_sched, patch_derefine_flag, obj_cnt);
-
         logger::raw_ln(
             " Count block's flag for derefinement [After geometry validity check and after 2:1 "
             "check] \t : ",
@@ -1505,7 +1518,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         const f64 *rho_old_snap;
         const f64_3 *rho_vel_old_snap;
         const f64 *rhoE_old_snap;
-
         AMRInterpMode amr_ref_interp_mode;
 
         // this will be needed for interpolation during refinement
@@ -1592,6 +1604,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             u64 &id_patch,
             shamrock::patch::PatchDataLayer &pdat,
             AMRInterpMode amr_ref_interp_mode) {
+
             pdat.get_field<f64>(2).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64_3>(3).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64>(4).get_buf().complete_event_state(resulting_events);
@@ -2599,9 +2612,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         }
 
         ///// enforce 2:1 for refinement ///////
-        enforce_two_to_one_refinement_new(std::move(refine_list));
+        enforce_two_to_one_refinement_new(refine_list);
+        ///// check geometriy validity
+        check_geometrical_validity(refine_list, derefine_list);
         /////// enforce 2:1 for derefinement //////
-        enforce_two_to_one_derefinement_new(std::move(derefine_list), std::move(refine_list));
+        enforce_two_to_one_derefinement_new(derefine_list, refine_list);
         //////// apply refine ////////
         // Note that this only add new blocks at the end of the patchdata
         const AMRInterpMode amr_ref_interp_mode = solver_config.amr_interp_mode;

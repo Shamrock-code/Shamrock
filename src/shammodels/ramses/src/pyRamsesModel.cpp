@@ -228,6 +228,11 @@ namespace shammodels::basegodunov {
                     self.amr_mode.old_amr = use_old_amr;
                 })
             .def(
+                "set_enable_2to1",
+                [](TConfig &self, bool do_enabled_2to1) {
+                    self.amr_mode.do_enabled_2to1 = do_enabled_2to1;
+                })
+            .def(
                 "set_first_order_interpolation_mode",
                 [](TConfig &self) {
                     self.amr_interp_mode = FIRST_ORDER;

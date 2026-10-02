@@ -10,9 +10,9 @@
 #pragma once
 
 /**
- * @file GeneratorLatticeHCP.hpp
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief SPH setup generator placing particles on a HCP lattice
+ * @file GeneratorLatticeFCC.hpp
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @brief SPH setup generator placing particles on a FCC lattice
  *
  */
 
@@ -22,6 +22,6 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec, bool Discontinuous = true>
-    using GeneratorLatticeHCP = GeneratorLattice<Tvec, shammath::LatticeHCP<Tvec>, Discontinuous>;
+    using GeneratorLatticeFCC = GeneratorLattice<Tvec, shammath::LatticeFCC<Tvec>, Discontinuous>;
 
 } // namespace shammodels::sph::modules

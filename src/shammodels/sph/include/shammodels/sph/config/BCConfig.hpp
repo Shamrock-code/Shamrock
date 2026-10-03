@@ -212,7 +212,7 @@ namespace shammodels::sph {
             p.set_shearing_periodic(
                 j.at("shear_base").get<i32_3>(),
                 j.at("shear_dir").get<i32_3>(),
-                j.at("speed").get<Tscal>());
+                j.at("shear_speed").get<Tscal>());
         } else {
             shambase::throw_unimplemented("wtf !");
         }

@@ -91,6 +91,14 @@ namespace shammodels::sph {
             return generic::setup::generators::get_box_dim(dr, xcnt, ycnt, zcnt);
         }
 
+        /**
+         * @brief Get the size of a periodic box for a true FCC lattice (ABC stacking)
+         */
+        template<std::enable_if_t<dim == 3, int> = 0>
+        inline Tvec get_box_dim_true_fcc_3d(Tscal dr, u32 xcnt, u32 ycnt, u32 zcnt) {
+            return shammath::LatticeFCC<Tvec>::get_box_dim(dr, xcnt, ycnt, zcnt);
+        }
+
         inline void set_cfl_cour(Tscal cfl_cour) {
             solver.solver_config.cfl_config.cfl_cour = cfl_cour;
         }

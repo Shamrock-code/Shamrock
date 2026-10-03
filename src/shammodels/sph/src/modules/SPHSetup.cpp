@@ -62,6 +62,19 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
 
 template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_generator_lattice_fcc(
+        Tscal dr, std::pair<Tvec, Tvec> box, bool discontinuous, Tscal init_h_factor) {
+    if (discontinuous) {
+        return std::shared_ptr<ISPHSetupNode>(
+            new GeneratorLatticeFCC<Tvec, true>(context, dr, box, init_h_factor));
+    } else {
+        return std::shared_ptr<ISPHSetupNode>(
+            new GeneratorLatticeFCC<Tvec, false>(context, dr, box, init_h_factor));
+    }
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
     SPHSetup<Tvec, SPHKernel>::make_generator_lattice_cubic(Tscal dr, std::pair<Tvec, Tvec> box) {
     return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeCubic<Tvec>(context, dr, box));
 }

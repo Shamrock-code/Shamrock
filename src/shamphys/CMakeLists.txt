@@ -21,6 +21,7 @@ endif()
 
 add_library(shamphys::shamphys ALIAS shamphys)
 
+target_link_libraries(shamphys PUBLIC shamalgs)
 target_link_libraries(shamphys PUBLIC shammath)
 target_link_libraries(shamphys PUBLIC shamunits)
 target_link_libraries(shamphys PUBLIC shambindings)

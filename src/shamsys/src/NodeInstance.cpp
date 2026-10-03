@@ -30,6 +30,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
+#include "shamcomm/MPIInitGuard.hpp"
 #include "shamcomm/local_rank.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
@@ -160,6 +161,10 @@ namespace syclinit {
 
 namespace shamsys::instance {
 
+    namespace {
+        std::unique_ptr<shamcomm::MPIInitGuard> mpi_init_guard;
+    } // namespace
+
     u32 compute_queue_eu_count = 64;
 
     u32 get_compute_queue_eu_count(u32 id) { return compute_queue_eu_count; }
@@ -244,9 +249,13 @@ namespace shamsys::instance {
 
     void start_mpi(MPIInitInfo mpi_info) {
 
+        if (mpi_init_guard) {
+            throw ShamsysInstanceException("MPI is already initialized");
+        }
+
         shamcomm::fetch_mpi_capabilities(mpi_info.forced_state);
 
-        mpi::init(&mpi_info.argc, &mpi_info.argv);
+        mpi_init_guard = std::make_unique<shamcomm::MPIInitGuard>(&mpi_info.argc, &mpi_info.argv);
 
         shamcomm::fetch_world_info();
 
@@ -343,6 +352,10 @@ namespace shamsys::instance {
     }
 
     void close_mpi() {
+        if (!mpi_init_guard) {
+            return;
+        }
+
         mpidtypehandler::free_mpidtype();
 
         free_sycl_mpi_types();
@@ -353,7 +366,7 @@ namespace shamsys::instance {
             logger::raw_ln(" Hopefully it was quick :')\n");
         }
 
-        mpi::finalize();
+        mpi_init_guard.reset();
     }
 
     void close() {

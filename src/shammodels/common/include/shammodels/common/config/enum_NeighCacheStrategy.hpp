@@ -29,14 +29,17 @@ namespace shammodels {
      * strategies can be added without breaking the config API again.
      */
     enum NeighCacheStrategy {
-        SingleStage = 0, ///< Single tree traversal per particle
-        TwoStage    = 1  ///< Two stage neighbours search (see shamrock paper)
+        SingleStage                 = 0, ///< Single tree traversal per particle
+        TwoStage                    = 1, ///< Two stage neighbours search (see shamrock paper)
+        SingleStagePersistentKernel = 2  ///< Single tree traversal per particle, persistent
+                                         ///< kernel variant
     };
 
     SHAMROCK_JSON_SERIALIZE_ENUM(
         NeighCacheStrategy,
         {{NeighCacheStrategy::SingleStage, "single_stage"},
-         {NeighCacheStrategy::TwoStage, "two_stage"}});
+         {NeighCacheStrategy::TwoStage, "two_stage"},
+         {NeighCacheStrategy::SingleStagePersistentKernel, "single_stage_persistent_kernel"}});
 
     /// Json key holding the neighbour cache strategy
     inline constexpr const char *neigh_cache_strategy_json_key = "neigh_cache_strategy";

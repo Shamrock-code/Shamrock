@@ -10,6 +10,7 @@ with the number of processes. Run it only if you have enough memory available.
 from statistics import mean, stdev
 
 import shamrock
+from shamrock import NeighCacheStrategy
 
 result_text = ""
 
@@ -61,6 +62,7 @@ for N_target_base in [32e6]:
     cfg.set_artif_viscosity_VaryingCD10(
         alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
     )
+    cfg.set_neigh_cache_strategy(NeighCacheStrategy.TwoStageSharedOffload)
     cfg.set_boundary_periodic()
     cfg.set_eos_adiabatic(gamma)
     cfg.print_status()

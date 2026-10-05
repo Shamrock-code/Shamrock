@@ -58,10 +58,10 @@ condensed steps it runs:
 ```bash
 # System packages (Boost.context/fiber + LLVM 20 for AdaptiveCpp, OpenMPI,
 # pre-commit, clangd/clang-tidy for dev tooling — one shared LLVM 20
-# toolchain, see below)
+# toolchain, see below — and ccache)
 apt-get install -y libboost-context-dev libboost-fiber-dev llvm-20-dev \
   libclang-20-dev libomp-20-dev libopenmpi-dev openmpi-bin pre-commit \
-  clang-20 clangd-20 clang-tidy-20
+  clang-20 clangd-20 clang-tidy-20 ccache
 
 # Submodules
 git submodule update --init --recursive
@@ -69,6 +69,12 @@ git submodule update --init --recursive
 # Env (does NOT build AdaptiveCpp yet)
 ./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp
 ```
+
+ccache needs no extra wiring: the `debian-generic.acpp` env script passes
+`-DCMAKE_CXX_COMPILER_LAUNCHER=ccache` to both the AdaptiveCpp build and
+`shamconfigure` whenever `ccache` is on `PATH`. Check hit rates with
+`ccache -s`. A `build/` configured before ccache was installed picks it up
+on the next `./shamenv_do shamconfigure`.
 
 pre-commit hook venvs also need `SETUPTOOLS_USE_DISTUTILS=stdlib` exported —
 Debian's patched sysconfig scheme otherwise breaks setuptools' vendored

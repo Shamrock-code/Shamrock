@@ -78,8 +78,8 @@ A single LLVM 20 toolchain backs both the AdaptiveCpp build and dev tooling
 (clangd/clang-tidy) — AdaptiveCpp's `CMakeLists.txt` supports up to LLVM 20
 (`LLVM_VERSION_MAJOR GREATER 20` is a hard `SEND_ERROR`). 20 is the newest
 available directly from Ubuntu noble's own repos; apt.llvm.org (which would
-offer newer releases closer to the clang-format v22.1.8 the `pre-commit`
-config pins to, matching the `.clangd` file's `>= clangd-21`/`>= clangd-22`
+offer newer releases closer to the clang-format version the `pre-commit`
+config pins, matching the `.clangd` file's `>= clangd-21`/`>= clangd-22`
 comments) is blocked by this environment's network policy.
 
 `clangd-20` only installs a versioned `/usr/bin/clangd-20` binary, so the

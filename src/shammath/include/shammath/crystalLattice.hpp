@@ -44,6 +44,206 @@ namespace shammath {
         std::string msg_;
     };
 
+    namespace iterator_utils {
+
+        /**
+         * @brief Iterator going through a lattice coordinates range in order
+         *
+         * @tparam Tvec position vector type
+         * @tparam Lattice lattice class providing a static `generator(dr, coord)` function
+         */
+        template<class Tvec, class Lattice>
+        class LatticeIterator {
+            using Tscal              = shambase::VecComponent<Tvec>;
+            static constexpr u32 dim = 3;
+
+            Tscal dr;
+            std::array<i32, dim> coord_min;
+
+            std::array<size_t, dim> coord_delta;
+            size_t current_idx;
+            size_t max_coord;
+
+            bool done = false;
+
+            public:
+            LatticeIterator(
+                Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
+                : dr(dr), coord_min(coord_min), current_idx(0),
+                  coord_delta({
+                      size_t(coord_max[0] - coord_min[0]),
+                      size_t(coord_max[1] - coord_min[1]),
+                      size_t(coord_max[2] - coord_min[2]),
+                  }) {
+
+                // must check for all axis otherwise we loop forever
+                for (int ax = 0; ax < dim; ax++) {
+                    if (coord_min[ax] == coord_max[ax]) {
+                        done = true;
+                    }
+                }
+
+                max_coord = coord_delta[0] * coord_delta[1] * coord_delta[2];
+            }
+
+            inline bool is_done() { return done; }
+
+            inline Tvec next() {
+
+                // std::array<i32, 3> current = {
+                //     coord_min[0] + i32(current_idx / (coord_delta[1] * coord_delta[2])),
+                //     coord_min[1] + i32((current_idx / coord_delta[2]) % coord_delta[1]),
+                //     coord_min[2] + i32(current_idx % coord_delta[2]),
+                // };
+
+                // current index of the particle
+                std::array<i32, 3> current = {
+                    coord_min[0] + i32(current_idx % coord_delta[0]),
+                    coord_min[1] + i32((current_idx / coord_delta[0]) % coord_delta[1]),
+                    coord_min[2] + i32((current_idx / (coord_delta[0] * coord_delta[1]))),
+                };
+
+                // find the physical position of this particle
+                Tvec ret = Lattice::generator(dr, current);
+
+                if (!done) {
+                    current_idx++;
+                }
+                if (current_idx >= max_coord) {
+                    done = true;
+                }
+
+                return ret;
+            }
+
+            inline std::vector<Tvec> next_n(u64 nmax) {
+                std::vector<Tvec> ret{};
+                for (u64 i = 0; i < nmax; i++) {
+                    if (done) {
+                        break;
+                    }
+                    ret.push_back(next());
+                }
+                shamlog_debug_ln("Lattice iterator", "next_n final idx", current_idx);
+                return ret;
+            }
+
+            inline void skip(u64 n) {
+                if (!done) {
+                    current_idx += n;
+                }
+                if (current_idx >= max_coord) {
+                    done = true;
+                }
+                shamlog_debug_ln("Lattice iterator", "skip final idx", current_idx);
+            }
+        };
+
+        /**
+         * @brief Iterator going through a lattice coordinates range in a discontinuous order
+         * (bit-reversed, see advance_it in DiscontinuousIterator.hpp)
+         *
+         * @tparam Tvec position vector type
+         * @tparam Lattice lattice class providing a static `generator(dr, coord)` function
+         */
+        template<class Tvec, class Lattice>
+        class LatticeIteratorDiscontinuous {
+            using Tscal              = shambase::VecComponent<Tvec>;
+            static constexpr u32 dim = 3;
+
+            Tscal dr;
+
+            std::array<std::vector<size_t>, dim> remapped_indices;
+
+            std::array<size_t, dim> coord_delta;
+            size_t max_coord;
+
+            bool done = false;
+
+            public:
+            size_t current_idx;
+            LatticeIteratorDiscontinuous(
+                Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
+                : dr(dr), current_idx(0), coord_delta({
+                                              size_t(coord_max[0] - coord_min[0]),
+                                              size_t(coord_max[1] - coord_min[1]),
+                                              size_t(coord_max[2] - coord_min[2]),
+                                          }) {
+
+                // must check for all axis otherwise we loop forever
+                for (int ax = 0; ax < dim; ax++) {
+                    if (coord_min[ax] == coord_max[ax]) {
+                        done = true;
+                    }
+                }
+
+                max_coord = coord_delta[0] * coord_delta[1] * coord_delta[2];
+
+                for (int ax = 0; ax < dim; ax++) {
+                    DiscontinuousIterator<i32> it(coord_min[ax], coord_max[ax]);
+                    while (!it.is_done()) {
+                        remapped_indices[ax].push_back(it.next());
+                    }
+                }
+            }
+
+            inline bool is_done() { return done; }
+
+            inline Tvec next() {
+
+                // std::array<i32, 3> current = {
+                //     coord_min[0] + i32(current_idx / (coord_delta[1] * coord_delta[2])),
+                //     coord_min[1] + i32((current_idx / coord_delta[2]) % coord_delta[1]),
+                //     coord_min[2] + i32(current_idx % coord_delta[2]),
+                // };
+
+                std::array<i32, 3> current = {
+                    i32(current_idx % coord_delta[0]),
+                    i32((current_idx / coord_delta[0]) % coord_delta[1]),
+                    i32((current_idx / (coord_delta[0] * coord_delta[1]))),
+                };
+
+                current[0] = remapped_indices[0][current[0]];
+                current[1] = remapped_indices[1][current[1]];
+                current[2] = remapped_indices[2][current[2]];
+
+                Tvec ret = Lattice::generator(dr, current);
+
+                if (!done) {
+                    current_idx++;
+                }
+                if (current_idx >= max_coord) {
+                    done = true;
+                }
+
+                return ret;
+            }
+
+            inline std::vector<Tvec> next_n(u64 nmax) {
+                std::vector<Tvec> ret{};
+                for (u64 i = 0; i < nmax; i++) {
+                    if (done) {
+                        break;
+                    }
+                    ret.push_back(next());
+                }
+                shamlog_debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
+                return ret;
+            }
+
+            inline void skip(u64 n) {
+                if (!done) {
+                    current_idx += n;
+                }
+                if (current_idx >= max_coord) {
+                    done = true;
+                }
+                shamlog_debug_ln("Discontinuous iterator", "skip final idx", current_idx);
+            }
+        };
+
+    } // namespace iterator_utils
+
     /**
      * @brief utility for generating HCP crystal lattices
      *
@@ -199,191 +399,12 @@ namespace shammath {
             return {ret_coord_min, ret_coord_max};
         }
 
-        /**
-         * @brief Iterator utility to generate the lattice
-         *
-         */
-        class Iterator {
-            Tscal dr;
-            std::array<i32, dim> coord_min;
+        /// Iterator utility to generate the lattice
+        using Iterator = iterator_utils::LatticeIterator<Tvec, LatticeHCP>;
 
-            std::array<size_t, dim> coord_delta;
-            size_t current_idx;
-            size_t max_coord;
-
-            bool done = false;
-
-            public:
-            Iterator(Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
-                : dr(dr), coord_min(coord_min), current_idx(0),
-                  coord_delta({
-                      size_t(coord_max[0] - coord_min[0]),
-                      size_t(coord_max[1] - coord_min[1]),
-                      size_t(coord_max[2] - coord_min[2]),
-                  }) {
-
-                // must check for all axis otherwise we loop forever
-                for (int ax = 0; ax < dim; ax++) {
-                    if (coord_min[ax] == coord_max[ax]) {
-                        done = true;
-                    }
-                }
-
-                max_coord = coord_delta[0] * coord_delta[1] * coord_delta[2];
-            }
-
-            inline bool is_done() { return done; }
-
-            inline Tvec next() {
-
-                // std::array<i32, 3> current = {
-                //     coord_min[0] + i32(current_idx / (coord_delta[1] * coord_delta[2])),
-                //     coord_min[1] + i32((current_idx / coord_delta[2]) % coord_delta[1]),
-                //     coord_min[2] + i32(current_idx % coord_delta[2]),
-                // };
-
-                std::array<i32, 3> current = {
-                    coord_min[0] + i32(current_idx % coord_delta[0]),
-                    coord_min[1] + i32((current_idx / coord_delta[0]) % coord_delta[1]),
-                    coord_min[2] + i32((current_idx / (coord_delta[0] * coord_delta[1]))),
-                };
-
-                // logger::raw_ln(current, current_idx, max_coord);
-
-                Tvec ret = generator(dr, current);
-
-                if (!done) {
-                    current_idx++;
-                }
-                if (current_idx >= max_coord) {
-                    done = true;
-                }
-
-                return ret;
-            }
-
-            inline std::vector<Tvec> next_n(u64 nmax) {
-                std::vector<Tvec> ret{};
-                for (u64 i = 0; i < nmax; i++) {
-                    if (done) {
-                        break;
-                    }
-
-                    ret.push_back(next());
-                }
-                shamlog_debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
-                return ret;
-            }
-
-            inline void skip(u64 n) {
-                if (!done) {
-                    current_idx += n;
-                }
-                if (current_idx >= max_coord) {
-                    done = true;
-                }
-                shamlog_debug_ln("Discontinuous iterator", "skip final idx", current_idx);
-            }
-        };
-
-        /**
-         * @brief Iterator utility to generate the lattice
-         *
-         */
-        class IteratorDiscontinuous {
-            Tscal dr;
-
-            std::array<std::vector<size_t>, dim> remapped_indices;
-
-            std::array<size_t, dim> coord_delta;
-            size_t max_coord;
-
-            bool done = false;
-
-            public:
-            size_t current_idx;
-            IteratorDiscontinuous(
-                Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
-                : dr(dr), current_idx(0), coord_delta({
-                                              size_t(coord_max[0] - coord_min[0]),
-                                              size_t(coord_max[1] - coord_min[1]),
-                                              size_t(coord_max[2] - coord_min[2]),
-                                          }) {
-
-                // must check for all axis otherwise we loop forever
-                for (int ax = 0; ax < dim; ax++) {
-                    if (coord_min[ax] == coord_max[ax]) {
-                        done = true;
-                    }
-                }
-
-                max_coord = coord_delta[0] * coord_delta[1] * coord_delta[2];
-
-                for (int ax = 0; ax < dim; ax++) {
-                    DiscontinuousIterator<i32> it(coord_min[ax], coord_max[ax]);
-                    while (!it.is_done()) {
-                        remapped_indices[ax].push_back(it.next());
-                    }
-                }
-            }
-
-            inline bool is_done() { return done; }
-
-            inline Tvec next() {
-
-                // std::array<i32, 3> current = {
-                //     coord_min[0] + i32(current_idx / (coord_delta[1] * coord_delta[2])),
-                //     coord_min[1] + i32((current_idx / coord_delta[2]) % coord_delta[1]),
-                //     coord_min[2] + i32(current_idx % coord_delta[2]),
-                // };
-
-                std::array<i32, 3> current = {
-                    i32(current_idx % coord_delta[0]),
-                    i32((current_idx / coord_delta[0]) % coord_delta[1]),
-                    i32((current_idx / (coord_delta[0] * coord_delta[1]))),
-                };
-
-                current[0] = remapped_indices[0][current[0]];
-                current[1] = remapped_indices[1][current[1]];
-                current[2] = remapped_indices[2][current[2]];
-
-                // logger::raw_ln(current, current_idx, max_coord);
-
-                Tvec ret = generator(dr, current);
-
-                if (!done) {
-                    current_idx++;
-                }
-                if (current_idx >= max_coord) {
-                    done = true;
-                }
-
-                return ret;
-            }
-
-            inline std::vector<Tvec> next_n(u64 nmax) {
-                std::vector<Tvec> ret{};
-                for (u64 i = 0; i < nmax; i++) {
-                    if (done) {
-                        break;
-                    }
-
-                    ret.push_back(next());
-                }
-                shamlog_debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
-                return ret;
-            }
-
-            inline void skip(u64 n) {
-                if (!done) {
-                    current_idx += n;
-                }
-                if (current_idx >= max_coord) {
-                    done = true;
-                }
-                shamlog_debug_ln("Discontinuous iterator", "skip final idx", current_idx);
-            }
-        };
+        /// Iterator utility to generate the lattice in a discontinuous order
+        using IteratorDiscontinuous
+            = iterator_utils::LatticeIteratorDiscontinuous<Tvec, LatticeHCP>;
 
         inline static std::tuple<Tvec, Tvec> get_ideal_hcp_box(
             Tscal dr, std::tuple<Tvec, Tvec> box) {
@@ -408,7 +429,8 @@ namespace shammath {
      * The lattice is built as a stack of close-packed triangular layers normal to the z axis
      * following the ABCABC... stacking sequence (as opposed to LatticeHCP which uses the ABAB...
      * sequence). Like LatticeHCP, neighbours are 2 dr apart, so both lattices share the
-     * sameparticle density and the same in-plane / inter-layer spacings, only the stacking differs.
+     * same particle density and the same in-plane / inter-layer spacings, only the stacking
+     * differs.
      *
      * Since the stacking repeats every 3 layers, a periodic box requires the number of layers
      * along z to be a multiple of 3 (instead of 2 for HCP).
@@ -575,191 +597,12 @@ namespace shammath {
             return {ret_coord_min, ret_coord_max};
         }
 
-        /**
-         * @brief Iterator utility to generate the lattice
-         *
-         */
-        class Iterator {
-            Tscal dr;
-            std::array<i32, dim> coord_min;
+        /// Iterator utility to generate the lattice
+        using Iterator = iterator_utils::LatticeIterator<Tvec, LatticeFCC>;
 
-            std::array<size_t, dim> coord_delta;
-            size_t current_idx;
-            size_t max_coord;
-
-            bool done = false;
-
-            public:
-            Iterator(Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
-                : dr(dr), coord_min(coord_min), current_idx(0),
-                  coord_delta({
-                      size_t(coord_max[0] - coord_min[0]),
-                      size_t(coord_max[1] - coord_min[1]),
-                      size_t(coord_max[2] - coord_min[2]),
-                  }) {
-
-                // must check for all axis otherwise we loop forever
-                for (int ax = 0; ax < dim; ax++) {
-                    if (coord_min[ax] == coord_max[ax]) {
-                        done = true;
-                    }
-                }
-
-                max_coord = coord_delta[0] * coord_delta[1] * coord_delta[2];
-            }
-
-            inline bool is_done() { return done; }
-
-            inline Tvec next() {
-
-                // std::array<i32, 3> current = {
-                //     coord_min[0] + i32(current_idx / (coord_delta[1] * coord_delta[2])),
-                //     coord_min[1] + i32((current_idx / coord_delta[2]) % coord_delta[1]),
-                //     coord_min[2] + i32(current_idx % coord_delta[2]),
-                // };
-
-                std::array<i32, 3> current = {
-                    coord_min[0] + i32(current_idx % coord_delta[0]),
-                    coord_min[1] + i32((current_idx / coord_delta[0]) % coord_delta[1]),
-                    coord_min[2] + i32((current_idx / (coord_delta[0] * coord_delta[1]))),
-                };
-
-                // logger::raw_ln(current, current_idx, max_coord);
-
-                Tvec ret = generator(dr, current);
-
-                if (!done) {
-                    current_idx++;
-                }
-                if (current_idx >= max_coord) {
-                    done = true;
-                }
-
-                return ret;
-            }
-
-            inline std::vector<Tvec> next_n(u64 nmax) {
-                std::vector<Tvec> ret{};
-                for (u64 i = 0; i < nmax; i++) {
-                    if (done) {
-                        break;
-                    }
-
-                    ret.push_back(next());
-                }
-                shamlog_debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
-                return ret;
-            }
-
-            inline void skip(u64 n) {
-                if (!done) {
-                    current_idx += n;
-                }
-                if (current_idx >= max_coord) {
-                    done = true;
-                }
-                shamlog_debug_ln("Discontinuous iterator", "skip final idx", current_idx);
-            }
-        };
-
-        /**
-         * @brief Iterator utility to generate the lattice
-         *
-         */
-        class IteratorDiscontinuous {
-            Tscal dr;
-
-            std::array<std::vector<size_t>, dim> remapped_indices;
-
-            std::array<size_t, dim> coord_delta;
-            size_t max_coord;
-
-            bool done = false;
-
-            public:
-            size_t current_idx;
-            IteratorDiscontinuous(
-                Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
-                : dr(dr), current_idx(0), coord_delta({
-                                              size_t(coord_max[0] - coord_min[0]),
-                                              size_t(coord_max[1] - coord_min[1]),
-                                              size_t(coord_max[2] - coord_min[2]),
-                                          }) {
-
-                // must check for all axis otherwise we loop forever
-                for (int ax = 0; ax < dim; ax++) {
-                    if (coord_min[ax] == coord_max[ax]) {
-                        done = true;
-                    }
-                }
-
-                max_coord = coord_delta[0] * coord_delta[1] * coord_delta[2];
-
-                for (int ax = 0; ax < dim; ax++) {
-                    DiscontinuousIterator<i32> it(coord_min[ax], coord_max[ax]);
-                    while (!it.is_done()) {
-                        remapped_indices[ax].push_back(it.next());
-                    }
-                }
-            }
-
-            inline bool is_done() { return done; }
-
-            inline Tvec next() {
-
-                // std::array<i32, 3> current = {
-                //     coord_min[0] + i32(current_idx / (coord_delta[1] * coord_delta[2])),
-                //     coord_min[1] + i32((current_idx / coord_delta[2]) % coord_delta[1]),
-                //     coord_min[2] + i32(current_idx % coord_delta[2]),
-                // };
-
-                std::array<i32, 3> current = {
-                    i32(current_idx % coord_delta[0]),
-                    i32((current_idx / coord_delta[0]) % coord_delta[1]),
-                    i32((current_idx / (coord_delta[0] * coord_delta[1]))),
-                };
-
-                current[0] = remapped_indices[0][current[0]];
-                current[1] = remapped_indices[1][current[1]];
-                current[2] = remapped_indices[2][current[2]];
-
-                // logger::raw_ln(current, current_idx, max_coord);
-
-                Tvec ret = generator(dr, current);
-
-                if (!done) {
-                    current_idx++;
-                }
-                if (current_idx >= max_coord) {
-                    done = true;
-                }
-
-                return ret;
-            }
-
-            inline std::vector<Tvec> next_n(u64 nmax) {
-                std::vector<Tvec> ret{};
-                for (u64 i = 0; i < nmax; i++) {
-                    if (done) {
-                        break;
-                    }
-
-                    ret.push_back(next());
-                }
-                shamlog_debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
-                return ret;
-            }
-
-            inline void skip(u64 n) {
-                if (!done) {
-                    current_idx += n;
-                }
-                if (current_idx >= max_coord) {
-                    done = true;
-                }
-                shamlog_debug_ln("Discontinuous iterator", "skip final idx", current_idx);
-            }
-        };
+        /// Iterator utility to generate the lattice in a discontinuous order
+        using IteratorDiscontinuous
+            = iterator_utils::LatticeIteratorDiscontinuous<Tvec, LatticeFCC>;
 
         /**
          * @brief Get the box size for a FCC lattice of xcnt * ycnt * zcnt lattice cells
@@ -856,104 +699,12 @@ namespace shammath {
             return {ret_coord_min, ret_coord_max};
         }
 
-        /**
-         * @brief Iterator utility to generate the lattice
-         *
-         */
-        class IteratorDiscontinuous {
-            Tscal dr;
+        /// Iterator utility to generate the lattice
+        using Iterator = iterator_utils::LatticeIterator<Tvec, LatticeCubic>;
 
-            std::array<std::vector<size_t>, dim> remapped_indices;
-
-            std::array<size_t, dim> coord_delta;
-            size_t max_coord;
-
-            bool done = false;
-
-            public:
-            size_t current_idx;
-            IteratorDiscontinuous(
-                Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
-                : dr(dr), current_idx(0), coord_delta({
-                                              size_t(coord_max[0] - coord_min[0]),
-                                              size_t(coord_max[1] - coord_min[1]),
-                                              size_t(coord_max[2] - coord_min[2]),
-                                          }) {
-
-                // must check for all axis otherwise we loop forever
-                for (int ax = 0; ax < dim; ax++) {
-                    if (coord_min[ax] == coord_max[ax]) {
-                        done = true;
-                    }
-                }
-
-                max_coord = coord_delta[0] * coord_delta[1] * coord_delta[2];
-
-                for (int ax = 0; ax < dim; ax++) {
-                    DiscontinuousIterator<i32> it(coord_min[ax], coord_max[ax]);
-                    while (!it.is_done()) {
-                        remapped_indices[ax].push_back(it.next());
-                    }
-                }
-            }
-
-            inline bool is_done() { return done; }
-
-            inline Tvec next() {
-
-                // std::array<i32, 3> current = {
-                //     coord_min[0] + i32(current_idx / (coord_delta[1] * coord_delta[2])),
-                //     coord_min[1] + i32((current_idx / coord_delta[2]) % coord_delta[1]),
-                //     coord_min[2] + i32(current_idx % coord_delta[2]),
-                // };
-
-                std::array<i32, 3> current = {
-                    i32(current_idx % coord_delta[0]),
-                    i32((current_idx / coord_delta[0]) % coord_delta[1]),
-                    i32((current_idx / (coord_delta[0] * coord_delta[1]))),
-                };
-
-                current[0] = remapped_indices[0][current[0]];
-                current[1] = remapped_indices[1][current[1]];
-                current[2] = remapped_indices[2][current[2]];
-
-                // logger::raw_ln(current, current_idx, max_coord);
-
-                Tvec ret = generator(dr, current);
-
-                if (!done) {
-                    current_idx++;
-                }
-                if (current_idx >= max_coord) {
-                    done = true;
-                }
-
-                return ret;
-            }
-
-            inline std::vector<Tvec> next_n(u64 nmax) {
-                std::vector<Tvec> ret{};
-                for (u64 i = 0; i < nmax; i++) {
-                    if (done) {
-                        break;
-                    }
-
-                    ret.push_back(next());
-                }
-                shamlog_debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
-                return ret;
-            }
-
-            inline void skip(u64 n) {
-                if (!done) {
-                    current_idx += n;
-                }
-                if (current_idx >= max_coord) {
-                    done = true;
-                }
-                shamlog_debug_ln("Discontinuous iterator", "skip final idx", current_idx);
-            }
-        };
+        /// Iterator utility to generate the lattice in a discontinuous order
+        using IteratorDiscontinuous
+            = iterator_utils::LatticeIteratorDiscontinuous<Tvec, LatticeCubic>;
     };
 
 } // namespace shammath

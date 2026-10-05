@@ -33,7 +33,7 @@ if(APPLE)
     target_compile_definitions(shamrock_gui_imgui PUBLIC GL_SILENCE_DEPRECATION)
 endif()
 
-set(sources src/main.cpp src/screenshot.cpp)
+set(sources src/main.cpp src/screenshot.cpp src/FrameTimings.cpp)
 add_executable(shamrock_gui ${sources})
 
 target_include_directories(

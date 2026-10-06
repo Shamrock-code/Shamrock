@@ -75,7 +75,7 @@ those require the whole dependency graph to be up to date anyway.
 
 ## Testing
 
-**BEFORE running any unittest, always check that reference files exist.**
+Before running any unit test, make sure the reference files exist.
 If `build/reference-files` is missing or stale, call `./shamenv_do pull_reffiles` to fetch them.
 Running tests without pulled reference files will produce failures.
 
@@ -90,7 +90,7 @@ test -d reference-files || ./shamenv_do pull_reffiles
 
 Never truncate the output of `--smi` with `head` or similar — it contains device IDs needed to run tests.
 
-Show the device table from the `--smi` output and **ask the user to select which device to use**. Do NOT pick a device yourself. **Prompt the user only once** and remember their choice for the rest of the session — reuse the same device for all subsequent test runs unless asked otherwise. Then run with the user-selected device ID:
+Show the device table from the `--smi` output and ask the user which device to use, rather than picking one yourself. Ask once per session and reuse that device for all later test runs unless the user says otherwise. Then run with the user-selected device ID:
 
 ```bash
 ./shamenv_do ./shamrock_test --sycl-cfg <user-chosen-id>:<user-chosen-id> --loglevel 1 --unittest
@@ -103,7 +103,7 @@ Show the device table from the `--smi` output and **ask the user to select which
 - **Pre-commit hooks**: `.pre-commit-config.yaml`
 - Run `pre-commit run --all-files` before committing
 
-## Naming conventions (enforced as warnings by `.clang-tidy` `CheckOptions`)
+## Naming conventions (mostly enforced as warnings by `.clang-tidy` `CheckOptions`)
 
 | Entity                            | Case       |
 | --------------------------------- | ---------- |
@@ -116,6 +116,10 @@ Show the device table from the `--smi` output and **ask the user to select which
 | Enum value                        | CamelCase  |
 | Template parameter (type, e.g. `Tvec`) | CamelCase  |
 | Template parameter (non-type, e.g. `dim`) | lower_case |
+
+`.clang-tidy` has no `CheckOptions` entry for variables, parameters or
+members, so those rows are a review-time convention, not a clang-tidy
+warning.
 
 Enum values use **acronym-preserving CamelCase**: each word is
 capitalized, but a word that is itself a recognized acronym (a
@@ -152,17 +156,21 @@ src/
   shambackends/      SYCL GPU device management and kernels
   shambase/          base containers, math utils, I/O
   shambindings/      embeds Python via pybind11, registering C++ types and modules
-  shamcmdopt/        CLI argument parsing, env/tty detection utilities
+  shamcmdopt/        CLI argument parsing, env-variable and CI detection utilities
   shamcomm/          MPI and SYCL comm layer for Shamrock
+  shamformat/        string formatting helpers and human-readable value printing
   shammath/          tensor and linear algebra math routines
   shamsolvergraph/   core solver graph nodes, edges, and registry
   shammodels/        SPH, GSPH, Ramses, Zeus hydro model implementations
   shamphys/          physics utilities: EOS, MHD, orbits, collapse
+  shampylib/         pybind11 bindings exposing Shamrock modules to Python
   shamrock/          core hydrodynamics framework: solvers, mesh, AMR, I/O, scheduler, graph
   shamsys/           SHAMROCK system and runtime glue
+  shamterm/          terminal colors, tty detection, error callbacks
   shamtest/          Shamrock's internal C++ test framework
   shamtree/          SYCL-accelerated Morton-code trees for hydrodynamics queries
   shamunits/         compile-time physics unit conversion library
+  gui/               optional control GUI (Dear ImGui + GLFW), -DSHAMROCK_BUILD_GUI=ON
   pylib/             Python package root for Shamrock
   tests/             unit tests for Shamrock library components
 ```

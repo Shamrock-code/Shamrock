@@ -20,6 +20,7 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 #include <cmath>
+#include <limits>
 #include <vector>
 
 template<class Ker>
@@ -196,6 +197,75 @@ NEW_TEST(Unittest, "shammath/sphkernels/TGauss3", 1) {
 NEW_TEST(Unittest, "shammath/sphkernels/TGauss5", 1) {
     validate_kernel_3d<shammath::TGauss5<f32>>(1e-3, 1e-4, 1e-3);
     validate_kernel_3d<shammath::TGauss5<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+/**
+ * @brief Check the symmetric f3d_integ_z against the plain Riemann sum
+ *
+ * The symmetric version drops the z = -Rkern sample (f(Rkern) == 0), adds each mirrored sample
+ * twice and factors out the step, which reorders the floating point sum, hence the few ulp per
+ * term tolerance.
+ */
+template<class Ker, int np>
+inline void validate_f3d_integ_z_symmetric() {
+    using Tscal = typename Ker::Tscal;
+
+    auto reference = [](Tscal x) {
+        return shammath::integ_riemann_sum<Tscal>(
+            -Ker::Rkern, Ker::Rkern, Ker::Rkern / np, [&](Tscal z) {
+                return Ker::f(sycl::sqrt(sycl::fma(z, z, x * x)));
+            });
+    };
+
+    const Tscal tol = 4 * (2 * np) * std::numeric_limits<Tscal>::epsilon() * reference(0);
+
+    const int n_samples = 4096;
+    u32 mismatch        = 0;
+    for (int i = 0; i <= n_samples; i++) {
+        Tscal x   = (Tscal(i) / Tscal(n_samples)) * (Ker::Rkern + Tscal(0.5));
+        Tscal ref = reference(x);
+        mismatch += !(sycl::fabs(Ker::f3d_integ_z(x, np) - ref) <= tol);
+        mismatch += !(sycl::fabs(Ker::template f3d_integ_z<np>(x) - ref) <= tol);
+    }
+
+    REQUIRE_EQUAL_NAMED("np = " + std::to_string(np), mismatch, 0_u32);
+}
+
+template<class Ker>
+inline void validate_f3d_integ_z_symmetric_all_np() {
+    validate_f3d_integ_z_symmetric<Ker, 4>();
+    validate_f3d_integ_z_symmetric<Ker, 8>();
+    validate_f3d_integ_z_symmetric<Ker, 16>();
+    validate_f3d_integ_z_symmetric<Ker, 32>();
+}
+
+template<template<class> class Ker>
+inline void validate_f3d_integ_z_symmetric_all_types() {
+    validate_f3d_integ_z_symmetric_all_np<Ker<f32>>();
+    validate_f3d_integ_z_symmetric_all_np<Ker<f64>>();
+}
+
+NEW_TEST(Unittest, "shammath/sphkernels/f3d_integ_z_symmetric", 1) {
+    validate_f3d_integ_z_symmetric_all_types<shammath::M4>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M4DH>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M4DH3>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M4DH5>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M4DH7>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M4Shift2>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M4Shift4>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M4Shift8>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M4Shift16>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M5>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M6>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M7>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M8>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M9>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::M10>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::C2>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::C4>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::C6>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::TGauss3>();
+    validate_f3d_integ_z_symmetric_all_types<shammath::TGauss5>();
 }
 
 struct Outplot {

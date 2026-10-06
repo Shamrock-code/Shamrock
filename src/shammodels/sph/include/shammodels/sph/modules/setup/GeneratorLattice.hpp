@@ -11,7 +11,7 @@
 
 /**
  * @file GeneratorLattice.hpp
- * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Generic SPH setup generator placing particles on a crystal lattice
  *

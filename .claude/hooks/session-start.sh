@@ -24,7 +24,13 @@ fi
 # to the clang-format v22.1.8 the `pre-commit` config pins to, matching the
 # `.clangd` file's `>= clangd-21`/`>= clangd-22` comments) is blocked by
 # this environment's network policy.
-NEEDED_PKGS="libboost-context-dev libboost-fiber-dev llvm-20-dev libclang-20-dev libomp-20-dev libopenmpi-dev openmpi-bin pre-commit clang-20 clangd-20 clang-tidy-20"
+#
+# ccache: the debian-generic.acpp env script passes
+# -DCMAKE_CXX_COMPILER_LAUNCHER=ccache to both the AdaptiveCpp build and
+# `shamconfigure` whenever `ccache` is on PATH (checked each time
+# `shamenv_do` sources the env), so installing it is all that's needed to
+# enable it.
+NEEDED_PKGS="libboost-context-dev libboost-fiber-dev llvm-20-dev libclang-20-dev libomp-20-dev libopenmpi-dev openmpi-bin pre-commit clang-20 clangd-20 clang-tidy-20 ccache"
 MISSING_PKGS=""
 for pkg in $NEEDED_PKGS; do
   if ! dpkg -s "$pkg" >/dev/null 2>&1; then

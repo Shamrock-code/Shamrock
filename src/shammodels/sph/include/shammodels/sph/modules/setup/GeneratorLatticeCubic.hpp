@@ -12,6 +12,7 @@
 /**
  * @file GeneratorLatticeCubic.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief SPH setup generator placing particles on a cubic lattice
  *
  */

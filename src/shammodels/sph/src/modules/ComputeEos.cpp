@@ -945,7 +945,9 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         Tscal hfactd_ = shambase::get_check_ref(hfactd).data;
         u32 n_sinks   = eos_config->n_sinks;
 
-        Tscal inv_r0_q = 1. / sycl::pow(r0, q_);
+        // cs = cs0 * (r0 * phi / M)^q, with phi = sum_i m_i / |r - r_i| and M = sum_i m_i, so that
+        // a single sink gives cs = cs0 * (r / r0)^-q, i.e. cs0 at r0 as for LP07
+        Tscal r0_q = sycl::pow(r0, q_);
 
         using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
 
@@ -991,7 +993,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                                auto spos,
                                auto smass,
                                Tscal cs0,
-                               Tscal inv_r0_q,
+                               Tscal r0_q,
                                Tscal q,
                                Tscal &pressure,
                                Tscal &soundspeed) {
@@ -1005,7 +1007,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                 pot_sum += s_m / s_r_abs;
             }
 
-            Tscal cs_out = cs0 * inv_r0_q * sycl::pow(pot_sum / sink_mass_sum, q);
+            Tscal cs_out = cs0 * r0_q * sycl::pow(pot_sum / sink_mass_sum, q);
             Tscal P_a    = EOS::pressure_from_cs(cs_out * cs_out, rho_a);
 
             pressure   = P_a;
@@ -1026,7 +1028,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                         sink_mass_buf},
                     out_refs.get(id),
                     count,
-                    [cs0, inv_r0_q, q_, sink_cnt, eos_internal](
+                    [cs0, r0_q, q_, sink_cnt, eos_internal](
                         u32 gid,
                         const Tscal *rho,
                         const Tvec *xyz,
@@ -1043,7 +1045,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                             spos,
                             smass,
                             cs0,
-                            inv_r0_q,
+                            r0_q,
                             q_,
                             pressure[gid],
                             soundspeed[gid]);
@@ -1063,7 +1065,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                         sink_mass_buf},
                     out_refs.get(id),
                     count,
-                    [cs0, inv_r0_q, q_, sink_cnt, pmass_, hfactd_, eos_internal](
+                    [cs0, r0_q, q_, sink_cnt, pmass_, hfactd_, eos_internal](
                         u32 gid,
                         const Tscal *h,
                         const Tvec *xyz,
@@ -1081,7 +1083,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                             spos,
                             smass,
                             cs0,
-                            inv_r0_q,
+                            r0_q,
                             q_,
                             pressure[gid],
                             soundspeed[gid]);

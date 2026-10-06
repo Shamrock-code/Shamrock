@@ -231,13 +231,14 @@ namespace shammodels::sph::phdump {
 
         cs0 = sycl::sqrt(eos.polyk);
         q   = eos.qfacdisc;
-        r0  = 1; // the polyk in phantom include the 1/r0^2 ?
+        r0  = 1; // phantom's polyk is cs^2 at r = 1, so cs0 = sqrt(polyk) with r0 = 1
     }
 
     void eos3_write(PhantomDump &dump, const f64 &cs0, const f64 &q, const f64 &r0) {
         EOSPhConfig eos;
 
-        eos.polyk    = cs0 * cs0 / (r0 * r0);
+        // phantom's polyk is cs^2 at r = 1: cs0^2 (r / r0)^-2q = cs0^2 r0^2q r^-2q
+        eos.polyk    = cs0 * cs0 * sycl::pow(r0, 2 * q);
         eos.qfacdisc = q;
 
         dump.table_header_i32.add("ieos", 3);
@@ -261,13 +262,14 @@ namespace shammodels::sph::phdump {
 
         cs0 = sycl::sqrt(eos.polyk);
         q   = eos.qfacdisc;
-        r0  = 1; // the polyk in phantom include the 1/r0^2 ?
+        r0  = 1; // phantom's polyk is cs^2 at r = 1, so cs0 = sqrt(polyk) with r0 = 1
     }
 
     void eos13_write(PhantomDump &dump, const f64 &cs0, const f64 &q, const f64 &r0) {
         EOSPhConfig eos;
 
-        eos.polyk    = cs0 * cs0 / (r0 * r0);
+        // phantom's polyk is cs^2 at r = 1: cs0^2 (r / r0)^-2q = cs0^2 r0^2q r^-2q
+        eos.polyk    = cs0 * cs0 * sycl::pow(r0, 2 * q);
         eos.qfacdisc = q;
 
         dump.table_header_i32.add("ieos", 13);
@@ -289,13 +291,14 @@ namespace shammodels::sph::phdump {
 
         cs0 = sycl::sqrt(eos.polyk);
         q   = eos.qfacdisc;
-        r0  = 1; // the polyk in phantom include the 1/r0^2 ?
+        r0  = 1; // phantom's polyk is cs^2 at r = 1, so cs0 = sqrt(polyk) with r0 = 1
     }
 
     void eos14_write(PhantomDump &dump, const f64 &cs0, const f64 &q, const f64 &r0) {
         EOSPhConfig eos;
 
-        eos.polyk    = cs0 * cs0 / (r0 * r0);
+        // phantom's polyk is cs^2 at r = 1: cs0^2 (r / r0)^-2q = cs0^2 r0^2q r^-2q
+        eos.polyk    = cs0 * cs0 * sycl::pow(r0, 2 * q);
         eos.qfacdisc = q;
 
         dump.table_header_i32.add("ieos", 14);

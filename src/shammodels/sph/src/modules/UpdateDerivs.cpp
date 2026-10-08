@@ -1291,8 +1291,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
         auto rhodust_eps  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
         rhodust_eps->data = cfg_evol->rhodust_eps;
 
-        auto dv_max  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
-        dv_max->data = cfg_evol->dv_max;
+        auto vfrag_threshold  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+        vfrag_threshold->data = cfg_evol->vfrag_threshold;
 
         auto dt_hydro_edge  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
         dt_hydro_edge->data = dt_hydro;
@@ -1326,7 +1326,14 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
             gpart_mass, part_counts, hpart_refs, grad_P_on_rho, s_j_refs, t_j_field, delta_v);
 
         node->set_edges(
-            rhodust_eps, dv_max, massgrid, tabflux_coag, part_counts, s_j_refs, delta_v, S_coag);
+            rhodust_eps,
+            vfrag_threshold,
+            massgrid,
+            tabflux_coag,
+            part_counts,
+            s_j_refs,
+            delta_v,
+            S_coag);
 
         node_add_source_term->set_edges(
             part_counts, rhodust_eps, dt_hydro_edge, S_coag, s_j_refs, ds_j_dt_refs);

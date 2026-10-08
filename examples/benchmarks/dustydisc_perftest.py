@@ -129,7 +129,7 @@ for c in configs:
     print(f"limiter = {limiter} (DUST_LIMITER={_dust_limiter_env!r})")
 
     if use_coala:
-        dv_max = 1000000 * codeu.get("m") / codeu.get("s")
+        vfrag_threshold = 1000000 * codeu.get("m") / codeu.get("s")
         Q = 5
         rhodust_eps = 1e-23 * codeu_kg_m3
         K0_multiplier = 1
@@ -226,7 +226,7 @@ for c in configs:
             )
 
         if use_coala:
-            cfg.set_dust_evol_coala_coag(rhodust_eps, dv_max, massgrid_edges, tabflux_coag)
+            cfg.set_dust_evol_coala_coag(rhodust_eps, vfrag_threshold, massgrid_edges, tabflux_coag)
 
     cfg.add_kill_sphere(center=(0, 0, 0), radius=bsize)  # kill particles outside the simulation box
 

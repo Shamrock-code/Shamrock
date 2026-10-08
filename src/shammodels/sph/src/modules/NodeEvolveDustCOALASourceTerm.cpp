@@ -39,10 +39,8 @@ namespace shammodels::sph::modules {
 
         using mdspan_rank_1         = std::mdspan<Tscal, std::dextents<u32, 1>>;
         using mdspan_rank_1_strided = std::mdspan<Tscal, std::dextents<u32, 1>, std::layout_stride>;
-        using mdspan_rank_3         = std::mdspan<Tscal, std::dextents<u32, 3>>;
 
         using const_mdspan_rank_1 = std::mdspan<const Tscal, std::dextents<u32, 1>>;
-        using const_mdspan_rank_3 = std::mdspan<const Tscal, std::dextents<u32, 3>>;
 
         u32 nbins;
         Tscal rho_eps;
@@ -55,7 +53,9 @@ namespace shammodels::sph::modules {
             u32 /**/,
             // common to all kernel calls
             const Tscal *__restrict massgrid_ptr,
-            const Tscal *__restrict tensor_tabflux_coag,
+            const u32 *__restrict tabflux_pair_offset,
+            const u32 *__restrict tabflux_pair_jmin,
+            const Tscal *__restrict tabflux_values,
             // field specific data
             const Tscal *__restrict s_j,
             const Tvec *__restrict delta_v_j,
@@ -86,7 +86,8 @@ namespace shammodels::sph::modules {
                     u32 id_a_d = id_a * nbins;
 
                     /* inputs */
-                    const_mdspan_rank_3 tabflux_coag(tensor_tabflux_coag, nbins, nbins, nbins);
+                    shamphys::TabfluxCoagK0SparseView<Tscal> tabflux_coag{
+                        nbins, tabflux_pair_offset, tabflux_pair_jmin, tabflux_values};
                     const_mdspan_rank_1 massgrid(massgrid_ptr, nbins + 1);
 
                     /* internal */
@@ -165,8 +166,21 @@ namespace shammodels::sph::modules {
         sham::DeviceBuffer<Tscal> massgrid_buf(nbins + 1, dev_sched);
         massgrid_buf.copy_from_stdvec(massgrid);
 
-        sham::DeviceBuffer<Tscal> tensor_tabflux_coag_buf(nbins * nbins * nbins, dev_sched);
-        tensor_tabflux_coag_buf.copy_from_stdvec(tensor_tabflux_coag);
+        // only the non-zero part of the tensor is used on device
+        auto tabflux_sparse = shamphys::make_tabflux_coag_k0_sparse<Tscal>(
+            nbins,
+            std::mdspan<const Tscal, std::dextents<u32, 3>>(
+                tensor_tabflux_coag.data(), nbins, nbins, nbins));
+
+        sham::DeviceBuffer<u32> tabflux_pair_offset_buf(
+            tabflux_sparse.pair_offset.size(), dev_sched);
+        tabflux_pair_offset_buf.copy_from_stdvec(tabflux_sparse.pair_offset);
+
+        sham::DeviceBuffer<u32> tabflux_pair_jmin_buf(tabflux_sparse.pair_jmin.size(), dev_sched);
+        tabflux_pair_jmin_buf.copy_from_stdvec(tabflux_sparse.pair_jmin);
+
+        sham::DeviceBuffer<Tscal> tabflux_values_buf(tabflux_sparse.values.size(), dev_sched);
+        tabflux_values_buf.copy_from_stdvec(tabflux_sparse.values);
 
         // per thread local memory: flux, one per bin
         usize local_mem_per_thread = nbins * sizeof(Tscal);
@@ -195,7 +209,9 @@ namespace shammodels::sph::modules {
                 q,
                 sham::MultiRef{
                     massgrid_buf,
-                    tensor_tabflux_coag_buf,
+                    tabflux_pair_offset_buf,
+                    tabflux_pair_jmin_buf,
+                    tabflux_values_buf,
                     s_j_spans.get(id_patch),
                     delta_v_j_spans.get(id_patch)},
                 sham::MultiRef{S_coag_spans.get(id_patch), gij_scratch},

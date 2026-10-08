@@ -32,11 +32,30 @@ target_link_libraries(shamrock_gui_imgui PUBLIC glfw OpenGL::GL)
 if(APPLE)
     target_compile_definitions(shamrock_gui_imgui PUBLIC GL_SILENCE_DEPRECATION)
 endif()
+if(SHAMROCK_GUI_FREETYPE AND FREETYPE_FOUND)
+    target_sources(shamrock_gui_imgui PRIVATE ${imgui_SOURCE_DIR}/misc/freetype/imgui_freetype.cpp)
+    target_compile_definitions(shamrock_gui_imgui PUBLIC IMGUI_ENABLE_FREETYPE)
+    target_link_libraries(shamrock_gui_imgui PUBLIC Freetype::Freetype)
+    message(STATUS "shamrock_gui fonts: FreeType")
+else()
+    message(STATUS "shamrock_gui fonts: stb_truetype")
+endif()
 
-set(sources src/main.cpp src/screenshot.cpp src/FrameTimings.cpp)
+set(sources src/main.cpp src/screenshot.cpp src/FrameTimings.cpp src/style.cpp)
 add_executable(shamrock_gui ${sources})
 
 target_include_directories(
     shamrock_gui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${stb_SOURCE_DIR}
 )
 target_link_libraries(shamrock_gui PRIVATE shamrock_gui_imgui)
+
+# Fonts next to the executable (the app also looks in ./assets).
+add_custom_command(
+    TARGET shamrock_gui
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:shamrock_gui>/assets/fonts
+    COMMAND ${CMAKE_COMMAND} -E copy ${SHAMROCK_GUI_FONTS}
+            $<TARGET_FILE_DIR:shamrock_gui>/assets/fonts
+    COMMAND ${CMAKE_COMMAND} -E copy ${SHAMROCK_GUI_FONTS_LICENSE}
+            $<TARGET_FILE_DIR:shamrock_gui>/assets/fonts/OFL.txt
+)

@@ -247,7 +247,7 @@ namespace shammodels::sph {
         template<class T>
         inline void overwrite_field_value(
             std::string field_name,
-            const std::function<std::vector<T>(py::dict)> field_compute,
+            const std::function<std::vector<T>(shamrock::PatchDataLazyGetter &)> field_compute,
             const u32 offset) {
 
             StackEntry stack_loc{};
@@ -269,7 +269,8 @@ namespace shammodels::sph {
                             f_nvar));
                     }
 
-                    auto result = field_compute(shamrock::pdat_to_dic(pdat));
+                    shamrock::PatchDataLazyGetter getter(pdat);
+                    auto result = field_compute(getter);
 
                     if (result.size() != f.get_obj_cnt()) {
                         throw shambase::make_except_with_loc<std::runtime_error>(sham::format(

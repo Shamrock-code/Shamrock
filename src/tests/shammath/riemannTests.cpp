@@ -292,3 +292,94 @@ NEW_TEST(Unittest, "shammath/flux_n_matches_directional", 1) {
         return shammath::huang_bai_flux(fspec, a, b, n);
     });
 }
+
+NEW_TEST(Unittest, "shammath/fluid_state_barotropic", 1) {
+
+    using Tvec  = f64_3;
+    using Tcons = shammath::ConsState<Tvec>;
+    using Tprim = shammath::PrimState<Tvec>;
+
+    constexpr f64 rho_c = 1e-2;
+    constexpr f64 cs0   = 0.3;
+    constexpr f64 gamma = 5. / 3.;
+
+    shammath::FluidStateBarotropic<Tvec> fspec{rho_c, cs0, gamma};
+
+    REQUIRE_FLOAT_EQUAL(fspec.rho_crit(), rho_c, 1e-15);
+    REQUIRE_FLOAT_EQUAL(fspec.cs0(), cs0, 1e-15);
+    REQUIRE_FLOAT_EQUAL(fspec.gamma_adiab(), gamma, 1e-15);
+
+    auto prim_at = [&](f64 rho, Tvec vel = Tvec{}) {
+        return Tprim{.rho = rho, .press = fspec.pressure(rho), .vel = vel};
+    };
+
+    // isothermal far below rho_c, polytropic far above it, twice isothermal at rho_c
+    {
+        const f64 rho_lo = 1e-12 * rho_c;
+        const f64 rho_hi = 1e12 * rho_c;
+        REQUIRE_FLOAT_EQUAL(fspec.pressure(rho_lo) / (cs0 * cs0 * rho_lo), 1., 1e-6);
+        REQUIRE_FLOAT_EQUAL(fspec.pressure(rho_c) / (cs0 * cs0 * rho_c), 2., 1e-14);
+        REQUIRE_FLOAT_EQUAL(
+            fspec.pressure(rho_hi) / (cs0 * cs0 * rho_c * sycl::pow(rho_hi / rho_c, gamma)),
+            1.,
+            1e-6);
+
+        REQUIRE_FLOAT_EQUAL(fspec.sound_speed(prim_at(rho_lo)), cs0, 1e-6);
+        REQUIRE_FLOAT_EQUAL(fspec.gamma(prim_at(rho_lo)), 1., 1e-6);
+        REQUIRE_FLOAT_EQUAL(fspec.gamma(prim_at(rho_c)), 0.5 * (1 + gamma), 1e-14);
+        REQUIRE_FLOAT_EQUAL(fspec.gamma(prim_at(rho_hi)), gamma, 1e-6);
+    }
+
+    // sound speed is sqrt(dP/drho) and gamma(prim) is rho cs^2 / P, on both sides of rho_c
+    for (f64 rho : {1e-3 * rho_c, 0.5 * rho_c, rho_c, 3. * rho_c, 1e3 * rho_c}) {
+        const f64 h       = 1e-6 * rho;
+        const f64 dp_drho = (fspec.pressure(rho + h) - fspec.pressure(rho - h)) / (2. * h);
+        const Tprim p     = prim_at(rho);
+        const f64 cs      = fspec.sound_speed(p);
+        REQUIRE_FLOAT_EQUAL(cs * cs / dp_drho, 1., 1e-8);
+        REQUIRE_FLOAT_EQUAL(fspec.gamma(p), rho * cs * cs / p.press, 1e-12);
+    }
+
+    // cons_to_prim ignores rhoe and recovers the barotropic pressure
+    {
+        const Tprim p = prim_at(4. * rho_c, Tvec{0.3, -0.2, 0.5});
+        Tcons c       = fspec.prim_to_cons(p);
+        c.rhoe *= 7.; // arbitrary energy, must not change the pressure
+        const Tprim p2 = fspec.cons_to_prim(c);
+        REQUIRE_FLOAT_EQUAL(p2.rho, p.rho, 1e-15);
+        REQUIRE_FLOAT_EQUAL(p2.press, p.press, 1e-15);
+        REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("", p2.vel, p.vel, 1e-15, sycl::length);
+    }
+
+    // every gas solver accepts the spec, and is consistent and conservative with it:
+    // F(L, L, n) is the physical flux and F(L, R, n) == -F(R, L, -n)
+    const Tprim pL = prim_at(0.5 * rho_c, Tvec{0.3, -0.2, 0.5});
+    const Tprim pR = prim_at(20. * rho_c, Tvec{-0.1, 0.4, -0.3});
+    const Tvec n   = sycl::normalize(Tvec{1., 2., -0.5});
+
+    constexpr f64 eps       = 1e-13;
+    auto require_cons_equal = [&](Tcons lhs, Tcons rhs) {
+        REQUIRE_FLOAT_EQUAL(lhs.rho, rhs.rho, eps);
+        REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("", lhs.rhovel, rhs.rhovel, eps, sycl::length);
+        REQUIRE_FLOAT_EQUAL(lhs.rhoe, rhs.rhoe, eps);
+    };
+
+    auto check_gas_solver = [&](auto solver_n) {
+        require_cons_equal(solver_n(fspec, pL, pL, n), fspec.flux(pL, n));
+        require_cons_equal(solver_n(fspec, pR, pR, n), fspec.flux(pR, n));
+        require_cons_equal(solver_n(fspec, pL, pR, n), -1. * solver_n(fspec, pR, pL, -n));
+    };
+
+    check_gas_solver([](auto f, Tprim a, Tprim b, Tvec n) {
+        return shammath::rusanov_flux(f, a, b, n);
+    });
+    check_gas_solver([](auto f, Tprim a, Tprim b, Tvec n) {
+        return shammath::hll_flux(f, a, b, n);
+    });
+    check_gas_solver([](auto f, Tprim a, Tprim b, Tvec n) {
+        return shammath::hllc_adiab_toro_flux(f, a, b, n);
+    });
+    check_gas_solver([](auto f, Tprim a, Tprim b, Tvec n) {
+        return shammath::hllc_davis_flux(f, a, b, n);
+    });
+}

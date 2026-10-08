@@ -604,6 +604,95 @@ namespace shammath {
     static_assert(FluidStateAdiabaticSpec<FluidStateAdiabatic<f64_3>>);
 
     /**
+     * @brief FluidStateSpec implementation for a barotropic equation of state that is
+     *        isothermal below a threshold density \f$ \rho_c \f$ and adiabatic above it
+     *        (e.g. the optically thin to thick transition in protostellar collapse)
+     *
+     * Pressure: \f$ P(\rho) = c_{s,0}^2 \rho \left(1 + (\rho/\rho_c)^{\gamma - 1}\right) \f$
+     *
+     * Sound speed: \f$ c_s^2 = \frac{dP}{d\rho}
+     *              = c_{s,0}^2 \left(1 + \gamma (\rho/\rho_c)^{\gamma - 1}\right) \f$
+     *
+     * The pressure is a function of \f$ \rho \f$ only, so cons_to_prim() ignores rhoe.
+     * prim_to_cons() and flux() still carry a total energy, with the internal part set to
+     * \f$ P/(\gamma - 1) \f$, so that this spec plugs into the existing conservative
+     * (rho, rhovel, rhoe) solvers unchanged; that energy is passive and never read back.
+     *
+     * The primitive states given to sound_speed()/flux()/gamma(prim) are expected to satisfy
+     * press == pressure(rho), which cons_to_prim() guarantees.
+     *
+     * gamma(prim) returns the local effective index
+     * \f$ \Gamma = \frac{d \ln P}{d \ln \rho} = \rho c_s^2 / P \f$, which goes from 1
+     * (isothermal) to \f$ \gamma \f$ (adiabatic) across \f$ \rho_c \f$, so HLLC uses the right
+     * shock-speed estimate on either side. There is deliberately no state-independent gamma()
+     * (see get_adiabatic_index_lr()); the high density index is exposed as gamma_adiab().
+     *
+     * The constructor does not validate its inputs, as the spec is meant to be built inside
+     * kernels; it expects \f$ \rho_c > 0 \f$, \f$ c_{s,0} > 0 \f$ and \f$ \gamma > 1 \f$.
+     */
+    template<class VecType>
+    class FluidStateBarotropic {
+        public:
+        using Tvec  = VecType;
+        using Tscal = shambase::VecComponent<Tvec>;
+        using Tprim = PrimState<Tvec>;
+        using Tcons = ConsState<Tvec>;
+
+        /**
+         * @param rho_crit threshold density \f$ \rho_c \f$ of the isothermal to adiabatic switch
+         * @param cs0 isothermal sound speed \f$ c_{s,0} \f$ of the low density regime
+         * @param gamma adiabatic index \f$ \gamma \f$ of the high density regime
+         */
+        constexpr FluidStateBarotropic(Tscal rho_crit, Tscal cs0, Tscal gamma)
+            : m_rho_crit(rho_crit), m_cs0_sq(cs0 * cs0), m_gamma(gamma) {}
+
+        /// Threshold density \f$ \rho_c \f$ of the isothermal to adiabatic switch
+        Tscal rho_crit() const { return m_rho_crit; }
+        /// Isothermal sound speed \f$ c_{s,0} \f$ of the low density regime
+        Tscal cs0() const { return sycl::sqrt(m_cs0_sq); }
+        /// Adiabatic index \f$ \gamma \f$ of the high density regime
+        Tscal gamma_adiab() const { return m_gamma; }
+
+        /// Barotropic pressure \f$ P(\rho) \f$
+        Tscal pressure(Tscal rho) const { return m_cs0_sq * rho * (1 + adiab_ratio(rho)); }
+
+        Tscal sound_speed(Tprim p) const {
+            return sycl::sqrt(m_cs0_sq * (1 + m_gamma * adiab_ratio(p.rho)));
+        }
+
+        /// Local effective adiabatic index \f$ d \ln P / d \ln \rho \f$
+        Tscal gamma(Tprim p) const {
+            const Tscal x = adiab_ratio(p.rho);
+            return (1 + m_gamma * x) / (1 + x);
+        }
+
+        Tprim cons_to_prim(Tcons c) const {
+            Tprim p;
+            p.rho   = c.rho;
+            p.vel   = c.rhovel / c.rho;
+            p.press = pressure(p.rho);
+            return p;
+        }
+        Tcons prim_to_cons(Tprim p) const { return shammath::prim_to_cons(p, m_gamma); }
+        Tscal vn(Tprim p, Tvec n) const { return sham::dot(p.vel, n); }
+        Tcons flux(Tprim p, Tvec n, Tscal vn) const {
+            return shammath::hydro_flux_n(p, n, vn, m_gamma);
+        }
+        Tcons flux(Tprim p, Tvec n) const { return shammath::hydro_flux_n(p, n, m_gamma); }
+
+        private:
+        /// \f$ (\rho/\rho_c)^{\gamma - 1} \f$, the adiabatic to isothermal pressure ratio
+        Tscal adiab_ratio(Tscal rho) const { return sycl::pow(rho / m_rho_crit, m_gamma - 1); }
+
+        Tscal m_rho_crit;
+        Tscal m_cs0_sq;
+        Tscal m_gamma;
+    };
+
+    static_assert(FluidStateSpec<FluidStateBarotropic<f64_3>>);
+    static_assert(FluidStateAdiabaticSpec<FluidStateBarotropic<f64_3>>);
+
+    /**
      * @brief cons_to_prim/prim_to_cons/vn/flux wrapper for a pressureless (dust) fluid.
      *        Unlike FluidStateAdiabatic there is no equation of state, so sound_speed() and
      *        gamma() are not defined here; this type satisfies DustFluidStateSpec rather than

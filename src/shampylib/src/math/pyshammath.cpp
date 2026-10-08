@@ -30,6 +30,7 @@
 #include "shammath/symtensor_collections.hpp"
 #include "shammath/symtensors.hpp"
 #include "shampylib/math/pyAABB.hpp"
+#include "shampylib/math/pyCamera3d.hpp"
 #include "shampylib/math/pyRay.hpp"
 #include "shampylib/math/pySPHKernels.hpp"
 #include "shampylib/math/pySfc.hpp"
@@ -46,6 +47,7 @@ ON_PYTHON_INIT {
     shampylib::init_shamrock_math_AABB<f64_3>(math_module, "AABB_f64_3");
     shampylib::init_shamrock_math_Ray<f64_3>(math_module, "Ray_f64_3");
     shampylib::init_shamrock_math_RingRay<f64_3>(math_module, "RingRay_f64_3");
+    shampylib::init_shamrock_math_Camera3d<f64_3>(math_module, "Camera3d_f64_3");
     shampylib::init_shamrock_math_sfc(math_module);
     shampylib::init_shamrock_math_sphkernels(math_module);
 

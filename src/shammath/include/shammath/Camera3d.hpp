@@ -134,7 +134,7 @@ namespace shammath {
             Tvec d = dir + right * (ndc_x * tan_half * aspect) + up * (ndc_y * tan_half);
 
             // the component of d along dir is 1, so this point lies on the near plane
-            return Ray<Tvec>(pos + d * znear, d, Tscal(0));
+            return Ray<Tvec>(pos + d * znear, d); // Tscal(0));
         }
 
         /// Rays of all the pixels, pixel ``(ix, iy)`` being at index ``iy * nx + ix``

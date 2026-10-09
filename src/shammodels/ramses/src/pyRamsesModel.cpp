@@ -63,6 +63,20 @@ namespace shammodels::basegodunov {
                     self.set_eos_gamma(eos_gamma);
                 })
             .def(
+                "set_eos_adiabatic",
+                [](TConfig &self, Tscal gamma) {
+                    self.eos_config.set_adiabatic(gamma);
+                })
+            .def(
+                "set_eos_barotropic",
+                [](TConfig &self, Tscal rho_crit, Tscal cs0, Tscal gamma) {
+                    self.eos_config.set_barotropic(rho_crit, cs0, gamma);
+                },
+                py::kw_only(),
+                py::arg("rho_crit"),
+                py::arg("cs0"),
+                py::arg("gamma"))
+            .def(
                 "set_riemann_solver_hll",
                 [](TConfig &self) {
                     self.riemann_config = HLL;

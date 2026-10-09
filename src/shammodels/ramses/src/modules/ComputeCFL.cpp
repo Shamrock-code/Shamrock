@@ -72,7 +72,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal C_safe = solver_config.Csafe;
-            Tscal gamma  = solver_config.eos_gamma;
+            Tscal gamma  = solver_config.get_eos_gamma();
 
             Tscal one_over_Nside = 1. / AMRBlock::Nside;
 

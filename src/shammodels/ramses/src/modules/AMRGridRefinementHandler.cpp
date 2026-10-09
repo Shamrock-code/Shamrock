@@ -2592,7 +2592,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             AMRmode_ShearBased *cfg
             = std::get_if<AMRmode_ShearBased>(&solver_config.amr_mode.config)) {
             Tscal dxfact(solver_config.grid_coord_to_pos_fact);
-            Tscal gamma(solver_config.eos_gamma);
+            Tscal gamma(solver_config.get_eos_gamma());
 
             gen_refine_block_changes_new<RefineCritShearAccessor>(
                 refine_list, derefine_list, cfg->threshold, gamma, dxfact);

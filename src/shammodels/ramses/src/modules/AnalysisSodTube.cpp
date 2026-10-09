@@ -27,7 +27,7 @@ auto shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>::compute_
     -> field_val {
 
     auto get_gamma = [&]() -> Tscal {
-        return solver_config.eos_gamma;
+        return solver_config.get_eos_gamma();
         return {};
     };
 

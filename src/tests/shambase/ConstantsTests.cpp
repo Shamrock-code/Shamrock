@@ -8,6 +8,7 @@
 // -------------------------------------------------------//
 
 #include "shambase/constants.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamtest/shamtest.hpp"
 
 NEW_TEST(Unittest, "shambase/constants", 1) {

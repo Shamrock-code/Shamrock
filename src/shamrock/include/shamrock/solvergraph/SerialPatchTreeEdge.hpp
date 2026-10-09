@@ -19,7 +19,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/exception.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 #include <optional>
 #include <stdexcept>
 

@@ -11,6 +11,7 @@
 
 /**
  * @file Model.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -55,6 +56,12 @@ namespace shammodels::basegodunov {
             solver.solver_config.scheduler_conf.split_load_value = crit_split;
             solver.solver_config.scheduler_conf.merge_load_value = crit_merge;
             init();
+        }
+
+        inline f64 solver_logs_last_rate() { return solver.solve_logs.get_last_rate(); }
+        inline u64 solver_logs_last_obj_count() { return solver.solve_logs.get_last_obj_count(); }
+        inline shamsys::SystemMetrics solver_logs_last_system_metrics() {
+            return solver.solve_logs.get_last_system_metrics();
         }
 
         void make_base_grid(TgridVec bmin, TgridVec cell_size, u32_3 cell_count);
@@ -165,6 +172,34 @@ namespace shammodels::basegodunov {
             // gz.build_ghost_cache();
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            // Migrate old dumps that stored time/dt in solver_config.time_state (before PR #1932)
+            auto sync_names = sched.synchronized_data.get_edge_names();
+
+            // Checking for time is equivalent to dumps written after this migration
+            bool had_time_edge
+                = std::find(sync_names.begin(), sync_names.end(), "time") != sync_names.end();
+
+            // create time/dt synchronization edges if not present
+            solver.ensure_time_state_edges();
+
+            if (!had_time_edge) {
+                if (j.at("solver_config").contains("time_state")) {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "Godunov",
+                            "Migrated time/dt from solver_config.time_state into scheduler "
+                            "edges"));
+                    const auto &ts = j.at("solver_config").at("time_state");
+                    solver.set_time(ts.at("time").get<Tscal>());
+                    solver.set_next_dt(ts.at("dt").get<Tscal>());
+                } else {
+                    throw shambase::make_except_with_loc<std::runtime_error>(
+                        "this should never happen: dump has neither time edges nor "
+                        "solver_config.time_state");
+                }
+            }
+
             shamlog_debug_ln("Sys", "build local scheduler tables");
             sched.owned_patch_id = sched.patch_list.build_local();
             sched.patch_list.build_local_idx_map();

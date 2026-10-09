@@ -253,7 +253,7 @@ def gif_results(data, tmax, test_number, case_anim):
 
     arr_x = [x[0] for x in positions_plot]
 
-    import matplotlib.animation as animation
+    from matplotlib import animation
 
     fig2, axes = plt.subplots(3, 1, figsize=(8, 10))
     fig2.suptitle(f"{case_anim} - t = {0.0:.3f} s", fontsize=14)

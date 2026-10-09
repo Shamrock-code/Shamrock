@@ -19,7 +19,7 @@
 
 #include "shambase/DistributedDataShared.hpp"
 #include "shambackends/DeviceBuffer.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace shamrock::solvergraph {

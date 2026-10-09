@@ -300,7 +300,7 @@ namespace sham {
         FETCH_PROP(partition_type_property, sycl::info::partition_property)
         FETCH_PROP(partition_type_affinity_domain, sycl::info::partition_affinity_domain)
 
-        auto physmem = sham::getPhysicalMemory();
+        auto physmem = sham::getHostPhysicalMemory();
 
 // On acpp 2^64-1 is returned, so we need to correct it
 // see : https://github.com/AdaptiveCpp/AdaptiveCpp/issues/1573
@@ -316,7 +316,7 @@ namespace sham {
         // with acpp 8 bit is returned for most backends so we default to 8 bytes (64 bits)
         if (*mem_base_addr_align && mem_base_addr_align == 8) {
             warnings.push_back(
-                shambase::format(
+                sham::format(
                     "mem_base_addr_align for is {} bits. I will assume that this is an "
                     "issue and default to 64 bits (8 bytes) instead.",
                     *mem_base_addr_align));
@@ -328,7 +328,7 @@ namespace sham {
         if (!sub_group_sizes) {
             sub_group_sizes = std::vector<size_t>{default_work_group_size};
             warnings.push_back(
-                shambase::format(
+                sham::format(
                     "cannot fetch sub_group_sizes, defaulting to {}", default_work_group_size));
         }
         default_work_group_size = shambase::get_check_ref(sub_group_sizes)[0];
@@ -342,7 +342,7 @@ namespace sham {
                 max_alloc_host       = max_alloc;
             } catch (const std::exception &e) {
                 warnings.push_back(
-                    shambase::format(
+                    sham::format(
                         "Could not parse SHAM_MAX_ALLOC_SIZE value '{}'. Error: {}. "
                         "Ignoring override.",
                         SHAM_MAX_ALLOC_SIZE.value(),
@@ -361,6 +361,7 @@ namespace sham {
             .global_mem_cache_size      = shambase::get_check_ref(global_mem_cache_size),
             .local_mem_size             = shambase::get_check_ref(local_mem_size),
             .max_compute_units          = shambase::get_check_ref(max_compute_units),
+            .max_work_group_size        = shambase::get_check_ref(max_work_group_size),
             .max_mem_alloc_size_dev     = max_alloc_dev,
             .max_mem_alloc_size_host    = max_alloc_host,
             // the SYCL standard returns the alignment in bits, we convert to bytes for convenience

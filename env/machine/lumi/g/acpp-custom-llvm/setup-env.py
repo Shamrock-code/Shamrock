@@ -29,13 +29,13 @@ def setup(arg: SetupArg, envgen: EnvGen):
     mode = None
     args = parser.parse_args(argv)
     if args.mode == None:
-        raise "no mode specified, can be SMCP or SSCP"
+        raise ValueError("no mode specified, can be SMCP or SSCP")
     elif args.mode == "SMCP":
         mode = "SMCP"
     elif args.mode == "SSCP":
         mode = "SSCP"
     else:
-        raise "unknown mode, can be SMCP or SSCP"
+        raise ValueError("unknown mode, can be SMCP or SSCP")
 
     args.gen = "ninja"
 
@@ -49,7 +49,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
     elif mode == "SSCP":
         ACPP_MODE = "SSCP\n"
     else:
-        raise "unknown mode, can be SMCP or SSCP"
+        raise ValueError("unknown mode, can be SMCP or SSCP")
 
     envgen.export_list = {
         "SHAMROCK_DIR": shamrockdir,

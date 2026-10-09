@@ -19,6 +19,7 @@
 #include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
 #include "shamsys/legacy/log.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
@@ -33,7 +34,6 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
     using namespace shamrock;
     using namespace shamrock::patch;
-    using Sink = SinkParticle<Tvec>;
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
@@ -45,10 +45,10 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
 
-    bool has_B_field     = solver_config.has_field_B_on_rho();
-    const u32 iB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : -1;
-    const u32 idB_on_rho = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : -1;
-    const u32 idrho_dt   = (has_B_field) ? pdl.get_field_idx<Tscal>("drho/dt") : -1;
+    bool has_b_field     = solver_config.has_field_b_on_rho();
+    const u32 iB_on_rho  = (has_b_field) ? pdl.get_field_idx<Tvec>("B/rho") : -1;
+    const u32 idB_on_rho = (has_b_field) ? pdl.get_field_idx<Tvec>("dB/rho") : -1;
+    const u32 idrho_dt   = (has_b_field) ? pdl.get_field_idx<Tscal>("drho/dt") : -1;
 
     std::string cv_checks = "conservation infos :\n";
 
@@ -63,13 +63,15 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     Tvec sum_p = gpart_mass * shamalgs::collective::allreduce_sum(tmpp);
 
     if (shamcomm::world_rank() == 0) {
-        if (!storage.sinks.is_empty()) {
-            std::vector<Sink> &sink_parts = storage.sinks.get();
-            for (Sink &s : sink_parts) {
-                sum_p += s.mass * s.velocity;
+        auto &sync = scheduler().synchronized_data;
+        auto &mass = get_sink_mass<Tvec>(sync);
+        if (!mass.empty()) {
+            auto &vel = get_sink_vel<Tvec>(sync);
+            for (size_t i = 0; i < mass.size(); i++) {
+                sum_p += mass[i] * vel[i];
             }
         }
-        cv_checks += shambase::format("    sum v = {}\n", sum_p);
+        cv_checks += sham::format("    sum v = {}\n", sum_p);
     }
 
     ///////////////////////////////////
@@ -83,13 +85,16 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     Tvec sum_a = gpart_mass * shamalgs::collective::allreduce_sum(tmpa);
 
     if (shamcomm::world_rank() == 0) {
-        if (!storage.sinks.is_empty()) {
-            std::vector<Sink> &sink_parts = storage.sinks.get();
-            for (Sink &s : sink_parts) {
-                sum_a += s.mass * (s.sph_acceleration + s.ext_acceleration);
+        auto &sync = scheduler().synchronized_data;
+        auto &mass = get_sink_mass<Tvec>(sync);
+        if (!mass.empty()) {
+            auto &acc_sph = get_sink_acc_sph<Tvec>(sync);
+            auto &acc_ext = get_sink_acc_ext<Tvec>(sync);
+            for (size_t i = 0; i < mass.size(); i++) {
+                sum_a += mass[i] * (acc_sph[i] + acc_ext[i]);
             }
         }
-        cv_checks += shambase::format("    sum a = {}\n", sum_a);
+        cv_checks += sham::format("    sum a = {}\n", sum_a);
     }
 
     ///////////////////////////////////
@@ -104,11 +109,15 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     Tscal sum_e = gpart_mass * shamalgs::collective::allreduce_sum(tmpe);
 
     if (shamcomm::world_rank() == 0) {
-        cv_checks += shambase::format("    sum e = {}\n", sum_e);
+        cv_checks += sham::format("    sum e = {}\n", sum_e);
     }
 
     Tscal pmass  = gpart_mass;
     Tscal tmp_de = 0;
+
+    // only fetched when needed, get_constant_mu_0 warns if the unit system is not set
+    Tscal const mu_0 = (has_b_field) ? solver_config.get_constant_mu_0() : Tscal{};
+
     scheduler().for_each_patchdata_nonempty([&, pmass](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataField<Tvec> &field_v      = pdat.get_field<Tvec>(ivxyz);
         PatchDataField<Tscal> &field_du    = pdat.get_field<Tscal>(iduint);
@@ -116,8 +125,6 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
         PatchDataField<Tscal> &field_hpart = pdat.get_field<Tscal>(ihpart);
 
         sham::DeviceBuffer<Tscal> temp_de(pdat.get_obj_cnt(), dev_sched);
-
-        Tscal const mu_0 = solver_config.get_constant_mu_0();
 
         sham::kernel_call(
             q,
@@ -128,7 +135,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
                 de[item] = pmass * (sycl::dot(v[item], a[item]) + du[item]);
             });
 
-        if (has_B_field) {
+        if (has_b_field) {
             PatchDataField<Tvec> &field_B_on_rho  = pdat.get_field<Tvec>(iB_on_rho);
             PatchDataField<Tvec> &field_dB_on_rho = pdat.get_field<Tvec>(idB_on_rho);
             PatchDataField<Tscal> &field_drho_dt  = pdat.get_field<Tscal>(idrho_dt);
@@ -170,7 +177,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     Tscal de = shamalgs::collective::allreduce_sum(tmp_de);
 
     if (shamcomm::world_rank() == 0) {
-        cv_checks += shambase::format("    sum de = {}", de);
+        cv_checks += sham::format("    sum de = {}", de);
     }
 
     if (shamcomm::world_rank() == 0) {

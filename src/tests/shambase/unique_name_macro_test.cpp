@@ -9,11 +9,11 @@
 
 #include "shambase/unique_name_macro.hpp"
 
-namespace {
-    int __shamrock_unique_name(test_var) = 0;
-    int __shamrock_unique_name(test_var) = 0;
-    int __shamrock_unique_name(test_var) = 0;
-    int __shamrock_unique_name(test_var) = 0;
-    int __shamrock_unique_name(test_var) = 0;
-    int __shamrock_unique_name(test_var) = 0;
-} // namespace
+// this is an intentional duplicate of unique_name_macro_test2.cpp
+// to test case where the linker names could clash
+
+static int __shamrock_unique_name(test_var) = 0;
+static int __shamrock_unique_name(test_var) = 0;
+
+static void __shamrock_unique_name(test_func)(){};
+static void __shamrock_unique_name(test_func)(){};

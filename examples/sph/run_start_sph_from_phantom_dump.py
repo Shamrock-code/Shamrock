@@ -86,7 +86,7 @@ cbar = plt.colorbar(res, extend="both")
 cbar.set_label(r"$\int \rho \, \mathrm{d} z$ [code unit]")
 # or r"$\rho$ [code unit]" for slices
 
-plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
+plt.title(f"t = {model.get_time():0.3f} [code unit]")
 plt.xlabel("x")
 plt.ylabel("z")
 plt.show()

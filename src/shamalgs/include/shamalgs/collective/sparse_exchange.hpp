@@ -62,7 +62,7 @@ namespace shamalgs::collective {
 
     template<sham::USMKindTarget target>
     void sparse_exchange(
-        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        const std::shared_ptr<sham::DeviceScheduler> &dev_sched,
         std::vector<std::unique_ptr<sham::DeviceBuffer<u8, target>>> &bytebuffer_send,
         std::vector<std::unique_ptr<sham::DeviceBuffer<u8, target>>> &bytebuffer_recv,
         const CommTable &comm_table);

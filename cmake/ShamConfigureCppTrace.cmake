@@ -26,5 +26,6 @@ if(SHAMROCK_USE_CPPTRACE)
     )
 
     set(CPPTRACE_INHERIT_HOST_STANDARD On)
+    set(CPPTRACE_DISABLE_CXX_20_MODULES On)
     add_subdirectory(external/cpptrace)
 endif()

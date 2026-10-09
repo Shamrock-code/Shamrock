@@ -24,7 +24,8 @@ void sycl_sort_morton_key_pair<u32, MultiKernel>(
     std::unique_ptr<sycl::buffer<u32>> &buf_index,
     std::unique_ptr<sycl::buffer<u32>> &buf_morton) {
 
-    shamalgs::algorithm::sort_by_key(queue, *buf_morton, *buf_index, morton_count_rounded_pow);
+    shamalgs::algorithm::sort_by_key_pow2_len(
+        queue, *buf_morton, *buf_index, morton_count_rounded_pow);
 }
 
 template<>
@@ -34,5 +35,6 @@ void sycl_sort_morton_key_pair<u64, MultiKernel>(
     std::unique_ptr<sycl::buffer<u32>> &buf_index,
     std::unique_ptr<sycl::buffer<u64>> &buf_morton) {
 
-    shamalgs::algorithm::sort_by_key(queue, *buf_morton, *buf_index, morton_count_rounded_pow);
+    shamalgs::algorithm::sort_by_key_pow2_len(
+        queue, *buf_morton, *buf_index, morton_count_rounded_pow);
 }

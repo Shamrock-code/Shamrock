@@ -83,10 +83,13 @@ namespace shammodels::sph::modules {
 
             Tvec tot_angular_momentum = shamalgs::collective::allreduce_sum(angular_momentum);
 
-            if (!solver.storage.sinks.is_empty()) {
-                for (auto &sink : solver.storage.sinks.get()) {
-                    tot_angular_momentum
-                        += sink.mass * sycl::cross(sink.pos, sink.velocity) + sink.angular_momentum;
+            auto &mass = get_sink_mass<Tvec>(sched.synchronized_data);
+            if (!mass.empty()) {
+                auto &pos = get_sink_pos<Tvec>(sched.synchronized_data);
+                auto &vel = get_sink_vel<Tvec>(sched.synchronized_data);
+                auto &ang = get_sink_angular_momentum<Tvec>(sched.synchronized_data);
+                for (size_t i = 0; i < mass.size(); i++) {
+                    tot_angular_momentum += mass[i] * sycl::cross(pos[i], vel[i]) + ang[i];
                 }
             }
 

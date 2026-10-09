@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lines of code</title>
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.3/plotly.min.js"></script>
+    <link rel="stylesheet" href="css/metrics-chart.css" />
+  </head>
+  <body>
+    <div id="status">Loading lines of code history…</div>
+    <div id="chart"></div>
+    <script src="js/metrics-chart.js"></script>
+    <script>
+      // Exclusive partitions (code, examples, doc) sum to "all". Nested
+      // shammodels/* counts are subsets of code, not extra buckets.
+      const AREA_SPECS = [
+        { key: "all", name: "all", nested: false },
+        { key: "all_code", name: "code", nested: false },
+        { key: "all_examples", name: "examples", nested: false },
+        { key: "all_doc", name: "doc", nested: false },
+        { key: "all_shammodels/sph", name: "shammodels/sph", nested: true },
+        { key: "all_shammodels/ramses", name: "shammodels/ramses", nested: true },
+        { key: "all_shammodels/zeus", name: "shammodels/zeus", nested: true },
+        { key: "all_shammodels/gsph", name: "shammodels/gsph", nested: true },
+      ];
+
+      const FILETYPE_SPECS = [
+        { key: "*.cpp", name: "*.cpp" },
+        { key: "*.hpp", name: "*.hpp" },
+        { key: "*.py", name: "*.py" },
+        { key: "*.md", name: "*.md" },
+        { key: "*.rst", name: "*.rst" },
+        { key: "*.yml", name: "*.yml" },
+        { key: "CMakeLists.txt + *.cmake", name: "CMake / CMakeLists.txt" },
+      ];
+
+      const ALL_SPECS = AREA_SPECS.concat(FILETYPE_SPECS);
+
+      function hasValues(values) {
+        return values.some(function (value) {
+          return typeof value === "number" && Number.isFinite(value);
+        });
+      }
+
+      function collectedValues(series, specs) {
+        return specs.reduce(function (acc, spec) {
+          return acc.concat(series[spec.key] || []);
+        }, []);
+      }
+
+      function chartLayout(theme, series) {
+        const colors = MetricsChart.themeColors(theme);
+        const axis = MetricsChart.axisStyle(theme);
+        return {
+          title: { text: "Lines of code", font: { color: colors.fg, size: 18 } },
+          margin: { l: 72, r: 24, t: 48, b: 96 },
+          paper_bgcolor: colors.bg,
+          plot_bgcolor: colors.bg,
+          font: { color: colors.fg },
+          grid: {
+            rows: 2,
+            columns: 1,
+            pattern: "independent",
+            roworder: "top to bottom",
+            ygap: 0.14,
+          },
+          legend: {
+            orientation: "h",
+            x: 0,
+            y: -0.12,
+            font: { color: colors.fg },
+            bgcolor: "rgba(0,0,0,0)",
+            borderwidth: 0,
+          },
+          xaxis: Object.assign({ type: "date" }, axis),
+          yaxis: Object.assign(
+            {
+              title: { text: "By area" },
+              type: "log",
+              tickformat: ",d",
+              autorange: false,
+              range: MetricsChart.paddedLogRange(collectedValues(series, AREA_SPECS)),
+            },
+            axis
+          ),
+          xaxis2: Object.assign(
+            {
+              title: { text: "Date (UTC)" },
+              type: "date",
+              matches: "x",
+            },
+            axis
+          ),
+          yaxis2: Object.assign(
+            {
+              title: { text: "By file type" },
+              type: "log",
+              tickformat: ",d",
+              autorange: false,
+              range: MetricsChart.paddedLogRange(collectedValues(series, FILETYPE_SPECS)),
+            },
+            axis
+          ),
+          hovermode: "x unified",
+        };
+      }
+
+      function toSeries(payload) {
+        if (!payload || !Array.isArray(payload.data)) {
+          throw new Error("Unexpected dataset shape: missing data[]");
+        }
+        const rows = payload.data
+          .filter(function (row) {
+            return row && typeof row.datetime === "string";
+          })
+          .slice()
+          .sort(function (a, b) {
+            return a.datetime.localeCompare(b.datetime);
+          });
+        const series = {
+          x: rows.map(function (row) {
+            return row.datetime;
+          }),
+        };
+        ALL_SPECS.forEach(function (spec) {
+          series[spec.key] = rows.map(function (row) {
+            return MetricsChart.finiteNumber(row[spec.key]);
+          });
+        });
+        return series;
+      }
+
+      function traceFor(theme, series, spec, index, axis) {
+        const palette = MetricsChart.themeColors(theme).palette;
+        const color = palette[index % palette.length];
+        return {
+          type: "scatter",
+          mode: "lines+markers",
+          name: spec.name,
+          x: series.x,
+          y: series[spec.key],
+          xaxis: axis.x,
+          yaxis: axis.y,
+          legendgroup: spec.key,
+          line: {
+            color: color,
+            width: spec.key === "all" ? 3 : 2,
+            dash: spec.nested ? "dash" : "solid",
+          },
+          marker: { color: color, size: 8 },
+          hovertemplate: "%{fullData.name}: %{y:,}<extra></extra>",
+        };
+      }
+
+      function traces(theme, series) {
+        const result = [];
+        AREA_SPECS.forEach(function (spec, index) {
+          if (hasValues(series[spec.key])) {
+            result.push(traceFor(theme, series, spec, index, { x: "x", y: "y" }));
+          }
+        });
+        FILETYPE_SPECS.forEach(function (spec, index) {
+          if (hasValues(series[spec.key])) {
+            result.push(traceFor(theme, series, spec, index, { x: "x2", y: "y2" }));
+          }
+        });
+        return result;
+      }
+
+      MetricsChart.mount({
+        urls: MetricsChart.metricsUrls("loc.json"),
+        loading: "Loading lines of code history…",
+        empty: "The lines of code dataset is empty.",
+        error: "Could not load lines of code history.",
+        makePlot: function (payload, theme) {
+          const series = toSeries(payload);
+          const plotTraces = traces(theme, series);
+          if (series.x.length === 0 || plotTraces.length === 0) {
+            return { traces: [] };
+          }
+          return { traces: plotTraces, layout: chartLayout(theme, series) };
+        },
+      });
+    </script>
+  </body>
+</html>

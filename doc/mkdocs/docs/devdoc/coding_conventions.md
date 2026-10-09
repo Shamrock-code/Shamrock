@@ -14,6 +14,15 @@ The following coding conventions are followed when developing Shamrock. In pract
 
 ## Naming Conventions
 
+Most of the rules below are checked by `readability-identifier-naming` in
+`.clang-tidy`, reported as **warnings** (not build-breaking errors) by the
+clang-tidy CI job. One caveat: that check's `CamelCase` style only rejects
+a name that has an underscore or a lowercase first letter — it can't tell
+a genuine acronym (`AMD`, `CUDA`, `CG` — fine as-is, see Enum Values below)
+from a plain word typed in caps by mistake (`UNKNOWN`, `MULTIGRID` — not
+fine, should be `Unknown`/`Multigrid`). It accepts both silently, so the
+second kind has to be caught by hand until renamed.
+
 ### Primitive Types
 
 Primitive types are basic types representable by the actual hardware, typically integers, floats, and SYCL vectors.
@@ -36,7 +45,67 @@ Functions in Shamrock use snake_case to distinguish them from classes.
 
 **Example:** `is_this_informatics_or_physics(...)`
 
+### Variables, Members, and Constants
+
+Local variables, function parameters, and class/struct member variables
+use `lower_case`.
+
+This also applies to constants, including `static constexpr` class
+members that mirror a math/physics symbol (e.g. a kernel radius or a
+side count) — name the identifier `lower_case` like any other member
+(`rkern`, `nside`) rather than capitalizing it to look like the symbol.
+
+### Namespaces
+
+Namespaces use a single lowercase word, with no underscores
+(`shamrock`, `shammodels`, `solvergraph`).
+
+### Macros
+
+Preprocessor macros use `UPPER_CASE` (`MPICHECK`, `NODE_EDGES`).
+
+### Enum Values
+
+Enum values (the enumerators inside a `class`/`enum class`) use
+**acronym-preserving CamelCase**, same as the enum type itself
+(`Periodic`, `Reflective`, `VanLeer`):
+
+- Each word is capitalized.
+- A word that is a recognized acronym is kept fully capitalized as that
+  one word, instead of only capitalizing its first letter — e.g.
+  `AMD`, `CPU`, `GPU`, `CUDA`, `CG`, `PCG`, `HLL`.
+- A plain English word typed in caps only for visual consistency with its
+  neighbors is *not* an acronym and should be normalized to a single
+  capital letter — `UNKNOWN` → `Unknown`, `MULTIGRID` → `Multigrid`.
+- When the value names a specific external technology, library, or
+  published algorithm that already has its own established spelling,
+  match that spelling instead of deriving one mechanically — `OpenMP`
+  (never `OPENMP`/`Openmp`), `ROCm` (not `ROCM`), `BiCGSTAB` (not
+  `BICGSTAB`/`Bicgstab`).
+
+Note that `readability-identifier-naming`'s `CamelCase` check in
+`.clang-tidy` can't distinguish an acronym from a plain word typed in caps
+by mistake — it accepts both `AMD` and `UNKNOWN` without a warning, so the
+second bucket above has to be caught by hand.
+
+### File Naming
+
+- A file that implements a single class or struct is named after that
+  type in CamelCase, matching the type name exactly (e.g.
+  `PatchDataField.hpp` for `class PatchDataField`).
+- A file that holds a free-function algorithm, a kernel, or a set of
+  related utility functions with no single owning type uses
+  `lower_case` (e.g. `compute_ranges.hpp`, `key_morton_sort.hpp`).
+- This isn't enforced by clang-tidy — there's no clang-tidy check for
+  file names — so it's a convention to apply during review, not a
+  generated warning.
+
 ## Template Conventions
+
+Type template parameters use `CamelCase`, usually prefixed with `T`
+(`Tvec`, `Tscal`, see below). Non-type template parameters (a `u32`,
+`int`, or `bool` template value) use `lower_case`, same as a regular
+variable (e.g. `template<class Tile, u32 group_size>`).
 
 ### Vector and Scalar Templates
 

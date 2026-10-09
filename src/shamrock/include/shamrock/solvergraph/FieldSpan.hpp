@@ -18,8 +18,8 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/PatchDataFieldSpan.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 
 namespace shamrock::solvergraph {
 
@@ -44,7 +44,7 @@ namespace shamrock::solvergraph {
                     spans.for_each([&](u64 id, const PatchDataFieldSpan<T> &span) {
                         ids.push_back(id);
                     });
-                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    shambase::throw_with_loc<std::runtime_error>(sham::format(
                         "Missing field span in distributed data at id {}\n"
                         "Field name: {}\n"
                         "Field texsymbol: {}",
@@ -56,7 +56,7 @@ namespace shamrock::solvergraph {
                     // TODO
                 },
                 [&](u64 id) {
-                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    shambase::throw_with_loc<std::runtime_error>(sham::format(
                         "Extra field span in distributed data at id {}\n"
                         "Field name: {}\n"
                         "Field texsymbol: {}",

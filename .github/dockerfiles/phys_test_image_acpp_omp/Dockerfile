@@ -7,10 +7,26 @@ ARG CLANGVERSION=18
 # ----------------------------
 # Install LLVM toolchain
 # ----------------------------
-RUN wget https://apt.llvm.org/llvm.sh && \
-    chmod +x llvm.sh && \
+# apt.llvm.org is served via Fastly, which advertises IPv6 addresses that
+# GitHub-hosted runners often can't route reliably, causing intermittent
+# "Network is unreachable" failures in apt/wget (including GPG key fetch),
+# and DNS lookups for apt.llvm.org itself can transiently fail ("Name or
+# service not known") before any connection is even attempted. Force IPv4
+# for apt and wget, and retry both the initial download and llvm.sh to
+# absorb transient Fastly edge / DNS failures. (Claude generated comment)
+RUN sudo sh -c 'echo "Acquire::ForceIPv4 \"true\";" > /etc/apt/apt.conf.d/99force-ipv4' && \
     sudo apt update && \
-    sudo ./llvm.sh ${CLANGVERSION} && \
+    for i in 1 2 3 4 5; do \
+        wget -4 https://apt.llvm.org/llvm.sh && break; \
+        echo "wget llvm.sh failed (attempt $i), retrying..."; \
+        sleep 15; \
+    done && \
+    chmod +x llvm.sh && \
+    for i in 1 2 3 4 5; do \
+        sudo ./llvm.sh ${CLANGVERSION} && break; \
+        echo "llvm.sh failed (attempt $i), retrying..."; \
+        sleep 15; \
+    done && \
     sudo apt install -y \
     libclang-${CLANGVERSION}-dev \
     clang-tools-${CLANGVERSION} \
@@ -23,9 +39,10 @@ RUN wget https://apt.llvm.org/llvm.sh && \
 RUN sudo apt install -y \
     gfortran \
     ffmpeg \
-    ccache
+    ccache \
+    graphviz
 
-RUN pip3 install matplotlib numpy scipy h5py
+RUN pip3 install matplotlib numpy scipy h5py graphviz
 
 # ----------------------------
 # ccache configuration

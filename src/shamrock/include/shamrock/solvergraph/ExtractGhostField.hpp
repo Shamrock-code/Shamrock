@@ -21,8 +21,16 @@
 #include "shamrock/solvergraph/CopyPatchDataField.hpp"
 #include "shamrock/solvergraph/DDSharedBuffers.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataFieldDDShared.hpp"
+#include "shamsolvergraph/node/INode.hpp"
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IFieldRefs<T>, original_fields)                                    \
+    X_RO(shamrock::solvergraph::DDSharedBuffers<u32>, idx_in_ghosts)                               \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::PatchDataFieldDDShared<T>, ghost_fields)
 
 namespace shamrock::solvergraph {
 
@@ -32,26 +40,7 @@ namespace shamrock::solvergraph {
         public:
         ExtractGhostField() {}
 
-        struct Edges {
-            const shamrock::solvergraph::IFieldRefs<T> &original_fields;
-            const shamrock::solvergraph::DDSharedBuffers<u32> &idx_in_ghosts;
-            shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_fields;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> original_fields,
-            std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghosts,
-            std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<T>> ghost_fields) {
-            __internal_set_ro_edges({original_fields, idx_in_ghosts});
-            __internal_set_rw_edges({ghost_fields});
-        }
-
-        Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<T>>(0),
-                get_ro_edge<shamrock::solvergraph::DDSharedBuffers<u32>>(1),
-                get_rw_edge<shamrock::solvergraph::PatchDataFieldDDShared<T>>(0)};
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -60,3 +49,5 @@ namespace shamrock::solvergraph {
         virtual std::string _impl_get_tex() const { return "TODO"; };
     };
 } // namespace shamrock::solvergraph
+
+#undef NODE_EDGES

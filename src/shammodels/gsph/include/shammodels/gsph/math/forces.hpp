@@ -27,8 +27,10 @@
  *   Riemann Solver"
  */
 
+#include "shambase/constants.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
+#include "shammodels/gsph/math/reconstruction.hpp"
 #include "shammodels/gsph/math/riemann/iterative.hpp"
 #include "shammodels/sph/math/forces.hpp"
 
@@ -160,5 +162,126 @@ namespace shammodels::gsph {
 
     // Note: For velocity projection onto pair axis, use sycl::dot(v, r_ab_unit) directly.
     // For density from smoothing length, use shamrock::sph::rho_h() from density.hpp.
+
+    /**
+     * @brief Add Inutsuka (2002) GSPH force contribution from a single neighbor pair
+     *
+     * Uses the effective volume/face formulation instead of the Cha & Whitworth
+     * symmetric SPH form: acc -= m_b * p* * V2_ij * grad_W_ij, where V2_ij is the
+     * effective squared volume element between the pair (see math/reconstruction.hpp)
+     * and grad_W_ij is the pair-symmetrized kernel gradient.
+     *
+     * @tparam Tvec Vector type
+     * @tparam Tscal Scalar type
+     * @param m_b Mass of neighbor particle
+     * @param p_star Interface pressure from Riemann solver
+     * @param v_star Interface velocity from Riemann solver
+     * @param V2_ij Effective squared volume element for the pair
+     * @param grad_W_ij Pair-symmetrized kernel gradient vector
+     * @param r_ab_unit Unit vector from a to b (points toward b)
+     * @param v_a Velocity of particle a
+     * @param[out] dv_dt Accumulated acceleration
+     * @param[out] du_dt Accumulated energy rate
+     */
+    template<class Tvec, class Tscal>
+    inline void add_gsph_force_contribution_inutsuka(
+        Tscal m_b,
+        Tscal p_star,
+        Tscal v_star,
+        Tscal V2_ij,
+        Tvec grad_W_ij,
+        Tvec r_ab_unit,
+        Tvec v_a,
+        Tvec &dv_dt,
+        Tscal &du_dt) {
+
+        dv_dt -= m_b * p_star * V2_ij * grad_W_ij;
+
+        Tvec v_star_vec = v_star * r_ab_unit;
+        du_dt -= m_b * p_star * V2_ij * sycl::dot(grad_W_ij, v_star_vec - v_a);
+    }
+
+    /**
+     * @brief Dispatch a single neighbor pair's force contribution to ChaWhitworth or
+     * InutsukaV2, given the pair's Riemann solver result
+     *
+     * Shared by update_derivs_iterative()/update_derivs_exact() in UpdateDerivs.cpp,
+     * which only differ in which Riemann solver produced (p_star, v_star).
+     *
+     * @tparam Kernel SPH kernel type (e.g. SPHKernel<Tscal>), for Kernel::dW_3d
+     * @tparam Tvec Vector type
+     * @tparam Tscal Scalar type
+     * @param use_inutsuka_v2 Selects InutsukaV2 (true) or ChaWhitworth (false)
+     * @param pmass Particle mass (equal-mass GSPH)
+     * @param p_star Interface pressure from Riemann solver
+     * @param v_star Interface velocity from Riemann solver
+     * @param rho_a Density of particle a
+     * @param rho_b Density of particle b
+     * @param omega_a Grad-h correction factor for particle a
+     * @param omega_b Grad-h correction factor for particle b
+     * @param rab Pair separation |r_a - r_b|
+     * @param rab_inv Inverse of rab
+     * @param h_a Smoothing length of particle a
+     * @param h_b Smoothing length of particle b
+     * @param r_ab_unit Unit vector from a to b
+     * @param vxyz_a Velocity of particle a
+     * @param[out] sum_axyz Accumulated acceleration
+     * @param[out] sum_du_a Accumulated energy rate
+     */
+    template<class Kernel, class Tvec, class Tscal>
+    inline void accumulate_gsph_pair_force(
+        bool use_inutsuka_v2,
+        Tscal pmass,
+        Tscal p_star,
+        Tscal v_star,
+        Tscal rho_a,
+        Tscal rho_b,
+        Tscal omega_a,
+        Tscal omega_b,
+        Tscal rab,
+        Tscal rab_inv,
+        Tscal h_a,
+        Tscal h_b,
+        Tvec r_ab_unit,
+        Tvec vxyz_a,
+        Tvec &sum_axyz,
+        Tscal &sum_du_a) {
+
+        if (use_inutsuka_v2) {
+            // Effective volume/face interpolation (Inutsuka 2002), linear
+            // (1st order): specific volume is 1/rho for equal-mass particles.
+            const Tscal vol_a = Tscal{1} / rho_a;
+            const Tscal vol_b = Tscal{1} / rho_b;
+
+            auto face = lin_v2_sast_ij<Tscal>(vol_a, vol_b, h_a, h_b, rab_inv);
+
+            // Pair-symmetrized kernel gradient at sqrt(2)*h (Inutsuka 2002)
+            constexpr Tscal sqrt2 = shambase::constants::sqrt_2<Tscal>;
+            const Tscal Fab2_a    = Kernel::dW_3d(rab, sqrt2 * h_a);
+            const Tscal Fab2_b    = Kernel::dW_3d(rab, sqrt2 * h_b);
+            const Tvec grad_W_ij  = (Fab2_a + Fab2_b) * r_ab_unit;
+
+            add_gsph_force_contribution_inutsuka<Tvec, Tscal>(
+                pmass, p_star, v_star, face.V2, grad_W_ij, r_ab_unit, vxyz_a, sum_axyz, sum_du_a);
+        } else {
+            const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
+            const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
+
+            add_gsph_force_contribution<Tvec, Tscal>(
+                pmass,
+                p_star,
+                v_star,
+                rho_a,
+                rho_b,
+                omega_a,
+                omega_b,
+                Fab_a,
+                Fab_b,
+                r_ab_unit,
+                vxyz_a,
+                sum_axyz,
+                sum_du_a);
+        }
+    }
 
 } // namespace shammodels::gsph

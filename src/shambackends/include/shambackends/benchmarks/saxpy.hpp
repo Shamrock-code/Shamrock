@@ -87,13 +87,13 @@ namespace sham::benchmarks {
         y.fill(init_y);
 
         if (x.get_size() < N) {
-            shambase::make_except_with_loc<std::runtime_error>(shambase::format(
-                "x.get_size() < N\n  x.get_size() = {},\n  N = {}", x.get_size(), N));
+            shambase::make_except_with_loc<std::runtime_error>(
+                sham::format("x.get_size() < N\n  x.get_size() = {},\n  N = {}", x.get_size(), N));
         }
 
         if (y.get_size() < N) {
-            shambase::make_except_with_loc<std::runtime_error>(shambase::format(
-                "y.get_size() < N\n  y.get_size() = {},\n  N = {}", y.get_size(), N));
+            shambase::make_except_with_loc<std::runtime_error>(
+                sham::format("y.get_size() < N\n  y.get_size() = {},\n  N = {}", y.get_size(), N));
         }
 
         std::vector<T> y_res = {};

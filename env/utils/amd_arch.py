@@ -9,13 +9,13 @@ AMD_ARCH_DESC = {
     "gfx942": "AMD CDNA3: MI300X, MI300A",
 }
 
-AMD_ARCH_LIST = [k for k in AMD_ARCH_DESC.keys()]
+AMD_ARCH_LIST = [k for k in AMD_ARCH_DESC]
 
 
 def print_description(arch_code):
     if not (arch_code in AMD_ARCH_LIST):
         print("-- unknown AMD arch code possible list :")
-        for k in AMD_ARCH_DESC.keys():
+        for k in AMD_ARCH_DESC:
             print("      ", k, AMD_ARCH_DESC[k])
         raise ValueError(f"unknown AMD arch code: {arch_code}")
 

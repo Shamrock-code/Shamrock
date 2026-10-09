@@ -117,7 +117,7 @@ namespace shamalgs::numeric::details {
 
         if (new_len > 0) {
             // logger::raw_ln(
-            //     shambase::format("len = {}, new_len = {}, end_flag = {}", len, new_len,
+            //     sham::format("len = {}, new_len = {}, end_flag = {}", len, new_len,
             //     end_flag));
             sham::kernel_call(
                 sched->get_queue(),
@@ -132,7 +132,7 @@ namespace shamalgs::numeric::details {
                     bool should_write
                         = (_if1) ? (current_val < sum_vals[idx + 1]) : (bool(last_flag));
 
-                    // logger::raw_ln(shambase::format(
+                    // logger::raw_ln(sham::format(
                     //     "idx = {}, sum = {}, _if1 = {}, should_write = {}",
                     //     idx,
                     //     sum_vals[idx],

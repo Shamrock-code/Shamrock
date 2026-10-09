@@ -48,15 +48,13 @@ for f in file_list:
     log_f = load_file(f)
     # print(log_f)
 
-    if f == "log_precommit_check_sycl_include":
-        print(log_f)
-    elif f == "log_precommit_license_check":
-        print(log_f)
-    elif f == "log_precommit_pragma_once_check":
-        print(log_f)
-    elif f == "log_precommit_doxygen_header":
-        print(log_f)
-    elif f == "log_precommit_check-Authorship-update":
+    if (
+        f == "log_precommit_check_sycl_include"
+        or f == "log_precommit_license_check"
+        or f == "log_precommit_pragma_once_check"
+        or f == "log_precommit_doxygen_header"
+        or f == "log_precommit_check-Authorship-update"
+    ):
         print(log_f)
     else:
         # start allow utf-8
@@ -76,5 +74,5 @@ print(" ")
 print("```diff")
 print(trunctate_diff(load_file("diff-pre-commit")))
 print("```")
-print("")
+print()
 print("</details>")

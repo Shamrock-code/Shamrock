@@ -16,6 +16,7 @@
 #include "shammodels/ramses/modules/FuseGhostLayer.hpp"
 
 void shammodels::basegodunov::modules::FuseGhostLayer::_impl_evaluate_internal() {
+    __shamrock_stack_entry();
     auto edges = get_edges();
 
     auto &ghost_layer       = edges.ghost_layer;

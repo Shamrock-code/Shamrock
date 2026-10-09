@@ -68,6 +68,7 @@ def print_tool_info(utility_name):
             ["git", "log", "-n", "1", "--decorate=full"],
             capture_output=True,
             text=True,
+            check=True,
         )
         if r_log.returncode != 0:
             raise RuntimeError("git log failed")

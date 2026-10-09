@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Top 10 function sets (compile / optimize)</title>
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.3/plotly.min.js"></script>
+    <link rel="stylesheet" href="css/metrics-chart.css" />
+  </head>
+  <body>
+    <div id="status">Loading function-set compile time history…</div>
+    <div id="chart"></div>
+    <script src="js/metrics-chart.js"></script>
+    <script>
+      MetricsChart.mount({
+        urls: MetricsChart.metricsUrls("function_sets_top10.json"),
+        loading: "Loading function-set compile time history…",
+        empty: "The function-set compile time dataset is empty.",
+        error: "Could not load function-set compile time history.",
+        events: true,
+        makePlot: function (payload, theme) {
+          const traces = MetricsChart.plotlyTraces(payload);
+          return {
+            traces: traces,
+            layout: MetricsChart.themedLayout(payload.layout, theme, { traces: traces }),
+          };
+        },
+      });
+    </script>
+  </body>
+</html>

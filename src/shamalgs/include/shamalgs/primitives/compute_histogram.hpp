@@ -17,13 +17,14 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/overloaded.hpp"
 #include "shambase/string.hpp"
-#include "shamalgs/ImplControl.hpp"
+#include "shamalgs/ImplVariant.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shambackends/Device.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/kernel_call.hpp"
-#include "shamcomm/logs.hpp"
 #include <shambackends/sycl.hpp>
 #include <optional>
 #include <stdexcept>
@@ -34,66 +35,33 @@
 namespace shamalgs::primitives {
 
     namespace impl {
-        enum class histo_impl { reference, naive_gpu, gpu_team_fetching, gpu_oversubscribe };
 
-        class HistogramImplControl : public ImplControl {
-
-            bool was_init   = false;
-            histo_impl impl = histo_impl::reference;
-
-            virtual std::string impl_get_alg_name() const { return "compute_histogram"; }
-
-            virtual bool impl_was_configured(const sham::DeviceScheduler_ptr &) const {
-                return was_init;
-            };
-
-            virtual std::string impl_get_config(const sham::DeviceScheduler_ptr &) const {
-                switch (impl) {
-                case histo_impl::reference        : return "reference";
-                case histo_impl::naive_gpu        : return "naive_gpu";
-                case histo_impl::gpu_team_fetching: return "gpu_team_fetching";
-                case histo_impl::gpu_oversubscribe: return "gpu_oversubscribe";
-                }
-            };
-
-            virtual std::string impl_get_default_config(
-                const sham::DeviceScheduler_ptr &dev_sched) const {
-                if (dev_sched->ctx->device->prop.type == sham::DeviceType::GPU) {
-                    return "gpu_oversubscribe";
-                } else {
-                    return "naive_gpu"; // it is portable and fast everywhere
-                }
-            };
-
-            virtual void impl_set_config(
-                const sham::DeviceScheduler_ptr &, const std::string &config) {
-                if (config == "reference") {
-                    impl = histo_impl::reference;
-                } else if (config == "naive_gpu") {
-                    impl = histo_impl::naive_gpu;
-                } else if (config == "gpu_team_fetching") {
-                    impl = histo_impl::gpu_team_fetching;
-                } else if (config == "gpu_oversubscribe") {
-                    impl = histo_impl::gpu_oversubscribe;
-                } else {
-                    shambase::throw_unimplemented("unknown implementation");
-                }
-                was_init = true;
-            };
-
-            virtual std::vector<std::string> impl_get_avail_configs(
-                const sham::DeviceScheduler_ptr &) {
-                return {"reference", "naive_gpu", "gpu_team_fetching", "gpu_oversubscribe"};
-            }
-
-            public:
-            histo_impl get_impl(const sham::DeviceScheduler_ptr &dev_sched) {
-                this->ensure_init(dev_sched);
-                return impl;
-            }
+        /// CPU reference implementation, computed on a host copy of the buffers
+        struct Reference {
+            static constexpr std::string_view variant_type_name = "reference";
+        };
+        /// Portable GPU kernel, one work-item per bin
+        struct NaiveGpu {
+            static constexpr std::string_view variant_type_name = "naive_gpu";
+        };
+        /// GPU kernel using a team-local cache to coalesce input reads
+        struct GpuTeamFetching {
+            static constexpr std::string_view variant_type_name = "gpu_team_fetching";
+        };
+        /// GPU kernel oversubscribing a work-group per bin, reducing locally
+        struct GpuOversubscribe {
+            static constexpr std::string_view variant_type_name = "gpu_oversubscribe";
         };
 
-        inline HistogramImplControl compute_histogram_impl_control{};
+        /// Implementation selector type for compute_histogram
+        using ComputeHistogramImpl
+            = shamalgs::ImplVariantGlobal<Reference, NaiveGpu, GpuTeamFetching, GpuOversubscribe>;
+
+        /// Implementation selector for compute_histogram (defined in compute_histogram.cpp)
+        extern ComputeHistogramImpl compute_histogram_impl;
+
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view compute_histogram_impl_name = "compute_histogram";
 
         template<class T, class Tbins, class... Targs, class Tfunctor>
         inline void compute_histogram_reference(
@@ -375,53 +343,58 @@ namespace shamalgs::primitives {
 
         sham::DeviceBuffer<T> result(nbins, dev_sched);
 
-        switch (compute_histogram_impl_control.get_impl(dev_sched)) {
-        case histo_impl::reference:
-            compute_histogram_reference(
-                bin_edge_inf,
-                bin_edge_sup,
-                nbins,
-                element_count,
-                std::forward<Tfunctor>(functor),
-                result,
-                input_data...);
-            break;
-        case histo_impl::naive_gpu:
-            compute_histogram_naive_gpu(
-                dev_sched,
-                bin_edge_inf,
-                bin_edge_sup,
-                nbins,
-                element_count,
-                std::forward<Tfunctor>(functor),
-                result,
-                input_data...);
-            break;
-        case histo_impl::gpu_team_fetching:
-            compute_histogram_gpu_team_fetching(
-                dev_sched,
-                bin_edge_inf,
-                bin_edge_sup,
-                nbins,
-                element_count,
-                std::forward<Tfunctor>(functor),
-                result,
-                input_data...);
-            break;
-        case histo_impl::gpu_oversubscribe:
-            compute_histogram_gpu_oversubscribe(
-                dev_sched,
-                256,
-                bin_edge_inf,
-                bin_edge_sup,
-                nbins,
-                element_count,
-                std::forward<Tfunctor>(functor),
-                result,
-                input_data...);
-            break;
-        default: shambase::throw_unimplemented("unknown implementation");
+        if (!impl::compute_histogram_impl.is_set()) {
+            shamalgs::impl_registry::autoselect_impl(impl::compute_histogram_impl_name, dev_sched);
         }
+
+        std::visit(
+            shambase::overloaded{
+                [&](impl::Reference) {
+                    compute_histogram_reference(
+                        bin_edge_inf,
+                        bin_edge_sup,
+                        nbins,
+                        element_count,
+                        std::forward<Tfunctor>(functor),
+                        result,
+                        input_data...);
+                },
+                [&](impl::NaiveGpu) {
+                    compute_histogram_naive_gpu(
+                        dev_sched,
+                        bin_edge_inf,
+                        bin_edge_sup,
+                        nbins,
+                        element_count,
+                        std::forward<Tfunctor>(functor),
+                        result,
+                        input_data...);
+                },
+                [&](impl::GpuTeamFetching) {
+                    compute_histogram_gpu_team_fetching(
+                        dev_sched,
+                        bin_edge_inf,
+                        bin_edge_sup,
+                        nbins,
+                        element_count,
+                        std::forward<Tfunctor>(functor),
+                        result,
+                        input_data...);
+                },
+                [&](impl::GpuOversubscribe) {
+                    compute_histogram_gpu_oversubscribe(
+                        dev_sched,
+                        256,
+                        bin_edge_inf,
+                        bin_edge_sup,
+                        nbins,
+                        element_count,
+                        std::forward<Tfunctor>(functor),
+                        result,
+                        input_data...);
+                },
+            },
+            impl::compute_histogram_impl.get());
 
         return result;
     }

@@ -60,6 +60,11 @@ component_management:
       paths:
         - src/shammath/**
 
+    - component_id: shamsolvergraph
+      name: shamsolvergraph
+      paths:
+        - src/shamsolvergraph/**
+
     - component_id: shamalgs
       name: shamalgs
       paths:

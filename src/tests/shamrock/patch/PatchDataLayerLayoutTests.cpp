@@ -9,6 +9,7 @@
 
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamtest/shamtest.hpp"
+#include <nlohmann/json.hpp>
 
 NEW_TEST(Unittest, "shamrock/patch/PatchDataLayerLayout::serialize_json", 1) {
     using namespace shamrock::patch;

@@ -17,6 +17,8 @@
 
 #include "sham/format/aliases.hpp"
 #include <source_location>
+#include <string_view>
+#include <string>
 
 namespace sham {
 

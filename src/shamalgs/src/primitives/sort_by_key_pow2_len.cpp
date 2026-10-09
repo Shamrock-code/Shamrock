@@ -1,0 +1,225 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+/**
+ * @file sort_by_key_pow2_len.cpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief Sort by keys algorithms
+ *
+ */
+
+#include "shambase/exception.hpp"
+#include "shambase/overloaded.hpp"
+#include "shamalgs/ImplVariant.hpp"
+#include "shamalgs/details/algorithm/bitonicSort.hpp"
+#include "shamalgs/details/algorithm/bitonicSort_updated_usm.hpp"
+#include "shamalgs/impl_registry.hpp"
+#include "shamalgs/primitives/device/details/sort_by_keys_lsd_radix_sort_basic.hpp"
+#include "shamalgs/primitives/device/details/sort_by_keys_std_sort.hpp"
+#include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
+
+namespace shamalgs::primitives::impl {
+
+    /// Max stencil size (tile width) used by the updated USM bitonic sort kernel
+    /// Sizes 2, 4 and 8 are currently disabled (kept for easy re-enabling if needed)
+    enum class MaxStencilSize : u32 {
+        // Size2  = 2,
+        // Size4  = 4,
+        // Size8  = 8,
+        Size16 = 16,
+        Size32 = 32,
+    };
+
+    /// Bitonic sort, updated USM kernel (see bitonicSort_updated_usm.hpp)
+    struct BitonicSort {
+        static constexpr std::string_view variant_type_name = "bitonic_sort";
+        MaxStencilSize stencil_size                         = MaxStencilSize::Size16;
+
+        /// Expose the stencil sizes worth benchmarking as separate default implementations
+        static std::vector<BitonicSort> variant_custom_defaults() {
+            return {
+                // BitonicSort{MaxStencilSize::Size8},
+                BitonicSort{MaxStencilSize::Size16},
+                BitonicSort{MaxStencilSize::Size32},
+            };
+        }
+    };
+
+    /// Copy the buffers to host, std::sort the zipped key/value pairs, and copy back
+    struct StdSort {
+        static constexpr std::string_view variant_type_name = "std_sort";
+    };
+
+    /// Stable LSD radix sort parallelized over chunks of the input (unsigned integer keys only,
+    /// falls back to the bitonic sort otherwise), well suited to CPU devices
+    struct LsdRadixSortBasic {
+        static constexpr std::string_view variant_type_name = "lsd_radix_sort_basic";
+    };
+
+} // namespace shamalgs::primitives::impl
+
+template<>
+struct shamalgs::ImplVariantParams<shamalgs::primitives::impl::BitonicSort> {
+    static nlohmann::json to_json(const shamalgs::primitives::impl::BitonicSort &p) {
+        return {{"stencil_size", static_cast<u32>(p.stencil_size)}};
+    }
+    static shamalgs::primitives::impl::BitonicSort from_json(const nlohmann::json &j) {
+        shamalgs::primitives::impl::BitonicSort p{};
+        if (j.contains("stencil_size")) {
+            p.stencil_size = static_cast<shamalgs::primitives::impl::MaxStencilSize>(
+                j.at("stencil_size").get<u32>());
+        }
+        return p;
+    }
+};
+
+namespace shamalgs::primitives {
+
+    template<class Tkey, class Tval>
+    void sort_by_key_pow2_len(
+        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
+
+        if (!shambase::is_pow_of_two(len)) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "Length must be a power of 2");
+        }
+
+        if (len < 5e3) {
+            shamalgs::algorithm::details::sort_by_key_bitonic_fallback(q, buf_key, buf_values, len);
+        } else {
+            shamalgs::algorithm::details::sort_by_key_bitonic_updated<Tkey, Tval, 16>(
+                q, buf_key, buf_values, len);
+        }
+    }
+
+    /// namespace to control implementation behavior
+    namespace impl {
+
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view sort_by_key_pow2_len_impl_name = "sort_by_key_pow2_len";
+
+        shamalgs::ImplVariantGlobal<BitonicSort, StdSort, LsdRadixSortBasic>
+            sort_by_key_pow2_len_impl{[](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
+                if (dev_sched->ctx->device->prop.type == sham::DeviceType::GPU) {
+                    self.set(BitonicSort{});
+                } else {
+                    self.set(LsdRadixSortBasic{});
+                }
+            }};
+
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(sort_by_key_pow2_len_impl_name, sort_by_key_pow2_len_impl);
+
+        /// Dispatch to the updated USM bitonic sort kernel, picking its MaxStencilSize
+        /// non-type template parameter at runtime from the enum value stored in BitonicSort
+        template<class Tkey, class Tval>
+        void sort_by_key_pow2_len_bitonic_dispatch(
+            const sham::DeviceScheduler_ptr &sched,
+            sham::DeviceBuffer<Tkey> &buf_key,
+            sham::DeviceBuffer<Tval> &buf_values,
+            u32 len,
+            MaxStencilSize stencil_size) {
+
+            switch (stencil_size) {
+            // case MaxStencilSize::Size2:
+            //     shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 2>(
+            //         sched, buf_key, buf_values, len);
+            //     return;
+            // case MaxStencilSize::Size4:
+            //     shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 4>(
+            //         sched, buf_key, buf_values, len);
+            //     return;
+            // case MaxStencilSize::Size8:
+            //     shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 8>(
+            //         sched, buf_key, buf_values, len);
+            //     return;
+            case MaxStencilSize::Size16:
+                shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 16>(
+                    sched, buf_key, buf_values, len);
+                return;
+            case MaxStencilSize::Size32:
+                shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 32>(
+                    sched, buf_key, buf_values, len);
+                return;
+            }
+
+            throw shambase::make_except_with_loc<std::invalid_argument>("invalid MaxStencilSize");
+        }
+
+    } // namespace impl
+
+    template<class Tkey, class Tval>
+    void sort_by_key_pow2_len(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<Tkey> &buf_key,
+        sham::DeviceBuffer<Tval> &buf_values,
+        u32 len) {
+
+        if (!shambase::is_pow_of_two(len)) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "Length must be a power of 2");
+        }
+
+        if (!impl::sort_by_key_pow2_len_impl.is_set()) {
+            shamalgs::impl_registry::autoselect_impl(impl::sort_by_key_pow2_len_impl_name, sched);
+        }
+
+        std::visit(
+            shambase::overloaded{
+                [&](impl::BitonicSort cfg) {
+                    impl::sort_by_key_pow2_len_bitonic_dispatch(
+                        sched, buf_key, buf_values, len, cfg.stencil_size);
+                },
+                [&](impl::StdSort) {
+                    device::details::sort_by_keys_std_sort(buf_key, buf_values, len);
+                },
+                [&](impl::LsdRadixSortBasic) {
+                    if constexpr (std::is_unsigned_v<Tkey>) {
+                        device::details::sort_by_keys_lsd_radix_sort_basic(
+                            sched, buf_key, buf_values, len);
+                    } else {
+                        impl::sort_by_key_pow2_len_bitonic_dispatch(
+                            sched, buf_key, buf_values, len, impl::MaxStencilSize::Size16);
+                    }
+                },
+            },
+            impl::sort_by_key_pow2_len_impl.get());
+    }
+
+    template void sort_by_key_pow2_len(
+        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
+
+    template void sort_by_key_pow2_len(
+        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
+
+    template void sort_by_key_pow2_len(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<u32> &buf_key,
+        sham::DeviceBuffer<u32> &buf_values,
+        u32 len);
+
+    template void sort_by_key_pow2_len(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<u64> &buf_key,
+        sham::DeviceBuffer<u32> &buf_values,
+        u32 len);
+
+    template void sort_by_key_pow2_len(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f64> &buf_key,
+        sham::DeviceBuffer<f64> &buf_values,
+        u32 len);
+
+    template void sort_by_key_pow2_len(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f32> &buf_key,
+        sham::DeviceBuffer<f32> &buf_values,
+        u32 len);
+
+} // namespace shamalgs::primitives

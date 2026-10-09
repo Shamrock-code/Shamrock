@@ -26,6 +26,8 @@
 #include "shamcomm/logs.hpp"
 #include <shambackends/sycl.hpp>
 #include <unordered_map>
+#include <fstream>
+#include <iostream>
 #include <vector>
 
 #if __has_include(<nlohmann/json.hpp>)

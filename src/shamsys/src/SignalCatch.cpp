@@ -97,7 +97,7 @@ namespace shamsys::details {
             outfile << report << std::endl;
             outfile << log_end << std::endl;
             outfile.close();
-            std::cout << shambase::format(
+            std::cout << sham::format(
                 "{}"
                 "Crash report written to {}",
                 log_start,

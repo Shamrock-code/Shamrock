@@ -16,12 +16,13 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
-#include "shammodels/sph/SPHUtilities.hpp"
+#include "shammath/sphkernels.hpp"
+#include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/modules/ComputeLuminosity.hpp"
-#include "shamrock/scheduler/SchedulerUtility.hpp"
-#include "shamrock/solvergraph/IFieldSpan.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_evaluate_internal() {
@@ -32,7 +33,11 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
+    auto &part_counts_with_ghosts = edges.part_counts_with_ghosts.indexes;
+    auto &part_counts             = edges.part_counts.indexes;
+
     edges.luminosity.ensure_sizes(edges.part_counts.indexes);
+    edges.omega.check_sizes(part_counts_with_ghosts);
 
     sham::distributed_data_kernel_call(
         dev_sched,
@@ -97,13 +102,6 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
 template<class Tvec, template<class> class SPHKernel>
 std::string shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_get_tex()
     const {
-    auto xyz        = get_ro_edge_base(0).get_tex_symbol();
-    auto hpart      = get_ro_edge_base(1).get_tex_symbol();
-    auto omega      = get_ro_edge_base(2).get_tex_symbol();
-    auto u          = get_ro_edge_base(3).get_tex_symbol();
-    auto pressure   = get_ro_edge_base(4).get_tex_symbol();
-    auto luminosity = get_rw_edge_base(0).get_tex_symbol();
-
     std::string tex = R"tex(
         Compute idealized luminosity from shocks only: energy dissipated immidiately emitted
         \begin{align}
@@ -114,12 +112,8 @@ std::string shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_i
         \end{align}
         )tex";
 
-    shambase::replace_all(tex, "{xyz}", xyz);
-    shambase::replace_all(tex, "{hpart}", hpart);
-    shambase::replace_all(tex, "{omega}", omega);
-    shambase::replace_all(tex, "{u}", u);
-    shambase::replace_all(tex, "{pressure}", pressure);
-    shambase::replace_all(tex, "{luminosity}", luminosity);
+    replace_edges_tex_symbols(tex);
+
     return tex;
 }
 

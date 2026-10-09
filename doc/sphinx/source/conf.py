@@ -44,6 +44,7 @@ extensions = [
     "sphinx_copybutton",  # add a copy button to code blocks
     "sphinx_design",  # Add grid tabs and fancy html stuff
     "myst_parser",  # Allow markdown files
+    "sphinx.ext.graphviz",  # Allow graphviz diagrams
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -70,6 +71,7 @@ sphinx_gallery_conf = {
     "examples_dirs": "../examples",  # path to your example scripts
     "gallery_dirs": "_as_gen",  # path to where to save gallery generated output
     "line_numbers": True,  # line numbers in examples
+    "capture_repr": ("_repr_html_", "__repr__"),
     # The 3 next args are a bit like dark magic which allows the link
     # to functions in the example to exist
     "reference_url": {"shamrock": None},

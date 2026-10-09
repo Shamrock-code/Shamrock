@@ -65,6 +65,16 @@ namespace shamrock {
             sham::DeviceBuffer<flt> &buf_eps_sq,
             sycl::range<1> elem_range,
             flt hdt);
+
+        template<class flt, class T>
+        void leapfrog_corrector_positive_only(
+            sham::DeviceQueue &queue,
+            sham::DeviceBuffer<T> &buf_val,
+            sham::DeviceBuffer<T> &buf_der,
+            sham::DeviceBuffer<T> &buf_der_old,
+            sham::DeviceBuffer<flt> &buf_eps_sq,
+            sycl::range<1> elem_range,
+            flt hdt);
     } // namespace integrators
 
     namespace utilities {

@@ -96,10 +96,10 @@ else:
     print("WARNING : The compiler is OTHER")
 
     if not (args.profile == None):
-        raise "can not select a profile with a unknown compiler"
+        raise ValueError("can not select a profile with a unknown compiler")
 
     if args.cxxbin == None:
-        raise "you must select the compiler path if unknown"
+        raise ValueError("you must select the compiler path if unknown")
 
 
 #########
@@ -221,7 +221,9 @@ if args.compiler == "acpp_cmake":
         cmake_dir_acpp_cmake = hipsycl_cmake_dir
         acpp_cmake_name = "hipSYCL"
     else:
-        raise "you want to use acpp_cmake mode but neither hipSYCL, OpenSYCL or AdaptiveCpp folders could be found in (cxxpath)/lib/cmake/"
+        raise ValueError(
+            "you want to use acpp_cmake mode but neither hipSYCL, OpenSYCL or AdaptiveCpp folders could be found in (cxxpath)/lib/cmake/"
+        )
 
 profile_acpp_cmake = {
     "omp": {
@@ -285,7 +287,9 @@ if args.interactive:
 
 ### processing results
 if args.builddir == None:
-    raise "no output directory specified, please add --builddir flag pointing to the build folder"
+    raise ValueError(
+        "no output directory specified, please add --builddir flag pointing to the build folder"
+    )
 
 # print(args)
 
@@ -314,7 +318,7 @@ if args.gen == "ninja":
 elif args.gen == "make":
     cmake_cmd += ' -G "Unix Makefiles"'
 else:
-    raise "unknown generator"
+    raise ValueError("unknown generator")
 
 if args.fresh:
     cmake_cmd += " --fresh"
@@ -322,13 +326,13 @@ if args.fresh:
 
 if args.interactive:
     if args.compiler == "intel_llvm":
-        print((profile_dpcpp.keys()))
+        print(profile_dpcpp.keys())
 
     elif args.compiler == "acpp":
-        print((profile_acpp.keys()))
+        print(profile_acpp.keys())
 
     elif args.compiler == "acpp_cmake":
-        print((profile_acpp_cmake.keys()))
+        print(profile_acpp_cmake.keys())
 
     args.profile = input("    please input the profile name : ")
 

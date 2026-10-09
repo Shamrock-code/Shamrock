@@ -31,8 +31,7 @@ def helper_get_last_dump(dump_prefix, ext=".sham") -> int | None:
     for f in res:
         try:
             dump_num = int(f[len(dump_prefix) : -len(ext)])
-            if dump_num > num_max:
-                num_max = dump_num
+            num_max = max(num_max, dump_num)
         except ValueError:
             pass
 

@@ -343,7 +343,7 @@ void make_indexmap(
 
             for (unsigned int i = 0; i < morton_leaf_count + 2; i++) {
                 if (dest[i] != reduc_index_map[i]) {
-                    throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                    throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
                         "difference i = {}, {} != {}", i, dest[i], reduc_index_map[i]));
                 }
             }

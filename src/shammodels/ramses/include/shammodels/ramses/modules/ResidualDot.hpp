@@ -18,8 +18,8 @@
  */
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 
 namespace shammodels::basegodunov::modules {
 

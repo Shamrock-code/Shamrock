@@ -21,7 +21,7 @@
 #include "shamcomm/logs.hpp"
 #include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/solvergraph/Field.hpp"
-#include "shamrock/solvergraph/IEdge.hpp"
+#include "shamsolvergraph/edge/IEdge.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <pybind11/complex.h>
 #include <pybind11/pybind11.h>
@@ -41,7 +41,7 @@ void register_field(py::module &m, const char *class_name) {
         .def(
             "__repr__",
             [=](Field<T> &self) {
-                return shambase::format(
+                return sham::format(
                     "{}(label={}, tex_symbol={}, nvar={})",
                     class_name,
                     self.get_label(),

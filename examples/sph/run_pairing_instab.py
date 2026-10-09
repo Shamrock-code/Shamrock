@@ -45,7 +45,7 @@ sim_name = "pairing_instab"
 
 N_target = 500
 scheduler_split_val = int(2e7)
-scheduler_merge_val = int(1)
+scheduler_merge_val = 1
 
 os.makedirs(dump_folder, exist_ok=True)
 
@@ -249,7 +249,7 @@ for iplot in range(50):
 # Convert PNG sequence to Image sequence in mpl
 ####################################################
 
-import matplotlib.animation as animation
+from matplotlib import animation
 from shamrock.utils.plot import show_image_sequence
 
 render_gif = True

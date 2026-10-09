@@ -32,7 +32,7 @@ namespace shamalgs::primitives {
 
         if (start_id > end_id) {
             shambase::throw_with_loc<std::invalid_argument>(
-                shambase::format("start_id > end_id : {} > {}", start_id, end_id));
+                sham::format("start_id > end_id : {} > {}", start_id, end_id));
         }
 
         sham::DeviceBuffer<Tscal> ret_data_base(end_id - start_id, buf1.get_dev_scheduler_ptr());

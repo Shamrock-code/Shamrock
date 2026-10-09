@@ -19,8 +19,8 @@
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 #include <functional>
 
 namespace shamrock::solvergraph {
@@ -55,7 +55,7 @@ namespace shamrock::solvergraph {
                 field_refs,
                 sizes,
                 [&](u64 id) {
-                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    shambase::throw_with_loc<std::runtime_error>(sham::format(
                         "Missing field ref in distributed data at id {}\n"
                         "Field name: {}\n"
                         "Field texsymbol: {}",
@@ -67,7 +67,7 @@ namespace shamrock::solvergraph {
                     // TODO
                 },
                 [&](u64 id) {
-                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    shambase::throw_with_loc<std::runtime_error>(sham::format(
                         "Extra field ref in distributed data at id {}\n"
                         "Field name: {}\n"
                         "Field texsymbol: {}",

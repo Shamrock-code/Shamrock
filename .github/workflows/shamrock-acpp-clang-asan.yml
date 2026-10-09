@@ -33,14 +33,14 @@ jobs:
         run:  |
           git config --global --add safe.directory '*'
           git config --global --list
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
         with:
           fetch-depth: 0
           submodules: recursive
           ref: "refs/pull/${{ github.event.number }}/merge"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name != 'pull_request_target'
         with:
           fetch-depth: 0
@@ -64,17 +64,10 @@ jobs:
         with:
           key: ${{ github.job }}-asan-acpp
           verbose: 2
+          save: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
+          evict-old-files: 4d
 
-      - name: Configure ccache
-        shell: bash
-        run: |
-          echo " ----- ccache configuration ----- "
-          echo " Old configuration: "
-          ccache -p
-          echo " ----- New configuration:   ----- "
-          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
-          ccache -p
-          echo " ----- ccache configuration done ----- "
+      - uses: ./.github/actions/configure_ccache
 
 
       - name: configure Shamrock

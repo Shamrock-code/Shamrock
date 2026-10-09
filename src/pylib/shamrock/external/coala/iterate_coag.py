@@ -229,12 +229,12 @@ def iterate_coag(kernel, K0, nbins, kpol, dthydro, ndthydro, coeff_CFL, Q, eps, 
 
     finish = time.time()
 
-    print("")
+    print()
     print("total nsub =", tot_nsub)
     print("total ndt =", tot_ndt)
     print("total number time-steps =", tot_ndt + tot_nsub)
 
-    print("")
+    print()
     print("gij tend =", gij)
 
     if kpol == 0:
@@ -482,12 +482,12 @@ def iterate_coag_kdv(
 
     finish = time.time()
 
-    print("")
+    print()
     print("total nsub =", tot_nsub)
     print("total ndt =", tot_ndt)
     print("total number time-steps =", tot_ndt + tot_nsub)
 
-    print("")
+    print()
     print("gij tend =", gij)
 
     if kpol == 0:

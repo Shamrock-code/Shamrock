@@ -9,6 +9,7 @@
 
 #include "shambase/time.hpp"
 #include "shambase/type_name_info.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/compute_histogram.hpp"
 #include "shamalgs/primitives/mock_value.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -16,6 +17,7 @@
 #include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
+#include <nlohmann/json.hpp>
 #include <utility>
 #include <vector>
 
@@ -77,8 +79,7 @@ inline void basic_histogram(const std::vector<std::string> &impl_list) {
     std::vector<Tscal> ref_result{};
 
     for (auto &cfg : impl_list) {
-        using namespace shamalgs::primitives::impl;
-        compute_histogram_impl_control.set_config(dev_sched, cfg);
+        shamalgs::impl_registry::set_impl("compute_histogram", cfg);
 
         shambase::Timer timer;
         timer.start();
@@ -97,7 +98,7 @@ inline void basic_histogram(const std::vector<std::string> &impl_list) {
 
         logger::raw_ln("impl =", cfg, "time =", timer.get_time_str());
 
-        if (cfg == "reference") {
+        if (nlohmann::json::parse(cfg).at("implementation").get<std::string>() == "reference") {
             ref_result = ret.copy_to_stdvec();
         } else {
             REQUIRE(compare<Tscal>(ref_result, ret.copy_to_stdvec(), 1e-12));
@@ -148,8 +149,7 @@ inline void basic_histogram_size(const std::vector<std::string> &impl_list) {
     std::vector<Tscal> ref_result{};
 
     for (auto &cfg : impl_list) {
-        using namespace shamalgs::primitives::impl;
-        compute_histogram_impl_control.set_config(dev_sched, cfg);
+        shamalgs::impl_registry::set_impl("compute_histogram", cfg);
 
         shambase::Timer timer;
         timer.start();
@@ -169,7 +169,7 @@ inline void basic_histogram_size(const std::vector<std::string> &impl_list) {
 
         logger::raw_ln("impl =", cfg, "time =", timer.get_time_str());
 
-        if (cfg == "reference") {
+        if (nlohmann::json::parse(cfg).at("implementation").get<std::string>() == "reference") {
             ref_result = ret.copy_to_stdvec();
         } else {
             REQUIRE(compare<Tscal>(ref_result, ret.copy_to_stdvec(), 1e-12));
@@ -222,8 +222,7 @@ inline void basic_histogram_size_non_unif(const std::vector<std::string> &impl_l
     std::vector<Tscal> ref_result{};
 
     for (auto &cfg : impl_list) {
-        using namespace shamalgs::primitives::impl;
-        compute_histogram_impl_control.set_config(dev_sched, cfg);
+        shamalgs::impl_registry::set_impl("compute_histogram", cfg);
 
         shambase::Timer timer;
         timer.start();
@@ -243,7 +242,7 @@ inline void basic_histogram_size_non_unif(const std::vector<std::string> &impl_l
 
         logger::raw_ln("impl =", cfg, "time =", timer.get_time_str());
 
-        if (cfg == "reference") {
+        if (nlohmann::json::parse(cfg).at("implementation").get<std::string>() == "reference") {
             ref_result = ret.copy_to_stdvec();
         } else {
             REQUIRE(compare<Tscal>(ref_result, ret.copy_to_stdvec(), 1e-12));
@@ -255,11 +254,11 @@ NEW_TEST(Unittest, "shamalgs::primitives::compute_histogram", 1) {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-    using namespace shamalgs::primitives::impl;
-
-    auto impl_list = compute_histogram_impl_control.get_avail_configs(dev_sched);
-
-    auto default_impl = compute_histogram_impl_control.get_default_config(dev_sched);
+    if (!shamalgs::impl_registry::is_impl_set("compute_histogram")) {
+        shamalgs::impl_registry::autoselect_impl("compute_histogram", dev_sched);
+    }
+    auto current_impl = shamalgs::impl_registry::get_current_impl("compute_histogram");
+    auto impl_list    = shamalgs::impl_registry::get_default_impl_list("compute_histogram");
 
     basic_histogram<f32>(impl_list);
     basic_histogram<f64>(impl_list);
@@ -268,5 +267,6 @@ NEW_TEST(Unittest, "shamalgs::primitives::compute_histogram", 1) {
     basic_histogram_size_non_unif<f32>(impl_list);
     basic_histogram_size_non_unif<f64>(impl_list);
 
-    compute_histogram_impl_control.set_config(dev_sched, default_impl);
+    // reset to default
+    shamalgs::impl_registry::set_impl("compute_histogram", current_impl);
 }

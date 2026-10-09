@@ -15,9 +15,16 @@
  * @brief A solver graph node to fuse a ghost layer into a set of patch data layers.
  */
 
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/IPatchDataLayerRefs.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
+#include "shamsolvergraph/node/INode.hpp"
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::PatchDataLayerDDShared, ghost_layer)                               \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IPatchDataLayerRefs, patch_data_layers)
 
 namespace shammodels::basegodunov::modules {
 
@@ -26,26 +33,7 @@ namespace shammodels::basegodunov::modules {
         public:
         FuseGhostLayer() {}
 
-        struct Edges {
-            // inputs
-            const shamrock::solvergraph::PatchDataLayerDDShared &ghost_layer;
-            // outputs
-            shamrock::solvergraph::IPatchDataLayerRefs &patch_data_layers;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::PatchDataLayerDDShared> ghost_layer,
-            std::shared_ptr<shamrock::solvergraph::IPatchDataLayerRefs> patch_data_layers) {
-            __internal_set_ro_edges({ghost_layer});
-            __internal_set_rw_edges({patch_data_layers});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                .ghost_layer       = get_ro_edge<shamrock::solvergraph::PatchDataLayerDDShared>(0),
-                .patch_data_layers = get_rw_edge<shamrock::solvergraph::IPatchDataLayerRefs>(0),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -54,3 +42,5 @@ namespace shammodels::basegodunov::modules {
         virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::basegodunov::modules
+
+#undef NODE_EDGES

@@ -17,6 +17,7 @@
  */
 
 #include "sham/term/color.hpp"
+#include <cstdint>
 #include <string>
 namespace shambase {
 
@@ -30,6 +31,9 @@ namespace shambase {
 
         /// Are colors enabled
         inline bool colors_enabled() { return sham::term::are_colors_enabled(); }
+
+        /// Get the detected/forced terminal color support level
+        inline sham::term::ColorLevel color_level() { return sham::term::color_level(); }
 
         /// Get the empty terminal escape
         inline const std::string empty() { return ""; };
@@ -59,6 +63,26 @@ namespace shambase {
         inline const std::string col8b_cyan() { return sham::term::colors_8b::cyan(); };
         /// Get the white terminal escape char
         inline const std::string col8b_white() { return sham::term::colors_8b::white(); };
+
+        /// Get the 256-color palette foreground terminal escape char (empty if unsupported)
+        inline std::string col256_foreground(std::uint8_t index) {
+            return sham::term::colors_256::foreground(index);
+        };
+
+        /// Get the 256-color palette background terminal escape char (empty if unsupported)
+        inline std::string col256_background(std::uint8_t index) {
+            return sham::term::colors_256::background(index);
+        };
+
+        /// Get the 24-bit RGB truecolor foreground terminal escape char (empty if unsupported)
+        inline std::string rgb_foreground(std::uint8_t r, std::uint8_t g, std::uint8_t b) {
+            return sham::term::colors_24b::foreground(r, g, b);
+        };
+
+        /// Get the 24-bit RGB truecolor background terminal escape char (empty if unsupported)
+        inline std::string rgb_background(std::uint8_t r, std::uint8_t g, std::uint8_t b) {
+            return sham::term::colors_24b::background(r, g, b);
+        };
 
     } // namespace term_colors
 

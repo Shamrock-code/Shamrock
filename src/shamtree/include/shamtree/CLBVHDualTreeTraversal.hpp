@@ -18,7 +18,7 @@
  * Bounding Volume Hierarchies (CLBVH).
  */
 
-#include "shamalgs/impl_utils.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/vec.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 
@@ -59,20 +59,5 @@ namespace shamtree {
         shambase::VecComponent<Tvec> theta_crit,
         bool ordered_result      = false,
         bool allow_leaf_lowering = false);
-
-    /// namespace to control implementation behavior
-    namespace impl {
-
-        /// Get list of available dual tree traversal implementations
-        std::vector<shamalgs::impl_param> get_default_impl_list_clbvh_dual_tree_traversal();
-
-        /// Get the current implementation for dual tree traversal
-        shamalgs::impl_param get_current_impl_clbvh_dual_tree_traversal_impl();
-
-        /// Set the implementation for dual tree traversal
-        void set_impl_clbvh_dual_tree_traversal(
-            const std::string &impl, const std::string &param = "");
-
-    } // namespace impl
 
 } // namespace shamtree

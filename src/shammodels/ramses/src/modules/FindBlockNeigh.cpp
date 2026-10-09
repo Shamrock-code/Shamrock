@@ -14,9 +14,10 @@
  *
  */
 
-#include "shammodels/ramses/modules/FindBlockNeigh.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
 #include "shammath/AABB.hpp"
+#include "shammodels/ramses/modules/FindBlockNeigh.hpp"
 #include "shammodels/ramses/modules/details/compute_neigh_graph.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamtree/TreeTraversal.hpp"
@@ -75,6 +76,8 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec, class Tmorton>
     void FindBlockNeigh<Tvec, TgridVec, Tmorton>::_impl_evaluate_internal() {
+        __shamrock_stack_entry();
+
         auto edges = get_edges();
 
         edges.spans_block_min.check_sizes(edges.sizes.indexes);

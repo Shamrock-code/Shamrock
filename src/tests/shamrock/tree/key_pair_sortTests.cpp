@@ -47,7 +47,7 @@ void unit_test_key_pair() {
 
     for (u32 i = 0; i < size_test; i++) {
         REQUIRE_EQUAL_NAMED(
-            "index [" + shambase::format_printf("%d", i) + "]", unsorted[i], morton_list[i]);
+            "index [" + sham::format_printf("%d", i) + "]", unsorted[i], morton_list[i]);
     }
 }
 

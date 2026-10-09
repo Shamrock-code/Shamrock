@@ -20,10 +20,10 @@
  */
 
 #include "shamalgs/collective/distributedDataComm.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataFieldDDShared.hpp"
 #include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* input */                                                                                    \

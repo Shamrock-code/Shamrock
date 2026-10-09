@@ -37,7 +37,7 @@ namespace shamtree {
         map_morton_id_to_obj_id.resize(morton_count);
         shamalgs::primitives::fill_buffer_index(map_morton_id_to_obj_id, morton_count);
 
-        shamalgs::algorithm::sort_by_key(
+        shamalgs::algorithm::sort_by_key_pow2_len(
             dev_sched, morton_codes_to_sort, map_morton_id_to_obj_id, morton_count);
 
         return MortonCodeSortedSet<Tmorton, Tvec, dim>(
@@ -66,6 +66,7 @@ namespace shamtree {
 
 template class shamtree::MortonCodeSortedSet<u32, f64_3, 3>;
 template class shamtree::MortonCodeSortedSet<u64, f64_3, 3>;
+template class shamtree::MortonCodeSortedSet<u64, i64_3, 3>;
 
 template shamtree::MortonCodeSortedSet<u32, f64_3, 3> shamtree::sort_morton_set<u32, f64_3, 3>(
     const sham::DeviceScheduler_ptr &dev_sched,
@@ -73,6 +74,9 @@ template shamtree::MortonCodeSortedSet<u32, f64_3, 3> shamtree::sort_morton_set<
 template shamtree::MortonCodeSortedSet<u64, f64_3, 3> shamtree::sort_morton_set<u64, f64_3, 3>(
     const sham::DeviceScheduler_ptr &dev_sched,
     shamtree::MortonCodeSet<u64, f64_3, 3> &&morton_codes_set);
+template shamtree::MortonCodeSortedSet<u64, i64_3, 3> shamtree::sort_morton_set<u64, i64_3, 3>(
+    const sham::DeviceScheduler_ptr &dev_sched,
+    shamtree::MortonCodeSet<u64, i64_3, 3> &&morton_codes_set);
 
 template shamtree::MortonCodeSortedSet<u32, f64_3, 3> shamtree::sort_morton_set<u32, f64_3, 3>(
     const sham::DeviceScheduler_ptr &dev_sched,
@@ -81,4 +85,8 @@ template shamtree::MortonCodeSortedSet<u32, f64_3, 3> shamtree::sort_morton_set<
 template shamtree::MortonCodeSortedSet<u64, f64_3, 3> shamtree::sort_morton_set<u64, f64_3, 3>(
     const sham::DeviceScheduler_ptr &dev_sched,
     shamtree::MortonCodeSet<u64, f64_3, 3> &&morton_codes_set,
+    sham::DeviceBuffer<u32> &&cached_map_morton_id_to_obj_id);
+template shamtree::MortonCodeSortedSet<u64, i64_3, 3> shamtree::sort_morton_set<u64, i64_3, 3>(
+    const sham::DeviceScheduler_ptr &dev_sched,
+    shamtree::MortonCodeSet<u64, i64_3, 3> &&morton_codes_set,
     sham::DeviceBuffer<u32> &&cached_map_morton_id_to_obj_id);

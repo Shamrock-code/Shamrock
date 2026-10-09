@@ -105,7 +105,7 @@ namespace shambase {
         nvtxRangePush(name);
 #endif
 
-        shamlog_debug_sycl_ln("SYCL", shambase::format("parallel_for {} N={}", name, length));
+        shamlog_debug_sycl_ln("SYCL", sham::format("parallel_for {} N={}", name, length));
 
         if constexpr (mode == PARALLEL_FOR) {
 
@@ -156,7 +156,7 @@ namespace shambase {
 #endif
 
         shamlog_debug_sycl_ln(
-            "SYCL", shambase::format("parallel_for {} N={} {}", name, length_x, length_y));
+            "SYCL", sham::format("parallel_for {} N={} {}", name, length_x, length_y));
 
         if constexpr (mode == PARALLEL_FOR) {
 
@@ -217,8 +217,7 @@ namespace shambase {
 #endif
 
         shamlog_debug_sycl_ln(
-            "SYCL",
-            shambase::format("parallel_for {} N={} {} {}", name, length_x, length_y, length_z));
+            "SYCL", sham::format("parallel_for {} N={} {} {}", name, length_x, length_y, length_z));
 
         if constexpr (mode == PARALLEL_FOR) {
 

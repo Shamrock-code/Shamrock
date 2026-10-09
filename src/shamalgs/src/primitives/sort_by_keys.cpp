@@ -14,62 +14,130 @@
  *
  */
 
+#include "shambase/exception.hpp"
+#include "shambase/overloaded.hpp"
+#include "shamalgs/ImplVariant.hpp"
+#include "shamalgs/details/algorithm/batcherOddEvenSort.hpp"
+#include "shamalgs/impl_registry.hpp"
+#include "shamalgs/primitives/device/details/sort_by_keys_lsd_radix_sort_basic.hpp"
+#include "shamalgs/primitives/device/details/sort_by_keys_std_sort.hpp"
 #include "shamalgs/primitives/sort_by_keys.hpp"
-#include "shamalgs/details/algorithm/bitonicSort.hpp"
-#include "shamalgs/details/algorithm/bitonicSort_updated_usm.hpp"
+#include <type_traits>
+#include <algorithm>
+#include <vector>
+
+namespace shamalgs::primitives::details {
+
+    /// Copy both buffers to host, sort the zipped key/value pairs with
+    /// batcher_odd_even_host_serial, and copy back
+    template<class Tkey, class Tval>
+    inline void sort_by_keys_batcher_odd_even_host_serial(
+        sham::DeviceBuffer<Tkey> &buf_key, sham::DeviceBuffer<Tval> &buf_values, u32 len) {
+
+        std::vector<Tkey> key_stdvec = buf_key.copy_to_stdvec();
+        std::vector<Tval> val_stdvec = buf_values.copy_to_stdvec();
+
+        std::vector<Tkey> key_sub(key_stdvec.begin(), key_stdvec.begin() + len);
+        std::vector<Tval> val_sub(val_stdvec.begin(), val_stdvec.begin() + len);
+
+        algorithm::details::sort_by_key_batcher_odd_even_host_reference(key_sub, val_sub);
+
+        std::copy(key_sub.begin(), key_sub.end(), key_stdvec.begin());
+        std::copy(val_sub.begin(), val_sub.end(), val_stdvec.begin());
+
+        buf_key.copy_from_stdvec(key_stdvec);
+        buf_values.copy_from_stdvec(val_stdvec);
+    }
+
+} // namespace shamalgs::primitives::details
 
 namespace shamalgs::primitives {
 
-    template<class Tkey, class Tval>
-    void sort_by_key_pow2_len(
-        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
+    /// namespace to control implementation behavior
+    namespace impl {
 
-        if (len < 5e3) {
-            shamalgs::algorithm::details::sort_by_key_bitonic_fallback(q, buf_key, buf_values, len);
-        } else {
-            shamalgs::algorithm::details::sort_by_key_bitonic_updated<Tkey, Tval, 16>(
-                q, buf_key, buf_values, len);
+        /// Copy the buffers to host, std::sort the zipped key/value pairs, and copy back
+        struct StdSort {
+            static constexpr std::string_view variant_type_name = "std_sort";
+        };
+
+        /// Copy the buffers to host, sort with Batcher's odd-even merge sort, and copy back
+        struct BatcherOddEvenHostSerial {
+            static constexpr std::string_view variant_type_name = "batcher_odd_even_host_serial";
+        };
+
+        /// Copy the buffers to host, sort with Batcher's odd-even merge sort, and copy back
+        struct BatcherOddEven {
+            static constexpr std::string_view variant_type_name = "batcher_odd_even";
+        };
+
+        /// Stable LSD radix sort parallelized over chunks of the input (unsigned integer keys
+        /// only, falls back to the std sort otherwise)
+        struct LsdRadixSortBasic {
+            static constexpr std::string_view variant_type_name = "lsd_radix_sort_basic";
+        };
+
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view sort_by_keys_impl_name = "sort_by_keys";
+
+        shamalgs::
+            ImplVariantGlobal<StdSort, BatcherOddEvenHostSerial, BatcherOddEven, LsdRadixSortBasic>
+                sort_by_keys_impl{[](const sham::DeviceScheduler_ptr &dev_sched, auto &self) {
+                    if (dev_sched->ctx->device->prop.type == sham::DeviceType::CPU) {
+                        self.set(LsdRadixSortBasic{});
+                    } else {
+                        self.set(StdSort{});
+                    }
+                }};
+
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(sort_by_keys_impl_name, sort_by_keys_impl);
+
+    } // namespace impl
+
+    template<class Tkey, class Tval>
+    void sort_by_keys(
+        sham::DeviceBuffer<Tkey> &buf_key, sham::DeviceBuffer<Tval> &buf_values, u32 len) {
+
+        if (!impl::sort_by_keys_impl.is_set()) {
+            shamalgs::impl_registry::autoselect_impl(
+                impl::sort_by_keys_impl_name, buf_key.get_dev_scheduler_ptr());
         }
+
+        std::visit(
+            shambase::overloaded{
+                [&](impl::StdSort) {
+                    device::details::sort_by_keys_std_sort(buf_key, buf_values, len);
+                },
+                [&](impl::BatcherOddEvenHostSerial) {
+                    details::sort_by_keys_batcher_odd_even_host_serial(buf_key, buf_values, len);
+                },
+                [&](impl::BatcherOddEven) {
+                    algorithm::details::sort_by_key_batcher_odd_even(
+                        buf_key.get_dev_scheduler_ptr(), buf_key, buf_values, len);
+                },
+                [&](impl::LsdRadixSortBasic) {
+                    if constexpr (std::is_unsigned_v<Tkey>) {
+                        device::details::sort_by_keys_lsd_radix_sort_basic(
+                            buf_key.get_dev_scheduler_ptr(), buf_key, buf_values, len);
+                    } else {
+                        device::details::sort_by_keys_std_sort(buf_key, buf_values, len);
+                    }
+                },
+            },
+            impl::sort_by_keys_impl.get());
     }
 
-    template<class Tkey, class Tval>
-    void sort_by_key_pow2_len(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<Tkey> &buf_key,
-        sham::DeviceBuffer<Tval> &buf_values,
-        u32 len) {
-        shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 16>(
-            sched, buf_key, buf_values, len);
-    }
+    template void sort_by_keys(
+        sham::DeviceBuffer<u32> &buf_key, sham::DeviceBuffer<u32> &buf_values, u32 len);
 
-    template void sort_by_key_pow2_len(
-        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
+    template void sort_by_keys(
+        sham::DeviceBuffer<u64> &buf_key, sham::DeviceBuffer<u32> &buf_values, u32 len);
 
-    template void sort_by_key_pow2_len(
-        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
+    template void sort_by_keys(
+        sham::DeviceBuffer<f64> &buf_key, sham::DeviceBuffer<f64> &buf_values, u32 len);
 
-    template void sort_by_key_pow2_len(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<u32> &buf_key,
-        sham::DeviceBuffer<u32> &buf_values,
-        u32 len);
-
-    template void sort_by_key_pow2_len(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<u64> &buf_key,
-        sham::DeviceBuffer<u32> &buf_values,
-        u32 len);
-
-    template void sort_by_key_pow2_len(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<f64> &buf_key,
-        sham::DeviceBuffer<f64> &buf_values,
-        u32 len);
-
-    template void sort_by_key_pow2_len(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<f32> &buf_key,
-        sham::DeviceBuffer<f32> &buf_values,
-        u32 len);
+    template void sort_by_keys(
+        sham::DeviceBuffer<f32> &buf_key, sham::DeviceBuffer<f32> &buf_values, u32 len);
 
 } // namespace shamalgs::primitives

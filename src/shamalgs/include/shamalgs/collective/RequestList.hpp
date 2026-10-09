@@ -79,10 +79,10 @@ namespace shamalgs::collective {
             std::string err_msg = "";
             for (size_t i = 0; i < rqs.size(); i++) {
                 if (!is_ready[i]) {
-                    err_msg += shambase::format("request {} is not ready\n", i);
+                    err_msg += sham::format("request {} is not ready\n", i);
                 }
             }
-            std::string msg = shambase::format("timeout : \n{}", err_msg);
+            std::string msg = sham::format("timeout : \n{}", err_msg);
             throw shambase::make_except_with_loc<std::runtime_error>(msg);
         }
 

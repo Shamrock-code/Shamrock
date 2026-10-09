@@ -14,10 +14,11 @@
  *
  */
 
-#include "shammodels/ramses/modules/ComputeSumOverV.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammath/riemann.hpp"
+#include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
 
@@ -43,27 +44,19 @@ namespace shammodels::basegodunov::modules {
 
     template<class T>
     std::string NodeComputeSumOverV<T>::_impl_get_tex() const {
-
-        auto block_count  = get_ro_edge_base(0).get_tex_symbol();
-        auto field        = get_ro_edge_base(1).get_tex_symbol();
-        auto total_volume = get_ro_edge_base(2).get_tex_symbol();
-        auto mean         = get_rw_edge_base(0).get_tex_symbol();
-
         std::string tex = R"tex(
             Compute cell mass
 
             \begin{align}
-            {mean} &=\sum_{i\in \Omega} {field}_i / {total_volume} \\
-            \Omega = [0,{block_count} * N_{\rm cell/block}) \\
+            {mean_val} &=\sum_{i\in \Omega} {spans_field}_i / {total_volume} \\
+            \Omega = [0,{sizes} * N_{\rm cell/block}) \\
             N_{\rm cell/block} & = {block_size}
             \end{align}
         )tex";
 
-        shambase::replace_all(tex, "{total_volume}", total_volume);
-        shambase::replace_all(tex, "{field}", field);
-        shambase::replace_all(tex, "{mean}", mean);
-        shambase::replace_all(tex, "{block_count}", block_count);
-        shambase::replace_all(tex, "{block_size}", shambase::format("{}", block_size));
+        replace_edges_tex_symbols(tex);
+
+        shambase::replace_all(tex, "{block_size}", sham::format("{}", block_size));
 
         return tex;
     }

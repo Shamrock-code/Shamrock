@@ -20,6 +20,7 @@
  * - Edge cases (zero acceleration, constant force)
  */
 
+#include "shambackends/sycl.hpp"
 #include "shamtest/shamtest.hpp"
 #include <cmath>
 #include <vector>

@@ -16,11 +16,37 @@
 #include "shamtree/CLBVHObjectIterator.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/TreeTraversal.hpp"
+#include "tests/shamtree/tie_order_utils.hpp"
+#include <algorithm>
 #include <vector>
+
+using shamtree::test_utils::sort_segments;
 
 using Tmorton = u64;
 using Tvec    = f64_3;
 using Tscal   = shambase::VecComponent<Tvec>;
+
+/// Host side reference for the tree depth (number of edges on the longest root to leaf path)
+inline u32 get_tree_depth_host_reference(const shamtree::KarrasRadixTree &tree) {
+    if (tree.is_root_leaf()) {
+        return 0;
+    }
+
+    auto host_traverser = tree.get_structure_traverser_host();
+    auto acc            = host_traverser.get_read_access();
+
+    // height of the subtree rooted at `id` (leaves have height 0)
+    auto get_height = [&](auto &&self, u32 id) -> u32 {
+        if (acc.is_id_leaf(id)) {
+            return 0;
+        }
+        return 1
+               + std::max(self(self, acc.get_left_child(id)), self(self, acc.get_right_child(id)));
+    };
+
+    // the root of a Karras tree is always the cell 0
+    return get_height(get_height, 0);
+}
 
 NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator", 1) {
 
@@ -54,6 +80,8 @@ NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator", 1) {
     bvh.rebuild_from_positions(partpos_buf, bb, 1);
 
     REQUIRE_EQUAL(bvh.structure.get_internal_cell_count(), 6);
+
+    REQUIRE_EQUAL(bvh.get_exact_tree_depth(), get_tree_depth_host_reference(bvh.structure));
 
     auto obj_it = bvh.get_object_iterator();
 
@@ -122,7 +150,9 @@ NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator", 1) {
                     });
             });
 
-        REQUIRE_EQUAL(pcache.index_neigh_map.copy_to_stdvec(), expected_neigh);
+        REQUIRE_EQUAL(
+            sort_segments(pcache.index_neigh_map.copy_to_stdvec(), expected_counts),
+            sort_segments(expected_neigh, expected_counts));
     }
 
     { // find within a box around particles
@@ -226,7 +256,9 @@ NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator", 1) {
                     });
             });
 
-        REQUIRE_EQUAL(pcache.index_neigh_map.copy_to_stdvec(), expected_neigh);
+        REQUIRE_EQUAL(
+            sort_segments(pcache.index_neigh_map.copy_to_stdvec(), expected_counts),
+            sort_segments(expected_neigh, expected_counts));
     }
 }
 
@@ -263,6 +295,8 @@ NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator(one-cell)", 1) {
 
     REQUIRE_EQUAL(bvh.structure.get_internal_cell_count(), 0);
 
+    REQUIRE_EQUAL(bvh.get_exact_tree_depth(), 0);
+
     auto obj_it = bvh.get_object_iterator();
 
     { // find everything
@@ -330,7 +364,9 @@ NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator(one-cell)", 1) {
                     });
             });
 
-        REQUIRE_EQUAL(pcache.index_neigh_map.copy_to_stdvec(), expected_neigh);
+        REQUIRE_EQUAL(
+            sort_segments(pcache.index_neigh_map.copy_to_stdvec(), expected_counts),
+            sort_segments(expected_neigh, expected_counts));
     }
 
     { // find within a box around particles
@@ -434,6 +470,8 @@ NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator(one-cell)", 1) {
                     });
             });
 
-        REQUIRE_EQUAL(pcache.index_neigh_map.copy_to_stdvec(), expected_neigh);
+        REQUIRE_EQUAL(
+            sort_segments(pcache.index_neigh_map.copy_to_stdvec(), expected_counts),
+            sort_segments(expected_neigh, expected_counts));
     }
 }

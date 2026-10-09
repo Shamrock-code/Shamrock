@@ -14,7 +14,7 @@ except ImportError:
     SHAM_IMPORT_MODE = "local"
 
 # explicitly re-export public API
-__all__ = [name for name in globals() if not name.startswith("_") and not name == "pyshamrock"]
+__all__ = [name for name in globals() if not name.startswith("_") and name != "pyshamrock"]
 
 # Sphinx uses obj.__module__ to decide where something belongs.
 for name in __all__:

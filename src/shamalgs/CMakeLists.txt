@@ -23,23 +23,28 @@ set(Sources
     src/details/algorithm/bitonicSort_updated.cpp
     src/details/algorithm/bitonicSort_updated_usm.cpp
     src/details/algorithm/bitonicSort_legacy.cpp
+    src/details/algorithm/batcherOddEvenSort.cpp
     src/details/random/random.cpp
     src/details/reduction/reduction.cpp
     src/details/reduction/groupReduction_usm.cpp
     src/details/reduction/fallbackReduction_usm.cpp
     src/serialize.cpp
+    src/impl_registry.cpp
     src/collective/distributedDataComm.cpp
     src/collective/sparseXchg.cpp
     src/collective/are_all_rank_true.cpp
+    src/primitives/sort_by_key_pow2_len.cpp
     src/primitives/sort_by_keys.cpp
     src/primitives/is_all_true.cpp
     src/primitives/mock_value.cpp
     src/primitives/reduction.cpp
     src/primitives/scan_exclusive_sum_in_place.cpp
+    src/primitives/digit_histogram.cpp
     src/primitives/dot_sum.cpp
     src/primitives/gen_buffer_index.cpp
     src/primitives/segmented_sort_in_place.cpp
     src/primitives/append_subset_to.cpp
+    src/primitives/compute_histogram.cpp
     src/collective/sparse_exchange.cpp
     src/collective/gather_str.cpp
     src/collective/string_histogram.cpp

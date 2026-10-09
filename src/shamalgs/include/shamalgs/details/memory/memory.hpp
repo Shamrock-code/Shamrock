@@ -38,34 +38,6 @@ namespace shamalgs::memory {
     template<class T>
     T extract_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx);
 
-    /**
-     * @brief Extract a value from a DeviceBuffer
-     *
-     * @tparam T Type of buffer elements
-     * @param q Device queue to submit operation
-     * @param buf Device buffer to extract from
-     * @param idx Index of element to extract
-     * @return T the extracted value
-     */
-    template<class T>
-    T extract_element(sham::DeviceQueue &q, sham::DeviceBuffer<T> &buf, u32 idx) {
-        T val;
-
-        sham::EventList depends_list;
-        auto acc = buf.get_read_access(depends_list);
-
-        T *dest = &val;
-
-        q.submit(depends_list, [&, idx](sycl::handler &cgh) {
-             cgh.copy(acc + idx, dest, 1);
-         }).wait_and_throw();
-        ;
-
-        buf.complete_event_state(sycl::event{});
-
-        return val;
-    }
-
     template<class T>
     void set_element(
         sycl::queue &q, sycl::buffer<T> &buf, u32 idx, T val, bool discard_write = false) {
@@ -188,13 +160,13 @@ namespace shamalgs::memory {
 
             if (i % column_count == 0) {
                 if (i == 0) {
-                    accum += shambase::format("{:8} : ", i);
+                    accum += sham::format("{:8} : ", i);
                 } else {
-                    accum += shambase::format("\n{:8} : ", i);
+                    accum += sham::format("\n{:8} : ", i);
                 }
             }
 
-            accum += shambase::vformat(fmt, fmt::make_format_args(acc[i]));
+            accum += sham::vformat(fmt, fmt::make_format_args(acc[i]));
         }
 
         logger::raw_ln(accum);

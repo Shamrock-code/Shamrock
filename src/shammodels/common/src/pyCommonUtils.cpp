@@ -23,6 +23,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/logs.hpp"
+#include "shammodels/common/config/enum_NeighCacheStrategy.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <pybind11/cast.h>
@@ -67,6 +68,60 @@ namespace sham {
 
 ON_PYTHON_INIT {
     auto &m = root_module;
+
+    py::enum_<shammodels::NeighCacheStrategy>(
+        m,
+        "NeighCacheStrategy",
+        R"==(
+    Strategy used to build the neighbours cache out of the tree traversal.
+
+    Usage
+    -----
+    >>> from shamrock import NeighCacheStrategy
+    >>> cfg.set_neigh_cache_strategy(NeighCacheStrategy.SingleStage)
+)==")
+        .value(
+            "SingleStage",
+            shammodels::NeighCacheStrategy::SingleStage,
+            R"==(
+    Single tree traversal per particle.
+
+    Each particle walks the tree itself and writes its neighbours straight to the
+    cache. Prefer this one when the tree ends up with giant leaves, as on a chaotic
+    disc: there the leaf bounding boxes grow so large that the two stage search makes
+    each particle scan far more candidates than it keeps.
+)==")
+        .value(
+            "TwoStage",
+            shammodels::NeighCacheStrategy::TwoStage,
+            R"==(
+    Two stage neighbours search (see the shamrock paper). This is the default.
+
+    A first pass walks the tree once per leaf to build a leaf to leaf neighbour map,
+    then each particle only scans the particles held by its own leaf's neighbour
+    leaves. This is usually the faster of the two, since the tree traversal is paid
+    once per leaf instead of once per particle.
+)==")
+        .value(
+            "SingleStageSharedOffload",
+            shammodels::NeighCacheStrategy::SingleStageSharedOffload,
+            R"==(
+    Single tree traversal per particle, shared memory offload variant.
+
+    Same algorithm as SingleStage, but the tree traversal stack is placed in a
+    work-group local memory allocation (one private slice per work-item) instead of a
+    per-work-item std::array, and the kernel is launched over nd_range work-groups.
+)==")
+        .value(
+            "TwoStageSharedOffload",
+            shammodels::NeighCacheStrategy::TwoStageSharedOffload,
+            R"==(
+    Two stage neighbours search, shared memory offload variant.
+
+    Same algorithm as TwoStage, but every tree traversal stack (leaf to leaf search
+    and particle parent-leaf search) is placed in work-group local memory instead of a
+    per-work-item std::array.
+)==");
 
     m.def(
         "compute_histogram",

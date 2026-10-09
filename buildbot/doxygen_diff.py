@@ -73,7 +73,7 @@ def format_delta_pourcent():
             return "(+∞)"
             # end allow utf-8
     else:
-        return "({:.1%})".format(div)
+        return f"({div:.1%})"
 
 
 print("# Doxygen diff with `main`")
@@ -105,5 +105,5 @@ for [a, b] in lst:
             print(f"- {a}")
 
 print("```")
-print("")
+print()
 print("</details>")

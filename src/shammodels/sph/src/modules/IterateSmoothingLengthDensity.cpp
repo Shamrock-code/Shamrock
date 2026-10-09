@@ -15,6 +15,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
@@ -55,7 +56,8 @@ void IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_evaluate_internal() {
         thread_counts,
         [gpart_mass      = this->gpart_mass,
          h_evol_max      = this->h_evol_max,
-         h_evol_iter_max = this->h_evol_iter_max](
+         h_evol_iter_max = this->h_evol_iter_max,
+         epsilon_h       = this->epsilon_h](
             u32 id_a,
             auto ploop_ptrs,
             const Tvec *__restrict r,
@@ -70,8 +72,7 @@ void IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_evaluate_internal() {
             Tscal h_max_evol_p       = h_evol_iter_max;
             Tscal h_max_evol_m       = 1 / h_evol_iter_max;
 
-            // TODO: make this tolerance configurable
-            if (eps[id_a] > 1e-6) {
+            if (eps[id_a] > epsilon_h) {
 
                 Tvec xyz_a = r[id_a]; // could be recovered from lambda
 
@@ -120,13 +121,6 @@ void IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_evaluate_internal() {
 
 template<class Tvec, class SPHKernel>
 std::string IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_get_tex() const {
-    auto sizes       = get_ro_edge_base(0).get_tex_symbol();
-    auto neigh_cache = get_ro_edge_base(1).get_tex_symbol();
-    auto positions   = get_ro_edge_base(2).get_tex_symbol();
-    auto old_h       = get_ro_edge_base(3).get_tex_symbol();
-    auto new_h       = get_rw_edge_base(0).get_tex_symbol();
-    auto eps_h       = get_rw_edge_base(1).get_tex_symbol();
-
     std::string tex = R"tex(
             Iterate smoothing length and density
 
@@ -150,14 +144,10 @@ std::string IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_get_tex() cons
             Output: ${new_h}$, ${eps_h}$
         )tex";
 
-    shambase::replace_all(tex, "{sizes}", sizes);
-    shambase::replace_all(tex, "{neigh_cache}", neigh_cache);
-    shambase::replace_all(tex, "{positions}", positions);
-    shambase::replace_all(tex, "{old_h}", old_h);
-    shambase::replace_all(tex, "{new_h}", new_h);
-    shambase::replace_all(tex, "{eps_h}", eps_h);
-    shambase::replace_all(tex, "{hfact}", shambase::format("{}", SPHKernel::hfactd));
-    shambase::replace_all(tex, "{Rkern}", shambase::format("{}", SPHKernel::Rkern));
+    replace_edges_tex_symbols(tex);
+
+    shambase::replace_all(tex, "{hfact}", sham::format("{}", SPHKernel::hfactd));
+    shambase::replace_all(tex, "{Rkern}", sham::format("{}", SPHKernel::Rkern));
 
     return tex;
 }

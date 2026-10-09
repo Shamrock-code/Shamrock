@@ -18,7 +18,7 @@
 
 #include "shambase/memory.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 #include <optional>
 
 namespace shammodels::gsph::solvergraph {

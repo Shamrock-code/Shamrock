@@ -14,13 +14,15 @@
  *
  * Tests cover:
  * - HLLC approximate Riemann solver
- * - Iterative exact Riemann solver
+ * - Iterative approximate (two-shock) Riemann solver
+ * - Exact Riemann solver (Toro)
  * - Standard shock tube problems (Sod, Lax, 123, strong shock)
  * - Edge cases (vacuum, supersonic, symmetric collisions)
  * - Formula verification against reference implementation
  * - Solver consistency and convergence
  */
 
+#include "shammodels/gsph/math/riemann/exact.hpp"
 #include "shammodels/gsph/math/riemann/iterative.hpp"
 #include "shamtest/shamtest.hpp"
 #include <cmath>
@@ -99,9 +101,9 @@ namespace {
          .u_star_exact = -6.19633,
          .tolerance    = 1.0},
 
-        // Test 5: Lax shock tube (challenging: left rarefaction + right shock)
-        // The iterative solver may struggle with this case due to the non-zero left velocity
-        // and the complex wave pattern. Using a more relaxed tolerance.
+        // Test 5: Lax shock tube (left rarefaction + right shock)
+        // p_star_exact/u_star_exact verified by solving Toro's
+        // f_L(p) + f_R(p) + (u_R - u_L) = 0 directly via bisection.
         {.name         = "Lax",
          .rho_L        = 0.445,
          .u_L          = 0.698,
@@ -110,9 +112,9 @@ namespace {
          .u_R          = 0.0,
          .p_R          = 0.571,
          .gamma        = 1.4,
-         .p_star_exact = 1.12838,
-         .u_star_exact = 0.92840,
-         .tolerance    = 0.8},
+         .p_star_exact = 2.46610,
+         .u_star_exact = 1.52872,
+         .tolerance    = 0.05},
     };
 
     //==========================================================================
@@ -142,9 +144,10 @@ namespace {
     void test_iterative_standard_problems() {
         for (const auto &test : standard_tests) {
             // Skip problematic cases for iterative solver:
-            // - 123 problem: near-vacuum case needs special handling
-            // - Lax: non-zero left velocity + complex wave pattern causes poor convergence
-            if (std::string(test.name) == "123 problem" || std::string(test.name) == "Lax") {
+            // - 123 problem: near-vacuum case, the approximate two-shock iteration
+            //   collapses toward its pressure floor instead of the true small p*
+            //   (see riemann/exact_vs_iterative_raref, which exercises this directly).
+            if (std::string(test.name) == "123 problem") {
                 continue;
             }
 
@@ -166,6 +169,69 @@ namespace {
                 std::string(test.name) + ": iterative p_star accurate",
                 p_rel_error < test.tolerance);
         }
+    }
+
+    //==========================================================================
+    // SCENARIO: Exact solver matches published Toro values on ALL standard
+    // problems, including the ones the approximate iterative solver must skip
+    //==========================================================================
+
+    void test_exact_standard_problems() {
+        for (const auto &test : standard_tests) {
+            auto result = exact_solver<f64>(
+                test.u_L, test.rho_L, test.p_L, test.u_R, test.rho_R, test.p_R, test.gamma);
+
+            // 3e-3: tight enough to demonstrate near-exact agreement (most cases
+            // match to 1e-4-1e-6), but loose enough to accommodate the "123
+            // problem" published reference, which is only quoted to 3
+            // significant figures (0.00189).
+            f64 p_rel_error = std::abs(result.p_star - test.p_star_exact) / test.p_star_exact;
+            REQUIRE_NAMED(
+                std::string(test.name) + ": exact p_star matches published value",
+                p_rel_error < 3e-3);
+
+            if (std::abs(test.u_star_exact) > 1e-6) {
+                f64 u_rel_error
+                    = std::abs(result.v_star - test.u_star_exact) / std::abs(test.u_star_exact);
+                REQUIRE_NAMED(
+                    std::string(test.name) + ": exact v_star matches published value",
+                    u_rel_error < 3e-3);
+            } else {
+                REQUIRE_FLOAT_EQUAL_NAMED(
+                    std::string(test.name) + ": exact v_star matches published value",
+                    result.v_star,
+                    test.u_star_exact,
+                    3e-3);
+            }
+        }
+    }
+
+    //==========================================================================
+    // SCENARIO: Exact solver stays accurate on strong double rarefactions where
+    // the approximate iterative solver is known to fail (near-vacuum "123
+    // problem" -- test_iterative_standard_problems() explicitly skips it)
+    //==========================================================================
+
+    void test_exact_beats_iterative_on_double_rarefaction() {
+        const f64 gamma                  = 1.4;
+        const f64 p_star_exact_published = 0.00189;
+        const f64 u_L = -2.0, rho_L = 1.0, p_L = 0.4;
+        const f64 u_R = 2.0, rho_R = 1.0, p_R = 0.4;
+
+        auto exact_result = exact_solver<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma);
+        auto iter_result  = iterative_solver<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma);
+
+        f64 exact_rel_error
+            = std::abs(exact_result.p_star - p_star_exact_published) / p_star_exact_published;
+        REQUIRE_NAMED("exact solver matches published 123-problem p*", exact_rel_error < 1e-2);
+
+        // The approximate iterative solver collapses toward its pressure floor
+        // instead of the true small-but-finite p* for this case.
+        f64 iter_rel_error
+            = std::abs(iter_result.p_star - p_star_exact_published) / p_star_exact_published;
+        REQUIRE_NAMED(
+            "exact solver is far more accurate than iterative on this case",
+            exact_rel_error < iter_rel_error);
     }
 
     //==========================================================================
@@ -278,6 +344,35 @@ namespace {
             REQUIRE_NAMED("finite p_star (both low)", std::isfinite(result3.p_star));
             REQUIRE_NAMED("finite v_star (both low)", std::isfinite(result3.v_star));
         }
+    }
+
+    //==========================================================================
+    // SCENARIO: exact_solver's degenerate-input guard (rho or p below 1e-25)
+    //==========================================================================
+
+    void test_exact_solver_degenerate_input_guard() {
+        const f64 gamma = 1.4;
+        // Strictly below exact_solver's smallp/smallrho threshold (1e-25), so the
+        // early-return fallback (result.p_star = max(smallp, avg(p)), result.v_star
+        // = avg(u)) is guaranteed to trigger rather than the normal bisection path.
+        const f64 tiny = 1e-30;
+
+        auto check_fallback = [&](f64 u_L, f64 rho_L, f64 p_L, f64 u_R, f64 rho_R, f64 p_R) {
+            auto result = exact_solver<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma);
+            REQUIRE_NAMED("finite p_star (degenerate)", std::isfinite(result.p_star));
+            REQUIRE_NAMED("finite v_star (degenerate)", std::isfinite(result.v_star));
+            const f64 expect_p = std::max(f64{1.0e-25}, 0.5 * (p_L + p_R));
+            const f64 expect_v = 0.5 * (u_L + u_R);
+            REQUIRE_FLOAT_EQUAL_NAMED(
+                "p_star matches fallback formula", result.p_star, expect_p, 1e-30);
+            REQUIRE_FLOAT_EQUAL_NAMED(
+                "v_star matches fallback formula", result.v_star, expect_v, 1e-12);
+        };
+
+        check_fallback(0.0, 1.0, 1.0, 0.0, tiny, tiny);   // low density+pressure right
+        check_fallback(0.0, tiny, tiny, 0.0, 1.0, 1.0);   // low density+pressure left
+        check_fallback(0.0, tiny, tiny, 0.0, tiny, tiny); // both low
+        check_fallback(1.5, 1.0, 1.0, -2.0, tiny, tiny);  // nonzero velocities too
     }
 
     //==========================================================================
@@ -453,6 +548,12 @@ NEW_TEST(Unittest, "shammodels/gsph/riemann/iterative_standard", 1) {
     test_iterative_standard_problems();
 }
 
+NEW_TEST(Unittest, "shammodels/gsph/riemann/exact_standard", 1) { test_exact_standard_problems(); }
+
+NEW_TEST(Unittest, "shammodels/gsph/riemann/exact_vs_iterative_raref", 1) {
+    test_exact_beats_iterative_on_double_rarefaction();
+}
+
 NEW_TEST(Unittest, "shammodels/gsph/riemann/uniform_state", 1) { test_uniform_state(); }
 
 NEW_TEST(Unittest, "shammodels/gsph/riemann/symmetric_collision", 1) { test_symmetric_collision(); }
@@ -460,6 +561,10 @@ NEW_TEST(Unittest, "shammodels/gsph/riemann/symmetric_collision", 1) { test_symm
 NEW_TEST(Unittest, "shammodels/gsph/riemann/symmetric_expansion", 1) { test_symmetric_expansion(); }
 
 NEW_TEST(Unittest, "shammodels/gsph/riemann/near_vacuum", 1) { test_near_vacuum_robustness(); }
+
+NEW_TEST(Unittest, "shammodels/gsph/riemann/exact_degenerate_guard", 1) {
+    test_exact_solver_degenerate_input_guard();
+}
 
 NEW_TEST(Unittest, "shammodels/gsph/riemann/strong_shocks", 1) { test_strong_shocks(); }
 

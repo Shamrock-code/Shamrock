@@ -395,64 +395,46 @@ namespace shamalgs::algorithm::details {
         }
     }
 
-    template void sort_by_key_bitonic_updated_usm<u32, u32, 16>(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<u32> &buf_key,
-        sham::DeviceBuffer<u32> &buf_values,
+// Explicit instantiations for every (Tkey, Tval) pair sort_by_key_pow2_len supports, at every
+// MaxStencilSize impl::MaxStencilSize (ImplVariant.hpp) can select:
+// sort_by_key_pow2_len_bitonic_dispatch (sort_by_key_pow2_len.cpp) switches on the enum at
+// runtime, so every case of that switch must have a definition available to the linker,
+// regardless of which stencil size actually gets selected at runtime.
+#define SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(Tkey, Tval, stencil_size)                            \
+    template void sort_by_key_bitonic_updated_usm<Tkey, Tval, stencil_size>(                       \
+        const sham::DeviceScheduler_ptr &sched,                                                    \
+        sham::DeviceBuffer<Tkey> &buf_key,                                                         \
+        sham::DeviceBuffer<Tval> &buf_values,                                                      \
         u32 len);
 
-    template void sort_by_key_bitonic_updated_usm<u64, u32, 16>(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<u64> &buf_key,
-        sham::DeviceBuffer<u32> &buf_values,
-        u32 len);
+// Stencil sizes 2, 4 and 8 are currently disabled (see MaxStencilSize in
+// sort_by_key_pow2_len.cpp); their instantiations are commented out below, kept for easy
+// re-enabling if needed
+#define SHAMROCK_INSTANTIATE_BITONIC_SORT_USM_ALL_STENCILS(Tkey, Tval)                             \
+    SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(Tkey, Tval, 16)                                          \
+    SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(Tkey, Tval, 32)
 
-    template void sort_by_key_bitonic_updated_usm<u32, u32, 8>(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<u32> &buf_key,
-        sham::DeviceBuffer<u32> &buf_values,
-        u32 len);
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(u32, u32, 2)
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(u32, u32, 4)
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(u32, u32, 8)
+    SHAMROCK_INSTANTIATE_BITONIC_SORT_USM_ALL_STENCILS(u32, u32)
 
-    template void sort_by_key_bitonic_updated_usm<u64, u32, 8>(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<u64> &buf_key,
-        sham::DeviceBuffer<u32> &buf_values,
-        u32 len);
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(u64, u32, 2)
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(u64, u32, 4)
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(u64, u32, 8)
+    SHAMROCK_INSTANTIATE_BITONIC_SORT_USM_ALL_STENCILS(u64, u32)
 
-    template void sort_by_key_bitonic_updated_usm<u32, u32, 32>(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<u32> &buf_key,
-        sham::DeviceBuffer<u32> &buf_values,
-        u32 len);
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(f32, f32, 2)
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(f32, f32, 4)
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(f32, f32, 8)
+    SHAMROCK_INSTANTIATE_BITONIC_SORT_USM_ALL_STENCILS(f32, f32)
 
-    template void sort_by_key_bitonic_updated_usm<u64, u32, 32>(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<u64> &buf_key,
-        sham::DeviceBuffer<u32> &buf_values,
-        u32 len);
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(f64, f64, 2)
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(f64, f64, 4)
+    // SHAMROCK_INSTANTIATE_BITONIC_SORT_USM(f64, f64, 8)
+    SHAMROCK_INSTANTIATE_BITONIC_SORT_USM_ALL_STENCILS(f64, f64)
 
-    template void sort_by_key_bitonic_updated_usm<f32, f32, 32>(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<f32> &buf_key,
-        sham::DeviceBuffer<f32> &buf_values,
-        u32 len);
-
-    template void sort_by_key_bitonic_updated_usm<f64, f64, 32>(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<f64> &buf_key,
-        sham::DeviceBuffer<f64> &buf_values,
-        u32 len);
-
-    template void sort_by_key_bitonic_updated_usm<f32, f32, 16>(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<f32> &buf_key,
-        sham::DeviceBuffer<f32> &buf_values,
-        u32 len);
-
-    template void sort_by_key_bitonic_updated_usm<f64, f64, 16>(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<f64> &buf_key,
-        sham::DeviceBuffer<f64> &buf_values,
-        u32 len);
+#undef SHAMROCK_INSTANTIATE_BITONIC_SORT_USM_ALL_STENCILS
+#undef SHAMROCK_INSTANTIATE_BITONIC_SORT_USM
 
 } // namespace shamalgs::algorithm::details

@@ -193,7 +193,7 @@ namespace shamrock {
             if (is_nvar_static()) {
                 if (field_ref.get_nvar() != nvar) {
                     shambase::throw_with_loc<std::invalid_argument>(
-                        shambase::format(
+                        sham::format(
                             "You are trying to bind a PatchDataFieldSpan with static nvar={} to a "
                             "PatchDataField with nvar={}",
                             nvar,
@@ -204,7 +204,7 @@ namespace shamrock {
 
             if (start + count > field_ref.get_obj_cnt()) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format(
+                    sham::format(
                         "PatchDataFieldSpan out of bounds: {} + {} > {}",
                         start,
                         count,

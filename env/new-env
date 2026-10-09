@@ -47,7 +47,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):
         klist = [k for k in list_machines.keys()]
         klist.sort()
         for k in klist:
-            machines += "  " + "{:30s}".format(k) + " " + list_machines[k] + "\n"
+            machines += "  " + f"{k:30s}" + " " + list_machines[k] + "\n"
 
         return (
             original_help

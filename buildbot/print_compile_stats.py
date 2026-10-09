@@ -13,7 +13,7 @@ args = parser.parse_args()
 arr = []
 
 f = open(args.path + "/.ninja_log", "r")
-for l in f.readlines():
+for l in f:
     if len(l.split()) == 5:
         arr.append(l.split())
 f.close()
@@ -48,4 +48,4 @@ arr2.sort()
 arr2 = arr2[::-1]
 
 for p, n, t in arr2:
-    print("{:>7.2f}% {:>7.2f}s  {:}".format(p, t, n))
+    print(f"{p:>7.2f}% {t:>7.2f}s  {n}")

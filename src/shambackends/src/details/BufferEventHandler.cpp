@@ -51,7 +51,7 @@ namespace sham::details {
     void BufferEventHandler::read_access(sham::EventList &depends_list, SourceLocation src_loc) {
 
         if (!up_to_date_events) {
-            std::string err_msg = shambase::format(
+            std::string err_msg = sham::format(
                 "you have requested a read access on a buffer in an incomplete state\n"
                 "  read_access call location : {}\n"
                 "  last access location : {}\n",
@@ -76,7 +76,7 @@ namespace sham::details {
     void BufferEventHandler::write_access(sham::EventList &depends_list, SourceLocation src_loc) {
 
         if (!up_to_date_events) {
-            std::string err_msg = shambase::format(
+            std::string err_msg = sham::format(
                 "you have requested a write access on a buffer in an incomplete state\n"
                 "  write_access call location : {}\n"
                 "  last access location : {}\n",

@@ -65,6 +65,7 @@ namespace {
 
 template<class TgridVec>
 void shammodels::basegodunov::modules::FindGhostLayerIndices<TgridVec>::_impl_evaluate_internal() {
+    __shamrock_stack_entry();
     auto edges = get_edges();
 
     // inputs

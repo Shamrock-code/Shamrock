@@ -17,13 +17,13 @@ NVIDIA_ARCH_DESC = {
     "sm_95": "Nvidia Blackwell: NVIDIA B100 (GB100), B200",
 }
 
-NVIDIA_ARCH_LIST = [k for k in NVIDIA_ARCH_DESC.keys()]
+NVIDIA_ARCH_LIST = [k for k in NVIDIA_ARCH_DESC]
 
 
 def print_description(arch_code):
     if not (arch_code in NVIDIA_ARCH_LIST):
         print("-- unknown cuda arch code possible list :")
-        for k in NVIDIA_ARCH_DESC.keys():
+        for k in NVIDIA_ARCH_DESC:
             print("      ", k, NVIDIA_ARCH_DESC[k])
         raise ValueError(f"unknown cuda arch code: {arch_code}")
 

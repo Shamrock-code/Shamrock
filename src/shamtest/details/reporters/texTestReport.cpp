@@ -159,7 +159,7 @@ namespace shamtest::details {
                 output << R"(\FAIL & )";
             }
 
-            output << shambase::format(R"({}/{} \\)", cnt_suc, cnt);
+            output << sham::format(R"({}/{} \\)", cnt_suc, cnt);
             output << "\n";
 
             table_cnt++;
@@ -175,7 +175,7 @@ namespace shamtest::details {
 
                 for (unsigned int j = 0; j < res.asserts.asserts.size(); j++) {
 
-                    output << shambase::format_printf(
+                    output << sham::format_printf(
                         "     - Assert [%d/%zu] \n\n", j + 1, res.asserts.asserts.size());
 
                     output << R"(\verb|)" << res.asserts.asserts[j].name << "| : ";

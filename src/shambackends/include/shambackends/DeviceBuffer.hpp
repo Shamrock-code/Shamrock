@@ -541,12 +541,12 @@ namespace sham {
             size_t begin, size_t end) const {
 
             if (end > size) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "copy_to_stdvec_idx_range: end > size\n  end = {},\n  size = {}", end, size));
             }
 
             if (begin > end) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "copy_to_stdvec_idx_range: begin >= end\n  begin = {},\n  end = {}",
                     begin,
                     end));
@@ -587,12 +587,12 @@ namespace sham {
             size_t dest_offset) const {
 
             if (begin > end) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "copy_range_offset: begin > end\n  begin = {},\n  end = {}", begin, end));
             }
 
             if (end > get_size()) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "copy_range_offset: end index is out of bounds\n  end = {},\n  source buffer "
                     "size = {}",
                     end,
@@ -600,7 +600,7 @@ namespace sham {
             }
 
             if (dest_offset > dest.get_size()) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "copy_range_offset: dest_offset > dest.get_size()\n  dest_offset = {},\n  "
                     "dest.get_size() = {}",
                     dest_offset,
@@ -608,7 +608,7 @@ namespace sham {
             }
 
             if (end - begin > (dest.get_size() - dest_offset)) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "copy_range_offset: end - begin > dest.get_size() - dest_offset\n  end - begin "
                     "= {},\n  "
                     "dest.get_size() - dest_offset = {},\n  dest_offset = {}",
@@ -666,7 +666,7 @@ namespace sham {
         inline void copy_from_stdvec(const std::vector<T> &vec) {
 
             if (size != vec.size()) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "copy_from_stdvec: size mismatch\n  size = {},\n  vec.size() = {}",
                     size,
                     vec.size()));
@@ -696,7 +696,7 @@ namespace sham {
         inline void copy_from_stdvec(const std::vector<T> &vec, size_t sz) {
 
             if (sz > vec.size() || sz > size) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "copy_from_stdvec: size mismatch (sz > vec.size() || sz > size)\n  size = "
                     "{},\n  vec.size() = {},\n  sz = {}",
                     size,
@@ -755,7 +755,7 @@ namespace sham {
         inline void copy_from_sycl_buffer(sycl::buffer<T> &buf) {
 
             if (size != buf.size()) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "copy_from_sycl_buffer: size mismatch\n  size = {},\n  buf.size() = {}",
                     size,
                     buf.size()));
@@ -788,7 +788,7 @@ namespace sham {
         inline void copy_from_sycl_buffer(sycl::buffer<T> &buf, size_t sz) {
 
             if (sz > buf.size() || sz > size) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "copy_from_sycl_buffer: size mismatch (sz > buf.size() || sz > size)\n  size = "
                     "{},\n  buf.size() = {},\n  sz = {}",
                     size,
@@ -797,7 +797,7 @@ namespace sham {
             }
 
             if (sz > u32_max) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "copy_from_sycl_buffer: size mismatch (sz > u32_max)\n  sz = {}", sz));
             }
 
@@ -859,7 +859,7 @@ namespace sham {
         inline void copy_from(const DeviceBuffer<T, new_target> &other, size_t copy_size) {
 
             if (!(copy_size <= get_size() && copy_size <= other.get_size())) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "The size of the copy must be smaller than the size of the buffer involved\n  "
                     "copy_size: {}\n  get_size(): {}\n  other.get_size(): {}",
                     copy_size,
@@ -892,7 +892,7 @@ namespace sham {
         inline void copy_from(const DeviceBuffer<T, new_target> &other) {
 
             if (get_size() != other.get_size()) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "The other field must be of the same size\n  get_size = {},\n  other.get_size "
                     "= {}",
                     get_size(),
@@ -954,7 +954,7 @@ namespace sham {
             size_t idx_count   = idx_range[1] - start_index;
 
             if (!(start_index + idx_count <= get_size())) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "!(start_index + idx_count <= get_size())\n  start_index = {},\n  idx_count = "
                     "{},\n  get_size() = {}",
                     start_index,
@@ -1033,7 +1033,7 @@ namespace sham {
             T ret;
 
             if (idx >= size) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "get_val_at_idx: idx >= size\n  idx = {},\n  size = {}", idx, size));
             }
 
@@ -1053,7 +1053,7 @@ namespace sham {
         void set_val_at_idx(size_t idx, T val) {
 
             if (idx >= size) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "set_val_at_idx: idx >= size\n  idx = {},\n  size = {}", idx, size));
             }
 
@@ -1126,7 +1126,7 @@ namespace sham {
                 }
 
                 if (new_storage_size > max_alloc_size) {
-                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    shambase::throw_with_loc<std::runtime_error>(sham::format(
                         "new_storage_size > max_alloc_size\n"
                         "  new_storage_size      = {}\n"
                         "  max_alloc_size  = {}\n"
@@ -1203,7 +1203,7 @@ namespace sham {
          */
         inline void shrink(u32 sub_sz) {
             if (sub_sz > get_size()) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "shrink called with sub_sz > get_size()\n  sub_sz: {}\n  get_size(): {}",
                     sub_sz,
                     get_size()));

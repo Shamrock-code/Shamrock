@@ -7,12 +7,13 @@ This example benchmarks the DTT performance for the different algorithms availab
 
 # sphinx_gallery_multi_image = "single"
 
+import json
 import random
 import time
 
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colors
 
 import shamrock
 
@@ -229,13 +230,16 @@ def create_checkerboard_plot(
 
 # %%
 # List current implementation
-current_impl = shamrock.tree.get_current_impl_clbvh_dual_tree_traversal_impl()
+if not shamrock.algs.is_impl_set("clbvh_dual_tree_traversal"):
+    shamrock.algs.autoselect_impl("clbvh_dual_tree_traversal")
+
+current_impl = shamrock.algs.get_current_impl("clbvh_dual_tree_traversal")
 
 print(current_impl)
 
 # %%
 # List all implementations available
-all_default_impls = shamrock.tree.get_default_impl_list_clbvh_dual_tree_traversal()
+all_default_impls = shamrock.algs.get_default_impl_list("clbvh_dual_tree_traversal")
 
 print(all_default_impls)
 
@@ -246,11 +250,10 @@ results = {}
 
 for ordered_result in [True, False]:
     for default_impl in all_default_impls:
-        shamrock.tree.set_impl_clbvh_dual_tree_traversal(
-            default_impl.impl_name, default_impl.params
-        )
+        shamrock.algs.set_impl("clbvh_dual_tree_traversal", default_impl)
 
-        n = default_impl.impl_name + " " + default_impl.params + "ordered=" + str(ordered_result)
+        impl_name = json.loads(default_impl)["implementation"]
+        n = impl_name + " ordered=" + str(ordered_result)
 
         print(f"Running DTT performance benchmarks for {n}...")
 

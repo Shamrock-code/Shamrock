@@ -58,7 +58,8 @@ namespace {
                     Tscal *__restrict P) {
                     auto conststate = shammath::ConsState<Tvec>{rho[i], rhoe[i], rhov[i]};
 
-                    auto prim_state = shammath::cons_to_prim(conststate, gamma);
+                    shammath::FluidStateAdiabatic<Tvec> adiab_fluid{.m_gamma = gamma};
+                    auto prim_state = adiab_fluid.cons_to_prim(conststate);
 
                     SHAM_ASSERT(prim_state.press >= 0.0);
 
@@ -74,6 +75,7 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec>
     void NodeConsToPrimGas<Tvec>::_impl_evaluate_internal() {
+        __shamrock_stack_entry();
         auto edges = get_edges();
 
         edges.spans_rho.check_sizes(edges.sizes.indexes);
@@ -96,34 +98,22 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec>
     std::string NodeConsToPrimGas<Tvec>::_impl_get_tex() const {
-
-        auto block_count = get_ro_edge_base(0).get_tex_symbol();
-        auto rho         = get_ro_edge_base(1).get_tex_symbol();
-        auto rhov        = get_ro_edge_base(2).get_tex_symbol();
-        auto rhoe        = get_ro_edge_base(3).get_tex_symbol();
-        auto vel         = get_rw_edge_base(0).get_tex_symbol();
-        auto P           = get_rw_edge_base(1).get_tex_symbol();
-
         std::string tex = R"tex(
             Conservative to primitive variable (gas)
 
             \begin{align}
-            {vel}_i &= \frac{ {rhov}_i }{ {rho}_i } \\
-            {P}_i &= (\gamma - 1) \left( {rhoe}_i - \frac{ {rhov}_i^2 }{ 2 {rho}_i } \right) \\
-            i &\in [0,{block_count} * N_{\rm cell/block}) \\
+            {spans_vel}_i &= \frac{ {spans_rhov}_i }{ {spans_rho}_i } \\
+            {spans_P}_i &= (\gamma - 1) \left( {spans_rhoe}_i - \frac{ {spans_rhov}_i^2 }{ 2 {spans_rho}_i } \right) \\
+            i &\in [0,{sizes} * N_{\rm cell/block}) \\
             \gamma &= {gamma} \\
             N_{\rm cell/block} & = {block_size}
             \end{align}
         )tex";
 
-        shambase::replace_all(tex, "{vel}", vel);
-        shambase::replace_all(tex, "{P}", P);
-        shambase::replace_all(tex, "{rho}", rho);
-        shambase::replace_all(tex, "{rhov}", rhov);
-        shambase::replace_all(tex, "{rhoe}", rhoe);
-        shambase::replace_all(tex, "{block_count}", block_count);
-        shambase::replace_all(tex, "{gamma}", shambase::format("{}", gamma));
-        shambase::replace_all(tex, "{block_size}", shambase::format("{}", block_size));
+        replace_edges_tex_symbols(tex);
+
+        shambase::replace_all(tex, "{gamma}", sham::format("{}", gamma));
+        shambase::replace_all(tex, "{block_size}", sham::format("{}", block_size));
 
         return tex;
     }

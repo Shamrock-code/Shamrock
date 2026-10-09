@@ -89,7 +89,7 @@ namespace shamalgs::reduction::details {
         u32 work_group_size) {
 
         if (start_id >= end_id) {
-            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+            shambase::throw_with_loc<std::invalid_argument>(sham::format(
                 "Empty range (or invalid range) not supported for max operation\n  start_id = {}, "
                 "end_id = {}",
                 start_id,
@@ -133,7 +133,7 @@ namespace shamalgs::reduction::details {
         u32 work_group_size) {
 
         if (start_id >= end_id) {
-            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+            shambase::throw_with_loc<std::invalid_argument>(sham::format(
                 "Empty range (or invalid range) not supported for min operation\n  start_id = {}, "
                 "end_id = {}",
                 start_id,

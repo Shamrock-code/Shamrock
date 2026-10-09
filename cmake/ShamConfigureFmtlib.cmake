@@ -12,6 +12,7 @@ message("   ---- fmtlib section ----")
 ###############################################################################
 
 option(SHAMROCK_EXTERNAL_FMTLIB "use fmt lib from the host system" Off)
+option(SHAMROCK_FMT_HEADER_ONLY "use fmt as a header-only library" Off)
 
 # LEGACY variable
 if(DEFINED USE_SYSTEM_FMTLIB)
@@ -19,6 +20,7 @@ if(DEFINED USE_SYSTEM_FMTLIB)
 endif()
 
 message(STATUS "SHAMROCK_EXTERNAL_FMTLIB : ${SHAMROCK_EXTERNAL_FMTLIB}")
+message(STATUS "SHAMROCK_FMT_HEADER_ONLY : ${SHAMROCK_FMT_HEADER_ONLY}")
 
 if(NOT SHAMROCK_EXTERNAL_FMTLIB)
     message(STATUS "Using git submodule fmtlib")
@@ -36,6 +38,13 @@ if(NOT SHAMROCK_EXTERNAL_FMTLIB)
         # on Christiano's laptop (that were due to anaconda, of course ...)
         message(STATUS "You are bypassing fmt cmake integration use it at your own risks !")
         message(STATUS "Manual inclusion path ${CMAKE_CURRENT_LIST_DIR}/external/fmt/include")
+        if(NOT SHAMROCK_FMT_HEADER_ONLY)
+            message(
+                WARNING
+                    "USE_MANUAL_FMTLIB does not compile fmt, forcing SHAMROCK_FMT_HEADER_ONLY=ON"
+            )
+            set(SHAMROCK_FMT_HEADER_ONLY ON CACHE BOOL "use fmt as a header-only library" FORCE)
+        endif()
         add_library(fmt-header-only INTERFACE)
         add_library(fmt::fmt-header-only ALIAS fmt-header-only)
         target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
@@ -45,6 +54,13 @@ if(NOT SHAMROCK_EXTERNAL_FMTLIB)
         )
     else()
         add_subdirectory(external/fmt)
+        if(NOT SHAMROCK_FMT_HEADER_ONLY)
+            # Shared shamformat / python modules need PIC objects from static libfmt
+            set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
+        else()
+            # Do not compile libfmt when the header-only target is the one we link
+            set_property(TARGET fmt PROPERTY EXCLUDE_FROM_ALL TRUE)
+        endif()
     endif()
 
     # I got many clang-tidy warning because of those headers, so now they are system headers
@@ -56,8 +72,31 @@ if(NOT SHAMROCK_EXTERNAL_FMTLIB)
     set_target_properties(
         fmt-header-only PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${fmtlib_IID}"
     )
+    if(TARGET fmt)
+        get_target_property(fmt_IID fmt INTERFACE_INCLUDE_DIRECTORIES)
+        set_target_properties(fmt PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${fmt_IID}")
+    endif()
 
 else()
     message(STATUS "Using system fmtlib")
     find_package(fmt REQUIRED)
 endif()
+
+# Pick a single fmt target for the whole build. Mixing fmt::fmt and
+# fmt::fmt-header-only in one build is an ODR violation.
+if(SHAMROCK_FMT_HEADER_ONLY)
+    if(NOT TARGET fmt::fmt-header-only)
+        message(FATAL_ERROR "SHAMROCK_FMT_HEADER_ONLY=ON requires fmt::fmt-header-only, "
+                            "which is not provided by this fmt package"
+        )
+    endif()
+    set(SHAMROCK_FMT_TARGET fmt::fmt-header-only)
+else()
+    if(NOT TARGET fmt::fmt)
+        message(FATAL_ERROR "SHAMROCK_FMT_HEADER_ONLY=OFF requires fmt::fmt, "
+                            "which is not provided by this fmt package"
+        )
+    endif()
+    set(SHAMROCK_FMT_TARGET fmt::fmt)
+endif()
+message(STATUS "SHAMROCK_FMT_TARGET : ${SHAMROCK_FMT_TARGET}")

@@ -89,20 +89,6 @@ inline void register_dtt_alg(py::module &m) {
             t.stop();
             return t.elapsed_sec();
         });
-
-    m.def("get_default_impl_list_clbvh_dual_tree_traversal", []() {
-        return shamtree::impl::get_default_impl_list_clbvh_dual_tree_traversal();
-    });
-
-    m.def(
-        "set_impl_clbvh_dual_tree_traversal",
-        [](const std::string &impl, const std::string &param = "") {
-            shamtree::impl::set_impl_clbvh_dual_tree_traversal(impl, param);
-        });
-
-    m.def("get_current_impl_clbvh_dual_tree_traversal_impl", []() {
-        return shamtree::impl::get_current_impl_clbvh_dual_tree_traversal_impl();
-    });
 }
 
 ON_PYTHON_INIT {

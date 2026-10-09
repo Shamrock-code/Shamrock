@@ -8,6 +8,7 @@
 // -------------------------------------------------------//
 
 #include "shambase/logs/loglevels.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/is_all_true.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -137,15 +138,18 @@ NEW_TEST(Unittest, "shamalgs/primitives/is_all_true:USM", 1) {
         }
     };
 
-    auto current_impl = shamalgs::primitives::impl::get_current_impl_is_all_true();
+    if (!shamalgs::impl_registry::is_impl_set("is_all_true")) {
+        shamalgs::impl_registry::autoselect_impl(
+            "is_all_true", shamsys::instance::get_compute_scheduler_ptr());
+    }
+    auto current_impl = shamalgs::impl_registry::get_current_impl("is_all_true");
 
-    for (shamalgs::impl_param impl :
-         shamalgs::primitives::impl::get_default_impl_list_is_all_true()) {
-        shamalgs::primitives::impl::set_impl_is_all_true(impl.impl_name, impl.params);
+    for (const std::string &impl : shamalgs::impl_registry::get_default_impl_list("is_all_true")) {
+        shamalgs::impl_registry::set_impl("is_all_true", impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_impl();
     }
 
     // reset to current impl
-    shamalgs::primitives::impl::set_impl_is_all_true(current_impl.impl_name, current_impl.params);
+    shamalgs::impl_registry::set_impl("is_all_true", current_impl);
 }

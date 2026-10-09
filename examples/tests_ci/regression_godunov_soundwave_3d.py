@@ -212,8 +212,8 @@ save_state(0)
 
 t = [0.01 * i for i in range(100)]
 # enumerate t
-for i, t in enumerate(t):
-    model.evolve_until(t)
+for i, t_ in enumerate(t):
+    model.evolve_until(t_)
     model.dump_vtk(os.path.join(dump_folder, sim_name + "_" + str(i) + ".vtk"))
 
 

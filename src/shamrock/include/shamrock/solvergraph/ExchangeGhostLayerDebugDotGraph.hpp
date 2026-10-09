@@ -20,9 +20,16 @@
  */
 
 #include "shamalgs/collective/distributedDataComm.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::ScalarsEdge<u64>, object_counts)                                   \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::PatchDataLayerDDShared, ghost_layer)
 
 namespace shamrock::solvergraph {
 
@@ -33,24 +40,7 @@ namespace shamrock::solvergraph {
         public:
         ExchangeGhostLayerDebugDotGraph() {}
 
-        struct Edges {
-            const shamrock::solvergraph::ScalarsEdge<u64> &object_counts;
-            shamrock::solvergraph::PatchDataLayerDDShared &ghost_layer;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u64>> object_counts,
-            std::shared_ptr<shamrock::solvergraph::PatchDataLayerDDShared> ghost_layer) {
-            __internal_set_ro_edges({object_counts});
-            __internal_set_rw_edges({ghost_layer});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                .object_counts = get_ro_edge<shamrock::solvergraph::ScalarsEdge<u64>>(0),
-                .ghost_layer   = get_rw_edge<shamrock::solvergraph::PatchDataLayerDDShared>(0),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal() {
             auto edges        = get_edges();
@@ -112,16 +102,15 @@ namespace shamrock::solvergraph {
                 )graph";
 
                 u32 current_subgraph = 0;
-                log += shambase::format("subgraph cluster_{0} {{\n", current_subgraph);
+                log += sham::format("subgraph cluster_{0} {{\n", current_subgraph);
 
                 for (u64_3 &info : collected_object_counts) {
                     if (info.z() != current_subgraph) {
                         log += "}\n";
                         current_subgraph = info.z();
-                        log += shambase::format("subgraph cluster_{0} {{\n", current_subgraph);
+                        log += sham::format("subgraph cluster_{0} {{\n", current_subgraph);
                     }
-                    log += shambase::format(
-                        "p_{0} [label=\"Patch {0} N={1}\"];\n", info.x(), info.y());
+                    log += sham::format("p_{0} [label=\"Patch {0} N={1}\"];\n", info.x(), info.y());
                 }
                 log += "}\n";
 
@@ -137,7 +126,7 @@ namespace shamrock::solvergraph {
                         edge_color = "blue";
                     }
 
-                    log += shambase::format(
+                    log += sham::format(
                         "p_{0} -> p_{1} [xlabel={2}, color={3}, fontcolor={3}];\n",
                         info.x(),
                         info.y(),
@@ -156,3 +145,5 @@ namespace shamrock::solvergraph {
         inline virtual std::string _impl_get_tex() const { return ""; };
     };
 } // namespace shamrock::solvergraph
+
+#undef NODE_EDGES

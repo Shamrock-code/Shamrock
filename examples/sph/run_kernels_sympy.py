@@ -4,8 +4,6 @@ Symbolic SPH kernels & c++ tests
 
 """
 
-from __future__ import division
-
 import matplotlib.pyplot as plt
 import mpmath
 import numpy as np
@@ -476,7 +474,7 @@ def test_kernel(ret, tolerance=1e-12):
     assert abs_err_phi_tilde_3d_prime < tolerance * 1000
 
     print("------------------------------------------")
-    print("")
+    print()
 
     return {
         "q_arr": q_arr,
@@ -498,7 +496,7 @@ def print_kernel_info(ret):
     print(f"phi_tilde_3d(q) = {ret['phi_tilde_3d']}")
     print(f"phi_tilde_3d_prime(q) = {ret['phi_tilde_3d_prime']}")
     print("------------------------------------------")
-    print("")
+    print()
 
 
 def print_kernel_cpp_code(ret):
@@ -507,7 +505,7 @@ def print_kernel_cpp_code(ret):
     print("------------------------------------------")
     print(ret["text"])
     print("------------------------------------------")
-    print("")
+    print()
 
 
 # %%

@@ -25,8 +25,8 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "shamalgs/impl_utils.hpp"
 #include "shambackends/DeviceBuffer.hpp"
+#include <vector>
 
 namespace shamalgs::primitives {
 
@@ -71,20 +71,5 @@ namespace shamalgs::primitives {
      */
     template<class T>
     void scan_exclusive_sum_in_place(sham::DeviceBuffer<T> &buf1, u32 len);
-
-    /// namespace to control implementation behavior
-    namespace impl {
-
-        /// Get list of available scan_exclusive_sum_in_place implementations
-        std::vector<shamalgs::impl_param> get_default_impl_list_scan_exclusive_sum_in_place();
-
-        /// Get the current implementation for scan_exclusive_sum_in_place
-        shamalgs::impl_param get_current_impl_scan_exclusive_sum_in_place();
-
-        /// Set the implementation for scan_exclusive_sum_in_place
-        void set_impl_scan_exclusive_sum_in_place(
-            const std::string &impl, const std::string &param = "");
-
-    } // namespace impl
 
 } // namespace shamalgs::primitives

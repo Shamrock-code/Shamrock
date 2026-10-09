@@ -127,9 +127,10 @@ namespace shamsys::instance {
 
         m.def(
             "get_microbench_results",
-            []() {
-                return shamsys::get_microbench_results();
+            [](bool allow_run) {
+                return shamsys::get_microbench_results(allow_run);
             },
+            py::arg("allow_run") = false,
             R"pbdoc(
             Get the microbench results
             )pbdoc");

@@ -142,14 +142,14 @@ namespace shamrock::scheduler {
 
             if (shamcomm::world_rank() == 0) {
                 std::string str = "Loadbalance stats : \n";
-                str += shambase::format("    npatch = {}\n", global_patch_list.size());
-                str += shambase::format("    min = {}\n", min);
-                str += shambase::format("    max = {}\n", max);
-                str += shambase::format("    avg = {}\n", avg);
+                str += sham::format("    npatch = {}\n", global_patch_list.size());
+                str += sham::format("    min = {}\n", min);
+                str += sham::format("    max = {}\n", max);
+                str += sham::format("    avg = {}\n", avg);
                 if (max == 0) {
                     str += "    efficiency = ???%";
                 } else {
-                    str += shambase::format(
+                    str += sham::format(
                         "    efficiency = {:.2f}%", 100 - (100 * (max - min) / max));
                 }
                 logger::info_ln("LoadBalance", str);

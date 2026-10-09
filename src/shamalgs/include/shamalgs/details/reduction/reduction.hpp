@@ -30,12 +30,12 @@
 namespace shamalgs::reduction {
 
     template<class T>
-    bool has_nan(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
+    bool has_nan(sham::DeviceBuffer<T> &buf, u64 cnt);
 
     template<class T>
-    bool has_inf(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
+    bool has_inf(sham::DeviceBuffer<T> &buf, u64 cnt);
 
     template<class T>
-    bool has_nan_or_inf(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
+    bool has_nan_or_inf(sham::DeviceBuffer<T> &buf, u64 cnt);
 
 } // namespace shamalgs::reduction

@@ -24,6 +24,8 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
+#include <type_traits>
+#include <variant>
 #include <vector>
 
 namespace shamrock::patch {
@@ -43,6 +45,19 @@ namespace shamrock::patch {
         });
 
         return pdat;
+    }
+
+    PatchDataLayer::PatchDataLayer(const PatchDataLayer &other) : pdl_ptr(other.get_layout_ptr()) {
+
+        NamedStackEntry stack_loc{"PatchDataLayer::copy_constructor", true};
+
+        for (auto &field_var : other.fields) {
+
+            field_var.visit([&](auto &field) {
+                using base_t = typename std::remove_reference<decltype(field)>::type::Field_type;
+                fields.emplace_back(PatchDataField<base_t>(field));
+            });
+        };
     }
 
     void PatchDataLayer::init_fields() {
@@ -279,11 +294,10 @@ namespace shamrock::patch {
                     if constexpr (std::is_same<t1, t2>::value) {
                         field.append_subset_to(idxs_buf, sz, out_field);
                     } else {
-                        throw shambase::make_except_with_loc<std::invalid_argument>(
-                            shambase::format(
-                                "Mismatch in layout\n source layout = {}\n dest layout = {}",
-                                pdl().get_description_str(),
-                                pdat.pdl().get_description_str()));
+                        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
+                            "Mismatch in layout\n source layout = {}\n dest layout = {}",
+                            pdl().get_description_str(),
+                            pdat.pdl().get_description_str()));
                     }
                 },
                 fields[idx].value,
@@ -327,6 +341,97 @@ namespace shamrock::patch {
         for_each_field_any([&](auto &f) {
             f.field_raz();
         });
+    }
+
+    u32 PatchDataLayer::get_obj_cnt() const {
+
+        bool is_empty = fields.empty();
+
+        if (!is_empty) {
+            return fields[0].visit_return([](const auto &field) {
+                return field.get_obj_cnt();
+            });
+        }
+
+        throw shambase::make_except_with_loc<std::runtime_error>(
+            "this PatchDataLayer does not contain any fields");
+    }
+
+    u64 PatchDataLayer::memsize() {
+        u64 sum = 0;
+
+        for (auto &field_var : fields) {
+
+            field_var.visit([&](auto &field) {
+                sum += field.memsize();
+            });
+        }
+
+        return sum;
+    }
+
+    void PatchDataLayer::synchronize_buf() {
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                field.synchronize_buf();
+            });
+        }
+    }
+
+    void PatchDataLayer::check_field_obj_cnt_match() {
+        u32 cnt = get_obj_cnt();
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.get_obj_cnt() != cnt) {
+                    throw shambase::make_except_with_loc<std::runtime_error>("mismatch in obj cnt");
+                }
+            });
+        }
+    }
+
+    bool PatchDataLayer::has_nan() {
+        StackEntry stack_loc{};
+
+        bool ret = false;
+
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.has_nan()) {
+                    ret = true;
+                }
+            });
+        }
+        return ret;
+    }
+
+    bool PatchDataLayer::has_inf() {
+        StackEntry stack_loc{};
+
+        bool ret = false;
+
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.has_inf()) {
+                    ret = true;
+                }
+            });
+        }
+        return ret;
+    }
+
+    bool PatchDataLayer::has_nan_or_inf() {
+        StackEntry stack_loc{};
+
+        bool ret = false;
+
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.has_nan_or_inf()) {
+                    ret = true;
+                }
+            });
+        }
+        return ret;
     }
 
     template<class T>
@@ -443,5 +548,30 @@ namespace shamrock::patch {
         std::array<i64_3, 8> min_box,
         std::array<i64_3, 8> max_box);
 #endif
+
+    bool operator==(PatchDataLayer &p1, PatchDataLayer &p2) {
+        bool check = true;
+
+        if (p1.fields.size() != p2.fields.size()) {
+            return false;
+        }
+
+        for (u32 idx = 0; idx < p1.fields.size(); idx++) {
+            bool ret = p1.fields[idx].visit_return([&](auto &pf1) -> bool {
+                using t1 = typename std::remove_reference<decltype(pf1)>::type::Field_type;
+
+                if (PatchDataField<t1> *pf2
+                    = std::get_if<PatchDataField<t1>>(&p2.fields[idx].value)) {
+                    return pf1.check_field_match(*pf2);
+                } else {
+                    return false;
+                }
+            });
+
+            check = check && ret;
+        }
+
+        return check;
+    }
 
 } // namespace shamrock::patch

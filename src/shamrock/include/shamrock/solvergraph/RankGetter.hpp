@@ -16,7 +16,7 @@
  *
  */
 
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 #include <functional>
 #include <utility>
 

@@ -156,7 +156,7 @@ namespace shamunits {
             static constexpr T electron_mass = proton_mass * electron_proton_ratio<T>; //(kg)
             static constexpr T earth_mass    = 5.9722e24;                              //(kg)
             static constexpr T jupiter_mass  = 1.898e27;                               //(kg)
-            static constexpr T sol_mass      = 1.98847e30;                             //(kg)
+            static constexpr T sol_mass      = Conv::sol_mass_to_kg;                   //(kg)
             static constexpr T planck_mass   = 2.17643424e-8;                          //(kg)
             static constexpr T dalton        = 1.66053906892e-27;                      //(kg)
 

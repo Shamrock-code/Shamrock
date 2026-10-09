@@ -29,7 +29,7 @@ namespace shamalgs {
 
         const u32 id_hash = gen_buf_hash();
         inline u32 get_hash() { return id_hash; }
-        inline std::string get_hash_log() { return shambase::format("id = {} |", id_hash); }
+        inline std::string get_hash_log() { return sham::format("id = {} |", id_hash); }
 
         bool up_to_date_events = true;
 

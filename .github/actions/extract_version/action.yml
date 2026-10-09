@@ -1,0 +1,29 @@
+name: Extract version
+description: Extract the Shamrock version from CMake
+
+outputs:
+  version:
+    description: Shamrock version extracted from CMake
+    value: ${{ steps.version.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Reconfigure git
+      shell: bash
+      run: |
+        git config --global --add safe.directory '*'
+        git config --global --list
+
+    - uses: actions/checkout@v7
+
+    - name: Extract version from CMake
+      id: version
+      shell: bash
+      run: |
+        BUILD_DIR=$(mktemp -d)
+        cd "$BUILD_DIR"
+        cmake "$GITHUB_WORKSPACE" 2>&1 | tee cmake_output.txt || true
+        VERSION=$(grep -F 'Shamrock version :' cmake_output.txt | sed 's/-- Shamrock version : //' || echo "unknown")
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Detected version: $VERSION"

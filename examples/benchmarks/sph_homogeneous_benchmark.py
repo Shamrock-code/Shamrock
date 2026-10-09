@@ -15,7 +15,7 @@ import shamrock
 
 device_properties = shamrock.sys.get_compute_device_properties()
 
-microbench_results = shamrock.sys.get_microbench_results()
+microbench_results = shamrock.sys.get_microbench_results(allow_run=True)
 if len(microbench_results) == 0:
     print("no microbench results, please run with --benchmark-mpi")
     raise ValueError("no microbench results")
@@ -27,12 +27,10 @@ print(f"N_target_base = {N_target_base}")
 print(f"memory_gb = {memory_gb}")
 print(f"device_properties = {device_properties}")
 
-if N_target_base > 2**25:
-    N_target_base = 2**25
+N_target_base = min(N_target_base, 2**25)
 
 if device_properties["type"] == "CPU":
-    if N_target_base > 2**23:
-        N_target_base = 2**23
+    N_target_base = min(N_target_base, 2**23)
 
 shamrock.backends.reset_mem_info_max()
 
@@ -46,7 +44,7 @@ bmax = (0.6, 0.6, 0.6)
 compute_multiplier = shamrock.sys.world_size()
 # compute_multiplier = 12
 scheduler_split_val = int(2e7)
-scheduler_merge_val = int(1)
+scheduler_merge_val = 1
 
 N_target = N_target_base * compute_multiplier
 xm, ym, zm = bmin

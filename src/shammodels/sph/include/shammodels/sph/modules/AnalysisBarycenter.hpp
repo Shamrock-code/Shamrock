@@ -94,13 +94,12 @@ namespace shammodels::sph::modules {
             Tscal tot_mass_disc = shamalgs::collective::allreduce_sum(mass_disc);
             Tscal tot_mass      = tot_mass_disc;
 
-            if (!solver.storage.sinks.is_empty()) {
-                for (auto &sink : solver.storage.sinks.get()) {
-                    Tvec star_xyz   = sink.pos;
-                    Tscal star_mass = sink.mass;
-
-                    tot_barycenter += star_xyz * star_mass;
-                    tot_mass += star_mass;
+            auto &pos  = get_sink_pos<Tvec>(sched.synchronized_data);
+            auto &mass = get_sink_mass<Tvec>(sched.synchronized_data);
+            if (!pos.empty()) {
+                for (size_t i = 0; i < pos.size(); i++) {
+                    tot_barycenter += pos[i] * mass[i];
+                    tot_mass += mass[i];
                 }
             }
             tot_barycenter /= tot_mass;

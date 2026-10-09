@@ -19,9 +19,9 @@
 #include "shambase/aliases_float.hpp"
 #include "shambase/aliases_int.hpp"
 #include "shambase/profiling/profiling.hpp"
-#include "shambase/string.hpp"
 #include "shambase/unique_name_macro.hpp"
 #include <stack>
+#include <string>
 
 namespace shambase::details {
 

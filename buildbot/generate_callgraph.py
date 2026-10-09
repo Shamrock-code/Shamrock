@@ -55,7 +55,7 @@ old way
         p2.stdout.close()
         output,err = p3.communicate()
 
-    os.system("rm \<stdin\>.callgraph.dot")
+    os.system("rm \\<stdin\\>.callgraph.dot")
 
 """
 
@@ -248,7 +248,7 @@ for l in _gbody:
 
         nd = l[l.find("Node") : l.find("Node") + 18]
 
-        if lbl in affect_dic.keys():
+        if lbl in affect_dic:
             replace_dic[nd] = affect_dic[lbl]
             line_to_rm.append(l)
         else:
@@ -264,12 +264,12 @@ print(inverse_affect_dic.keys())
 
 for l in line_to_rm:
     nd = l[l.find("Node") : l.find("Node") + 18]
-    print(nd, nd in inverse_affect_dic.keys())
+    print(nd, nd in inverse_affect_dic)
 
     _gbody.remove(l)
 
 
-for key in replace_dic.keys():
+for key in replace_dic:
     new_nd = replace_dic[key]
     old_nd = key
 
@@ -296,7 +296,7 @@ for l in _gbody:
         nd1 = tmp[0][tmp[0].find("Node") : tmp[0].find("Node") + 18]
         nd2 = tmp[1][tmp[1].find("Node") : tmp[1].find("Node") + 18]
 
-        if nd1 in links.keys():
+        if nd1 in links:
             links[nd1] += [nd2]
         else:
             links[nd1] = [nd2]
@@ -312,7 +312,7 @@ print(links)
 
 def get_starting_Node(Node_label):
     start_Node_id = ""
-    for k in Nodes.keys():
+    for k in Nodes:
         if Node_label == get_label(Nodes[k]):
             start_Node_id = k
     return start_Node_id
@@ -334,7 +334,7 @@ def add_childs(Node_id, depth=0):
 
     used_Nodes[Node_id] = True
 
-    if Node_id in links.keys():
+    if Node_id in links:
         for child_Node_id in links[Node_id]:
             used_links[Node_id + " -> " + child_Node_id] = True
 
@@ -409,21 +409,20 @@ def is_unittest_group(Node_label):
     return False
 
 
-for nid in used_Nodes.keys():
-    if get_label(Nodes[nid]).startswith("MPI_"):
-        print(nid)
-    elif is_std_group(get_label(Nodes[nid])):
-        print(nid)
-    elif is_run_tests_group(get_label(Nodes[nid])):
-        print(nid)
-    elif is_unittest_group(get_label(Nodes[nid])):
+for nid in used_Nodes:
+    if (
+        get_label(Nodes[nid]).startswith("MPI_")
+        or is_std_group(get_label(Nodes[nid]))
+        or is_run_tests_group(get_label(Nodes[nid]))
+        or is_unittest_group(get_label(Nodes[nid]))
+    ):
         print(nid)
     else:
         _gbody.append(nid + " " + Nodes[nid] + ";\n")
 
 # mpi cluster
 _gbody += ['subgraph clustermpi_subgraph { style=filled; rank=max;label = "MPI instructions";  ']
-for nid in used_Nodes.keys():
+for nid in used_Nodes:
     if get_label(Nodes[nid]).startswith("MPI_"):
         _gbody.append(nid + ' [style=filled;color=cyan1;label="' + get_label(Nodes[nid]) + '"];\n')
 _gbody += ["}"]
@@ -433,7 +432,7 @@ _gbody += ["}"]
 _gbody += [
     'subgraph clusterstdgroup_subgraph { style=filled; rank=max;label = "std instructions";  '
 ]
-for nid in used_Nodes.keys():
+for nid in used_Nodes:
     if is_std_group(get_label(Nodes[nid])):
         if get_label(Nodes[nid]) == "exit":
             _gbody.append(
@@ -448,7 +447,7 @@ _gbody += ["}"]
 
 # std run_tests cluster
 _gbody += ['subgraph clusterrun_testsgroup_subgraph { style=filled;label = "run_tests";  ']
-for nid in used_Nodes.keys():
+for nid in used_Nodes:
     if is_run_tests_group(get_label(Nodes[nid])):
         _gbody.append(nid + ' [style=filled;color=white;label="' + get_label(Nodes[nid]) + '"];\n')
 _gbody += ["}"]
@@ -456,13 +455,13 @@ _gbody += ["}"]
 
 # std unit_tests cluster
 _gbody += ['subgraph clusterunit_testsgroup_subgraph { style=filled;label = "unit_test::";  ']
-for nid in used_Nodes.keys():
+for nid in used_Nodes:
     if is_unittest_group(get_label(Nodes[nid])):
         _gbody.append(nid + ' [style=filled;color=white;label="' + get_label(Nodes[nid]) + '"];\n')
 _gbody += ["}"]
 
 
-for lk in used_links.keys():
+for lk in used_links:
     _gbody.append(lk + ";\n")
 
 
@@ -486,7 +485,7 @@ move_map = {
 }
 
 
-for kk in rep_stmap.keys():
+for kk in rep_stmap:
     for i in range(len(_gbody)):
         if get_label(_gbody[i]) == kk:
             _gbody[i] = _gbody[i].replace("shape=record", rep_stmap[kk])
@@ -494,7 +493,7 @@ for kk in rep_stmap.keys():
             print(_gbody[i])
 
 
-for kk in move_map.keys():
+for kk in move_map:
     for i in range(len(_gbody)):
         if get_label(_gbody[i]) == kk:
             _gbody[i] = "{\n    " + move_map[kk] + _gbody[i].replace("{" + kk + "}", kk) + "}\n"

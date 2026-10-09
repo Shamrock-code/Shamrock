@@ -9,8 +9,10 @@
 
 /**
  * @file pyshammath.cpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yann Bernard (yann.bernard@univ-grenoble-alpes.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -20,9 +22,11 @@
 #include "shambindings/pytypealias.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/derivatives.hpp"
+#include "shammath/integrator.hpp"
 #include "shammath/matrix.hpp"
 #include "shammath/matrix_op.hpp"
 #include "shammath/paving_function.hpp"
+#include "shammath/solve.hpp"
 #include "shammath/symtensor_collections.hpp"
 #include "shammath/symtensors.hpp"
 #include "shampylib/math/pyAABB.hpp"
@@ -856,7 +860,106 @@ ON_PYTHON_INIT {
                 py::str(py::cast(c.t1)).cast<std::string>());
         });
 
+    math_module.def(
+        "euler_ode",
+        [](f64 start, f64 end, f64 step, std::function<f64(f64, f64)> &&ode, f64 x0, f64 u0) {
+            return shammath::euler_ode<f64>(start, end, step, ode, x0, u0);
+        },
+        py::kw_only(),
+        py::arg("start"),
+        py::arg("end"),
+        py::arg("step"),
+        py::arg("ode"),
+        py::arg("x0"),
+        py::arg("u0"),
+        R"pbdoc(
+        Solve ODE with Euler method
+        start : Lower bound of integration
+        end :   Higher bound of integration
+        step :  Step of integration
+        ode :   Ode function
+        x0 :    Initial coordinate
+        u0 :    Initial value
+    )pbdoc");
+
+    math_module.def(
+        "least_squares",
+        [](const std::function<f64(const std::vector<f64> &, f64)> &func,
+           const std::vector<f64> &x_data,
+           const std::vector<f64> &y_data,
+           const std::vector<f64> &p0) {
+            return shammath::least_squares(func, x_data, y_data, p0);
+        },
+        py::kw_only(),
+        py::arg("func"),
+        py::arg("x_data"),
+        py::arg("y_data"),
+        py::arg("p0"),
+        R"pbdoc(
+        Fit data with a given function by least squares method
+        f:     Function (1d values)
+        X:     $x$ Data to fit
+        Y:     $y$ Data to fit
+        p0:    Initial parameters estimated
+    )pbdoc");
+
     math_module.def("get_ideal_hcp_box", [](f64 dr, f64_3 box_min, f64_3 box_max) {
         return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
     });
+
+    math_module.def(
+        "get_periodic_hcp_box",
+        [](f64 dr, std::array<i32, 3> box_min, std::array<i32, 3> box_max) {
+            auto ret = shammath::LatticeHCP<f64_3>::get_periodic_box(dr, box_min, box_max);
+            return std::tuple<f64_3, f64_3>{ret.lower, ret.upper};
+        },
+        py::arg("dr"),
+        py::arg("box_min"),
+        py::arg("box_max"),
+        R"pbdoc(
+        Get the periodic box corresponding to integer lattice coordinates
+        this function will throw if the coordinates asked cannot make a periodic lattice
+
+        Args:
+            dr: the particle spacing in the lattice
+            box_min: integer triplet for the minimal coordinates on the lattice
+            box_max: integer triplet for the maximal coordinates on the lattice
+        )pbdoc");
+
+    math_module.def(
+        "get_ideal_fcc_box",
+        [](f64 dr, f64_3 box_min, f64_3 box_max) {
+            return shammath::LatticeFCC<f64_3>::get_ideal_fcc_box(dr, {box_min, box_max});
+        },
+        py::arg("dr"),
+        py::arg("box_min"),
+        py::arg("box_max"),
+        R"pbdoc(
+        Get the smallest periodic box of a true FCC lattice (ABC stacking) containing the given box
+
+        Args:
+            dr: the particle spacing in the lattice (neighbours are 2 dr apart)
+            box_min: lower corner of the box
+            box_max: upper corner of the box
+        )pbdoc");
+
+    math_module.def(
+        "get_periodic_fcc_box",
+        [](f64 dr, std::array<i32, 3> box_min, std::array<i32, 3> box_max) {
+            auto ret = shammath::LatticeFCC<f64_3>::get_periodic_box(dr, box_min, box_max);
+            return std::tuple<f64_3, f64_3>{ret.lower, ret.upper};
+        },
+        py::arg("dr"),
+        py::arg("box_min"),
+        py::arg("box_max"),
+        R"pbdoc(
+        Get the periodic box of a true FCC lattice (ABC stacking) corresponding to integer
+        lattice coordinates. This function will throw if the coordinates asked cannot make a
+        periodic lattice (x count must be >= 2, y count even and z count a multiple of 3)
+
+        Args:
+            dr: the particle spacing in the lattice
+            box_min: integer triplet for the minimal coordinates on the lattice
+            box_max: integer triplet for the maximal coordinates on the lattice
+        )pbdoc");
 }

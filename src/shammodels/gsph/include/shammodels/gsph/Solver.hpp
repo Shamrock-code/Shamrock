@@ -12,8 +12,9 @@
 /**
  * @file Solver.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief GSPH Solver class
  *
  * The GSPH method originated from:
@@ -28,16 +29,18 @@
 #include "shambase/exception.hpp"
 #include "SolverConfig.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/common/SolverLog.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include "shammodels/gsph/modules/SolverStorage.hpp"
-#include "shammodels/sph/SolverLog.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
+#include <algorithm>
 #include <memory>
 #include <stdexcept>
 #include <variant>
@@ -83,7 +86,48 @@ namespace shammodels::gsph {
         SolverStorage<Tvec, u_morton> storage{};
 
         Config solver_config;
-        sph::SolverLog solve_logs;
+        SolverLog solve_logs;
+
+        /// Access synchronized simulation time (scheduler edge "time")
+        inline Tscal &time_edge_value() {
+            return scheduler()
+                .synchronized_data
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>("time")
+                .data;
+        }
+
+        /// Access synchronized next dt (scheduler edge "dt")
+        inline Tscal &dt_edge_value() {
+            return scheduler()
+                .synchronized_data
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>("dt")
+                .data;
+        }
+
+        inline Tscal get_time() { return time_edge_value(); }
+        inline void set_time(Tscal t) { time_edge_value() = t; }
+        inline Tscal get_dt() { return dt_edge_value(); }
+        inline void set_next_dt(Tscal dt) { dt_edge_value() = dt; }
+
+        /// Register time/dt synchronized edges if missing (idempotent)
+        inline void ensure_time_state_edges() {
+            auto &sync    = scheduler().synchronized_data;
+            auto names    = sync.get_edge_names();
+            auto has_edge = [&](const std::string &name) {
+                return std::find(names.begin(), names.end(), name) != names.end();
+            };
+
+            if (!has_edge("time")) {
+                auto edge = sync.register_edge(
+                    "time", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("time", "t"));
+                edge->data = 0;
+            }
+            if (!has_edge("dt")) {
+                auto edge = sync.register_edge(
+                    "dt", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("dt", "dt"));
+                edge->data = 0;
+            }
+        }
 
         inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
 
@@ -127,7 +171,6 @@ namespace shammodels::gsph {
         void communicate_merge_ghosts_fields();
         void reset_merge_ghosts_fields();
 
-        void compute_omega();
         void compute_eos_fields();
         void reset_eos_fields();
 
@@ -139,6 +182,19 @@ namespace shammodels::gsph {
          * state is preserved across simulation restarts and available for VTK output.
          */
         void copy_eos_to_patchdata();
+
+        /**
+         * @brief Compute SPH-summation density for GSPH
+         *
+         * Unlike the plain SPH solver, which derives density analytically from
+         * the converged smoothing length via rho_h(pmass, h, hfact), GSPH needs
+         * an explicit summed density field (Sigma m_j W_ij) because the Riemann
+         * reconstruction and MUSCL gradients consume density directly, not just
+         * through h. This computes that summation into storage.density.
+         *
+         * Must have h converged, neighbor cache valid.
+         */
+        void compute_density();
 
         /**
          * @brief Compute gradients for MUSCL reconstruction
@@ -195,16 +251,16 @@ namespace shammodels::gsph {
         TimestepLog evolve_once();
 
         Tscal evolve_once_time_expl(Tscal t_current, Tscal dt_input) {
-            solver_config.set_time(t_current);
-            solver_config.set_next_dt(dt_input);
+            set_time(t_current);
+            set_next_dt(dt_input);
             evolve_once();
-            return solver_config.get_dt();
+            return get_dt();
         }
 
         inline bool evolve_until(Tscal target_time, i32 niter_max = -1) {
             auto step = [&]() {
-                Tscal dt = solver_config.get_dt();
-                Tscal t  = solver_config.get_time();
+                Tscal dt = get_dt();
+                Tscal t  = get_time();
 
                 if (t > target_time) {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -212,14 +268,14 @@ namespace shammodels::gsph {
                 }
 
                 if (t + dt > target_time) {
-                    solver_config.set_next_dt(target_time - t);
+                    set_next_dt(target_time - t);
                 }
                 evolve_once();
             };
 
             i32 iter_count = 0;
 
-            while (solver_config.get_time() < target_time) {
+            while (get_time() < target_time) {
                 step();
                 iter_count++;
 

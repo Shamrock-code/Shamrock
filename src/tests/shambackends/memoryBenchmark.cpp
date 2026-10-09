@@ -7,6 +7,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"

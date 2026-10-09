@@ -18,9 +18,14 @@
 
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    X_RO(shamrock::solvergraph::IFieldRefs<Tscal>, eps_h)                                          \
+                                                                                                   \
+    X_RW(shamrock::solvergraph::IDataEdge<bool>, is_converged)
 
 namespace shammodels::sph::modules {
 
@@ -45,24 +50,7 @@ namespace shammodels::sph::modules {
               epsilon_h(epsilon_h), h_iter_per_subcycles(h_iter_per_subcycles),
               print_info(print_info) {}
 
-        struct Edges {
-            const shamrock::solvergraph::IFieldRefs<Tscal> &eps_h;
-            shamrock::solvergraph::ScalarEdge<bool> &is_converged;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::IFieldRefs<Tscal>> eps_h,
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<bool>> is_converged) {
-            __internal_set_ro_edges({eps_h});
-            __internal_set_rw_edges({is_converged});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<Tscal>>(0),
-                get_rw_edge<shamrock::solvergraph::ScalarEdge<bool>>(0),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -71,5 +59,7 @@ namespace shammodels::sph::modules {
         virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::sph::modules
+
+#undef NODE_EDGES
 
 template class shammodels::sph::modules::LoopSmoothingLengthIter<f64_3>;

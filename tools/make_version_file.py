@@ -8,7 +8,7 @@ try:
     strfile = fvers.read()
     fvers.close()
 except:
-    None
+    pass
 
 try:
     str_git = os.popen("git log -n 1 --decorate=full").read()
@@ -46,7 +46,7 @@ str_ += 'const std::string version_string = "' + sys.argv[3] + '";\n'
 
 str_ += "const bool is_git = " + str(is_git) + ";\n"
 
-if not (strfile == str_):
+if strfile != str_:
     f = open(sys.argv[1], "w")
     f.write(str_)
     f.close()

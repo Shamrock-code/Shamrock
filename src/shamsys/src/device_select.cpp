@@ -16,6 +16,7 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/Device.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"

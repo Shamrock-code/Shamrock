@@ -9,8 +9,8 @@ Using Coala within Shamrock to solve the Smoluchowski equation
 import os
 
 import numpy as np
-import shamrock.external.coala as coala
 from matplotlib import pyplot as plt
+from shamrock.external import coala
 
 import shamrock
 
@@ -67,10 +67,7 @@ def run_kernel_case(kernel):
     elif kernel == 1:
         dthydro = 1e-2
         ndthydro = 300
-    elif kernel == 2:
-        dthydro = 1e-1
-        ndthydro = 500
-    elif kernel == 3:
+    elif kernel == 2 or kernel == 3:
         dthydro = 1e-1
         ndthydro = 500
     else:
@@ -89,7 +86,7 @@ def run_kernel_case(kernel):
 
     for case in cases:
         kpol = cases[case]["kpol"]
-        print("")
+        print()
         print("Computing coala solver for k=%d" % (kpol))
         match kernel:
             case 0 | 1 | 2:
@@ -146,7 +143,7 @@ def run_kernel_case(kernel):
             nbins_ref = 100
             massgrid_ref, massbins_ref = coala.init_grid_log(nbins_ref, massmax, massmin)
 
-            print("")
+            print()
             print("Computing coala solver for k_Br (k=0), ref solution")
             gij_init_ref, gij_ref, time_coag_ref = coala.iterate_coag(
                 kernel,
@@ -170,7 +167,7 @@ def run_kernel_case(kernel):
             massmeanlog_ref = np.sqrt(massgrid_ref[0:nbins_ref] * massgrid_ref[1:])
             dv_Br_ref = np.sqrt(1.0 / massmeanlog_ref[:, None] + 1.0 / massmeanlog_ref[None, :])
 
-            print("")
+            print()
             print("Computing coala solver for k_dv (k=0), ref solution")
             gij_init_ref, gij_ref, time_coag_ref = coala.iterate_coag_kdv(
                 kernel,

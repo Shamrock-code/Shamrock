@@ -28,11 +28,11 @@ This code aims to be **Modern**, **Modular**, **Fast**, **Portable**.
 # Documentation
 
 We provide both a book like documentation and the more classic doxygen style for more details about the sources
- - The documentation is available here: [Shamrock documentation](https://shamrock-code.github.io/Shamrock/mkdocs/index.html)
+ - The documentation is available here: [Shamrock documentation](https://shamrock-code.github.io/Shamrock/sphinx/index.html)
 
 # Getting started
 
-The whole getting started guide can be found here: [Getting started](https://shamrock-code.github.io/Shamrock/mkdocs/usermanual/quickstart/)
+The whole getting started guide can be found here: [Getting started](https://shamrock-code.github.io/Shamrock/sphinx/user_guide/quickstart.html)
 
 Note that a convenient way to pull the Shamrock repo is the following command to also pull the submodules:
 ```bash

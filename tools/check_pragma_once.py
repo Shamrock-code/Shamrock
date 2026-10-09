@@ -35,12 +35,7 @@ for fname in file_list:
             has_pragma = True
             break
         else:
-            if not (
-                l.startswith(r"//")
-                or l.startswith(r"/*")
-                or l.startswith(r"/*")
-                or l.startswith("\n")
-            ):
+            if not l.startswith((r"//", r"/*", r"/*", "\n")):
                 # print(l)
                 has_line_before_guard = True
 

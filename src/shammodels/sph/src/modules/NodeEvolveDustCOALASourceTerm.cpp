@@ -14,6 +14,7 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
@@ -27,6 +28,7 @@
 #include "shamrock/patch/PatchDataField.hpp" // IWYU pragma: keep
 #include "shamsys/NodeInstance.hpp"
 #include <experimental/mdspan>
+#include <array>
 #include <vector>
 
 namespace shammodels::sph::modules {
@@ -35,15 +37,14 @@ namespace shammodels::sph::modules {
     struct KernelGenCoala_k0 {
         using Tscal = shambase::VecComponent<Tvec>;
 
-        using mdspan_rank_1 = std::mdspan<Tscal, std::dextents<u32, 1>>;
-        using mdspan_rank_3 = std::mdspan<Tscal, std::dextents<u32, 3>>;
+        using mdspan_rank_1         = std::mdspan<Tscal, std::dextents<u32, 1>>;
+        using mdspan_rank_1_strided = std::mdspan<Tscal, std::dextents<u32, 1>, std::layout_stride>;
 
         using const_mdspan_rank_1 = std::mdspan<const Tscal, std::dextents<u32, 1>>;
-        using const_mdspan_rank_3 = std::mdspan<const Tscal, std::dextents<u32, 3>>;
 
         u32 nbins;
         Tscal rho_eps;
-        Tscal dv_max;
+        Tscal vfrag_threshold;
         u32 corrected_len;
         u32 group_size;
         u32 true_size;
@@ -52,22 +53,26 @@ namespace shammodels::sph::modules {
             u32 /**/,
             // common to all kernel calls
             const Tscal *__restrict massgrid_ptr,
-            const Tscal *__restrict tensor_tabflux_coag,
+            const u32 *__restrict tabflux_pair_offset,
+            const u32 *__restrict tabflux_pair_jmin,
+            const Tscal *__restrict tabflux_values,
             // field specific data
             const Tscal *__restrict s_j,
             const Tvec *__restrict delta_v_j,
-            Tscal *__restrict S_coag) const {
+            Tscal *__restrict S_coag,
+            // scratch
+            Tscal *__restrict gij_scratch) const {
 
             auto range = sycl::nd_range<1>{corrected_len, group_size};
 
             auto local_acc_sz_nbins = sycl::range<1>{group_size * nbins};
 
-            auto true_size = this->true_size;
-            auto rho_eps   = this->rho_eps;
-            auto dv_max    = this->dv_max;
+            auto true_size       = this->true_size;
+            auto rho_eps         = this->rho_eps;
+            auto vfrag_threshold = this->vfrag_threshold;
+            auto group_size      = this->group_size;
 
             return [=, nbins = this->nbins](sycl::handler &cgh) {
-                auto gij_acc  = sycl::local_accessor<Tscal>{local_acc_sz_nbins, cgh};
                 auto flux_acc = sycl::local_accessor<Tscal>{local_acc_sz_nbins, cgh};
 
                 cgh.parallel_for(range, [=](sycl::nd_item<1> tid) {
@@ -81,15 +86,26 @@ namespace shammodels::sph::modules {
                     u32 id_a_d = id_a * nbins;
 
                     /* inputs */
-                    const_mdspan_rank_3 tabflux_coag(tensor_tabflux_coag, nbins, nbins, nbins);
+                    shamphys::TabfluxCoagK0SparseView<Tscal> tabflux_coag{
+                        nbins, tabflux_pair_offset, tabflux_pair_jmin, tabflux_values};
                     const_mdspan_rank_1 massgrid(massgrid_ptr, nbins + 1);
 
                     /* internal */
-                    auto gij_loc  = &(gij_acc[nbins * lid]);
-                    auto flux_loc = &(flux_acc[nbins * lid]);
+                    // flux in local memory with a bin-major layout (stride group_size), such
+                    // that the work-items of a sub-group, which access the same bin at the
+                    // same time, hit distinct banks
+                    mdspan_rank_1_strided flux(
+                        &(flux_acc[lid]),
+                        typename mdspan_rank_1_strided::mapping_type(
+                            std::dextents<u32, 1>(nbins), std::array<u32, 1>{group_size}));
 
-                    mdspan_rank_1 gij(gij_loc, nbins);
-                    mdspan_rank_1 flux(flux_loc, nbins);
+                    // gij in global memory with a particle-major layout, such that the
+                    // work-items of a sub-group, which access the same bin at the same time,
+                    // read contiguous addresses
+                    mdspan_rank_1_strided gij(
+                        gij_scratch + id_a,
+                        typename mdspan_rank_1_strided::mapping_type(
+                            std::dextents<u32, 1>(nbins), std::array<u32, 1>{true_size}));
 
                     /* output */
                     mdspan_rank_1 S_coag_span(S_coag + id_a_d, nbins);
@@ -103,7 +119,9 @@ namespace shammodels::sph::modules {
                     auto dv = [&, delta_v = delta_v_j + id_a_d](int i, int j) {
                         // dv_ij = v_dust_j - v_dust_i = delta_v_j[j] - delta_v_j[i]
                         auto tmp = sycl::length(delta_v[j] - delta_v[i]);
-                        return (tmp > dv_max) ? 0 : tmp;
+                        // Coag-only kernel: "poor man" fragmentation, pairs faster than
+                        // vfrag_threshold do not coagulate (dv_ij = 0).
+                        return (tmp > vfrag_threshold) ? 0 : tmp;
                     };
 
                     // should implement the same content as
@@ -139,10 +157,10 @@ namespace shammodels::sph::modules {
         edges.S_coag.ensure_sizes(counts);
         auto S_coag_spans = edges.S_coag.get_spans();
 
-        Tscal rho_eps                                 = edges.rhodust_eps.value;
-        Tscal dv_max                                  = edges.dv_max.value;
-        const std::vector<Tscal> &massgrid            = edges.massgrid.value;
-        const std::vector<Tscal> &tensor_tabflux_coag = edges.tensor_tabflux_coag.value;
+        Tscal rho_eps                                 = edges.rhodust_eps.data;
+        Tscal vfrag_threshold                         = edges.vfrag_threshold.data;
+        const std::vector<Tscal> &massgrid            = edges.massgrid.data;
+        const std::vector<Tscal> &tensor_tabflux_coag = edges.tensor_tabflux_coag.data;
 
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
         auto &q        = shambase::get_check_ref(dev_sched).get_queue();
@@ -150,49 +168,72 @@ namespace shammodels::sph::modules {
         sham::DeviceBuffer<Tscal> massgrid_buf(nbins + 1, dev_sched);
         massgrid_buf.copy_from_stdvec(massgrid);
 
-        sham::DeviceBuffer<Tscal> tensor_tabflux_coag_buf(nbins * nbins * nbins, dev_sched);
-        tensor_tabflux_coag_buf.copy_from_stdvec(tensor_tabflux_coag);
+        // only the non-zero part of the tensor is used on device
+        auto tabflux_sparse = shamphys::make_tabflux_coag_k0_sparse<Tscal>(
+            nbins,
+            std::mdspan<const Tscal, std::dextents<u32, 3>>(
+                tensor_tabflux_coag.data(), nbins, nbins, nbins));
+
+        sham::DeviceBuffer<u32> tabflux_pair_offset_buf(
+            tabflux_sparse.pair_offset.size(), dev_sched);
+        tabflux_pair_offset_buf.copy_from_stdvec(tabflux_sparse.pair_offset);
+
+        sham::DeviceBuffer<u32> tabflux_pair_jmin_buf(tabflux_sparse.pair_jmin.size(), dev_sched);
+        tabflux_pair_jmin_buf.copy_from_stdvec(tabflux_sparse.pair_jmin);
+
+        sham::DeviceBuffer<Tscal> tabflux_values_buf(tabflux_sparse.values.size(), dev_sched);
+        tabflux_values_buf.copy_from_stdvec(tabflux_sparse.values);
+
+        // per thread local memory: flux, one per bin
+        usize local_mem_per_thread = nbins * sizeof(Tscal);
+        usize local_mem_size       = q.get_device_prop().local_mem_size;
 
         u32 group_size = 64;
+        while (group_size > 1 && group_size * local_mem_per_thread > local_mem_size) {
+            group_size /= 2;
+        }
+        if (group_size * local_mem_per_thread > local_mem_size) {
+            shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                "COALA kernel: not enough local memory for nbins = {} ({} B per thread, {} B "
+                "available)",
+                nbins,
+                local_mem_per_thread,
+                local_mem_size));
+        }
 
         counts.for_each([&](u64 id_patch, u64 count) {
             u32 group_cnt     = shambase::group_count(count, group_size);
             u32 corrected_len = group_cnt * group_size;
 
+            sham::DeviceBuffer<Tscal> gij_scratch(count * nbins, dev_sched);
+
             sham::kernel_call_hndl(
                 q,
                 sham::MultiRef{
                     massgrid_buf,
-                    tensor_tabflux_coag_buf,
+                    tabflux_pair_offset_buf,
+                    tabflux_pair_jmin_buf,
+                    tabflux_values_buf,
                     s_j_spans.get(id_patch),
                     delta_v_j_spans.get(id_patch)},
-                sham::MultiRef{S_coag_spans.get(id_patch)},
+                sham::MultiRef{S_coag_spans.get(id_patch), gij_scratch},
                 count,
                 KernelGenCoala_k0<Tvec>{
-                    .nbins         = nbins,
-                    .rho_eps       = rho_eps,
-                    .dv_max        = dv_max,
-                    .corrected_len = corrected_len,
-                    .group_size    = group_size,
-                    .true_size     = u32(count)});
+                    .nbins           = nbins,
+                    .rho_eps         = rho_eps,
+                    .vfrag_threshold = vfrag_threshold,
+                    .corrected_len   = corrected_len,
+                    .group_size      = group_size,
+                    .true_size       = u32(count)});
         });
     }
 
     template<class Tvec>
     std::string NodeEvolveDustCOALASourceTerm<Tvec>::_impl_get_tex() const {
-
-        auto rhodust_eps         = get_ro_edge_base(0).get_tex_symbol();
-        auto massgrid            = get_ro_edge_base(1).get_tex_symbol();
-        auto tensor_tabflux_coag = get_ro_edge_base(2).get_tex_symbol();
-        auto part_counts         = get_ro_edge_base(3).get_tex_symbol();
-        auto s_j                 = get_ro_edge_base(5).get_tex_symbol();
-        auto delta_v_j           = get_ro_edge_base(6).get_tex_symbol();
-        auto S_coag              = get_rw_edge_base(0).get_tex_symbol();
-
         std::string tex = R"tex(
             COALA dust coagulation source term, DG $k=0$ (Lombart et al., 2021)
 
-            Per gas particle $a$ and mass bin $j$ (monofluid: $\rho_{{\rm d},j,a}} = {s_j}_{j,a}^2$):
+            Per gas particle $a$ and mass bin $j$ (monofluid: $\rho_{{\rm d},j,a} = {s_j}_{j,a}^2$):
 
             \begin{align}
             \rho_{{\rm d},j,a} &= {s_j}_{j,a}^2 \\
@@ -213,14 +254,9 @@ namespace shammodels::sph::modules {
             \end{align}
         )tex";
 
-        shambase::replace_all(tex, "{rhodust_eps}", rhodust_eps);
-        shambase::replace_all(tex, "{massgrid}", massgrid);
-        shambase::replace_all(tex, "{tensor_tabflux_coag}", tensor_tabflux_coag);
-        shambase::replace_all(tex, "{part_counts}", part_counts);
-        shambase::replace_all(tex, "{s_j}", s_j);
-        shambase::replace_all(tex, "{delta_v_j}", delta_v_j);
-        shambase::replace_all(tex, "{S_coag}", S_coag);
-        shambase::replace_all(tex, "{nbins}", shambase::format("{}", nbins));
+        replace_edges_tex_symbols(tex);
+
+        shambase::replace_all(tex, "{nbins}", sham::format("{}", nbins));
 
         return tex;
     }

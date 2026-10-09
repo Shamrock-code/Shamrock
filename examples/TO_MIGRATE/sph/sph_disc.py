@@ -285,7 +285,7 @@ else:
         sum(s["mass"] * s["pos"][2] for s in sink_list) / sum_mass,
     )
 
-    print("sinks baryenceter : velocity {} position {}".format(vel_bary, pos_bary))
+    print(f"sinks baryenceter : velocity {vel_bary} position {pos_bary}")
 
     model.set_particle_mass(pmass)
     for s in sink_list:
@@ -302,9 +302,7 @@ else:
         vy -= vel_bary[1]
         vz -= vel_bary[2]
 
-        print(
-            "add sink : mass {} pos {} vel {} racc {}".format(mass, (x, y, z), (vx, vy, vz), racc)
-        )
+        print(f"add sink : mass {mass} pos {(x, y, z)} vel {(vx, vy, vz)} racc {racc}")
         model.add_sink(mass, (x, y, z), (vx, vy, vz), racc)
 
     setup = model.get_setup()

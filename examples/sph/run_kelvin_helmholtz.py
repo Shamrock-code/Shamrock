@@ -211,7 +211,7 @@ def plot_state(iplot):
     cbar0 = plt.colorbar(im0, extend="both")
     cbar0.set_label(r"$\rho$ [code unit]")
 
-    plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
+    plt.title(f"t = {model.get_time():0.3f} [code unit]")
     plt.xlabel("x")
     plt.ylabel("y")
     plt.savefig(os.path.join(dump_folder, f"{sim_name}_rho_{iplot:04}.png"))
@@ -227,7 +227,7 @@ def plot_state(iplot):
     cbar0 = plt.colorbar(im0, extend="both")
     cbar0.set_label(r"$\alpha_{AV}$ [code unit]")
 
-    plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
+    plt.title(f"t = {model.get_time():0.3f} [code unit]")
     plt.xlabel("x")
     plt.ylabel("y")
     plt.savefig(os.path.join(dump_folder, f"{sim_name}_alpha_{iplot:04}.png"))
@@ -248,7 +248,7 @@ def plot_state(iplot):
     cbar1 = plt.colorbar(im1, extend="both")
     cbar1.set_label(r"$v_y$ [code unit]")
 
-    plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
+    plt.title(f"t = {model.get_time():0.3f} [code unit]")
     plt.xlabel("x")
     plt.ylabel("y")
     plt.savefig(os.path.join(dump_folder, f"{sim_name}_vy_{iplot:04}.png"))

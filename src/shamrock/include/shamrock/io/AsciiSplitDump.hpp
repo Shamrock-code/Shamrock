@@ -45,7 +45,7 @@ class AsciiSplitDump {
          */
         void open(u64 id_patch, std::string fileprefix) {
             const std::filesystem::path path{
-                fileprefix + "patch_" + shambase::format("{:04d}", id_patch) + ".txt"};
+                fileprefix + "patch_" + sham::format("{:04d}", id_patch) + ".txt"};
             if (std::filesystem::exists(path)) {
                 std::filesystem::remove(path);
             }

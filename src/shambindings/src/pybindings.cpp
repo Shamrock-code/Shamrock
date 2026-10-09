@@ -156,7 +156,7 @@ namespace shambindings {
     void expect_init_lib(SourceLocation loc) {
         if (init_state != Lib) {
             shambase::throw_with_loc<std::runtime_error>(
-                shambase::format(
+                sham::format(
                     "python bindings not initialized as lib mode, current mode = {}",
                     i32(init_state)),
                 loc);
@@ -166,7 +166,7 @@ namespace shambindings {
     void expect_init_embed(SourceLocation loc) {
         if (init_state != Embed) {
             shambase::throw_with_loc<std::runtime_error>(
-                shambase::format(
+                sham::format(
                     "python bindings not initialized as embed mode, current mode = {}",
                     i32(init_state)),
                 loc);

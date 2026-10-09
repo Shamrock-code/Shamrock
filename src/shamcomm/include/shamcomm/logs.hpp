@@ -19,7 +19,6 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/logs.hpp"
 #include "shambase/print.hpp"
-#include "shambase/string.hpp"
 #include "shambase/term_colors.hpp"
 #include <string>
 

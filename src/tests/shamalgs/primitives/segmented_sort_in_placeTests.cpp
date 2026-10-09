@@ -10,6 +10,7 @@
 #include "shambase/alg_primitives.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/term_colors.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/mock_value.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/primitives/segmented_sort_in_place.hpp"
@@ -181,16 +182,19 @@ NEW_TEST(Unittest, "shamalgs/primitives/segmented_sort_in_place", 1) {
         }
     };
 
-    auto current_impl = shamalgs::primitives::impl::get_current_impl_segmented_sort_in_place();
+    if (!shamalgs::impl_registry::is_impl_set("segmented_sort_in_place")) {
+        shamalgs::impl_registry::autoselect_impl(
+            "segmented_sort_in_place", shamsys::instance::get_compute_scheduler_ptr());
+    }
+    auto current_impl = shamalgs::impl_registry::get_current_impl("segmented_sort_in_place");
 
-    for (shamalgs::impl_param impl :
-         shamalgs::primitives::impl::get_default_impl_list_segmented_sort_in_place()) {
-        shamalgs::primitives::impl::set_impl_segmented_sort_in_place(impl.impl_name, impl.params);
+    for (const std::string &impl :
+         shamalgs::impl_registry::get_default_impl_list("segmented_sort_in_place")) {
+        shamalgs::impl_registry::set_impl("segmented_sort_in_place", impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_segmented_sort_in_place(
-        current_impl.impl_name, current_impl.params);
+    shamalgs::impl_registry::set_impl("segmented_sort_in_place", current_impl);
 }

@@ -20,9 +20,9 @@
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shammodels/ramses/solvegraph/NeighGraphLinkFieldEdge.hpp"
 #include "shamrock/solvergraph/Field.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* ------------------- inputs ------------------- */                                           \

@@ -58,20 +58,20 @@ namespace shamrock {
 
         while (it1 != v1.end() || it2 != v2.end()) {
             if (it1 == v1.end()) {
-                ss << shambase::format("{}+ | {}{}\n", green, *it2++, reset);
+                ss << sham::format("{}+ | {}{}\n", green, *it2++, reset);
             } else if (it2 == v2.end()) {
-                ss << shambase::format("{}- | {}{}\n", red, *it1++, reset);
+                ss << sham::format("{}- | {}{}\n", red, *it1++, reset);
             } else if (differ_by_trailing_char(*it1, *it2)) {
                 auto &longest = (*it1).length() > (*it2).length() ? *it1 : *it2;
-                ss << shambase::format("  | {}\n", longest); // unchanged
+                ss << sham::format("  | {}\n", longest); // unchanged
                 ++it1;
                 ++it2;
             } else if (*it1 < *it2) {
-                ss << shambase::format("{}- | {}{}\n", red, *it1++, reset);
+                ss << sham::format("{}- | {}{}\n", red, *it1++, reset);
             } else if (*it2 < *it1) {
-                ss << shambase::format("{}+ | {}{}\n", green, *it2++, reset);
+                ss << sham::format("{}+ | {}{}\n", green, *it2++, reset);
             } else {
-                ss << shambase::format("  | {}\n", *it1); // unchanged
+                ss << sham::format("  | {}\n", *it1); // unchanged
                 ++it1;
                 ++it2;
             }

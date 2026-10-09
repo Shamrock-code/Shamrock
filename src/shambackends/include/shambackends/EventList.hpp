@@ -16,6 +16,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "sham/format/format.hpp"
 #include "shambackends/DeviceContext.hpp"
 
 namespace sham {
@@ -127,7 +128,7 @@ namespace sham {
          * @return A string representation of the EventList's state.
          */
         inline std::string get_state() {
-            return shambase::format("events : {}, consumed : {}", events.size(), consumed);
+            return sham::format("events : {}, consumed : {}", events.size(), consumed);
         }
 
         /// Default constructor for EventList with source location

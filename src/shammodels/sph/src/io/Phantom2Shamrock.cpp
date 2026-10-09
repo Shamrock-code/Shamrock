@@ -268,9 +268,9 @@ namespace shammodels::sph {
             dump.table_header_fort_real.add("xmin", bmin.x());
             dump.table_header_fort_real.add("xmax", bmax.x());
             dump.table_header_fort_real.add("ymin", bmin.y());
-            dump.table_header_fort_real.add("ymax", bmax.x());
+            dump.table_header_fort_real.add("ymax", bmax.y());
             dump.table_header_fort_real.add("zmin", bmin.z());
-            dump.table_header_fort_real.add("zmax", bmax.x());
+            dump.table_header_fort_real.add("zmax", bmax.z());
         } else if (
             SolverBCShearingPeriodic *c = std::get_if<SolverBCShearingPeriodic>(&cfg.config)) {
             std::string err_msg

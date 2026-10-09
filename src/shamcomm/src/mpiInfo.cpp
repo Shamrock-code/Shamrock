@@ -14,6 +14,7 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/term_colors.hpp"
 #include "fmt/core.h"
 #include "shamcomm/logs.hpp"

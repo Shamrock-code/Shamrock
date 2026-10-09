@@ -69,7 +69,7 @@ If you need a custom edge, create a new class inheriting from `IEdgeNamed`:
 // Header file: include/yourmodel/solvergraph/YourCustomEdge.hpp
 #pragma once
 
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 #include "your_data_type.hpp"
 
 namespace yourmodel::solvergraph {

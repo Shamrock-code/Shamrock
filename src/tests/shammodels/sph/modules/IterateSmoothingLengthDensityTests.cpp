@@ -17,8 +17,8 @@
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shamtree/TreeTraversal.hpp"
 #include <memory>
@@ -124,7 +124,7 @@ void test_smoothing_length_density_module(
 
     // 8. Set up IterateSmoothingLengthDensity module
     IterateSmoothingLengthDensity<Tvec, SPHKernel> iterate_module(
-        gpart_mass, h_evol_max, h_evol_iter_max);
+        gpart_mass, h_evol_max, h_evol_iter_max, Tscal(1e-6));
     iterate_module.set_edges(
         sizes, neigh_cache, positions_refs, old_h_refs, new_h_refs, eps_h_refs);
 

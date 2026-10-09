@@ -19,6 +19,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
+#include <algorithm>
 #include <random>
 #include <vector>
 
@@ -80,15 +81,16 @@ bool all_sum_are_equals(shammath::CoordRange<f64_3> box, std::vector<f64_3> &par
     return !found_diff;
 }
 
+template<class Lattice = shammath::LatticeHCP<f64_3>>
 bool check_periodicity(std::array<i32, 3> coord_min, std::array<i32, 3> coord_max) {
 
     shammath::CoordRange<f64_3> box{};
 
     try {
 
-        box = shammath::LatticeHCP<f64_3>::get_periodic_box(1, coord_min, coord_max);
+        box = Lattice::get_periodic_box(1, coord_min, coord_max);
 
-        auto gen = shammath::LatticeHCP<f64_3>::Iterator{1., coord_min, coord_max};
+        auto gen = typename Lattice::Iterator{1., coord_min, coord_max};
 
         std::vector<f64_3> parts = gen.next_n(100000);
 
@@ -115,7 +117,7 @@ NEW_TEST(Unittest, "shammath/crystalLattice/LatticeHCP/get_periodic_box", 1) {
         i32 zmax = shamalgs::primitives::mock_value(eng, 0, 7);
 
         REQUIRE_NAMED(
-            shambase::format(
+            sham::format(
                 "check periodicity : ({} {} {}) ({} {} {}) ({} {} {}) ",
                 xmin,
                 ymin,
@@ -151,7 +153,7 @@ NEW_TEST(Unittest, "shammath/crystalLattice/LatticeHCP/nearest_periodic_box_indi
                 {xmin, ymin, zmin}, {xmax, ymax, zmax});
 
         REQUIRE_NAMED(
-            shambase::format(
+            sham::format(
                 "check periodicity : ({} {} {}) ({} {} {}) ({} {} {})",
                 xmin,
                 ymin,
@@ -164,6 +166,207 @@ NEW_TEST(Unittest, "shammath/crystalLattice/LatticeHCP/nearest_periodic_box_indi
                 zmax - zmin),
             shammath::LatticeHCP<f64_3>::can_make_periodic_box(out.first, out.second));
     }
+}
+
+NEW_TEST(Unittest, "shammath/crystalLattice/LatticeFCC/get_periodic_box", 1) {
+    std::mt19937 eng(0x1111);
+
+    for (u32 i = 0; i < 100; i++) {
+        i32 xmin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 ymin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 zmin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 xmax = shamalgs::primitives::mock_value(eng, 0, 7);
+        i32 ymax = shamalgs::primitives::mock_value(eng, 0, 7);
+        i32 zmax = shamalgs::primitives::mock_value(eng, 0, 7);
+
+        REQUIRE_NAMED(
+            sham::format(
+                "check periodicity : ({} {} {}) ({} {} {}) ({} {} {}) ",
+                xmin,
+                ymin,
+                zmin,
+                xmax,
+                ymax,
+                zmax,
+                xmax - xmin,
+                ymax - ymin,
+                zmax - zmin),
+            check_periodicity<shammath::LatticeFCC<f64_3>>({xmin, ymin, zmin}, {xmax, ymax, zmax}));
+    }
+}
+
+NEW_TEST(Unittest, "shammath/crystalLattice/LatticeFCC/can_make_periodic_box", 1) {
+    using Lattice = shammath::LatticeFCC<f64_3>;
+
+    // the ABC stacking repeats every 3 layers along z
+    REQUIRE(Lattice::can_make_periodic_box({-2, -2, -3}, {2, 2, 3}));
+    REQUIRE(Lattice::can_make_periodic_box({-2, -1, -1}, {2, 3, 2}));
+    REQUIRE(!Lattice::can_make_periodic_box({-2, -2, -2}, {2, 2, 2})); // 4 layers
+    REQUIRE(!Lattice::can_make_periodic_box({-2, -2, 0}, {2, 2, 2}));  // 2 layers (HCP-like)
+    REQUIRE(!Lattice::can_make_periodic_box({-2, -2, 0}, {2, 3, 3}));  // odd y count
+    REQUIRE(!Lattice::can_make_periodic_box({0, -2, 0}, {1, 2, 3}));   // x count < 2
+    REQUIRE(!Lattice::can_make_periodic_box({-2, 2, 0}, {2, 2, 3}));   // empty y span
+    REQUIRE(!Lattice::can_make_periodic_box({-2, 4, 0}, {2, 2, 3}));   // inverted y span
+    REQUIRE(!Lattice::can_make_periodic_box({-2, -2, 3}, {2, 2, 3}));  // empty z span
+    REQUIRE(!Lattice::can_make_periodic_box({-2, -2, 3}, {2, 2, 0}));  // inverted z span
+
+    // a 4 layer box would be considered as periodic by the HCP check but is not periodic in
+    // FCC, check that the lattice sums do indeed detect it
+    {
+        std::array<i32, 3> coord_min = {-3, -2, -2};
+        std::array<i32, 3> coord_max = {3, 2, 2};
+
+        shammath::CoordRange<f64_3> box
+            = shammath::LatticeHCP<f64_3>::get_periodic_box(1, coord_min, coord_max);
+        auto gen                 = Lattice::Iterator{1., coord_min, coord_max};
+        std::vector<f64_3> parts = gen.next_n(100000);
+        REQUIRE(!all_sum_are_equals(box, parts));
+    }
+}
+
+NEW_TEST(Unittest, "shammath/crystalLattice/LatticeFCC/nearest_periodic_box_indices", 1) {
+    std::mt19937 eng(0x1111);
+
+    for (u32 i = 0; i < 100; i++) {
+        i32 xmin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 ymin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 zmin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 xmax = shamalgs::primitives::mock_value(eng, 0, 7);
+        i32 ymax = shamalgs::primitives::mock_value(eng, 0, 7);
+        i32 zmax = shamalgs::primitives::mock_value(eng, 0, 7);
+
+        if (xmin == xmax || ymin == ymax || zmin == zmax)
+            continue;
+
+        std::pair<std::array<i32, 3>, std::array<i32, 3>> out
+            = shammath::LatticeFCC<f64_3>::nearest_periodic_box_indices(
+                {xmin, ymin, zmin}, {xmax, ymax, zmax});
+
+        REQUIRE_NAMED(
+            sham::format(
+                "check periodicity : ({} {} {}) ({} {} {}) ({} {} {})",
+                xmin,
+                ymin,
+                zmin,
+                xmax,
+                ymax,
+                zmax,
+                xmax - xmin,
+                ymax - ymin,
+                zmax - zmin),
+            shammath::LatticeFCC<f64_3>::can_make_periodic_box(out.first, out.second));
+
+        // the box must only grow, and by less than one period
+        REQUIRE(out.first == (std::array<i32, 3>{xmin, ymin, zmin}));
+        REQUIRE(out.second[1] - ymax < 2);
+        REQUIRE(out.second[2] - zmax < 3);
+    }
+}
+
+/// count the neighbours of particle id per distance shell using the minimum image convention
+std::vector<std::pair<f64, u32>> neighbour_shells(
+    shammath::CoordRange<f64_3> box, u32 id, std::vector<f64_3> &parts, u32 nshells) {
+    f64_3 delt = box.delt();
+
+    std::vector<f64> dists;
+    for (const auto &ra : parts) {
+        f64_3 d = ra - parts[id];
+        d.x() -= delt.x() * sycl::round(d.x() / delt.x());
+        d.y() -= delt.y() * sycl::round(d.y() / delt.y());
+        d.z() -= delt.z() * sycl::round(d.z() / delt.z());
+        f64 r = sycl::length(d);
+        if (r > 1e-9) {
+            dists.push_back(r);
+        }
+    }
+    std::sort(dists.begin(), dists.end());
+
+    std::vector<std::pair<f64, u32>> shells;
+    for (f64 r : dists) {
+        if (!shells.empty() && sycl::fabs(shells.back().first - r) < 1e-9) {
+            shells.back().second++;
+        } else {
+            if (shells.size() == nshells) {
+                break;
+            }
+            shells.push_back({r, 1});
+        }
+    }
+    return shells;
+}
+
+NEW_TEST(Unittest, "shammath/crystalLattice/LatticeFCC/neighbour_shells", 1) {
+    // a true FCC lattice of nearest neighbour distance d = 2 dr has the shells
+    // 12 at d, 6 at sqrt(2) d, 24 at sqrt(3) d, 12 at 2 d
+    // (HCP instead has 2 neighbours at sqrt(8/3) d)
+    std::array<i32, 3> coord_min = {-3, -2, -3};
+    std::array<i32, 3> coord_max = {3, 4, 6};
+
+    using Lattice                   = shammath::LatticeFCC<f64_3>;
+    shammath::CoordRange<f64_3> box = Lattice::get_periodic_box(1, coord_min, coord_max);
+    auto gen                        = Lattice::Iterator{1., coord_min, coord_max};
+    std::vector<f64_3> parts        = gen.next_n(100000);
+
+    REQUIRE_EQUAL(parts.size(), 6 * 6 * 9);
+
+    std::vector<std::pair<f64, u32>> expected
+        = {{2., 12}, {2. * sycl::sqrt(2.), 6}, {2. * sycl::sqrt(3.), 24}, {4., 12}};
+
+    bool all_ok = true;
+    for (u32 id = 0; id < parts.size(); id++) {
+        // all particles must be inside the box
+        all_ok = all_ok && box.contain_pos(parts[id]);
+
+        auto shells = neighbour_shells(box, id, parts, 4);
+        all_ok      = all_ok && (shells.size() == expected.size());
+        for (u32 s = 0; s < shells.size() && s < expected.size(); s++) {
+            all_ok = all_ok && (sycl::fabs(shells[s].first - expected[s].first) < 1e-9)
+                     && (shells[s].second == expected[s].second);
+        }
+    }
+    REQUIRE(all_ok);
+}
+
+NEW_TEST(Unittest, "shammath/crystalLattice/LatticeFCC/get_ideal_fcc_box", 1) {
+    using Lattice = shammath::LatticeFCC<f64_3>;
+
+    f64 dr       = 0.1;
+    f64_3 in_min = {-1, -1, -1};
+    f64_3 in_max = {1, 1, 1};
+
+    auto [bmin, bmax] = Lattice::get_ideal_fcc_box(dr, {in_min, in_max});
+
+    // the ideal box must contain the input box
+    REQUIRE(bmin.x() <= in_min.x() && bmin.y() <= in_min.y() && bmin.z() <= in_min.z());
+    REQUIRE(bmax.x() >= in_max.x() && bmax.y() >= in_max.y() && bmax.z() >= in_max.z());
+
+    // and the lattice in it must be periodic
+    auto [idxs_min, idxs_max] = Lattice::get_box_index_bounds(dr, bmin, bmax);
+    std::vector<f64_3> parts;
+    auto gen = Lattice::Iterator{dr, idxs_min, idxs_max};
+    while (!gen.is_done()) {
+        f64_3 r = gen.next();
+        if (shammath::CoordRange<f64_3>{bmin, bmax}.contain_pos(r)) {
+            parts.push_back(r);
+        }
+    }
+
+    f64_3 L        = (bmax - bmin) / dr;
+    f64 n_expected = (L.x() / 2) * (L.y() / sycl::sqrt(3.)) * (L.z() / (2 * sycl::sqrt(6.) / 3));
+    REQUIRE_EQUAL(parts.size(), u64(sycl::round(n_expected)));
+
+    // the lattice box dimension helper must be consistent with the periodic box
+    f64_3 dim = Lattice::get_box_dim(dr, 6, 4, 9);
+    f64_3 ref = {12 * dr, 4 * sycl::sqrt(3.) * dr, 9 * 2 * sycl::sqrt(6.) / 3 * dr};
+    REQUIRE(sham::length2(dim - ref) < 1e-24);
+
+    bool has_thrown = false;
+    try {
+        Lattice::get_box_dim(dr, 6, 4, 8);
+    } catch (const shammath::LatticeError &) {
+        has_thrown = true;
+    }
+    REQUIRE(has_thrown);
 }
 
 std::vector<f64_3> reference_set

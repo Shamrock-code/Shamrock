@@ -53,45 +53,43 @@ export OMP_NUM_THREADS=32
 import shamrock
 
 
-gamma = 5./3.
+gamma = 5.0 / 3.0
 rho_g = 1
 target_tot_u = 1
 
-bmin = (-0.6,-0.6,-0.6)
-bmax = ( 0.6, 0.6, 0.6)
+bmin = (-0.6, -0.6, -0.6)
+bmax = (0.6, 0.6, 0.6)
 
 N_target_base = 4e6
 compute_multiplier = shamrock.sys.world_size()
 scheduler_split_val = int(2e6)
 scheduler_merge_val = int(1)
 
-N_target = N_target_base*compute_multiplier
-xm,ym,zm = bmin
-xM,yM,zM = bmax
-vol_b = (xM - xm)*(yM - ym)*(zM - zm)
+N_target = N_target_base * compute_multiplier
+xm, ym, zm = bmin
+xM, yM, zM = bmax
+vol_b = (xM - xm) * (yM - ym) * (zM - zm)
 
-part_vol = vol_b/N_target
+part_vol = vol_b / N_target
 
-#lattice volume
-part_vol_lattice = 0.74*part_vol
+# lattice volume
+part_vol_lattice = 0.74 * part_vol
 
-dr = (part_vol_lattice / ((4./3.)*3.1416))**(1./3.)
+dr = (part_vol_lattice / ((4.0 / 3.0) * 3.1416)) ** (1.0 / 3.0)
 
 pmass = -1
 
 
-
-
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
-model = shamrock.get_Model_SPH(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
-model.init_scheduler(scheduler_split_val,scheduler_merge_val)
-bmin,bmax = model.get_ideal_fcc_box(dr,bmin,bmax)
-xm,ym,zm = bmin
-xM,yM,zM = bmax
-model.resize_simulation_box(bmin,bmax)
-model.add_cube_fcc_3d(dr, bmin,bmax)
-xc,yc,zc = model.get_closest_part_to((0,0,0))
+model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M6")
+model.init_scheduler(scheduler_split_val, scheduler_merge_val)
+bmin, bmax = model.get_ideal_fcc_box(dr, bmin, bmax)
+xm, ym, zm = bmin
+xM, yM, zM = bmax
+model.resize_simulation_box(bmin, bmax)
+model.add_cube_fcc_3d(dr, bmin, bmax)
+xc, yc, zc = model.get_closest_part_to((0, 0, 0))
 ctx.close_sched()
 del model
 del ctx
@@ -100,42 +98,44 @@ del ctx
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_Model_SPH(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
+model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M6")
 
 cfg = model.gen_default_config()
-#cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
-#cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+# cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
+# cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+cfg.set_artif_viscosity_VaryingCD10(
+    alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
+)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e6),1)
+model.init_scheduler(int(1e6), 1)
 
 
-bmin = (xm - xc,ym - yc, zm - zc)
-bmax = (xM - xc,yM - yc, zM - zc)
-xm,ym,zm = bmin
-xM,yM,zM = bmax
+bmin = (xm - xc, ym - yc, zm - zc)
+bmax = (xM - xc, yM - yc, zM - zc)
+xm, ym, zm = bmin
+xM, yM, zM = bmax
 
-model.resize_simulation_box(bmin,bmax)
-model.add_cube_fcc_3d(dr, bmin,bmax)
+model.resize_simulation_box(bmin, bmax)
+model.add_cube_fcc_3d(dr, bmin, bmax)
 
-vol_b = (xM - xm)*(yM - ym)*(zM - zm)
+vol_b = (xM - xm) * (yM - ym) * (zM - zm)
 
-totmass = (rho_g*vol_b)
-#print("Total mass :", totmass)
+totmass = rho_g * vol_b
+# print("Total mass :", totmass)
 
 pmass = model.total_mass_to_part_mass(totmass)
 
-model.set_value_in_a_box("uint","f64", 0 , bmin,bmax)
+model.set_value_in_a_box("uint", "f64", 0, bmin, bmax)
 
-rinj = 0.008909042924642563*2/2
-#rinj = 0.008909042924642563*2*2
-#rinj = 0.01718181
+rinj = 0.008909042924642563 * 2 / 2
+# rinj = 0.008909042924642563*2*2
+# rinj = 0.01718181
 u_inj = 1
-model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj)
+model.add_kernel_value("uint", "f64", u_inj, (0, 0, 0), rinj)
 
 model.set_particle_mass(pmass)
 
@@ -148,10 +148,9 @@ current_dt = 1e-7
 i = 0
 i_dump = 0
 while t_sum < t_target:
+    # print("step : t=",t_sum)
 
-    #print("step : t=",t_sum)
-
-    next_dt = model.evolve(t_sum,current_dt, False, "dump_"+str(i_dump)+".vtk", False)
+    next_dt = model.evolve(t_sum, current_dt, False, "dump_" + str(i_dump) + ".vtk", False)
 
     if i % 1 == 0:
         i_dump += 1
@@ -162,14 +161,14 @@ while t_sum < t_target:
     if (t_target - t_sum) < next_dt:
         current_dt = t_target - t_sum
 
-    i+= 1
+    i += 1
 
     if i > 5:
         break
 
-res_rate,res_cnt = model.solver_logs_last_rate(), model.solver_logs_last_obj_count()
+res_rate, res_cnt = model.solver_logs_last_rate(), model.solver_logs_last_obj_count()
 
 if shamrock.sys.world_rank() == 0:
-    print("result rate :",res_rate)
-    print("result cnt :",res_cnt)
+    print("result rate :", res_rate)
+    print("result cnt :", res_cnt)
 ```

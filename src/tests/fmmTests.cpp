@@ -1130,7 +1130,7 @@ Result_nompi_fmm_testing<flt, morton_mode, fmm_order> nompi_fmm_testing(
             if (i < 10) {
                 logger::raw_ln(
                     "local relative error : ",
-                    shambase::format_printf(
+                    sham::format_printf(
                         "%e (%e %e %e) (%e %e %e)",
                         err,
                         force[i].x(),
@@ -1147,7 +1147,7 @@ Result_nompi_fmm_testing<flt, morton_mode, fmm_order> nompi_fmm_testing(
 
         logger::raw_ln(
             "global relative error :",
-            shambase::format_printf("avg = %e max = %e", err_sum / npart, err_max));
+            sham::format_printf("avg = %e max = %e", err_sum / npart, err_max));
 
         prec = err_sum / npart;
     }

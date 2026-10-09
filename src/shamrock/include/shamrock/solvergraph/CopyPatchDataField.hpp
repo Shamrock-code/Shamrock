@@ -11,6 +11,7 @@
 
 /**
  * @file CopyPatchDataField.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Defines the CopyPatchDataField class for copying fields between patch data field
  * references.
@@ -19,8 +20,12 @@
 
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    X_RO(shamrock::solvergraph::IFieldRefs<T>, original)                                           \
+    X_RW(shamrock::solvergraph::IFieldRefs<T>, target)
 
 namespace shamrock::solvergraph {
 
@@ -61,29 +66,7 @@ namespace shamrock::solvergraph {
         /// Default constructor.
         CopyPatchDataField() {}
 
-        /// Structure containing references to the node's input and output edges.
-        struct Edges {
-            const IFieldRefs<T> &original; ///< Reference to the source field data
-            Field<T> &target;              ///< Reference to the target field for copying
-        };
-
-        /**
-         * @brief Sets the input and output edges for the copy operation.
-         *
-         * @param original Shared pointer to the source field references (read-only)
-         * @param target Shared pointer to the target field (read-write)
-         */
-        void set_edges(std::shared_ptr<IFieldRefs<T>> original, std::shared_ptr<Field<T>> target) {
-            __internal_set_ro_edges({original});
-            __internal_set_rw_edges({target});
-        }
-
-        /**
-         * @brief Retrieves the current edges of the node.
-         *
-         * @return Edges structure containing references to original and target fields
-         */
-        Edges get_edges() { return Edges{get_ro_edge<IFieldRefs<T>>(0), get_rw_edge<Field<T>>(0)}; }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         /**
          * @brief Internal implementation of the field copying operation.
@@ -110,3 +93,5 @@ namespace shamrock::solvergraph {
         std::string _impl_get_tex() const;
     };
 } // namespace shamrock::solvergraph
+
+#undef NODE_EDGES

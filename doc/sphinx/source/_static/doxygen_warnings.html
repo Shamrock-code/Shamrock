@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Doxygen warning count</title>
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.3/plotly.min.js"></script>
+    <link rel="stylesheet" href="css/metrics-chart.css" />
+  </head>
+  <body>
+    <div id="status">Loading Doxygen warning history…</div>
+    <div id="chart"></div>
+    <script src="js/metrics-chart.js"></script>
+    <script>
+      function chartLayout(theme, series) {
+        const colors = MetricsChart.themeColors(theme);
+        const axis = MetricsChart.axisStyle(theme);
+        return {
+          title: { text: "Doxygen warning count", font: { color: colors.fg, size: 18 } },
+          margin: { l: 64, r: 24, t: 48, b: 56 },
+          paper_bgcolor: colors.bg,
+          plot_bgcolor: colors.bg,
+          font: { color: colors.fg },
+          xaxis: Object.assign(
+            {
+              title: { text: "Date (UTC)" },
+              type: "date",
+            },
+            axis
+          ),
+          yaxis: Object.assign(
+            {
+              title: { text: "Warning count" },
+              tickformat: "d",
+              autorange: false,
+              range: MetricsChart.paddedRange(series.y, true),
+            },
+            axis
+          ),
+          hovermode: "x unified",
+        };
+      }
+
+      function toSeries(payload) {
+        if (!payload || !Array.isArray(payload.data)) {
+          throw new Error("Unexpected dataset shape: missing data[]");
+        }
+        const rows = payload.data
+          .filter(function (row) {
+            return row && typeof row.datetime === "string" && Number.isFinite(Number(row.doxygen_warning_count));
+          })
+          .slice()
+          .sort(function (a, b) {
+            return a.datetime.localeCompare(b.datetime);
+          });
+        return {
+          x: rows.map(function (row) {
+            return row.datetime;
+          }),
+          y: rows.map(function (row) {
+            return Number(row.doxygen_warning_count);
+          }),
+        };
+      }
+
+      function traces(theme, series) {
+        const lineColor = MetricsChart.themeColors(theme).parsing;
+        return [
+          {
+            type: "scatter",
+            mode: "lines+markers",
+            name: "doxygen_warning_count",
+            x: series.x,
+            y: series.y,
+            line: { color: lineColor, width: 2 },
+            marker: { color: lineColor, size: 8 },
+            hovertemplate: "%{x|%Y-%m-%d %H:%M UTC}<br>warnings: %{y}<extra></extra>",
+          },
+        ];
+      }
+
+      MetricsChart.mount({
+        urls: MetricsChart.metricsUrls("doxygen_warnings.json"),
+        loading: "Loading Doxygen warning history…",
+        empty: "The Doxygen warning dataset is empty.",
+        error: "Could not load Doxygen warning history.",
+        makePlot: function (payload, theme) {
+          const series = toSeries(payload);
+          if (series.x.length === 0) {
+            return { traces: [] };
+          }
+          return { traces: traces(theme, series), layout: chartLayout(theme, series) };
+        },
+      });
+    </script>
+  </body>
+</html>

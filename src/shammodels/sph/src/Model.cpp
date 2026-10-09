@@ -1304,6 +1304,12 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
         }
     }
 
+    if (Brhoxyz.size() > 0 && !solver.solver_config.has_field_B_on_rho()
+        && shamcomm::world_rank() == 0) {
+        logger::warn_ln(
+            "SPH", "the phantom dump has B/rho fields but MHD is disabled, ignoring them");
+    }
+
     // Load time infos
     f64 time_phdump = phdump.read_header_float<f64>("time");
     solver.solver_config.set_time(time_phdump);
@@ -1403,11 +1409,11 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
                 ptmp.override_patch_field("uint", ins_u);
             }
 
-            if (ins_Brhoxyz.size() > 0) {
+            if (ins_Brhoxyz.size() > 0 && solver.solver_config.has_field_B_on_rho()) {
                 ptmp.override_patch_field("B/rho", ins_Brhoxyz);
             }
 
-            if (ins_psich.size() > 0) {
+            if (ins_psich.size() > 0 && solver.solver_config.has_field_psi_on_ch()) {
                 ptmp.override_patch_field("psi/ch", ins_psich);
             }
 
@@ -1721,7 +1727,9 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
     PhantomDumpBlock block_3rd;
     dump.blocks.push_back(std::move(block_3rd));
-    dump.blocks.push_back(std::move(block_mhd));
+    if (solver.solver_config.has_field_B_on_rho()) {
+        dump.blocks.push_back(std::move(block_mhd));
+    }
 
     return dump;
 }

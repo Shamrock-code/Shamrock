@@ -37,8 +37,8 @@ namespace shammath {
      *
      * Pixel ``(ix, iy)`` covers ``ix`` in ``[0, nx)`` from left to right and ``iy`` in
      * ``[0, ny)`` from bottom to top. Its ray goes through the pixel center, starts on the near
-     * plane (at depth ``znear``) and extends to infinity (``Ray::t_min = 0``), so that nothing
-     * behind the image plane is rendered. ``zfar`` is only used by the projection matrix.
+     * plane (at depth ``znear``) and extends to infinity.
+     * ``zfar`` is only used by the projection matrix.
      *
      * @tparam Tvec 3D vector type
      */
@@ -123,7 +123,6 @@ namespace shammath {
         /**
          * @brief Ray going through the center of pixel ``(ix, iy)``
          *
-         * The ray starts on the near plane and extends to infinity (``t_min = 0``).
          */
         inline Ray<Tvec> get_pixel_ray(u32 ix, u32 iy) const {
             Tscal tan_half = sycl::tan(fovy / 2);
@@ -134,7 +133,7 @@ namespace shammath {
             Tvec d = dir + right * (ndc_x * tan_half * aspect) + up * (ndc_y * tan_half);
 
             // the component of d along dir is 1, so this point lies on the near plane
-            return Ray<Tvec>(pos + d * znear, d); // Tscal(0));
+            return Ray<Tvec>(pos + d * znear, d);
         }
 
         /// Rays of all the pixels, pixel ``(ix, iy)`` being at index ``iy * nx + ix``

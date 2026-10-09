@@ -76,9 +76,11 @@ ccache needs no extra wiring: the `debian-generic.acpp` env script passes
 `ccache -s`. A `build/` configured before ccache was installed picks it up
 on the next `./shamenv_do shamconfigure`.
 
-pre-commit hook venvs also need `SETUPTOOLS_USE_DISTUTILS=stdlib` exported —
-Debian's patched sysconfig scheme otherwise breaks setuptools' vendored
-distutils with `AttributeError: install_layout`.
+pre-commit hook venvs need `SETUPTOOLS_USE_DISTUTILS=local` (setuptools'
+vendored distutils). The container's `python3` is 3.13, which has no
+stdlib `distutils`, so a leftover `SETUPTOOLS_USE_DISTUTILS=stdlib` makes
+building hook environments fail with `No module named 'distutils'`; the
+hook exports `local` to override any such value.
 
 A single LLVM 20 toolchain backs both the AdaptiveCpp build and dev tooling
 (clangd/clang-tidy) — AdaptiveCpp's `CMakeLists.txt` supports up to LLVM 20
@@ -104,7 +106,15 @@ parse — the same database CI's clang-tidy job uses), then runs the newest
 `clang-tidy` found on `PATH` against it (not hardcoded to 20, so this also
 works on a host with a different LLVM install).
 
-The hook deliberately stops there: `./shamenv_do shamconfigure` builds
-AdaptiveCpp from source on its first invocation (a few minutes), so that
-cost is paid inline the first time a build/test is actually needed rather
-than blocking every session start.
+On a cold start (repo cloned during this boot: the cache-building run, or
+a session that starts while the cache rebuilds) the hook then pre-builds,
+all within a hard deadline of 4m30 from hook start (`HOOK_DEADLINE`):
+AdaptiveCpp (~2 min cold on 4 vCPUs), `shamconfigure` (~1 min), then as
+much of `shammake` as fits. The environment cache snapshots the disk right
+after the SessionStart hook (observed, not documented) but only when setup
+stays under roughly five minutes, so that partial build carries over to
+every session started from the snapshot; finish it with
+`./shamenv_do shamconfigure && ./shamenv_do shammake`. Sessions restored
+from the snapshot skip the pre-build even when it is incomplete (only the
+cache-building run is snapshotted, so redoing it there would only block
+session start); whatever is missing is built when first needed.

@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+# Hard deadline for this whole hook, in seconds from script start (bash's
+# $SECONDS). The cloud environment snapshot is taken after this hook finishes,
+# but only when setup stays under roughly five minutes; 4m30 keeps a margin.
+HOOK_DEADLINE=270
+
 # Only run this setup in Claude Code on the web / remote sessions.
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
@@ -53,25 +58,66 @@ if ! command -v clangd >/dev/null 2>&1 && [ -x /usr/bin/clangd-20 ]; then
   ln -sf /usr/bin/clangd-20 /usr/local/bin/clangd
 fi
 
-# pre-commit's isolated venvs pick up Debian's patched sysconfig scheme,
-# which expects a distutils "install_layout" attribute that setuptools'
-# vendored (local) distutils no longer provides. Forcing stdlib distutils
-# avoids the AttributeError when hook environments are built.
+# pre-commit builds hook environments with the container's python3 (3.13),
+# which has no stdlib distutils, so setuptools must use its vendored (local)
+# copy. Export it explicitly to override a leftover
+# SETUPTOOLS_USE_DISTUTILS=stdlib, which fails with
+# "No module named 'distutils'".
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  echo 'export SETUPTOOLS_USE_DISTUTILS=stdlib' >> "$CLAUDE_ENV_FILE"
+  echo 'export SETUPTOOLS_USE_DISTUTILS=local' >> "$CLAUDE_ENV_FILE"
 fi
-export SETUPTOOLS_USE_DISTUTILS=stdlib
+export SETUPTOOLS_USE_DISTUTILS=local
 
 # --- Submodules ----------------------------------------------------------
 git submodule update --init --recursive --jobs "$(nproc)"
 
 # --- Build environment -----------------------------------------------
 # CPU-only container: use AdaptiveCpp's OpenMP backend (no GPU present).
-# Deliberately stop here: `shamenv_do shamconfigure` builds AdaptiveCpp
-# from source on its first invocation (a few minutes), so it's left for
-# whenever a build/test is actually needed rather than blocking every
-# session start. That first `shamconfigure`/`shammake` call will pay the
-# one-time cost inline; every session after that reuses the cached build.
 if [ ! -f build/shamenv_do ]; then
   ./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp
+fi
+
+# --- Time-boxed pre-build ----------------------------------------------
+# The environment cache snapshots the disk right after this hook, so whatever
+# gets built here carries over to every session started from that snapshot.
+# Each step gets what is left of HOOK_DEADLINE; a step that is cut short is
+# picked up again by the next `shamconfigure`/`shammake` (ninja reruns
+# unfinished steps, ccache keeps finished ones).
+#
+# Only on a cold start, i.e. when the repo was cloned during this boot: the
+# cache-building run, or a session that starts while the cache rebuilds. A
+# session restored from the snapshot (repo cloned before this boot) skips it
+# even if the snapshot's pre-build is incomplete: only the cache-building run
+# is snapshotted, so redoing it there would just block that session's start
+# for minutes; whatever is missing gets built when it is first needed.
+run_until_deadline() {
+  local left=$((HOOK_DEADLINE - SECONDS - 5)) # 5 s for timeout's -k grace
+  if [ "$left" -le 0 ]; then
+    return 124
+  fi
+  timeout -s INT -k 5 "$left" "$@"
+}
+
+boot_time=$(awk '/^btime/ {print $2}' /proc/stat)
+clone_time=$(stat -c %W .git) # birth time; 0 if unknown, i.e. treated as warm
+if [ "$clone_time" -ge "$boot_time" ]; then
+  # Sourcing the env builds AdaptiveCpp on first use (~2 min cold).
+  acpp_rc=0
+  run_until_deadline build/shamenv_do true || acpp_rc=$?
+  if [ "$acpp_rc" -ne 0 ]; then
+    # The env script treats AdaptiveCpp as built once bin/acpp exists, which a
+    # stop during `make install` could leave behind; drop the install so the
+    # next session resumes the (kept) build instead of using a partial one.
+    rm -rf build/.env/acpp-installdir
+    echo "pre-build: AdaptiveCpp not finished (rc=$acpp_rc) at ${SECONDS}s"
+  else
+    conf_rc=0
+    run_until_deadline build/shamenv_do shamconfigure || conf_rc=$?
+    make_rc=skipped
+    if [ "$conf_rc" -eq 0 ] && [ -f build/build.ninja ]; then
+      make_rc=0
+      run_until_deadline build/shamenv_do shammake || make_rc=$?
+    fi
+    echo "pre-build: shamconfigure rc=$conf_rc, shammake rc=$make_rc at ${SECONDS}s"
+  fi
 fi

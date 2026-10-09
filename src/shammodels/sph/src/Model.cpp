@@ -1294,12 +1294,59 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
         phdump.blocks[0].fill_vec("u", u);
         phdump.blocks[0].fill_vec("alpha", alpha);
 
-        // MHD fields
+        // MHD fields, B/rho and psi/ch (Shamrock dumps) or B and psi (Phantom dumps)
         for (auto &block : phdump.blocks) {
             block.fill_vec("B/rhox", Brhox);
             block.fill_vec("B/rhoy", Brhoy);
             block.fill_vec("B/rhoz", Brhoz);
             block.fill_vec("psi/ch", psich);
+        }
+
+        // Phantom dumps store B, read it and convert it in place to B/rho with rho = m (hfact/h)^3
+        if (Brhox.empty()) {
+            for (auto &block : phdump.blocks) {
+                block.fill_vec("Bx", Brhox);
+                block.fill_vec("By", Brhoy);
+                block.fill_vec("Bz", Brhoz);
+            }
+
+            if (!Brhox.empty()) {
+                if (Brhox.size() != h.size() || Brhoy.size() != h.size()
+                    || Brhoz.size() != h.size()) {
+                    shambase::throw_with_loc<std::runtime_error>(
+                        "the number of B values does not match the number of particles");
+                }
+
+                Tscal pmass = phdump.read_header_floats<Tscal>("massoftype")[0];
+                Tscal hfact = phdump.read_header_float<Tscal>("hfact");
+                Tscal inv_m_hfact3 = 1 / (pmass * hfact * hfact * hfact);
+
+                for (u64 i = 0; i < h.size(); i++) {
+                    // dead particles (h < 0) are not inserted
+                    Tscal inv_rho = (h[i] > 0) ? h[i] * h[i] * h[i] * inv_m_hfact3 : 0;
+                    Brhox[i] *= inv_rho;
+                    Brhoy[i] *= inv_rho;
+                    Brhoz[i] *= inv_rho;
+                }
+
+                if (shamcomm::world_rank() == 0) {
+                    logger::info_ln("Model", "phantom dump has B, converted to B/rho");
+                }
+            }
+        }
+
+        // Phantom dumps store psi, use it as psi/ch
+        if (psich.empty()) {
+            for (auto &block : phdump.blocks) {
+                block.fill_vec("psi", psich);
+            }
+        }
+
+        // same as phantom, missing cleaning field means psi/ch = 0
+        if (!Brhox.empty() && psich.empty() && solver.solver_config.has_field_psi_on_ch()
+            && shamcomm::world_rank() == 0) {
+            logger::warn_ln(
+                "Model", "phantom dump has B but no psi/ch or psi, assuming psi/ch = 0");
         }
 
         for (u32 i = 0; i < x.size(); i++) {

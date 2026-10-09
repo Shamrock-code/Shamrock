@@ -148,10 +148,12 @@ namespace shammodels::sph {
         MHDConfig<Tvec> cfg{};
 
         // Phantom only writes B fields for MHD runs (in any block), otherwise keep hydro
-        const std::string tag_Bx = shambase::format("{:16s}", "B/rhox");
-        auto has_tag             = [&](auto &arrays) {
+        // B/rho for Shamrock (or converted) dumps, B for Phantom dumps
+        const std::string tag_Brhox = shambase::format("{:16s}", "B/rhox");
+        const std::string tag_Bx    = shambase::format("{:16s}", "Bx");
+        auto has_tag                = [&](auto &arrays) {
             for (auto &arr : arrays) {
-                if (arr.tag == tag_Bx) {
+                if (arr.tag == tag_Brhox || arr.tag == tag_Bx) {
                     return true;
                 }
             }

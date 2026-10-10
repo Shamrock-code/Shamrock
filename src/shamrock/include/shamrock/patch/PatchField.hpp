@@ -29,6 +29,7 @@ namespace shamrock::patch {
         PatchField(shambase::DistributedData<T> &&field_all) : field_all(std::move(field_all)) {}
 
         T &get(u64 id) { return field_all.get(id); }
+        const T &get(u64 id) const { return field_all.get(id); }
     };
 
     template<class T>

@@ -178,7 +178,7 @@ class SerialPatchTree {
     inline shamrock::patch::PatchtreeField<T> make_patch_tree_field(
         PatchScheduler &sched,
         sycl::queue &queue,
-        shamrock::patch::PatchField<T> pfield,
+        const shamrock::patch::PatchField<T> &pfield,
         Func &&reducer) {
         __shamrock_stack_entry();
 

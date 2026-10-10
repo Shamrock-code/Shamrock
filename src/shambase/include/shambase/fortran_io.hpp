@@ -22,6 +22,7 @@
 #include "shambase/exception.hpp"
 #include <array>
 #include <fstream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -311,21 +312,47 @@ namespace shambase {
         template<class T>
         inline void read_val_array(std::vector<T> &vec, u32 val_count) {
 
-            u64 totlen = sizeof(T) * val_count;    // Total length of the array
-            i32 check  = read_fortran_4byte(data); // Read the total length
-
-            if (check != totlen) {                  // Make sure the byte count matches
-                throw_with_loc<std::runtime_error>( // Throw an exception if not
-                    "the byte count is not correct");
-            }
+            u64 totlen = sizeof(T) * u64(val_count); // Total length of the array
+            i32 check  = read_fortran_4byte(data);   // Read the total length
 
             vec.resize(val_count); // Resize the output array to the correct size
+            byte *dst = reinterpret_cast<byte *>(vec.data());
 
-            for (u32 i = 0; i < val_count; i++) { // Read each value from the buffer
-                stream_read(data, vec[i]);
+            // Records above 2^31-1 bytes written by write_val_array carry a single marker
+            // wrapped around 32 bits, accept it if it matches the expected length modulo 2^32
+            if (totlen > u64(std::numeric_limits<i32>::max()) && u32(check) == u32(totlen)) {
+                data.read(dst, totlen);
+                check_fortran_4byte(data, check); // Check the byte count again
+                return;
             }
 
-            check_fortran_4byte(data, check); // Check the byte count again
+            // gfortran splits records above 2^31-9 bytes into subrecords, a negative head
+            // marker means that another subrecord follows
+            u64 read_len = 0;
+            while (true) {
+                u64 sublen = (check < 0) ? u64(-i64(check)) : u64(check);
+                if (read_len + sublen > totlen) { // Make sure the byte count matches
+                    throw_with_loc<std::runtime_error>("the byte count is not correct");
+                }
+
+                data.read(dst + read_len, sublen);
+                read_len += sublen;
+
+                i32 tail = read_fortran_4byte(data); // Check the byte count again
+                if ((tail < 0 ? u64(-i64(tail)) : u64(tail)) != sublen) {
+                    throw shambase::make_except_with_loc<std::runtime_error>(
+                        "fortran 4 bytes invalid");
+                }
+
+                if (check >= 0) {
+                    break;
+                }
+                check = read_fortran_4byte(data);
+            }
+
+            if (read_len != totlen) {
+                throw_with_loc<std::runtime_error>("the byte count is not correct");
+            }
         }
 
         /**

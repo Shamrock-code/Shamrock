@@ -66,6 +66,10 @@ struct shammodels::sph::MHDConfig {
 
     void set(Variant v) { configMHD = v; }
 
+    void set_ideal_mhd_constrained_hyper_para(Tscal sigma_mhd, Tscal alpha_u) {
+        set(IdealMhdConstrainedHyperPara{sigma_mhd, alpha_u});
+    }
+
     inline bool do_nimhd() {
         bool is_NIMHD = bool(std::get_if<NonIdealMHD>(&configMHD));
         return is_NIMHD;

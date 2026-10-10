@@ -24,6 +24,7 @@ set(Sources
     src/modules/SolverStorage.cpp
     src/modules/BuildTrees.cpp
     src/modules/BuildGhostInterfaceIdTable.cpp
+    src/modules/FindGhostInterfaces.cpp
     src/modules/UpdateViscosity.cpp
     src/modules/DiffOperator.cpp
     src/modules/DiffOperatorDtDivv.cpp

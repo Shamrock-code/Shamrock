@@ -58,6 +58,8 @@ if(HAVE_GEOPM_HEADER AND GEOPM_LIB)
     endif()
 endif()
 
+sham_pch_reuse(shamsys)
+
 target_include_directories(
     shamsys PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
                    "$<INSTALL_INTERFACE:include>"

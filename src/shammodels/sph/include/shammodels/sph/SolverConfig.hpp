@@ -1165,6 +1165,10 @@ struct shammodels::sph::SolverConfig {
     /// @brief Whether the solver has a field for dt divB
     inline bool has_field_dtdiv_b() { return mhd_config.has_dtdiv_b_field(); }
 
+    /// @brief Whether the solver reads etaO/etaH/etaAD from per-particle fields instead of
+    /// constants
+    inline bool has_field_eta() { return mhd_config.has_field_eta(); }
+
     /// @brief Whether to store luminosity
     bool compute_luminosity = false;
     inline void use_luminosity(bool enable) { compute_luminosity = enable; }

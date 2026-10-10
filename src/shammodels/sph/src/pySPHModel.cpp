@@ -244,9 +244,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal etaAD,
                Tscal alpha_B,
                Tscal alpha_AV,
-               Tscal beta_AV) {
+               Tscal beta_AV,
+               bool eta_fields) {
                 self.set_non_ideal_mhd(
-                    {sigma_mhd, sigma_u, alpha_B, alpha_AV, beta_AV, etaO, etaH, etaAD});
+                    {sigma_mhd,
+                     sigma_u,
+                     alpha_B,
+                     alpha_AV,
+                     beta_AV,
+                     etaO,
+                     etaH,
+                     etaAD,
+                     eta_fields});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
@@ -254,9 +263,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("etaO"),
             py::arg("etaH"),
             py::arg("etaAD"),
-            py::arg("alpha_B")  = 1.0,
-            py::arg("alpha_AV") = 1.0,
-            py::arg("beta_AV")  = 1.0)
+            py::arg("alpha_B")    = 1.0,
+            py::arg("alpha_AV")   = 1.0,
+            py::arg("beta_AV")    = 1.0,
+            py::arg("eta_fields") = false)
         .def(
             "set_self_gravity_none",
             [](TConfig &self) {

@@ -251,12 +251,20 @@ class SerialPatchTree {
     sycl::buffer<u64> compute_patch_owner(
         sham::DeviceScheduler_ptr dev_sched,
         sham::DeviceBuffer<fp_prec_vec> &position_buffer,
-        u32 len);
+        u32 len,
+        u64 current_patch_id          = u64_max,
+        fp_prec_vec current_patch_min = {},
+        fp_prec_vec current_patch_max = {});
 };
 
 template<class vec>
 sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
-    sham::DeviceScheduler_ptr dev_sched, sham::DeviceBuffer<vec> &position_buffer, u32 len) {
+    sham::DeviceScheduler_ptr dev_sched,
+    sham::DeviceBuffer<vec> &position_buffer,
+    u32 len,
+    u64 current_patch_id,
+    vec current_patch_min,
+    vec current_patch_max) {
     sycl::buffer<u64> new_owned_id(len);
 
     using namespace shamrock::patch;
@@ -284,6 +292,13 @@ sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
             u32 i = (u32) item.get_id(0);
 
             auto xyz = pos[i];
+
+            // the object is still in its current patch, skip the tree traversal
+            if (current_patch_id != u64_max
+                && Patch::is_in_patch_converted(xyz, current_patch_min, current_patch_max)) {
+                new_id[i] = current_patch_id;
+                return;
+            }
 
             u64 current_node = 0;
 

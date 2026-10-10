@@ -194,31 +194,27 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, 
             u32 len = pos_data.size();
             PatchDataField<Tvec> &f
                 = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
-            sycl::buffer<Tvec> buf(vec_pos.data(), len);
-            f.override(buf, len);
+            f.override(vec_pos, len);
         }
 
         {
             u32 len = pos_data.size();
             PatchDataField<Tvec> &f
                 = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("vxyz"));
-            sycl::buffer<Tvec> buf(vec_vel.data(), len);
-            f.override(buf, len);
+            f.override(vec_vel, len);
         }
         {
             u32 len = vec_pos.size();
             PatchDataField<Tscal> &f
                 = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("hpart"));
-            sycl::buffer<Tscal> buf(vec_h.data(), len);
-            f.override(buf, len);
+            f.override(vec_h, len);
         }
 
         if (need_cs) {
             u32 len = vec_pos.size();
             PatchDataField<Tscal> &f
                 = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("soundspeed"));
-            sycl::buffer<Tscal> buf(vec_cs.data(), len);
-            f.override(buf, len);
+            f.override(vec_cs, len);
         }
     }
 

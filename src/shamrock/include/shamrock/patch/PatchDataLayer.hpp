@@ -432,8 +432,7 @@ namespace shamrock::patch {
         void override_patch_field(std::string field_name, std::vector<T> &vec) {
             u32 len              = vec.size();
             PatchDataField<T> &f = get_field<T>(pdl().get_field_idx<T>(field_name));
-            sycl::buffer<T> buf(vec.data(), len);
-            f.override(buf, len);
+            f.override(vec, len);
         }
 
         /**

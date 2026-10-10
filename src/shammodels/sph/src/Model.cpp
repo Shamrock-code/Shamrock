@@ -325,24 +325,21 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
             u32 len = vec_acc.size();
             PatchDataField<Tvec> &f
                 = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
-            sycl::buffer<Tvec> buf(vec_acc.data(), len);
-            f.override(buf, len);
+            f.override(vec_acc, len);
         }
 
         {
             u32 len = vec_acc.size();
             PatchDataField<Tscal> &f
                 = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("hpart"));
-            sycl::buffer<Tscal> buf(hpart_acc.data(), len);
-            f.override(buf, len);
+            f.override(hpart_acc, len);
         }
 
         {
             u32 len = u_acc.size();
             PatchDataField<Tscal> &f
                 = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("uint"));
-            sycl::buffer<Tscal> buf(u_acc.data(), len);
-            f.override(buf, len);
+            f.override(u_acc, len);
         }
 
         pdat.insert_elements(tmp);
@@ -421,40 +418,35 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
             u32 len = vec_acc.size();
             PatchDataField<Tvec> &f
                 = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
-            sycl::buffer<Tvec> buf(vec_acc.data(), len);
-            f.override(buf, len);
+            f.override(vec_acc, len);
         }
 
         {
             u32 len = vec_acc.size();
             PatchDataField<Tscal> &f
                 = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("hpart"));
-            sycl::buffer<Tscal> buf(hpart_acc.data(), len);
-            f.override(buf, len);
+            f.override(hpart_acc, len);
         }
 
         {
             u32 len = u_acc.size();
             PatchDataField<Tscal> &f
                 = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("uint"));
-            sycl::buffer<Tscal> buf(u_acc.data(), len);
-            f.override(buf, len);
+            f.override(u_acc, len);
         }
 
         {
             u32 len = vec_acc.size();
             PatchDataField<Tvec> &f
                 = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("B/rho"));
-            sycl::buffer<Tvec> buf(B_on_rho_acc.data(), len);
-            f.override(buf, len);
+            f.override(B_on_rho_acc, len);
         }
 
         {
             u32 len = vec_acc.size();
             PatchDataField<Tscal> &f
                 = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("psi/ch"));
-            sycl::buffer<Tscal> buf(psi_on_ch_acc.data(), len);
-            f.override(buf, len);
+            f.override(psi_on_ch_acc, len);
         }
 
         pdat.insert_elements(tmp);
@@ -1010,40 +1002,35 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
                     u32 len = vec_pos.size();
                     PatchDataField<Tvec> &f
                         = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
-                    sycl::buffer<Tvec> buf(vec_pos.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_pos, len);
                 }
 
                 {
                     u32 len = vec_pos.size();
                     PatchDataField<Tscal> &f
                         = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("hpart"));
-                    sycl::buffer<Tscal> buf(vec_h.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_h, len);
                 }
 
                 {
                     u32 len = vec_pos.size();
                     PatchDataField<Tscal> &f
                         = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("uint"));
-                    sycl::buffer<Tscal> buf(vec_u.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_u, len);
                 }
 
                 if (solver.solver_config.is_eos_locally_isothermal()) {
                     u32 len = vec_pos.size();
                     PatchDataField<Tscal> &f
                         = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("soundspeed"));
-                    sycl::buffer<Tscal> buf(vec_cs.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_cs, len);
                 }
 
                 {
                     u32 len = vec_pos.size();
                     PatchDataField<Tvec> &f
                         = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("vxyz"));
-                    sycl::buffer<Tvec> buf(vec_vel.data(), len);
-                    f.override(buf, len);
+                    f.override(vec_vel, len);
                 }
 
                 pdat.insert_elements(tmp);
@@ -1170,8 +1157,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
                 u32 len = vec_acc.size();
                 PatchDataField<Tvec> &f
                     = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
-                sycl::buffer<Tvec> buf(vec_acc.data(), len);
-                f.override(buf, len);
+                f.override(vec_acc, len);
             }
 
             {

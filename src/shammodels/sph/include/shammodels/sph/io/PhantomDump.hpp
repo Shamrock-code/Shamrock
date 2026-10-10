@@ -49,9 +49,12 @@ namespace shammodels::sph {
          * @brief Reads the header from a Phantom dump file.
          *
          * @param phfile the file to read from
+         * @param single_prec if true, the values are stored in the file as 32-bit floats
+         * (phantom small dumps) and are converted to T
          * @return the header
          */
-        static PhantomDumpTableHeader<T> from_file(shambase::FortranIOFile &phfile);
+        static PhantomDumpTableHeader<T> from_file(
+            shambase::FortranIOFile &phfile, bool single_prec = false);
 
         /**
          * @brief Adds an entry to the header.
@@ -68,8 +71,10 @@ namespace shammodels::sph {
          * @brief Writes the header to a Phantom dump file.
          *
          * @param phfile the file to write to
+         * @param single_prec if true, the values are written as 32-bit floats (phantom small
+         * dumps)
          */
-        void write(shambase::FortranIOFile &phfile);
+        void write(shambase::FortranIOFile &phfile, bool single_prec = false);
 
         /**
          * @brief Fetches the value of a given entry from the header.
@@ -144,17 +149,22 @@ namespace shammodels::sph {
          *
          * @param phfile the file to read from
          * @param tot_count the total number of values to read
+         * @param single_prec if true, the values are stored in the file as 32-bit floats
+         * (phantom small dumps) and are converted to T
          * @return the block that was read
          */
-        static PhantomDumpBlockArray from_file(shambase::FortranIOFile &phfile, i64 tot_count);
+        static PhantomDumpBlockArray from_file(
+            shambase::FortranIOFile &phfile, i64 tot_count, bool single_prec = false);
 
         /**
          * @brief Writes a block to a file
          *
          * @param phfile the file to write to
          * @param tot_count the total number of values to write
+         * @param single_prec if true, the values are written as 32-bit floats (phantom small
+         * dumps)
          */
-        void write(shambase::FortranIOFile &phfile, i64 tot_count);
+        void write(shambase::FortranIOFile &phfile, i64 tot_count, bool single_prec = false);
 
         /**
          * @brief Fills a vector with the values of a given field name
@@ -283,10 +293,15 @@ namespace shammodels::sph {
          * @param phfile the file to read from
          * @param tot_count the total number of values to read
          * @param numarray the number of values of each type
+         * @param single_prec_real if true, the `fort_real` arrays are stored as 32-bit floats
+         * (phantom small dumps)
          * @return the block that was read
          */
         static PhantomDumpBlock from_file(
-            shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
+            shambase::FortranIOFile &phfile,
+            i64 tot_count,
+            std::array<i32, 8> numarray,
+            bool single_prec_real = false);
 
         /**
          * @brief Writes a block to a file
@@ -294,8 +309,14 @@ namespace shammodels::sph {
          * @param phfile the file to write to
          * @param tot_count the total number of values to write
          * @param numarray the number of values of each type
+         * @param single_prec_real if true, the `fort_real` arrays are written as 32-bit floats
+         * (phantom small dumps)
          */
-        void write(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
+        void write(
+            shambase::FortranIOFile &phfile,
+            i64 tot_count,
+            std::array<i32, 8> numarray,
+            bool single_prec_real = false);
 
         /**
          * @brief Fills a vector with the values of a given field name
@@ -363,6 +384,18 @@ namespace shammodels::sph {
         fort_real r1;
         /// Magic number used in the phantom dump format.
         std::string fileid;
+
+        /**
+         * @brief True if the default phantom `real` is stored in single precision.
+         *
+         * This is the case for phantom small dumps, where `r1`, the `fort_real` header entries
+         * and the `fort_real` arrays are written as 32-bit floats. They are still held as
+         * `fort_real` in memory and written back in single precision by `gen_file`.
+         */
+        bool single_prec_real = false;
+
+        /// True if this is a phantom small dump (fileid starting with 'S')
+        inline bool is_small_dump() const { return !fileid.empty() && fileid[0] == 'S'; }
 
         /// Overrides the magic numbers used in the PhantomDump struct.
         void override_magic_number() {

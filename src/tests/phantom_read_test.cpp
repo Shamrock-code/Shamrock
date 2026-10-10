@@ -43,11 +43,11 @@ NEW_TEST(Unittest, "phantom-small-dump-read-write", 1) {
     shambase::FortranIOFile phfile           = shambase::load_fortran_file(fname_in);
     shammodels::sph::PhantomDump phdump_full = shammodels::sph::PhantomDump::from_file(phfile);
 
-    REQUIRE(!phdump_full.single_prec_real);
+    REQUIRE(!phdump_full.small_dump_mode);
 
+    // only the mode is set, gen_file must also mark the fileid as a small dump
     shammodels::sph::PhantomDump phdump_small = phdump_full;
-    phdump_small.single_prec_real             = true;
-    phdump_small.fileid[0]                    = 'S';
+    phdump_small.small_dump_mode              = true;
 
     shambase::FortranIOFile small_file  = phdump_small.gen_file();
     std::basic_string<byte> small_bytes = small_file.get_internal_buf().str();
@@ -57,7 +57,7 @@ NEW_TEST(Unittest, "phantom-small-dump-read-write", 1) {
     shammodels::sph::PhantomDump phdump_read
         = shammodels::sph::PhantomDump::from_file(small_file_in);
 
-    REQUIRE(phdump_read.single_prec_real);
+    REQUIRE(phdump_read.small_dump_mode);
     REQUIRE(phdump_read.is_small_dump());
     REQUIRE(small_file_in.finished_read());
 
@@ -78,4 +78,16 @@ NEW_TEST(Unittest, "phantom-small-dump-read-write", 1) {
 
     // writing it back must give the exact same bytes
     REQUIRE(phdump_read.gen_file().get_internal_buf().str() == small_bytes);
+
+    // switching the mode off writes a full dump again
+    shammodels::sph::PhantomDump phdump_back_full = phdump_read;
+    phdump_back_full.small_dump_mode              = false;
+    std::basic_string<byte> full_bytes = phdump_back_full.gen_file().get_internal_buf().str();
+    shambase::FortranIOFile full_file_in(
+        std::basic_stringstream<byte>(full_bytes), full_bytes.size());
+    shammodels::sph::PhantomDump phdump_full_read
+        = shammodels::sph::PhantomDump::from_file(full_file_in);
+    REQUIRE(!phdump_full_read.small_dump_mode);
+    REQUIRE(!phdump_full_read.is_small_dump());
+    REQUIRE(full_file_in.finished_read());
 }

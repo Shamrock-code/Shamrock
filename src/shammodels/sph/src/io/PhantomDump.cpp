@@ -36,63 +36,59 @@
 namespace {
 
     /**
-     * @brief Read an array of values, optionally stored as 32-bit floats in the file
+     * @brief Read an array of values stored as `Tfile` in the file, converting them to `T`
      *
-     * Phantom small dumps store the default `real` in single precision, this converts them back
-     * to the in-memory type `T`.
+     * Phantom small dumps store the default `real` as f32, this converts them back to the
+     * in-memory type.
      */
-    template<class T>
-    void read_vals(
-        shambase::FortranIOFile &phfile, std::vector<T> &vals, u32 count, bool single_prec) {
-        if (!single_prec) {
+    template<class Tfile, class T>
+    void read_vals(shambase::FortranIOFile &phfile, std::vector<T> &vals, u32 count) {
+        if constexpr (std::is_same_v<Tfile, T>) {
             phfile.read_val_array(vals, count);
-            return;
-        }
-        if constexpr (std::is_floating_point_v<T>) {
-            std::vector<f32> tmp;
+        } else {
+            static_assert(
+                std::is_floating_point_v<Tfile> && std::is_floating_point_v<T>,
+                "only floating point values can be converted on read");
+            std::vector<Tfile> tmp;
             phfile.read_val_array(tmp, count);
             vals.assign(tmp.begin(), tmp.end());
-        } else {
-            shambase::throw_with_loc<std::invalid_argument>(
-                "single precision storage is only valid for floating point values");
         }
     }
 
-    /// Write an array of values, optionally converting them to 32-bit floats (phantom small dumps)
-    template<class T>
-    void write_vals(
-        shambase::FortranIOFile &phfile, std::vector<T> &vals, u32 count, bool single_prec) {
-        if (!single_prec) {
+    /// Write an array of values as `Tfile` in the file, converting them from `T`
+    template<class Tfile, class T>
+    void write_vals(shambase::FortranIOFile &phfile, std::vector<T> &vals, u32 count) {
+        if constexpr (std::is_same_v<Tfile, T>) {
             phfile.write_val_array(vals, count);
-            return;
-        }
-        if constexpr (std::is_floating_point_v<T>) {
-            std::vector<f32> tmp(vals.begin(), vals.end());
-            phfile.write_val_array(tmp, count);
         } else {
-            shambase::throw_with_loc<std::invalid_argument>(
-                "single precision storage is only valid for floating point values");
+            static_assert(
+                std::is_floating_point_v<Tfile> && std::is_floating_point_v<T>,
+                "only floating point values can be converted on write");
+            std::vector<Tfile> tmp(vals.begin(), vals.end());
+            phfile.write_val_array(tmp, count);
         }
     }
 
 } // namespace
 
 template<class T>
+template<class Tfile>
 shammodels::sph::PhantomDumpBlockArray<T> shammodels::sph::PhantomDumpBlockArray<T>::from_file(
-    shambase::FortranIOFile &phfile, i64 tot_count, bool single_prec) {
+    shambase::FortranIOFile &phfile, i64 tot_count) {
     StackEntry stack_loc{};
     PhantomDumpBlockArray tmp;
     phfile.read_fixed_string(tmp.tag, 16);
-    read_vals(phfile, tmp.vals, tot_count, single_prec);
+    read_vals<Tfile>(phfile, tmp.vals, tot_count);
     return tmp;
 }
 
 template<class T>
+template<class Tfile>
 void shammodels::sph::PhantomDumpBlockArray<T>::write(
-    shambase::FortranIOFile &phfile, i64 tot_count, bool single_prec) {
+    shambase::FortranIOFile &phfile, i64 tot_count) {
     StackEntry stack_loc{};
     phfile.write_fixed_string(tag, 16);
-    write_vals(phfile, vals, tot_count, single_prec);
+    write_vals<Tfile>(phfile, vals, tot_count);
 }
 
 template<class T>
@@ -101,8 +97,9 @@ void shammodels::sph::PhantomDumpBlockArray<T>::print_state() {
 }
 
 template<class T>
+template<class Tfile>
 shammodels::sph::PhantomDumpTableHeader<T> shammodels::sph::PhantomDumpTableHeader<T>::from_file(
-    shambase::FortranIOFile &phfile, bool single_prec) {
+    shambase::FortranIOFile &phfile) {
     StackEntry stack_loc{};
 
     shammodels::sph::PhantomDumpTableHeader<T> tmp;
@@ -119,7 +116,7 @@ shammodels::sph::PhantomDumpTableHeader<T> shammodels::sph::PhantomDumpTableHead
     phfile.read_string_array(tags, 16, nvars);
 
     std::vector<T> vals;
-    read_vals(phfile, vals, nvars, single_prec);
+    read_vals<Tfile>(phfile, vals, nvars);
 
     for (u32 i = 0; i < nvars; i++) {
         tmp.entries.push_back({tags[i], vals[i]});
@@ -129,8 +126,8 @@ shammodels::sph::PhantomDumpTableHeader<T> shammodels::sph::PhantomDumpTableHead
 }
 
 template<class T>
-void shammodels::sph::PhantomDumpTableHeader<T>::write(
-    shambase::FortranIOFile &phfile, bool single_prec) {
+template<class Tfile>
+void shammodels::sph::PhantomDumpTableHeader<T>::write(shambase::FortranIOFile &phfile) {
     StackEntry stack_loc{};
 
     int nvars = entries.size();
@@ -149,7 +146,7 @@ void shammodels::sph::PhantomDumpTableHeader<T>::write(
     }
 
     phfile.write_string_array(tags, 16, nvars);
-    write_vals(phfile, vals, nvars, single_prec);
+    write_vals<Tfile>(phfile, vals, nvars);
 }
 
 template<class T>
@@ -196,11 +193,9 @@ void shammodels::sph::PhantomDumpBlock::print_state() {
     }
 }
 
+template<class TfileReal>
 shammodels::sph::PhantomDumpBlock shammodels::sph::PhantomDumpBlock::from_file(
-    shambase::FortranIOFile &phfile,
-    i64 tot_count,
-    std::array<i32, 8> numarray,
-    bool single_prec_real) {
+    shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray) {
     PhantomDumpBlock block;
 
     block.tot_count = tot_count;
@@ -223,7 +218,7 @@ shammodels::sph::PhantomDumpBlock shammodels::sph::PhantomDumpBlock::from_file(
     }
     for (u32 j = 0; j < numarray[5]; j++) {
         block.blocks_fort_real.push_back(
-            PhantomDumpBlockArray<fort_real>::from_file(phfile, block.tot_count, single_prec_real));
+            PhantomDumpBlockArray<fort_real>::from_file<TfileReal>(phfile, block.tot_count));
     }
     for (u32 j = 0; j < numarray[6]; j++) {
         block.blocks_f32.push_back(PhantomDumpBlockArray<f32>::from_file(phfile, block.tot_count));
@@ -235,11 +230,9 @@ shammodels::sph::PhantomDumpBlock shammodels::sph::PhantomDumpBlock::from_file(
     return block;
 }
 
+template<class TfileReal>
 void shammodels::sph::PhantomDumpBlock::write(
-    shambase::FortranIOFile &phfile,
-    i64 tot_count,
-    std::array<i32, 8> numarray,
-    bool single_prec_real) {
+    shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray) {
     StackEntry stack_loc{};
 
     for (u32 j = 0; j < numarray[0]; j++) {
@@ -258,7 +251,7 @@ void shammodels::sph::PhantomDumpBlock::write(
         blocks_i64[j].write(phfile, tot_count);
     }
     for (u32 j = 0; j < numarray[5]; j++) {
-        blocks_fort_real[j].write(phfile, tot_count, single_prec_real);
+        blocks_fort_real[j].write<TfileReal>(phfile, tot_count);
     }
     for (u32 j = 0; j < numarray[6]; j++) {
         blocks_f32[j].write(phfile, tot_count);
@@ -267,6 +260,19 @@ void shammodels::sph::PhantomDumpBlock::write(
         blocks_f64[j].write(phfile, tot_count);
     }
 }
+
+/// explicit instanciation for double precision phantom reals (full dumps)
+template shammodels::sph::PhantomDumpBlock shammodels::sph::PhantomDumpBlock::from_file<f64>(
+    shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
+/// explicit instanciation for single precision phantom reals (small dumps)
+template shammodels::sph::PhantomDumpBlock shammodels::sph::PhantomDumpBlock::from_file<f32>(
+    shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
+/// explicit instanciation for double precision phantom reals (full dumps)
+template void shammodels::sph::PhantomDumpBlock::write<f64>(
+    shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
+/// explicit instanciation for single precision phantom reals (small dumps)
+template void shammodels::sph::PhantomDumpBlock::write<f32>(
+    shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
 
 u64 shammodels::sph::PhantomDumpBlock::get_ref_fort_real(std::string s) {
 
@@ -321,21 +327,33 @@ shambase::FortranIOFile shammodels::sph::PhantomDump::gen_file() {
     StackEntry stack_loc{};
 
     shambase::FortranIOFile phfile;
-    if (single_prec_real) {
+    if (small_dump_mode) {
         f32 r1_single = r1;
         phfile.write(i1, r1_single, i2, iversion, i3);
     } else {
         phfile.write(i1, r1, i2, iversion, i3);
     }
 
-    phfile.write_fixed_string(fileid, 100);
+    // phantom identifies the dump kind from the first character of the fileid ('F' full, 'S'
+    // small), keep it consistent with small_dump_mode
+    std::string fileid_out = fileid;
+    if (small_dump_mode) {
+        fileid_out[0] = 'S';
+    } else if (is_small_dump()) {
+        fileid_out[0] = 'F';
+    }
+    phfile.write_fixed_string(fileid_out, 100);
 
     table_header_fort_int.write(phfile);
     table_header_i8.write(phfile);
     table_header_i16.write(phfile);
     table_header_i32.write(phfile);
     table_header_i64.write(phfile);
-    table_header_fort_real.write(phfile, single_prec_real);
+    if (small_dump_mode) {
+        table_header_fort_real.write<f32>(phfile);
+    } else {
+        table_header_fort_real.write(phfile);
+    }
     table_header_f32.write(phfile);
     table_header_f64.write(phfile);
 
@@ -363,7 +381,11 @@ shambase::FortranIOFile shammodels::sph::PhantomDump::gen_file() {
     }
 
     for (u32 i = 0; i < nblocks; i++) {
-        blocks[i].write(phfile, block_tot_counts[i], block_numarray[i], single_prec_real);
+        if (small_dump_mode) {
+            blocks[i].write<f32>(phfile, block_tot_counts[i], block_numarray[i]);
+        } else {
+            blocks[i].write(phfile, block_tot_counts[i], block_numarray[i]);
+        }
     }
 
     return phfile;
@@ -380,12 +402,12 @@ shammodels::sph::PhantomDump shammodels::sph::PhantomDump::from_file(
     constexpr i32 len_first_line_double = 4 * sizeof(fort_int) + sizeof(f64);
     constexpr i32 len_first_line_single = 4 * sizeof(fort_int) + sizeof(f32);
 
-    i32 len_first_line = phfile.peek_record_length();
+    i32 len_first_line  = phfile.peek_record_length();
+    bool single_prec_r1 = false;
     if (len_first_line == len_first_line_double) {
-        phdump.single_prec_real = false;
         phfile.read(phdump.i1, phdump.r1, phdump.i2, phdump.iversion, phdump.i3);
     } else if (len_first_line == len_first_line_single) {
-        phdump.single_prec_real = true;
+        single_prec_r1 = true;
         f32 r1_single;
         phfile.read(phdump.i1, r1_single, phdump.i2, phdump.iversion, phdump.i3);
         phdump.r1 = r1_single;
@@ -403,6 +425,16 @@ shammodels::sph::PhantomDump shammodels::sph::PhantomDump::from_file(
     // <4 bytes>fileid<4 bytes>
     phfile.read_fixed_string(phdump.fileid, 100);
 
+    phdump.small_dump_mode = phdump.is_small_dump();
+    if (phdump.small_dump_mode != single_prec_r1) {
+        shambase::throw_with_loc<std::runtime_error>(sham::format(
+            "inconsistent phantom dump: the fileid ('{}') says {} dump, but the first record "
+            "stores reals in {} precision (single precision full dumps are not supported)",
+            phdump.fileid.substr(0, 2),
+            phdump.small_dump_mode ? "small" : "full",
+            single_prec_r1 ? "single" : "double"));
+    }
+
     // loop i=1,8
     //    <4 bytes>nvars<4 bytes>
     //    <4 bytes>tags(1:nvars)<4 bytes>
@@ -413,8 +445,11 @@ shammodels::sph::PhantomDump shammodels::sph::PhantomDump::from_file(
     phdump.table_header_i16      = PhantomDumpTableHeader<i16>::from_file(phfile);
     phdump.table_header_i32      = PhantomDumpTableHeader<i32>::from_file(phfile);
     phdump.table_header_i64      = PhantomDumpTableHeader<i64>::from_file(phfile);
-    phdump.table_header_fort_real
-        = PhantomDumpTableHeader<fort_real>::from_file(phfile, phdump.single_prec_real);
+    if (phdump.small_dump_mode) {
+        phdump.table_header_fort_real = PhantomDumpTableHeader<fort_real>::from_file<f32>(phfile);
+    } else {
+        phdump.table_header_fort_real = PhantomDumpTableHeader<fort_real>::from_file(phfile);
+    }
     phdump.table_header_f32 = PhantomDumpTableHeader<f32>::from_file(phfile);
     phdump.table_header_f64 = PhantomDumpTableHeader<f64>::from_file(phfile);
 
@@ -435,9 +470,13 @@ shammodels::sph::PhantomDump shammodels::sph::PhantomDump::from_file(
         block_numarray.push_back(counts);
     }
     for (u32 i = 0; i < nblocks; i++) {
-        phdump.blocks.push_back(
-            PhantomDumpBlock::from_file(
-                phfile, block_tot_counts[i], block_numarray[i], phdump.single_prec_real));
+        if (phdump.small_dump_mode) {
+            phdump.blocks.push_back(
+                PhantomDumpBlock::from_file<f32>(phfile, block_tot_counts[i], block_numarray[i]));
+        } else {
+            phdump.blocks.push_back(
+                PhantomDumpBlock::from_file(phfile, block_tot_counts[i], block_numarray[i]));
+        }
     }
 
     if (!phfile.finished_read()) {

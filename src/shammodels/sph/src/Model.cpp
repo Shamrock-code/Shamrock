@@ -1294,7 +1294,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
         // phantom small dumps only store positions & smoothing lengths (no velocities, internal
         // energy or AV alpha), missing fields are left to zero
         if (shamcomm::world_rank() == 0) {
-            if (phdump.is_small_dump()) {
+            if (phdump.small_dump_mode) {
                 logger::warn_ln(
                     "Model",
                     "loading a phantom small dump: only positions & smoothing lengths are "

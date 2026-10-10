@@ -44,7 +44,7 @@ ON_PYTHON_INIT {
                 return self.read_header_int<i64>(s);
             })
         .def("is_small_dump", &shammodels::sph::PhantomDump::is_small_dump)
-        .def_readonly("single_prec_real", &shammodels::sph::PhantomDump::single_prec_real)
+        .def_readwrite("small_dump_mode", &shammodels::sph::PhantomDump::small_dump_mode)
         .def("print_state", &shammodels::sph::PhantomDump::print_state);
 
     m.def("load_phantom_dump", [](std::string fname) {

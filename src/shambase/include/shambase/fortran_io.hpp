@@ -203,6 +203,21 @@ namespace shambase {
         }
 
         /**
+         * @brief Get the byte count of the next record without consuming it
+         *
+         * Useful when the content of a record depends on its length (e.g. a record written
+         * either in single or double precision).
+         *
+         * @return the byte count stored in the leading 4 bytes of the next record
+         */
+        inline i32 peek_record_length() {
+            auto pos  = data.tellg();
+            i32 check = read_fortran_4byte(data);
+            data.seekg(pos);
+            return check;
+        }
+
+        /**
          * @brief Read a fixed-length string from the buffer
          *
          * This function reads a fixed-length string from the buffer using the

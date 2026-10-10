@@ -1290,6 +1290,24 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
         for (u32 i = 0; i < vx.size(); i++) {
             vxyz.push_back({vx[i], vy[i], vz[i]});
         }
+
+        // phantom small dumps only store positions & smoothing lengths (no velocities, internal
+        // energy or AV alpha), missing fields are left to zero
+        if (shamcomm::world_rank() == 0) {
+            if (phdump.is_small_dump()) {
+                logger::warn_ln(
+                    "Model",
+                    "loading a phantom small dump: only positions & smoothing lengths are "
+                    "available, missing fields (velocity, internal energy, AV alpha, ...) are set "
+                    "to zero");
+            } else if (vxyz.size() != xyz.size()) {
+                logger::warn_ln(
+                    "Model", "the phantom dump does not contain velocities, they are set to zero");
+            }
+        }
+        if (vxyz.size() != xyz.size()) {
+            vxyz.assign(xyz.size(), Tvec{0, 0, 0});
+        }
     }
 
     // Load time infos
@@ -1416,6 +1434,19 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
             sink_block.fill_vec("vz", vzsink);
             sink_block.fill_vec("m", mass);
             sink_block.fill_vec("h", Racc);
+
+            // phantom small dumps do not store the sinks velocities
+            if (vxsink.size() != xsink.size()) {
+                if (xsink.size() > 0 && shamcomm::world_rank() == 0) {
+                    logger::warn_ln(
+                        "Model",
+                        "the phantom dump does not contain sink velocities (small dump ?), they "
+                        "will be set to zero");
+                }
+                vxsink.assign(xsink.size(), 0);
+                vysink.assign(xsink.size(), 0);
+                vzsink.assign(xsink.size(), 0);
+            }
 
             for (u32 i = 0; i < xsink.size(); i++) {
                 add_sink(

@@ -52,7 +52,12 @@ namespace sham::gui {
     inline constexpr double TOP_H = 52.0, STATUS_H = 28.0, PANE_HDR = 36.0;
 
     /// Size settings and colour table of the dark theme (ImGui's own widgets: dock tabs,
-    /// dividers, drop overlay, scrollbars).
+    /// dividers, drop overlay, scrollbars). Keeps a copy of the unscaled style for apply_scale().
     void setup_style();
+
+    /// Scale ImGui's own widgets (dock tabs, dividers, drop overlay, scrollbars) and the base font
+    /// size by s, starting from the unscaled style of setup_style(). Called before
+    /// ImGui::NewFrame(), which reads the base font size.
+    void apply_scale(double s);
 
 } // namespace sham::gui

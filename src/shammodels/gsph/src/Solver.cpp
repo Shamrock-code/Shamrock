@@ -778,16 +778,15 @@ void shammodels::gsph::Solver<Tvec, Kern>::gsph_prestep(Tscal time_val, Tscal dt
             std::string add_info = "";
             u64 cnt_unconverged  = 0;
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-                auto res
-                    = _epsilon_h.get_field(p.id_patch).get_ids_buf_where([](auto access, u32 id) {
+                sham::DeviceBuffer<u32> idx_err
+                    = _epsilon_h.get_field(p.id_patch).get_ids_where([](auto access, u32 id) {
                           return access[id] == -1;
                       });
 
                 if (hstep_cnt == hstep_max - 1) {
-                    if (std::get<0>(res)) {
+                    if (idx_err.get_size() > 0) {
                         add_info += "\n    patch " + std::to_string(p.id_patch) + " ";
                         add_info += "errored parts : \n";
-                        sycl::buffer<u32> &idx_err = *std::get<0>(res);
 
                         sham::DeviceBuffer<Tvec> &xyz    = pdat.get_field_buf_ref<Tvec>(0);
                         sham::DeviceBuffer<Tscal> &hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
@@ -795,17 +794,14 @@ void shammodels::gsph::Solver<Tvec, Kern>::gsph_prestep(Tscal time_val, Tscal dt
                         auto pos = xyz.copy_to_stdvec();
                         auto h   = hpart.copy_to_stdvec();
 
-                        {
-                            sycl::host_accessor acc{idx_err};
-                            for (u32 i = 0; i < idx_err.size(); i++) {
-                                add_info += sham::format(
-                                    "{} - pos : {}, hpart : {}\n", acc[i], pos[acc[i]], h[acc[i]]);
-                            }
+                        for (u32 i : idx_err.copy_to_stdvec()) {
+                            add_info
+                                += sham::format("{} - pos : {}, hpart : {}\n", i, pos[i], h[i]);
                         }
                     }
                 }
 
-                cnt_unconverged += std::get<1>(res);
+                cnt_unconverged += idx_err.get_size();
             });
 
             u64 global_cnt_unconverged = shamalgs::collective::allreduce_sum(cnt_unconverged);

@@ -11,6 +11,33 @@ concurrency:
 
 jobs:
 
+  # If the PR head commit message contains `[skip-ci]`, skip main_workflow
+  # (and the metrics/wait jobs that depend on it). The gates `all` and
+  # `all_light` still run and report success in that case.
+  check_skip_ci:
+    name: Check [skip-ci]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Read head commit message
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          msg="$(gh api "repos/$GH_REPO/commits/$HEAD_SHA" --jq .commit.message)"
+          if grep -qF '[skip-ci]' <<<"$msg"; then
+            echo "Head commit $HEAD_SHA contains [skip-ci]; skipping CI."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
   # Full CI runs when the `full-ci` label is set, or on Mergify merge-queue
   # branches (`mergify/merge-queue/*`) or any branch containing `merge-queue`.
   # Every other PR uses light CI.
@@ -18,6 +45,8 @@ jobs:
   # mode (it is already part of full CI).
   main_workflow:
     name: CI
+    needs: [check_skip_ci]
+    if: ${{ needs.check_skip_ci.outputs.skip == 'false' }}
     uses: ./.github/workflows/main_workflow.yml
     with:
       run_build_push_docker: true
@@ -27,8 +56,8 @@ jobs:
 
   collect_metrics:
     name: Collect metrics
-    needs: [main_workflow]
-    if: ${{ always() && !cancelled() }}
+    needs: [check_skip_ci, main_workflow]
+    if: ${{ always() && !cancelled() && needs.check_skip_ci.outputs.skip != 'true' }}
     uses: ./.github/workflows/collect_metrics.yml
 
   upload_metrics_history:
@@ -63,8 +92,8 @@ jobs:
   # after 1 hour.
   wait_for_push_schedule:
     name: Wait for push/schedule jobs
-    needs: [ main_workflow, upload_metrics_history ]
-    if: ${{ always() && !cancelled() && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/') || contains(github.head_ref, 'merge-queue')) }}
+    needs: [ check_skip_ci, main_workflow, upload_metrics_history ]
+    if: ${{ always() && !cancelled() && needs.check_skip_ci.outputs.skip != 'true' && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/') || contains(github.head_ref, 'merge-queue')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 70
     permissions:
@@ -125,6 +154,8 @@ jobs:
   # Mergify merge gate (merge_conditions: check-success = all). Runs only when
   # full CI ran (`full-ci` label or Mergify merge-queue branch). Other PRs use
   # all_light for queue entry instead.
+  # If check_skip_ci found `[skip-ci]` in the head commit, both gates report
+  # success without checking the (skipped) CI jobs.
   #
   # needs.main_workflow.result / needs.upload_metrics_history.result can be:
   #   - success   : reusable workflow completed without failure
@@ -136,13 +167,21 @@ jobs:
   #                 still finishing (e.g. Mergify CI auto-retry). Treat as
   #                 non-success — do not whitelist only failure/cancelled.
   all:
-    needs: [ main_workflow, upload_metrics_history, wait_for_push_schedule ]
+    needs: [ check_skip_ci, main_workflow, upload_metrics_history, wait_for_push_schedule ]
     # run always except for cancel, and only when full CI ran
     if: ${{ always() && !cancelled() && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/') || contains(github.head_ref, 'merge-queue')) }}
     runs-on: ubuntu-latest
     steps:
     - name: Status summary
       run: |
+        if [ "${{ needs.check_skip_ci.result }}" != "success" ]; then
+          echo "[skip-ci] check did not succeed (result: ${{ needs.check_skip_ci.result }})."
+          exit 1
+        fi
+        if [ "${{ needs.check_skip_ci.outputs.skip }}" == "true" ]; then
+          echo "CI skipped: head commit contains [skip-ci]."
+          exit 0
+        fi
         if [ "${{ needs.main_workflow.result }}" != "success" ]; then
           echo "CI did not succeed (result: ${{ needs.main_workflow.result }})."
           exit 1
@@ -156,13 +195,21 @@ jobs:
   # Runs for both light and full CI.
   # Same gate logic as all; see comment above for needs.*.result states.
   all_light:
-    needs: [ main_workflow, upload_metrics_history ]
+    needs: [ check_skip_ci, main_workflow, upload_metrics_history ]
     # run always except for cancel
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     steps:
     - name: Status summary
       run: |
+        if [ "${{ needs.check_skip_ci.result }}" != "success" ]; then
+          echo "[skip-ci] check did not succeed (result: ${{ needs.check_skip_ci.result }})."
+          exit 1
+        fi
+        if [ "${{ needs.check_skip_ci.outputs.skip }}" == "true" ]; then
+          echo "CI skipped: head commit contains [skip-ci]."
+          exit 0
+        fi
         if [ "${{ needs.main_workflow.result }}" != "success" ]; then
           echo "CI did not succeed (result: ${{ needs.main_workflow.result }})."
           exit 1

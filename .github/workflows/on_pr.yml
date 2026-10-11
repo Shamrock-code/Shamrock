@@ -12,7 +12,8 @@ concurrency:
 jobs:
 
   # Full CI runs when the `full-ci` label is set, or on Mergify merge-queue
-  # branches (e.g. mergify/merge-queue/7da018d0ff). Every other PR uses light CI.
+  # branches (`mergify/merge-queue/*`) or any branch containing `merge-queue`.
+  # Every other PR uses light CI.
   # The `profile-build` label runs the compile-time build profile job in either
   # mode (it is already part of full CI).
   main_workflow:
@@ -20,9 +21,9 @@ jobs:
     uses: ./.github/workflows/main_workflow.yml
     with:
       run_build_push_docker: true
-      light_ci: ${{ !(contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
+      light_ci: ${{ !(contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/') || contains(github.head_ref, 'merge-queue')) }}
       run_build_profile: ${{ contains(github.event.pull_request.labels.*.name, 'profile-build') }}
-      is_merge_queue: ${{ startsWith(github.head_ref, 'mergify/merge-queue/') }}
+      is_merge_queue: ${{ startsWith(github.head_ref, 'mergify/merge-queue/') || contains(github.head_ref, 'merge-queue') }}
 
   collect_metrics:
     name: Collect metrics
@@ -39,7 +40,7 @@ jobs:
 
   light_ci:
     name: Notify Light CI
-    if: ${{ !(contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
+    if: ${{ !(contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/') || contains(github.head_ref, 'merge-queue')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Echo message
@@ -48,7 +49,7 @@ jobs:
 
 
           Light CI is enabled (the default for pull requests). This will only run the basic tests and not the full tests.
-          Full CI runs if the `full-ci` label is set, or automatically on Mergify merge-queue branches (`mergify/merge-queue/*`).
+          Full CI runs if the `full-ci` label is set, or automatically on Mergify merge-queue branches (`mergify/merge-queue/*` or any branch containing `merge-queue`).
           The merge gate job "on PR / all" is skipped in this case. Queue entry uses "on PR / all_light"; full CI runs in the merge queue.
           EOF
 
@@ -63,7 +64,7 @@ jobs:
   wait_for_push_schedule:
     name: Wait for push/schedule jobs
     needs: [ main_workflow, upload_metrics_history ]
-    if: ${{ always() && !cancelled() && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
+    if: ${{ always() && !cancelled() && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/') || contains(github.head_ref, 'merge-queue')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 70
     permissions:
@@ -137,7 +138,7 @@ jobs:
   all:
     needs: [ main_workflow, upload_metrics_history, wait_for_push_schedule ]
     # run always except for cancel, and only when full CI ran
-    if: ${{ always() && !cancelled() && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
+    if: ${{ always() && !cancelled() && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/') || contains(github.head_ref, 'merge-queue')) }}
     runs-on: ubuntu-latest
     steps:
     - name: Status summary

@@ -4,7 +4,7 @@ import argparse
 import json
 import re
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 
 BUILD_PROFILE_SUMMARY_RE = re.compile(
@@ -37,12 +37,12 @@ DATETIME_FORMATS = (
 def to_iso8601(datetime_str):
     for fmt in DATETIME_FORMATS:
         try:
-            dt = datetime.strptime(datetime_str, fmt)  # noqa: DTZ007
+            dt = datetime.strptime(datetime_str, fmt)
         except ValueError:
             continue
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     raise ValueError(f"unrecognized datetime format: {datetime_str!r}")
 
 

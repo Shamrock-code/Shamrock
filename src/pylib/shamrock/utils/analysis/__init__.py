@@ -14,6 +14,7 @@ from .VelocityPlots import (
     ColumnAverageVzPlot,
     SliceAngularMomentumTransportCoefficientPlot,
     ColumnAverageAngularMomentumTransportCoefficientPlot,
+    SliceVrPlot,
 )
 
 from .BfieldPlots import (

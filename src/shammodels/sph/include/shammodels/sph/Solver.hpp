@@ -331,6 +331,10 @@ namespace shammodels::sph {
         /// @brief Updates the magnetic current field (for NIMHD)
         void update_j();
 
+        /// @brief Recomputes the per-particle NIMHD resistivities from the local state
+        /// (semi-constant prescription, see MHDConfig::NonIdealMHD::eta_semi_constant)
+        void update_eta_semi_constant();
+
         /// @brief Initializes data layout for ghost particle fields
         void init_ghost_layout();
 

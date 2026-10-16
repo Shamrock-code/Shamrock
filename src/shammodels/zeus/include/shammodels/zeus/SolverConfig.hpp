@@ -20,10 +20,7 @@
 #include "shambase/string.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
-#include "shammodels/zeus/modules/SolverStorage.hpp"
-#include "shamrock/scheduler/PatchScheduler.hpp"
-#include "shamrock/scheduler/SerialPatchTree.hpp"
-#include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/scheduler/PatchSchedulerConfig.hpp"
 
 namespace shammodels::zeus {
 

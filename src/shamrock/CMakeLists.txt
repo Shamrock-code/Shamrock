@@ -83,6 +83,8 @@ target_link_libraries(shamlib PUBLIC shambindings)
 target_link_libraries(shamlib PUBLIC shamtree)
 target_link_libraries(shamlib PUBLIC nlohmann_json::nlohmann_json)
 
+sham_pch_reuse(shamlib)
+
 target_include_directories(
     shamlib PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
                    "$<INSTALL_INTERFACE:include>"

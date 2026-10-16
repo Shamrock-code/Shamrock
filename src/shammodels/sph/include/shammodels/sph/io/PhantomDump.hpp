@@ -48,9 +48,12 @@ namespace shammodels::sph {
         /**
          * @brief Reads the header from a Phantom dump file.
          *
+         * @tparam Tfile type of the values as stored in the file, converted to T on read
+         * (e.g. f32 for the phantom default real in small dumps)
          * @param phfile the file to read from
          * @return the header
          */
+        template<class Tfile = T>
         static PhantomDumpTableHeader<T> from_file(shambase::FortranIOFile &phfile);
 
         /**
@@ -67,8 +70,10 @@ namespace shammodels::sph {
         /**
          * @brief Writes the header to a Phantom dump file.
          *
+         * @tparam Tfile type of the values as stored in the file, converted from T on write
          * @param phfile the file to write to
          */
+        template<class Tfile = T>
         void write(shambase::FortranIOFile &phfile);
 
         /**
@@ -143,17 +148,23 @@ namespace shammodels::sph {
          * @brief Reads a block from a file
          *
          * @param phfile the file to read from
+         * @tparam Tfile type of the values as stored in the file, converted to T on read
+         * @param phfile the file to read from
          * @param tot_count the total number of values to read
          * @return the block that was read
          */
+        template<class Tfile = T>
         static PhantomDumpBlockArray from_file(shambase::FortranIOFile &phfile, i64 tot_count);
 
         /**
          * @brief Writes a block to a file
          *
          * @param phfile the file to write to
+         * @tparam Tfile type of the values as stored in the file, converted from T on write
+         * @param phfile the file to write to
          * @param tot_count the total number of values to write
          */
+        template<class Tfile = T>
         void write(shambase::FortranIOFile &phfile, i64 tot_count);
 
         /**
@@ -280,11 +291,14 @@ namespace shammodels::sph {
         /**
          * @brief Reads a block from a file
          *
+         * @tparam TfileReal type of the `fort_real` arrays as stored in the file (f32 in phantom
+         * small dumps)
          * @param phfile the file to read from
          * @param tot_count the total number of values to read
          * @param numarray the number of values of each type
          * @return the block that was read
          */
+        template<class TfileReal = fort_real>
         static PhantomDumpBlock from_file(
             shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
 
@@ -294,7 +308,10 @@ namespace shammodels::sph {
          * @param phfile the file to write to
          * @param tot_count the total number of values to write
          * @param numarray the number of values of each type
+         * @tparam TfileReal type of the `fort_real` arrays as stored in the file (f32 in phantom
+         * small dumps)
          */
+        template<class TfileReal = fort_real>
         void write(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
 
         /**
@@ -363,6 +380,22 @@ namespace shammodels::sph {
         fort_real r1;
         /// Magic number used in the phantom dump format.
         std::string fileid;
+
+        /**
+         * @brief True if the dump is (or is to be written as) a phantom small dump.
+         *
+         * In small dumps, the default phantom `real` (`r1`, the `fort_real` header entries and the
+         * `fort_real` arrays) is stored as 32-bit floats. It is still held as `fort_real` in
+         * memory.
+         *
+         * Set by `from_file` from `is_small_dump()`, and read by `gen_file`, which writes the
+         * dump in the matching format (including the first character of `fileid`). Set it before
+         * calling `gen_file` to choose the format on write.
+         */
+        bool small_dump_mode = false;
+
+        /// True if `fileid` marks a phantom small dump (first character 'S', as in phantom)
+        inline bool is_small_dump() const { return !fileid.empty() && fileid[0] == 'S'; }
 
         /// Overrides the magic numbers used in the PhantomDump struct.
         void override_magic_number() {

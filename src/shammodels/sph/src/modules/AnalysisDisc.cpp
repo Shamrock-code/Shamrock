@@ -245,7 +245,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
                 Tscal *__restrict buf_zmean) {
                 using namespace shamrock::sph;
                 Tvec pos      = xyz[i];
-                Tscal radiusi = radius[i];
+                Tscal radiusi = radius[i + start_write];
                 u32 bini      = mybin(radiusi, bin_edges, Nbin);
 
                 // zdash
@@ -293,8 +293,8 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
                 Tscal radius = sycl::sqrt(pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
                 u32 bini     = mybin(radius, bin_edges, Nbin);
 
-                buf_H[i + start_write]
-                    = (buf_zmean[i] - binned_zmean[bini]) * (buf_zmean[i] - binned_zmean[bini]);
+                Tscal dz               = buf_zmean[i + start_write] - binned_zmean[bini];
+                buf_H[i + start_write] = dz * dz;
             });
 
         j++;

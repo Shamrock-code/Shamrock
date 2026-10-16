@@ -17,6 +17,7 @@ set(Sources
     src/logs.cpp
     src/wrapper.cpp
     src/local_rank.cpp
+    src/timeout_detect.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

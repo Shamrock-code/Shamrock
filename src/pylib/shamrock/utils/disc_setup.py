@@ -1,217 +1,976 @@
 """
-Standard SPH disc setup helpers.
+Production run: Circular disc & central sink particle
+=====================================================
+
+This example demonstrates how to run a smoothed particle hydrodynamics (SPH)
+simulation of a circular disc orbiting around a central sink.
+
+The simulation models:
+
+- A central star with a given mass and accretion radius
+- A gaseous disc with specified mass, inner/outer radii, and vertical structure
+- Artificial viscosity for angular momentum transport
+- Locally isothermal equation of state
+
+Also this simulation feature rolling dumps (see `purge_old_dumps` function) to save disk space.
+
+This example is the accumulation of 3 files in a single one to showcase the complete workflow.
+
+- The actual run script (runscript.py)
+- Plot generation (make_plots.py)
+- Animation from the plots (plot_to_gif.py)
+
+On a cluster or laptop, one can run the code as follows:
+
+.. code-block:: bash
+
+    mpirun <your parameters> ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript runscript.py
+
+
+then after the run is done (or while it is running), one can run the following to generate the plots:
+
+.. code-block:: bash
+
+    python make_plots.py
+
+
 """
 
-# pylint: disable=invalid-name
+# %%
+# Runscript (runscript.py)
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# The runscript is the actual simulation with on the fly analysis & rolling dumps
 
-from dataclasses import dataclass
-from typing import Any, Literal
+import glob
+import json
+import os  # for makedirs
+
+import numpy as np
+from shamrock.utils.numba_helper import maybe_njit
+from shamrock.utils.SimulationRunner import SimulationRunner, callback, simulation_setup
 
 import shamrock
-from shamrock.utils.numba_helper import maybe_njit
 
-RotationMode = Literal["keplerian", "subkeplerian", "subkeplerian_3d"]
-_VALID_ROTATIONS = ("keplerian", "subkeplerian", "subkeplerian_3d")
+# If we use the shamrock executable to run this script instead of the python interpreter,
+# we should not initialize the system as the shamrock executable needs to handle specific MPI logic
+if not shamrock.sys.is_initialized():
+    shamrock.change_loglevel(1)
+    shamrock.sys.init("0:0")
 
-
-@dataclass
-class DiscProfiles:
-    """
-    Helper class to store the profiles of the disc.
-    """
-
-    sigma: Any
-    H: Any
-    vtheta_kepler: Any
-    omega_k: Any
-    cs: Any
-    vtheta: Any = None
-    velocity: Any = None
-    cs_field: Any = None
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
 
 
-@dataclass
-class StandardDisc:
-    """
-    Locally isothermal LP07 disc profiles and Monte Carlo generator helper.
+# %%
+# Setup units
 
-    All radii and masses are expressed in the provided code unit system.
-    """
+si = shamrock.UnitSystem()
+sicte = shamrock.Constants(si)
+codeu = shamrock.UnitSystem(
+    unit_time=sicte.year(),
+    unit_length=sicte.au(),
+    unit_mass=sicte.sol_mass(),
+)
 
-    units: shamrock.UnitSystem
-    center_mass: float
-    disc_mass: float
-    rin: float
-    rout: float
-    H_r_0: float = 0.05
-    q: float = 0.5
-    p: float = 1.5
-    r0: float = 1.0
-    H_factor: float = 1.0
-    rotation: RotationMode = "subkeplerian"
-    inner_tapering: bool = False
-    outer_tapering: bool = False
+# %%
+# List parameters
 
-    def __post_init__(self) -> None:
-        if self.rin >= self.rout:
-            raise ValueError("rin must be smaller than rout")
-        if self.center_mass <= 0:
-            raise ValueError("center_mass must be positive")
-        if self.disc_mass <= 0:
-            raise ValueError("disc_mass must be positive")
-        if self.rotation not in _VALID_ROTATIONS:
-            raise ValueError(f"rotation must be one of {_VALID_ROTATIONS}, got {self.rotation!r}")
+# Resolution
+Npart = 100000
 
-    def _G(self) -> float:
-        return shamrock.Constants(self.units).G()
+# Domain decomposition parameters
+scheduler_split_val = int(5.0e5)  # split patches with more than 1e7 particles
+scheduler_merge_val = scheduler_split_val // 16
 
-    def _get_sigma(self) -> Any:
-        if self.outer_tapering:
-            raise NotImplementedError("outer_tapering is not implemented yet")
+dt_stop = 5  # Interval between analysis
+t_end = 20 * dt_stop  # So 30 analysis here
 
-        rin = self.rin
-        r0 = self.r0
-        p = self.p
-        inner_tapering = self.inner_tapering
+# Sink parameters
+center_mass = 1.0
+center_racc = 0.05
 
-        def sigma(r: float) -> float:
-            sigma_0 = 1.0
-            if inner_tapering:
-                sigma_0 *= 1 - (rin / r) ** 0.5
-            return sigma_0 * (r / r0) ** (-p)
+# Disc parameters
+disc = shamrock.utils.disc_setup.StandardDisc(
+    units=codeu,
+    center_mass=center_mass,
+    disc_mass=0.0001,  # sol mass
+    rin=0.32,  # au
+    rout=3.125,  # au
+    H_r_0=0.05,
+    q=0.0001,
+    p=3.0 / 2.0,
+    r0=1.0,
+    rotation="subkeplerian_3d",
+    inner_tapering=True,
+)
 
-        return maybe_njit(sigma)
+# Viscosity parameter
+alpha_AV = 1.0e-3 / 0.08
+alpha_u = 1.0
+beta_AV = 2.0
 
-    def _get_vtheta_kepler(self) -> Any:
-        G = self._G()
-        center_mass = self.center_mass
+# Integrator parameters
+C_cour = 0.3
+C_force = 0.25
 
-        def vtheta_kepler(r: float) -> float:
-            return (G * center_mass / r) ** 0.5
+sim_folder = f"_to_trash/oct_20_eos_100k_no_offset_vel_inner_tapering_long/"
 
-        return maybe_njit(vtheta_kepler)
+dump_folder = sim_folder + "dump/"
+analysis_folder = sim_folder + "analysis/"
+plot_folder = analysis_folder + "plots/"
+dump_prefix = dump_folder + "dump_"
 
-    def _get_omega_k(self, vtheta_kepler: Any) -> Any:
-        def omega_k(r: float) -> float:
-            return vtheta_kepler(r) / r
 
-        return maybe_njit(omega_k)
+bsize = disc.rout * 2
+bmin = (-bsize, -bsize, -bsize)
+bmax = (bsize, bsize, bsize)
 
-    def _get_cs(self, vtheta_kepler: Any) -> Any:
-        H_r_0 = self.H_r_0
-        q = self.q
-        r0 = self.r0
-        cs_in = H_r_0 * vtheta_kepler(r0)  # == (H_r_0 * r0) * omega_k(r0)
+profiles = disc.get_profiles()
 
-        def cs(r: float) -> float:
-            return ((r / r0) ** (-q)) * cs_in
+# %%
+# Create the dump directory if it does not exist
+if shamrock.sys.world_rank() == 0:
+    os.makedirs(sim_folder, exist_ok=True)
+    os.makedirs(dump_folder, exist_ok=True)
+    os.makedirs(analysis_folder, exist_ok=True)
+    os.makedirs(plot_folder, exist_ok=True)
 
-        return maybe_njit(cs)
+# %%
+# Start the context
+# The context holds the data of the code
+# We then init the layout of the field (e.g. the list of fields used by the solver)
 
-    def _get_H(self, cs: Any, omega_k: Any) -> Any:
-        H_factor = self.H_factor
+ctx = shamrock.Context()
+ctx.pdata_layout_new()
 
-        def H(r: float) -> float:
-            return H_factor * cs(r) / omega_k(r)
+# %%
+# Attach a SPH model to the context
 
-        return maybe_njit(H)
+model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
 
-    def _get_vtheta_subkeplerian(self, vtheta_kepler: Any, cs: Any) -> Any:
-        p, q = self.p, self.q
+# %%
+# Declare the simulation class
 
-        def vtheta(r: float) -> float:
-            return ((vtheta_kepler(r) ** 2) - (2 * p + q) * cs(r) ** 2) ** 0.5
 
-        return maybe_njit(vtheta)
+class Simulation(SimulationRunner):
+    # Use the global vars defined at the top of the file
+    t_end = t_end
+    dump_prefix = dump_prefix
 
-    def _get_velocity_vertical(self, vtheta_kepler: Any, cs: Any) -> Any:
-        p, q = self.p, self.q
+    # If there are multiple callbacks at the same time, they will be run in the declaration order
 
-        def vtheta_rz(r: float, z: float) -> float:
-            gm_r = vtheta_kepler(r) ** 2
-            term2 = -(p + q + 3.0 / 2.0) * cs(r) ** 2
-            r2z2_sqrt = (r**2 + z**2) ** 0.5
-            term3 = -gm_r * r * (2 * q) * (1 / r - 1 / r2z2_sqrt)
-            return (gm_r + term2 + term3) ** 0.5
+    @callback(tsim_interval=dt_stop)  # Do the analysis every dt_stop
+    def analysis_plots(self, ianalysis):
+        # Run all the analysis modules (declared below)
+        for a in self.analysis_modules:
+            a.analysis_save(ianalysis + 1)
 
-        vtheta_rz = maybe_njit(vtheta_rz)
+    def get_vtk_dump_name(self, idump):
+        return self.dump_prefix + f"{idump:07}" + ".vtk"
 
-        def velocity(pos):
-            x, y, z = pos[0], pos[1], pos[2]
-            r = (x**2 + y**2) ** 0.5
-            v_mag = vtheta_rz(r, z)
-            return (v_mag * (-y / r), v_mag * (x / r), 0.0)
+    @callback(tsim_interval=dt_stop * 4)  # So once every 4 analysis
+    def vtk_dump(self, idump):
+        self.model.do_vtk_dump(self.get_vtk_dump_name(idump), True)
 
-        return maybe_njit(velocity)
+    @callback(walltime_interval=30.0)  # Checkpoint the simulation every 30 seconds
+    def checkpoint(self, icheckpoint):
+        self.do_checkpoint(icheckpoint, purge_old_dumps=True, keep_first=1, keep_last=3)
 
-    def _get_rotation(self, vtheta_kepler: Any, cs: Any) -> tuple[Any, Any]:
-        if self.rotation == "keplerian":
-            return vtheta_kepler, None
-        if self.rotation == "subkeplerian":
-            return self._get_vtheta_subkeplerian(vtheta_kepler, cs), None
-        return None, self._get_velocity_vertical(vtheta_kepler, cs)
+    def setup_config(self):
 
-    def get_profiles(self) -> DiscProfiles:
-        """
-        Get the profiles of the disc.
-        """
-        sigma = self._get_sigma()
-        vtheta_kepler = self._get_vtheta_kepler()
-        omega_k = self._get_omega_k(vtheta_kepler)
-        cs = self._get_cs(vtheta_kepler)
-        H = self._get_H(cs, omega_k)
-        vtheta, velocity = self._get_rotation(vtheta_kepler, cs)
+        # Generate the default config
+        cfg = model.gen_default_config()
+        cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
+        #cfg.set_eos_isothermal(disc.cs0())
+        #cfg.set_eos_locally_isothermalLP07(cs0=disc.cs0(), q=disc.q, r0=disc.r0)
+        cfg.set_eos_locally_isothermalFA2014_extended(cs0=disc.cs0(), q=disc.q, r0=disc.r0, n_sinks=1)
+        
+        cfg.add_kill_sphere(
+            center=(0, 0, 0), radius=bsize
+        )  # kill particles outside the simulation box
 
-        return DiscProfiles(
-            sigma=sigma,
-            H=H,
-            vtheta_kepler=vtheta_kepler,
-            omega_k=omega_k,
-            cs=cs,
-            vtheta=vtheta,
-            velocity=velocity,
+        cfg.set_units(codeu)
+        cfg.set_particle_mass(disc.part_mass(Npart))
+        # Set the CFL
+        cfg.set_cfl_cour(C_cour)
+        cfg.set_cfl_force(C_force)
+        cfg.set_show_cfl_detail(True)
+
+        # Enable this to debug the neighbor counts
+        # cfg.set_show_neigh_stats(True)
+
+        # Standard way to set the smoothing length (e.g. Price et al. 2018)
+        # cfg.set_smoothing_length_density_based()
+
+        # To use the dt field analysis
+        cfg.set_save_dt_to_fields(True)
+
+        # Standard density based smoothing length but with a neighbor count limit
+        # Use it if you have large slowdowns due to giant particles
+        # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
+        cfg.set_smoothing_length_density_based_neigh_lim(500)
+
+        # Set the solver config to be the one stored in cfg
+        self.model.set_solver_config(cfg)
+
+    def setup_sph_particles(self):
+
+        setup = model.get_setup()
+        gen_disc = disc.make_generator(setup, Npart, random_seed=666)
+
+        # Print the dot graph of the setup
+        if shamrock.sys.world_rank() == 0:
+            print(gen_disc.get_dot())
+
+        # Apply the setup
+        setup.apply_setup(gen_disc)
+
+        # correct the momentum and barycenter of the disc to 0
+        analysis_momentum = shamrock.model_sph.analysisTotalMomentum(model=model)
+        total_momentum = analysis_momentum.get_total_momentum()
+
+        if shamrock.sys.world_rank() == 0:
+            print(f"disc momentum = {total_momentum}")
+
+        #model.apply_momentum_offset((-total_momentum[0], -total_momentum[1], -total_momentum[2]))
+
+        # Correct the barycenter before adding the sink
+        analysis_barycenter = shamrock.model_sph.analysisBarycenter(model=model)
+        barycenter, disc_mass = analysis_barycenter.get_barycenter()
+
+        if shamrock.sys.world_rank() == 0:
+            print(f"disc barycenter = {barycenter}")
+
+        #model.apply_position_offset((-barycenter[0], -barycenter[1], -barycenter[2]))
+
+        total_momentum = shamrock.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
+
+        if shamrock.sys.world_rank() == 0:
+            print(f"disc momentum after correction = {total_momentum}")
+
+        barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
+
+        if shamrock.sys.world_rank() == 0:
+            print(f"disc barycenter after correction = {barycenter}")
+
+        #if not np.allclose(total_momentum, 0.0):
+            #raise RuntimeError("disc momentum is not 0")
+        #if not np.allclose(barycenter, 0.0):
+            #raise RuntimeError("disc barycenter is not 0")
+
+        # now that the barycenter & momentum are 0, we can add the sink
+        model.add_sink(center_mass, (0, 0, 0), (0, 0, 0), center_racc)
+
+    @simulation_setup
+    def setup(self):
+
+        self.setup_config()
+
+        # Print the solver config
+        model.get_current_config().print_status()
+
+        # Init the scheduler & fields
+        model.init_scheduler(scheduler_split_val, scheduler_merge_val)
+
+        # Set the simulation box size
+        model.resize_simulation_box(bmin, bmax)
+
+        # Setup particles & sink
+        self.setup_sph_particles()
+
+        # Run a single step to init the integrator and smoothing length of the particles
+        # Here the htolerance is the maximum factor of evolution of the smoothing length in each
+        # Smoothing length iterations, increasing it affect the performance negatively but
+        # increase the convergence rate of the smoothing length
+        # this is why we increase it temporely to 1.3 before lowering it back to 1.1 (default value)
+        # Note that both ``change_htolerances`` can be removed and it will work the same but
+        # would converge more slowly at the first timestep
+        if shamrock.sys.world_rank() == 0: 
+            print("Saving initial analysis (before first timestep)...") 
+        for a in self.analysis_modules: 
+            a.analysis_save(0) # Dont work if more than 1000 dumps but here just for a test
+
+        model.change_htolerances(coarse=1.3, fine=1.1) 
+        model.timestep() 
+
+        model.change_htolerances(coarse=1.1, fine=1.1)
+
+        model.solver_logs_reset_cumulated_step_time()
+        model.solver_logs_reset_step_count()
+
+
+# %%
+# On the fly analysis
+
+
+from shamrock.utils.analysis import (
+    AnalysisHelper,
+    ColumnDensityPlot,
+    ColumnParticleCount,
+    PerfHistory,
+    SliceDensityPlot,
+    SliceDiffVthetaProfile,
+    SliceDtPart,
+    SliceVzPlot,
+    VerticalShearGradient,
+)
+
+perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
+
+face_on_render_kwargs = {
+    "x_unit": "au",
+    "y_unit": "au",
+    "time_unit": "year",
+    "x_label": "x",
+    "y_label": "y",
+}
+
+sink_params = {
+    "sink_scale_factor": 1,
+    "sink_color": "green",
+    "sink_linewidth": 1,
+    "sink_fill": False,
+}
+
+column_density_plot = ColumnDensityPlot(
+    model,
+    ext_r=disc.rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_integ_normal",
+)
+
+column_density_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "kg.m^-2",
+    "field_label": "$\\int \\rho \\, \\mathrm{{d}} z$",
+    "vmin": 1,
+    "vmax": 1e4,
+    "norm": "log",
+    **sink_params,
+}
+
+column_density_plot_hollywood = ColumnDensityPlot(
+    model,
+    ext_r=disc.rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_integ_hollywood",
+)
+
+column_density_plot_hollywood.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "kg.m^-2",
+    "field_label": "$\\int \\rho \\, \\mathrm{{d}} z$",
+    "vmin": 1,
+    "vmax": 1e4,
+    "norm": "log",
+    "holywood_mode": True,
+    **sink_params,
+}
+
+vertical_density_plot = SliceDensityPlot(
+    model,
+    ext_r=disc.rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_slice",
+)
+
+vertical_density_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "kg.m^-3",
+    "field_label": "$\\rho$",
+    "vmin": 1e-10,
+    "vmax": 1e-6,
+    "norm": "log",
+    **sink_params,
+}
+
+v_z_slice_plot = SliceVzPlot(
+    model,
+    ext_r=disc.rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="v_z_slice",
+    do_normalization=True,
+)
+
+v_z_slice_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "m.s^-1",
+    "field_label": "$\\mathrm{v}_z$",
+    "cmap": "seismic",
+    "cmap_bad_color": "white",
+    "vmin": -300,
+    "vmax": 300,
+    **sink_params,
+}
+
+relative_azy_velocity_slice_plot = SliceDiffVthetaProfile(
+    model,
+    ext_r=disc.rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((disc.rin + disc.rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="relative_azy_velocity_slice",
+    velocity_profile=profiles.vtheta_kepler,
+    do_normalization=True,
+    min_normalization=1e-9,
+)
+
+relative_azy_velocity_slice_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "m.s^-1",
+    "field_label": "$\\mathrm{v}_{\\theta} - v_k$",
+    "cmap": "seismic",
+    "cmap_bad_color": "white",
+    "vmin": -300,
+    "vmax": 300,
+    **sink_params,
+}
+
+
+vertical_shear_gradient_slice_plot = VerticalShearGradient(
+    model,
+    ext_r=disc.rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((disc.rin + disc.rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="vertical_shear_gradient_slice",
+    do_normalization=True,
+    min_normalization=1e-9,
+)
+
+vertical_shear_gradient_slice_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "yr^-1",
+    "field_label": "${{\\partial R \\Omega}}/{{\\partial z}}$",
+    "cmap": "seismic",
+    "cmap_bad_color": "white",
+    "vmin": -1,
+    "vmax": 1,
+    **sink_params,
+}
+
+dt_part_slice_plot = SliceDtPart(
+    model,
+    ext_r=disc.rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((disc.rin + disc.rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="dt_part_slice",
+)
+
+dt_part_slice_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "year",
+    "field_label": "$\\Delta t$",
+    "vmin": 1e-4,
+    "vmax": 1,
+    "norm": "log",
+    "contour_list": [1e-4, 1e-3, 1e-2, 1e-1, 1],
+    **sink_params,
+}
+
+
+column_particle_count_plot = ColumnParticleCount(
+    model,
+    ext_r=disc.rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="particle_count",
+)
+
+column_particle_count_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": None,
+    "field_label": "$\\int \\frac{1}{h_\\mathrm{part}} \\, \\mathrm{{d}} z$",
+    "vmin": 1,
+    "vmax": 1e2,
+    "norm": "log",
+    "contour_list": [1, 10, 100, 1000],
+    **sink_params,
+}
+
+
+profile_plot = AnalysisHelper(
+    analysis_folder=os.path.join(analysis_folder, "plots"),
+    analysis_prefix="density_profile",
+)
+
+
+class profiles_plot_analysis:
+    def analysis_save(self, ianalysis):
+
+        rho_field = model.compute_field("rho", "f64")
+        hpart_field = model.compute_field("hpart", "f64")
+
+        def internal(size: int, x: np.array, y: np.array, z: np.array) -> np.array:
+            r = np.sqrt(x**2 + y**2 + z**2)
+            return r
+
+        internal = maybe_njit(internal)
+
+        def custom_getter(size: int, dic_out: dict) -> np.array:
+            return internal(
+                size,
+                dic_out["xyz"][:, 0],
+                dic_out["xyz"][:, 1],
+                dic_out["xyz"][:, 2],
+            )
+
+        r_field = model.compute_field("custom", "f64", custom_getter)
+
+        print(rho_field, r_field)
+
+        x_min = center_racc / 2.0
+        x_max = disc.rout * 1.1
+        x_min_log = np.log10(x_min)
+        x_max_log = np.log10(x_max)
+
+        bin_edges_x1d = np.logspace(x_min_log, x_max_log, 2049)
+
+        histo = shamrock.compute_histogram(
+            bin_edges=bin_edges_x1d,
+            x_field=r_field,
+            y_field=rho_field,
+            do_average=True,
         )
 
-    def part_mass(self, npart: int) -> float:
-        """
-        Get the mass of a single particle from the total mass & number of particles.
-        """
-        return self.disc_mass / npart
+        histo_convolve = shamrock.compute_histogram_convolve_x(
+            bin_edges=bin_edges_x1d,
+            x_field=r_field,
+            y_field=rho_field,
+            size_field=hpart_field,
+            do_average=True,
+        )
 
-    def cs0(self) -> float:
-        """
-        Get the sound speed at the reference radius.
-        """
-        return self.get_profiles().cs(self.r0)
+        bin_edges_x = np.logspace(x_min_log, x_max_log, 1025)
+        bin_edges_y = np.logspace(-6, -3, 1025)
+        histo_top = shamrock.compute_histogram_2d(
+            bin_edges_x=bin_edges_x,
+            bin_edges_y=bin_edges_y,
+            x_field=r_field,
+            y_field=rho_field,
+        )
+        histo_2d = np.array(histo_top).reshape(len(bin_edges_x) - 1, len(bin_edges_y) - 1)
 
-    def make_generator(
-        self,
-        setup: Any,
-        npart: int,
-        *,
-        random_seed: int = 666,
-        init_h_factor: float = 0.8,
-    ):
-        """
-        Make a SPH generator for the disc.
-        """
-        profiles = self.get_profiles()
-        kwargs = {
-            "part_mass": self.part_mass(npart),
-            "disc_mass": self.disc_mass,
-            "r_in": self.rin,
-            "r_out": self.rout,
-            "sigma_profile": profiles.sigma,
-            "H_profile": profiles.H,
-            "random_seed": random_seed,
-            "init_h_factor": init_h_factor,
+        data = {
+            "bin_edges_x1d": bin_edges_x1d,
+            "bin_edges_x": bin_edges_x,
+            "bin_edges_y": bin_edges_y,
+            "histo": histo,
+            "histo_convolve": histo_convolve,
+            "histo_2d": histo_2d,
+            "time": model.get_time(),
         }
-        if profiles.velocity is not None:
-            kwargs["velocity_field"] = profiles.velocity
-        else:
-            kwargs["rot_profile"] = profiles.vtheta
-        if profiles.cs_field is not None:
-            kwargs["cs_field"] = profiles.cs_field
-        else:
-            kwargs["cs_profile"] = profiles.cs
-        return setup.make_generator_disc_mc(**kwargs)
+
+        profile_plot.analysis_save(ianalysis, data)
+
+
+def save_analysis_data(filename, key, value, ianalysis):
+    """Helper to save analysis data to a JSON file."""
+    if shamrock.sys.world_rank() == 0:
+        filepath = os.path.join(analysis_folder, filename)
+        try:
+            with open(filepath, "r") as fp:
+                data = json.load(fp)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {key: []}
+        data[key] = data[key][:ianalysis]
+        data[key].append({"t": model.get_time(), key: value})
+        with open(filepath, "w") as fp:
+            json.dump(data, fp, indent=4)
+
+
+class curves_analysis:
+    def analysis_save(self, ianalysis):
+        barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
+
+        total_momentum = shamrock.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
+        angular_momentum = shamrock.model_sph.analysisAngularMomentum(
+            model=model
+        ).get_angular_momentum()
+
+        potential_energy = shamrock.model_sph.analysisEnergyPotential(
+            model=model
+        ).get_potential_energy()
+
+        kinetic_energy = shamrock.model_sph.analysisEnergyKinetic(model=model).get_kinetic_energy()
+
+        save_analysis_data("barycenter.json", "barycenter", barycenter, ianalysis)
+        save_analysis_data("disc_mass.json", "disc_mass", disc_mass, ianalysis)
+        save_analysis_data("total_momentum.json", "total_momentum", total_momentum, ianalysis)
+        save_analysis_data("angular_momentum.json", "angular_momentum", angular_momentum, ianalysis)
+        save_analysis_data("potential_energy.json", "potential_energy", potential_energy, ianalysis)
+        save_analysis_data("kinetic_energy.json", "kinetic_energy", kinetic_energy, ianalysis)
+
+        sinks = model.get_sinks()
+        save_analysis_data("sinks.json", "sinks", sinks, ianalysis)
+
+
+# %%
+# Declare the simulation and add analysis modules
+
+sim = Simulation(model)
+
+sim.analysis_modules = [
+    perf_analysis,
+    column_density_plot,
+    column_density_plot_hollywood,
+    vertical_density_plot,
+    v_z_slice_plot,
+    relative_azy_velocity_slice_plot,
+    vertical_shear_gradient_slice_plot,
+    dt_part_slice_plot,
+    column_particle_count_plot,
+    profiles_plot_analysis(),
+    curves_analysis(),
+]
+
+
+# %%
+# Run the simulation
+
+sim.run()
+
+# %%
+# Plot generation
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Load the on-the-fly analysis after the run to make the plots
+# (everything in this section can be in another file)
+
+import matplotlib
+import matplotlib.pyplot as plt
+
+for analysis_module in sim.analysis_modules:
+    # if it has a render_all function, call it
+    if hasattr(analysis_module, "render_all"):
+        analysis_module.render_all(
+            **analysis_module.render_args,
+        )
+
+
+def profile_plot_func(iplot, data):
+
+    data = data.item()
+
+    bin_edges_x1d = data["bin_edges_x1d"]
+    bin_edges_x = data["bin_edges_x"]
+    bin_edges_y = data["bin_edges_y"]
+    histo = data["histo"]
+    histo_convolve = data["histo_convolve"]
+    histo_2d = data["histo_2d"]
+    time = data["time"]
+
+    bin_center = (bin_edges_x1d[:-1] + bin_edges_x1d[1:]) / 2
+
+    plt.figure(dpi=150)
+
+    plt.pcolormesh(
+        bin_edges_x, bin_edges_y, histo_2d, norm="log", cmap="Greys", vmin=1, vmax=2, shading="auto"
+    )
+
+    plt.plot(bin_center, histo)
+    plt.plot(bin_center, histo_convolve)
+    plt.xlabel("r")
+    plt.ylabel("density")
+
+    plt.xscale("log")
+    plt.yscale("log")
+
+    plt.ylim(1e-6, 1e-3)
+
+    text = f"t = {time:0.3f}"
+    from matplotlib.offsetbox import AnchoredText
+
+    anchored_text = AnchoredText(text, loc=2)
+    plt.gca().add_artist(anchored_text)
+
+    plt.savefig(profile_plot.analysis_prefix + f"{iplot:07}.png")
+    plt.close()
+
+
+profile_plot.render_all(profile_plot_func)
+
+# %%
+# Make gif for the doc (plot_to_gif.py)
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Convert PNG sequence to Image sequence in mpl
+
+# sphinx_gallery_multi_image = "single"
+
+
+render_gif = True
+
+# %%
+# Do it for rho integ
+if render_gif:
+    ani = column_density_plot.render_gif(gif_filename="rho_integ.gif", save_animation=True)
+    if ani is not None:
+        plt.show()
+
+
+# %%
+# Same but in hollywood
+if render_gif:
+    ani = column_density_plot_hollywood.render_gif(
+        gif_filename="rho_integ_hollywood.gif", save_animation=True
+    )
+    if ani is not None:
+        plt.show()
+
+# %%
+# For the vertical density plot
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = vertical_density_plot.render_gif(gif_filename="rho_slice.gif", save_animation=True)
+    if ani is not None:
+        plt.show()
+
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = v_z_slice_plot.render_gif(gif_filename="v_z_slice.gif", save_animation=True)
+    if ani is not None:
+        plt.show()
+
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = relative_azy_velocity_slice_plot.render_gif(
+        gif_filename="relative_azy_velocity_slice.gif", save_animation=True
+    )
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = vertical_shear_gradient_slice_plot.render_gif(
+        gif_filename="vertical_shear_gradient_slice.gif", save_animation=True
+    )
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = dt_part_slice_plot.render_gif(gif_filename="dt_part_slice.gif", save_animation=True)
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = column_particle_count_plot.render_gif(
+        gif_filename="particle_count.gif", save_animation=True
+    )
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = profile_plot.render_gif(
+        profile_plot.analysis_prefix + "*.png",
+        gif_filename="density_profile.gif",
+        save_animation=True,
+    )
+    if ani is not None:
+        plt.show()
+
+
+# %%
+# helper function to load data from JSON files
+def load_data_from_json(filename, key):
+    filepath = os.path.join(analysis_folder, filename)
+    with open(filepath, "r") as fp:
+        data = json.load(fp)[key]
+    t = [d["t"] for d in data]
+    values = [d[key] for d in data]
+    return t, values
+
+
+# %%
+# load the json file for barycenter
+t, barycenter = load_data_from_json("barycenter.json", "barycenter")
+barycenter_x = [d[0] for d in barycenter]
+barycenter_y = [d[1] for d in barycenter]
+barycenter_z = [d[2] for d in barycenter]
+
+plt.figure(figsize=(8, 5), dpi=200)
+
+plt.plot(t, barycenter_x)
+plt.plot(t, barycenter_y)
+plt.plot(t, barycenter_z)
+plt.xlabel("t")
+plt.ylabel("barycenter")
+plt.legend(["x", "y", "z"])
+plt.savefig(analysis_folder + "barycenter.png")
+plt.show()
+
+# %%
+# load the json file for disc_mass
+t, disc_mass = load_data_from_json("disc_mass.json", "disc_mass")
+
+plt.figure(figsize=(8, 5), dpi=200)
+
+plt.plot(t, disc_mass)
+plt.xlabel("t")
+plt.ylabel("disc_mass")
+plt.savefig(analysis_folder + "disc_mass.png")
+plt.show()
+
+# %%
+# load the json file for total_momentum
+t, total_momentum = load_data_from_json("total_momentum.json", "total_momentum")
+total_momentum_x = [d[0] for d in total_momentum]
+total_momentum_y = [d[1] for d in total_momentum]
+total_momentum_z = [d[2] for d in total_momentum]
+
+plt.figure(figsize=(8, 5), dpi=200)
+
+plt.plot(t, total_momentum_x)
+plt.plot(t, total_momentum_y)
+plt.plot(t, total_momentum_z)
+plt.xlabel("t")
+plt.ylabel("total_momentum")
+plt.legend(["x", "y", "z"])
+plt.savefig(analysis_folder + "total_momentum.png")
+plt.show()
+
+
+# %%
+# load the json file for total_momentum
+t, angular_momentum = load_data_from_json("angular_momentum.json", "angular_momentum")
+angular_momentum_x = [d[0] - angular_momentum[0][0] for d in angular_momentum]
+angular_momentum_y = [d[1] - angular_momentum[0][1] for d in angular_momentum]
+angular_momentum_z = [d[2] - angular_momentum[0][2] for d in angular_momentum]
+
+
+plt.figure(figsize=(8, 5), dpi=200)
+
+plt.plot(t, angular_momentum_x)
+plt.plot(t, angular_momentum_y)
+plt.plot(t, angular_momentum_z)
+plt.xlabel("t")
+plt.ylabel(r"$\mathrm{L} - \mathrm{L}(t=0)$")
+plt.legend(["x", "y", "z"])
+plt.savefig(analysis_folder + "angular_momentum.png")
+
+# %%
+# load the json file for energies
+t, potential_energy = load_data_from_json("potential_energy.json", "potential_energy")
+_, kinetic_energy = load_data_from_json("kinetic_energy.json", "kinetic_energy")
+
+total_energy = [p + k for p, k in zip(potential_energy, kinetic_energy)]
+
+plt.figure(figsize=(8, 5), dpi=200)
+plt.plot(t, potential_energy)
+plt.plot(t, kinetic_energy)
+plt.plot(t, total_energy)
+plt.xlabel("t")
+plt.ylabel("energy")
+plt.legend(["potential_energy", "kinetic_energy", "total_energy"])
+plt.savefig(analysis_folder + "energies.png")
+plt.show()
+
+# %%
+# load the json file for sinks
+t, sinks = load_data_from_json("sinks.json", "sinks")
+
+sinks_x = [d[0]["pos"][0] for d in sinks]
+sinks_y = [d[0]["pos"][1] for d in sinks]
+sinks_z = [d[0]["pos"][2] for d in sinks]
+
+plt.figure(figsize=(8, 5), dpi=200)
+plt.plot(t, sinks_x, label="sink 0 (x)")
+plt.plot(t, sinks_y, label="sink 0 (y)")
+plt.plot(t, sinks_z, label="sink 0 (z)")
+plt.xlabel("t")
+plt.ylabel("sink position")
+plt.legend()
+plt.savefig(analysis_folder + "sinks.png")
+plt.show()
+
+# %%
+# Sink angular momentum
+t, sinks = load_data_from_json("sinks.json", "sinks")
+
+sinks_lx = np.array([d[0]["angular_momentum"][0] for d in sinks])
+sinks_ly = np.array([d[0]["angular_momentum"][1] for d in sinks])
+sinks_lz = np.array([d[0]["angular_momentum"][2] for d in sinks])
+
+
+plt.figure(figsize=(8, 5), dpi=200)
+plt.plot(t, sinks_lx, label="sink 0 (l_x)")
+plt.plot(t, sinks_ly, label="sink 0 (l_y)")
+plt.plot(t, sinks_lz, label="sink 0 (l_z)")
+plt.xlabel("t")
+plt.ylabel("sink spin")
+plt.legend()
+plt.savefig(analysis_folder + "sink_angular_momentum.png")
+plt.show()
+
+# %%
+# Sink to barycenter distance
+t, sinks = load_data_from_json("sinks.json", "sinks")
+_, barycenter = load_data_from_json("barycenter.json", "barycenter")
+
+barycenter_x = np.array([d[0] for d in barycenter])
+barycenter_y = np.array([d[1] for d in barycenter])
+barycenter_z = np.array([d[2] for d in barycenter])
+
+sinks_x = np.array([d[0]["pos"][0] for d in sinks])
+sinks_y = np.array([d[0]["pos"][1] for d in sinks])
+sinks_z = np.array([d[0]["pos"][2] for d in sinks])
+
+
+plt.figure(figsize=(8, 5), dpi=200)
+plt.plot(t, sinks_x - barycenter_x, label="sink 0 (x)")
+plt.plot(t, sinks_y - barycenter_y, label="sink 0 (y)")
+plt.plot(t, sinks_z - barycenter_z, label="sink 0 (z)")
+plt.xlabel("t")
+plt.ylabel("sink pos - barycenter pos")
+plt.legend()
+plt.savefig(analysis_folder + "sink_to_barycenter_distance.png")
+plt.show()
+
+
+# %%
+# Plot the performance history (Switch close_plots to True if doing a long run)
+perf_analysis.plot_perf_history(close_plots=False)
+plt.show()

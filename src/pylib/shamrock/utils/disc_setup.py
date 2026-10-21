@@ -133,7 +133,9 @@ class StandardDisc:
             gm_r = vtheta_kepler(r) ** 2
             term2 = -(p + q + 3.0 / 2.0) * cs(r) ** 2
             if inner_tapering:
-                term2 += cs(r) ** 2 * 0.5 * (rin / r) ** 0.5 / (1 - (rin / r) ** 0.5)    # take into account the tapering of the density profil sigma(r): inner_tapering
+                term2 += (
+                    cs(r) ** 2 * 0.5 * (rin / r) ** 0.5 / (1 - (rin / r) ** 0.5)
+                )  # take into account the tapering of the density profil sigma(r): inner_tapering
             r2z2_sqrt = (r**2 + z**2) ** 0.5
             term3 = -gm_r * r * (2 * q) * (1 / r - 1 / r2z2_sqrt)
             return (gm_r + term2 + term3) ** 0.5

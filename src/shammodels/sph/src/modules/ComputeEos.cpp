@@ -1098,9 +1098,9 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         using namespace shamunits;
         auto unit_sys = *solver_config.unit_sys;
 
-        Tscal mass   = unit_sys.template to<units::kilogram>();
-        Tscal length = unit_sys.template to<units::metre>();
-        Tscal time   = unit_sys.template to<units::second>();
+        Tscal mass   = unit_sys.template to<legacy_units::kilogram>();
+        Tscal length = unit_sys.template to<legacy_units::metre>();
+        Tscal time   = unit_sys.template to<legacy_units::second>();
 
         auto mu_e  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("mu_e", "\\mu_e");
         mu_e->data = eos_config->mu_e;

@@ -27,7 +27,6 @@
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                                      \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_vel)                                       \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_press)                                    \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_grad_rho)                                  \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_dx_v)                                      \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_dy_v)                                      \
@@ -36,32 +35,26 @@
                                                                                                    \
     /* ------------------- outputs ------------------- */                                          \
     X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_dt_rho)                                   \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_dt_vel)                                    \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_dt_press)
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_dt_vel)
 
 namespace shammodels::basegodunov::modules {
 
     /**
-     * @brief Compute the Euler time derivatives of the gas primitive state per cell using
-     *        shammath::FluidStateBarotropic
+     * @brief Compute the Euler time derivatives of the gas primitive state per cell for a
+     *        barotropic equation of state
      *
-     * Same as NodeEulerTimeDerivativeGasAdiabatic, except that for \f$ P = P(\rho) \f$ the
-     * pressure equation reads \f$ \partial_t P = -(\rho c_s^2(\rho) \nabla \cdot \mathbf{v}
-     * + \mathbf{v} \cdot \nabla P) \f$, i.e. \f$ \gamma P \f$ is replaced by
-     * \f$ \rho c_s^2(\rho) \f$.
+     * Same as NodeEulerTimeDerivativeGasAdiabatic, except that no pressure time derivative is
+     * produced: with \f$ P = P(\rho) \f$ the pressure is not interpolated to the faces but
+     * recomputed from the face density wherever it is needed.
      */
     template<class Tvec>
     class NodeEulerTimeDerivativeGasBarotropic : public shamrock::solvergraph::INode {
         using Tscal = shambase::VecComponent<Tvec>;
 
         u32 block_size;
-        Tscal rho_crit;
-        Tscal cs0;
-        Tscal gamma;
 
         public:
-        NodeEulerTimeDerivativeGasBarotropic(u32 block_size, Tscal rho_crit, Tscal cs0, Tscal gamma)
-            : block_size(block_size), rho_crit(rho_crit), cs0(cs0), gamma(gamma) {}
+        NodeEulerTimeDerivativeGasBarotropic(u32 block_size) : block_size(block_size) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 

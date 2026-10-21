@@ -34,7 +34,8 @@
     inline constexpr T name()
 
 /// Utility macro to get the value of a unit in the current unit system with its power
-#define Uget(unitname, mult_pow) units.template get<None, units::unitname, (mult_pow) * power>()
+#define Uget(unitname, mult_pow)                                                                   \
+    units.template get<None, legacy_units::unitname, (mult_pow) * power>()
 
 /// Utility macro to get the value of a constant in the current unit system with its power
 #define Cget(constant_name, mult_pow)                                                              \

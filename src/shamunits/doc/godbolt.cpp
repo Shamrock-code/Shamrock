@@ -307,7 +307,9 @@ namespace shamunits {
         return None; // to silence a warning
     }
 
-    namespace units {
+    /// Pre-redesign unit enum. Temporary: deleted once every user has moved to the
+    /// shamunits::units tables (see the shamunits redesign notes).
+    namespace legacy_units {
 
         // clang-format off
         /// List of all units name
@@ -360,7 +362,7 @@ namespace shamunits {
             return s; // to silence a warning
         }
 
-    } // namespace units
+    } // namespace legacy_units
 
 } // namespace shamunits
 // end shamunits/Names.hpp
@@ -378,13 +380,13 @@ namespace shamunits {
 #define addget(uname)                                                                              \
     template<                                                                                      \
         UnitPrefix pref = None,                                                                    \
-        units::UnitName u,                                                                         \
-        int power                                = 1,                                              \
-        std::enable_if_t<u == units::uname, int> = 0>                                              \
+        legacy_units::UnitName u,                                                                  \
+        int power                                       = 1,                                       \
+        std::enable_if_t<u == legacy_units::uname, int> = 0>                                       \
     inline constexpr T get() const noexcept
 
 /// Shorthand for unit getter
-#define Uget(unitname, mult_pow) get<None, units::unitname, (mult_pow) * power>()
+#define Uget(unitname, mult_pow) get<None, legacy_units::unitname, (mult_pow) * power>()
 /// Shorthand for constant getter
 #define Cget(constant_name, mult_pow)                                                              \
     details::pow_constexpr_fast_inv<(mult_pow) * power>(constant_name, T(1) / constant_name)
@@ -404,7 +406,7 @@ namespace shamunits {
     ///
     ///    // get the value of au^2 in the unit system
     ///    // but it is quite big :)
-    ///    std::cout << si.get<units::astronomical_unit,2>() << std::endl;
+    ///    std::cout << si.get<legacy_units::astronomical_unit,2>() << std::endl;
     ///
     ///    double sol_mass = Constants<double>(si).sol_mass();
     ///
@@ -412,13 +414,13 @@ namespace shamunits {
     ///    * create a unit system with time in Myr, length in au, mass in solar masses
     ///    */
     ///    UnitSystem<double> astro_units {
-    ///        si.get<mega, units::years>(),
-    ///        si.get<units::astronomical_unit>(),
-    ///        si.get<units::kilogram>()*sol_mass,
+    ///        si.get<mega, legacy_units::years>(),
+    ///        si.get<legacy_units::astronomical_unit>(),
+    ///        si.get<legacy_units::kilogram>()*sol_mass,
     ///    };
     ///
     ///    //this time it returns 1 because the base length is the astronomical unit
-    ///    std::cout << astro_units.get<units::astronomical_unit,2>() << std::endl;
+    ///    std::cout << astro_units.get<legacy_units::astronomical_unit,2>() << std::endl;
     ///
     ///    Constants<double> astro_cte {astro_units};
     ///
@@ -521,7 +523,7 @@ namespace shamunits {
          * @tparam power the power of the units (also applied to the prefix)
          * @return constexpr T the value in this system
          */
-        template<UnitPrefix pref = None, units::UnitName u, int power = 1>
+        template<UnitPrefix pref = None, legacy_units::UnitName u, int power = 1>
         inline constexpr T get() const noexcept;
 #else
 
@@ -585,72 +587,74 @@ namespace shamunits {
          * @tparam power the power of the units (also applied to the prefix)
          * @return constexpr T the value in si units
          */
-        template<UnitPrefix pref = None, units::UnitName u, int power = 1>
+        template<UnitPrefix pref = None, legacy_units::UnitName u, int power = 1>
         inline constexpr T to() {
             return get<pref, u, -power>();
         }
 
         /// Simplified signature for \ref get without prefix
-        template<units::UnitName u, int power = 1>
+        template<legacy_units::UnitName u, int power = 1>
         inline constexpr T get() {
             return get<None, u, power>();
         }
 
         /// Simplified signature for \ref to without prefix
-        template<units::UnitName u, int power = 1>
+        template<legacy_units::UnitName u, int power = 1>
         inline constexpr T to() {
             return to<None, u, power>();
         }
 
         private:
         template<UnitPrefix pref = None>
-        inline T getter_1(units::UnitName name) {
+        inline T getter_1(legacy_units::UnitName name) {
             switch (name) {
 
-            case units::second  : return get<pref, units::second>(); break;
-            case units::metre   : return get<pref, units::metre>(); break;
-            case units::kilogram: return get<pref, units::kilogram>(); break;
-            case units::Ampere  : return get<pref, units::Ampere>(); break;
-            case units::Kelvin  : return get<pref, units::Kelvin>(); break;
-            case units::mole    : return get<pref, units::mole>(); break;
-            case units::candela : return get<pref, units::candela>(); break;
-            // case units::mps: return get<pref, units::mps>(); break;
-            case units::Hertz            : return get<pref, units::Hertz>(); break;
-            case units::Newton           : return get<pref, units::Newton>(); break;
-            case units::Pascal           : return get<pref, units::Pascal>(); break;
-            case units::Joule            : return get<pref, units::Joule>(); break;
-            case units::Watt             : return get<pref, units::Watt>(); break;
-            case units::Coulomb          : return get<pref, units::Coulomb>(); break;
-            case units::Volt             : return get<pref, units::Volt>(); break;
-            case units::Farad            : return get<pref, units::Farad>(); break;
-            case units::Ohm              : return get<pref, units::Ohm>(); break;
-            case units::Siemens          : return get<pref, units::Siemens>(); break;
-            case units::Weber            : return get<pref, units::Weber>(); break;
-            case units::Tesla            : return get<pref, units::Tesla>(); break;
-            case units::Henry            : return get<pref, units::Henry>(); break;
-            case units::lumens           : return get<pref, units::lumens>(); break;
-            case units::lux              : return get<pref, units::lux>(); break;
-            case units::Bequerel         : return get<pref, units::Bequerel>(); break;
-            case units::Gray             : return get<pref, units::Gray>(); break;
-            case units::Sievert          : return get<pref, units::Sievert>(); break;
-            case units::katal            : return get<pref, units::katal>(); break;
-            case units::minutes          : return get<pref, units::minutes>(); break;
-            case units::hours            : return get<pref, units::hours>(); break;
-            case units::days             : return get<pref, units::days>(); break;
-            case units::years            : return get<pref, units::years>(); break;
-            case units::astronomical_unit: return get<pref, units::astronomical_unit>(); break;
-            case units::light_year       : return get<pref, units::light_year>(); break;
-            case units::parsec           : return get<pref, units::parsec>(); break;
-            case units::solar_radius     : return get<pref, units::solar_radius>(); break;
-            case units::earth_radius     : return get<pref, units::earth_radius>(); break;
-            case units::solar_mass       : return get<pref, units::solar_mass>(); break;
-            case units::eV               : return get<pref, units::eV>(); break;
-            case units::erg              : return get<pref, units::erg>(); break;
-            case units::pint             : return get<pref, units::pint>(); break;
+            case legacy_units::second  : return get<pref, legacy_units::second>(); break;
+            case legacy_units::metre   : return get<pref, legacy_units::metre>(); break;
+            case legacy_units::kilogram: return get<pref, legacy_units::kilogram>(); break;
+            case legacy_units::Ampere  : return get<pref, legacy_units::Ampere>(); break;
+            case legacy_units::Kelvin  : return get<pref, legacy_units::Kelvin>(); break;
+            case legacy_units::mole    : return get<pref, legacy_units::mole>(); break;
+            case legacy_units::candela : return get<pref, legacy_units::candela>(); break;
+            // case legacy_units::mps: return get<pref, legacy_units::mps>(); break;
+            case legacy_units::Hertz   : return get<pref, legacy_units::Hertz>(); break;
+            case legacy_units::Newton  : return get<pref, legacy_units::Newton>(); break;
+            case legacy_units::Pascal  : return get<pref, legacy_units::Pascal>(); break;
+            case legacy_units::Joule   : return get<pref, legacy_units::Joule>(); break;
+            case legacy_units::Watt    : return get<pref, legacy_units::Watt>(); break;
+            case legacy_units::Coulomb : return get<pref, legacy_units::Coulomb>(); break;
+            case legacy_units::Volt    : return get<pref, legacy_units::Volt>(); break;
+            case legacy_units::Farad   : return get<pref, legacy_units::Farad>(); break;
+            case legacy_units::Ohm     : return get<pref, legacy_units::Ohm>(); break;
+            case legacy_units::Siemens : return get<pref, legacy_units::Siemens>(); break;
+            case legacy_units::Weber   : return get<pref, legacy_units::Weber>(); break;
+            case legacy_units::Tesla   : return get<pref, legacy_units::Tesla>(); break;
+            case legacy_units::Henry   : return get<pref, legacy_units::Henry>(); break;
+            case legacy_units::lumens  : return get<pref, legacy_units::lumens>(); break;
+            case legacy_units::lux     : return get<pref, legacy_units::lux>(); break;
+            case legacy_units::Bequerel: return get<pref, legacy_units::Bequerel>(); break;
+            case legacy_units::Gray    : return get<pref, legacy_units::Gray>(); break;
+            case legacy_units::Sievert : return get<pref, legacy_units::Sievert>(); break;
+            case legacy_units::katal   : return get<pref, legacy_units::katal>(); break;
+            case legacy_units::minutes : return get<pref, legacy_units::minutes>(); break;
+            case legacy_units::hours   : return get<pref, legacy_units::hours>(); break;
+            case legacy_units::days    : return get<pref, legacy_units::days>(); break;
+            case legacy_units::years   : return get<pref, legacy_units::years>(); break;
+            case legacy_units::astronomical_unit:
+                return get<pref, legacy_units::astronomical_unit>();
+                break;
+            case legacy_units::light_year  : return get<pref, legacy_units::light_year>(); break;
+            case legacy_units::parsec      : return get<pref, legacy_units::parsec>(); break;
+            case legacy_units::solar_radius: return get<pref, legacy_units::solar_radius>(); break;
+            case legacy_units::earth_radius: return get<pref, legacy_units::earth_radius>(); break;
+            case legacy_units::solar_mass  : return get<pref, legacy_units::solar_mass>(); break;
+            case legacy_units::eV          : return get<pref, legacy_units::eV>(); break;
+            case legacy_units::erg         : return get<pref, legacy_units::erg>(); break;
+            case legacy_units::pint        : return get<pref, legacy_units::pint>(); break;
             }
         }
 
-        inline T getter_2(UnitPrefix pref, units::UnitName name) {
+        inline T getter_2(UnitPrefix pref, legacy_units::UnitName name) {
             switch (pref) {
 
             case tera : return getter_1<tera>(name); break;
@@ -672,12 +676,12 @@ namespace shamunits {
 
         public:
         /// Non templated version of \ref get
-        inline T runtime_get(UnitPrefix pref, units::UnitName name, int power) {
+        inline T runtime_get(UnitPrefix pref, legacy_units::UnitName name, int power) {
             return pown(getter_2(pref, name), power);
         }
 
         /// Non templated version of \ref to
-        inline T runtime_to(UnitPrefix pref, units::UnitName name, int power) {
+        inline T runtime_to(UnitPrefix pref, legacy_units::UnitName name, int power) {
             return pown(getter_2(pref, name), -power);
         }
     };
@@ -701,7 +705,8 @@ namespace shamunits {
     inline constexpr T name()
 
 /// Utility macro to get the value of a unit in the current unit system with its power
-#define Uget(unitname, mult_pow) units.template get<None, units::unitname, (mult_pow) * power>()
+#define Uget(unitname, mult_pow)                                                                   \
+    units.template get<None, legacy_units::unitname, (mult_pow) * power>()
 
 /// Utility macro to get the value of a constant in the current unit system with its power
 #define Cget(constant_name, mult_pow)                                                              \
@@ -1082,7 +1087,7 @@ int main(void) {
 
     // get the value of au^2 in the unit system
     // but it is quite big :)
-    std::cout << si.get<units::astronomical_unit, 2>() << std::endl;
+    std::cout << si.get<legacy_units::astronomical_unit, 2>() << std::endl;
 
     double sol_mass = Constants<double>(si).sol_mass();
 
@@ -1090,13 +1095,13 @@ int main(void) {
      * create a unit system with time in Myr, length in au, mass in solar masses
      */
     UnitSystem<double> astro_units{
-        si.get<mega, units::years>(),
-        si.get<units::astronomical_unit>(),
-        si.get<units::kilogram>() * sol_mass,
+        si.get<mega, legacy_units::years>(),
+        si.get<legacy_units::astronomical_unit>(),
+        si.get<legacy_units::kilogram>() * sol_mass,
     };
 
     // this time it returns 1 because the base length is the astronomical unit
-    std::cout << astro_units.get<units::astronomical_unit, 2>() << std::endl;
+    std::cout << astro_units.get<legacy_units::astronomical_unit, 2>() << std::endl;
 
     Constants<double> astro_cte{astro_units};
 

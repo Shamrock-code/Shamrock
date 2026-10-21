@@ -470,12 +470,17 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         AMRBlock::block_size, "grad_P", "\\nabla P");
 
     // will be filled by NodeEulerTimeDerivativeGasAdiabatic or NodeEulerTimeDerivativeGasBarotropic
+    // euler_dt_press exists only for the adiabatic EOS: with a barotropic EOS the face pressure is
+    // recomputed from the face density, so no pressure time derivative is needed
     storage.euler_dt_rho = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
         AMRBlock::block_size, "euler_dt_rho", "\\partial_t \\rho");
     storage.euler_dt_vel = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         AMRBlock::block_size, "euler_dt_vel", "\\partial_t \\mathbf{v}");
-    storage.euler_dt_press = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
-        AMRBlock::block_size, "euler_dt_press", "\\partial_t P");
+    if (std::holds_alternative<typename EOSConfig<Tvec>::Adiabatic>(
+            solver_config.eos_config.config)) {
+        storage.euler_dt_press = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "euler_dt_press", "\\partial_t P");
+    }
 
     if (solver_config.is_dust_on()) {
         u32 ndust             = solver_config.dust_config.ndust;
@@ -1170,36 +1175,44 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> dt_prim_sequence;
 
         {
-            auto set_edges_and_push = [&](auto &&node) {
-                node.set_edges(
-                    storage.block_counts_with_ghost,
-                    storage.refs_rho,
-                    storage.vel,
-                    storage.press,
-                    storage.grad_rho,
-                    storage.dx_v,
-                    storage.dy_v,
-                    storage.dz_v,
-                    storage.grad_P,
-                    storage.euler_dt_rho,
-                    storage.euler_dt_vel,
-                    storage.euler_dt_press);
-                using Tnode = std::remove_cvref_t<decltype(node)>;
-                dt_prim_sequence.push_back(std::make_shared<Tnode>(std::move(node)));
-            };
-
             using EOS = EOSConfig<Tvec>;
             std::visit(
                 shambase::overloaded{
                     [&](const typename EOS::Adiabatic &cfg) {
-                        set_edges_and_push(
-                            modules::NodeEulerTimeDerivativeGasAdiabatic<Tvec>{
-                                AMRBlock::block_size, cfg.gamma});
+                        modules::NodeEulerTimeDerivativeGasAdiabatic<Tvec> node{
+                            AMRBlock::block_size, cfg.gamma};
+                        node.set_edges(
+                            storage.block_counts_with_ghost,
+                            storage.refs_rho,
+                            storage.vel,
+                            storage.press,
+                            storage.grad_rho,
+                            storage.dx_v,
+                            storage.dy_v,
+                            storage.dz_v,
+                            storage.grad_P,
+                            storage.euler_dt_rho,
+                            storage.euler_dt_vel,
+                            storage.euler_dt_press);
+                        dt_prim_sequence.push_back(
+                            std::make_shared<decltype(node)>(std::move(node)));
                     },
-                    [&](const typename EOS::Barotropic &cfg) {
-                        set_edges_and_push(
-                            modules::NodeEulerTimeDerivativeGasBarotropic<Tvec>{
-                                AMRBlock::block_size, cfg.rho_crit, cfg.cs0, cfg.gamma});
+                    [&](const typename EOS::Barotropic &) {
+                        modules::NodeEulerTimeDerivativeGasBarotropic<Tvec> node{
+                            AMRBlock::block_size};
+                        node.set_edges(
+                            storage.block_counts_with_ghost,
+                            storage.refs_rho,
+                            storage.vel,
+                            storage.grad_rho,
+                            storage.dx_v,
+                            storage.dy_v,
+                            storage.dz_v,
+                            storage.grad_P,
+                            storage.euler_dt_rho,
+                            storage.euler_dt_vel);
+                        dt_prim_sequence.push_back(
+                            std::make_shared<decltype(node)>(std::move(node)));
                     },
                 },
                 solver_config.eos_config.config);
@@ -1268,7 +1281,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             interp_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
         }
 
-        {
+        // with a barotropic EOS the face pressure is recomputed from the face density, so it is
+        // not interpolated (and euler_dt_press does not exist)
+        if (std::holds_alternative<typename EOSConfig<Tvec>::Adiabatic>(
+                solver_config.eos_config.config)) {
             modules::InterpolateToFacePress<Tvec, TgridVec> node{AMRBlock::block_size};
             node.set_edges(
                 storage.dt_over2,

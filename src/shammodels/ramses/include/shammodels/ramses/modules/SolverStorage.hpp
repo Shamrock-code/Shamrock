@@ -122,7 +122,8 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_rho;
         /// Euler time derivative of the gas primitive velocity (predictor term)
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> euler_dt_vel;
-        /// Euler time derivative of the gas primitive pressure (predictor term)
+        /// Euler time derivative of the gas primitive pressure (predictor term), adiabatic EOS
+        /// only (null with a barotropic EOS)
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_press;
         /// Euler time derivative of the dust primitive density (predictor term)
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_rho_dust;

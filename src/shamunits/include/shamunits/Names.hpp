@@ -148,7 +148,9 @@ namespace shamunits {
         return None; // to silence a warning
     }
 
-    namespace units {
+    /// Pre-redesign unit enum. Temporary: deleted once every user has moved to the
+    /// shamunits::units tables (see the shamunits redesign notes).
+    namespace legacy_units {
 
         // clang-format off
         /// List of all units name
@@ -201,6 +203,6 @@ namespace shamunits {
             return s; // to silence a warning
         }
 
-    } // namespace units
+    } // namespace legacy_units
 
 } // namespace shamunits

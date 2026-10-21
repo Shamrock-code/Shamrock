@@ -31,7 +31,7 @@ namespace {
     static_assert(astro_cte.units.kg_inv == 1.98847e30);
 
     // the explicit-prefix getter is const + constexpr, so it now works at compile time
-    static_assert(si.get<None, units::astronomical_unit>() == 149597870700.0);
+    static_assert(si.get<None, legacy_units::astronomical_unit>() == 149597870700.0);
 } // namespace
 
 NEW_TEST(Unittest, "shamunits/constexpr", 1) {

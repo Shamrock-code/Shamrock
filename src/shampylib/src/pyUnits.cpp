@@ -60,7 +60,8 @@ ON_PYTHON_INIT {
             [](UnitSystem &self, std::string name, i32 power, std::string pref) {
                 shamunits::UnitPrefix pref_ = shamunits::unit_prefix_from_name(pref);
 
-                return self.runtime_get(pref_, shamunits::units::unit_from_name(name), power);
+                return self.runtime_get(
+                    pref_, shamunits::legacy_units::unit_from_name(name), power);
             },
             // py::arg("self"),
             py::arg("name"),
@@ -71,7 +72,7 @@ ON_PYTHON_INIT {
             [](UnitSystem &self, std::string name, i32 power, std::string pref) {
                 shamunits::UnitPrefix pref_ = shamunits::unit_prefix_from_name(pref);
 
-                return self.runtime_to(pref_, shamunits::units::unit_from_name(name), power);
+                return self.runtime_to(pref_, shamunits::legacy_units::unit_from_name(name), power);
             },
             // py::arg("self"),
             py::arg("name"),

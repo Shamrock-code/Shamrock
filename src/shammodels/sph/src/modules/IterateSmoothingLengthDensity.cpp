@@ -57,7 +57,8 @@ void IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_evaluate_internal() {
         [gpart_mass      = this->gpart_mass,
          h_evol_max      = this->h_evol_max,
          h_evol_iter_max = this->h_evol_iter_max,
-         epsilon_h       = this->epsilon_h](
+         epsilon_h       = this->epsilon_h,
+         newton_fallback = this->newton_fallback](
             u32 id_a,
             auto ploop_ptrs,
             const Tvec *__restrict r,
@@ -99,7 +100,9 @@ void IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_evaluate_internal() {
                 using namespace shamrock::sph;
 
                 Tscal rho_ha = rho_h(part_mass, h_a, SPHKernel::hfactd);
-                Tscal new_h  = newton_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
+                Tscal new_h  = newton_fallback
+                                   ? newton_iterate_new_h_fallback(rho_ha, rho_sum, sumdWdh, h_a)
+                                   : newton_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                 if (new_h < h_a * h_max_evol_m)
                     new_h = h_max_evol_m * h_a;

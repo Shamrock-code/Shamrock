@@ -23,6 +23,7 @@
 #include "shamphys/Dust.hpp"
 #include "shamphys/HydroSoundwave.hpp"
 #include "shamphys/Planets.hpp"
+#include "shamphys/PolytropicTorus.hpp"
 #include "shamphys/SedovTaylor.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamphys/collapse.hpp"
@@ -366,6 +367,51 @@ ON_PYTHON_INIT {
             auto ret = self.get_value(t, x);
             return std::tuple<f64, f64, f64>{ret.rho, ret.vx, ret.P};
         });
+
+    shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.PolytropicTorus");
+    py::class_<shamphys::PolytropicTorus>(shamphys_module, "PolytropicTorus", R"pbdoc(
+    Analytic equilibrium of a non self-gravitating polytropic torus with specific angular
+    momentum ``l = L0 * varpi^a_ang`` in the potential ``-GM / (r - r_s)`` (``r_s = 0``:
+    point mass, ``r_s = 2 GM / c^2``: Paczynski-Wiita).
+
+    ``W = (n + 1) P / rho = Phi_eff_0 - Phi_eff`` and ``rho = rho0 (W / W0)^n``; all the profiles
+    are given for ``rho0 = 1``. This is the equilibrium sampled by
+    ``make_generator_torus_mc``.
+)pbdoc")
+        .def(
+            py::init([](f64 GM, f64 r_s, f64 r0, f64 r_in, f64 a_ang, f64 n_poly) {
+                return std::make_unique<shamphys::PolytropicTorus>(
+                    GM, r_s, r0, r_in, a_ang, n_poly);
+            }),
+            py::kw_only(),
+            py::arg("GM"),
+            py::arg("r_s"),
+            py::arg("r0"),
+            py::arg("r_in"),
+            py::arg("a_ang")  = 0.0,
+            py::arg("n_poly") = 3.0)
+        .def("phi_eff", &shamphys::PolytropicTorus::phi_eff, py::arg("r_cyl"), py::arg("z"))
+        .def("enthalpy", &shamphys::PolytropicTorus::enthalpy, py::arg("r_cyl"), py::arg("z"))
+        .def("rho_shape", &shamphys::PolytropicTorus::rho_shape, py::arg("r_cyl"), py::arg("z"))
+        .def("p_over_rho", &shamphys::PolytropicTorus::p_over_rho, py::arg("r_cyl"), py::arg("z"))
+        .def("v_phi", &shamphys::PolytropicTorus::v_phi, py::arg("r_cyl"))
+        .def(
+            "b_poloidal_unit",
+            &shamphys::PolytropicTorus::b_poloidal_unit,
+            py::arg("r_cyl"),
+            py::arg("z"),
+            py::arg("A_cut"))
+        .def("volume_integral", &shamphys::PolytropicTorus::volume_integral)
+        .def("pressure_integral", &shamphys::PolytropicTorus::pressure_integral)
+        .def(
+            "b_poloidal_unit_sq_integral",
+            &shamphys::PolytropicTorus::b_poloidal_unit_sq_integral,
+            py::arg("A_cut"))
+        .def("get_r_out", &shamphys::PolytropicTorus::get_r_out)
+        .def("get_z_max", &shamphys::PolytropicTorus::get_z_max)
+        .def("get_r_cusp", &shamphys::PolytropicTorus::get_r_cusp)
+        .def("get_L0", &shamphys::PolytropicTorus::get_L0)
+        .def("get_W0", &shamphys::PolytropicTorus::get_W0);
 
     shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.SedovTaylor");
     py::class_<shamphys::SedovTaylor>(shamphys_module, "SedovTaylor")

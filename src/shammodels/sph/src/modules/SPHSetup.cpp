@@ -36,6 +36,7 @@
 #include "shammodels/sph/modules/setup/GeneratorLatticeCubic.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
+#include "shammodels/sph/modules/setup/GeneratorMCTorus.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyCustomWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierFilter.hpp"
@@ -103,6 +104,28 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         H_profile,
         vel_profile,
         cs_profile,
+        eng,
+        init_h_factor));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_generator_torus_mc(
+        shamphys::PolytropicTorus torus,
+        Tscal part_mass,
+        Tscal torus_mass,
+        std::optional<Tscal> plasma_beta,
+        Tscal A_cut,
+        std::mt19937_64 eng,
+        Tscal init_h_factor) {
+    return std::shared_ptr<ISPHSetupNode>(new GeneratorMCTorus<Tvec, SPHKernel>(
+        context,
+        solver_config,
+        torus,
+        part_mass,
+        torus_mass,
+        plasma_beta,
+        A_cut,
         eng,
         init_h_factor));
 }

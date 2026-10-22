@@ -20,6 +20,7 @@
 #include "sham/format/format.hpp"
 #include "shamalgs/collective/indexing.hpp"
 #include "shamalgs/random.hpp"
+#include "shammath/unimodal_max.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
 
@@ -28,41 +29,12 @@ auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::c
     -> Tscal {
     // f_func is not necessarily monotonic so the rejection sampling
     // envelope has to be the max over the whole range, not f_func(r_out)
-
-    // dichotomic search of the max of f_func (assumed unimodal) on [r_in, r_out]
-    constexpr Tscal rel_tol = 1e-8;
-    constexpr u32 max_iter  = 200;
-
-    Tscal a = r_in;
-    Tscal b = r_out;
-
-    Tscal f_prev = sycl::fmax(f_func(a), f_func(b));
-    Tscal f_est  = f_prev;
-
-    for (u32 iter = 0; iter < max_iter; iter++) {
-        Tscal m     = (a + b) / 2;
-        Tscal delta = (b - a) * Tscal(1e-3);
-
-        Tscal f1 = f_func(m - delta);
-        Tscal f2 = f_func(m + delta);
-
-        // keep the half containing the max
-        if (f1 < f2) {
-            a = m - delta;
-        } else {
-            b = m + delta;
-        }
-
-        f_est = sycl::fmax(f1, f2);
-
-        if (sycl::fabs(f_est - f_prev) <= rel_tol * sycl::fabs(f_est)) {
-            break;
-        }
-        f_prev = f_est;
-    }
-
-    // the max may sit on the boundary if f_func is monotonic
-    return sycl::fmax(f_est, sycl::fmax(f_func(r_in), f_func(r_out)));
+    return shammath::unimodal_max_value<Tscal>(
+        [&](Tscal r) {
+            return f_func(r);
+        },
+        r_in,
+        r_out);
 }
 
 template<class Tvec, template<class> class SPHKernel>

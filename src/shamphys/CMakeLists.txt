@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.9...3.10)
 
 project(Shamphys CXX C)
 
-set(Sources src/HydroSoundwave.cpp src/SodTube.cpp src/SedovTaylor.cpp)
+set(Sources src/HydroSoundwave.cpp src/SodTube.cpp src/SedovTaylor.cpp src/PolytropicTorus.cpp)
 
 if(SHAMROCK_USE_SHARED_LIB)
     message("-- adding shamphys target (Shared lib)")

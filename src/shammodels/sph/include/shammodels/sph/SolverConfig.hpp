@@ -458,6 +458,8 @@ namespace shammodels::sph {
 
         mode config = DensityBased{};
 
+        bool newton_fallback = false;
+
         void set_density_based() { config = DensityBased{}; }
         void set_density_based_neigh_lim(u32 max_neigh_count) {
             config = DensityBasedNeighLim{max_neigh_count};
@@ -765,6 +767,9 @@ struct shammodels::sph::SolverConfig {
     }
     inline void set_smoothing_length_density_based_neigh_lim(u32 max_neigh_count) {
         smoothing_length_config.set_density_based_neigh_lim(max_neigh_count);
+    }
+    inline void set_smoothing_length_newton_fallback(bool enable) {
+        smoothing_length_config.newton_fallback = enable;
     }
 
     bool enable_particle_reordering = false;
@@ -1300,6 +1305,7 @@ namespace shammodels::sph {
         } else {
             shambase::throw_unimplemented();
         }
+        j["newton_fallback"] = p.newton_fallback;
     }
 
     inline void from_json(const nlohmann::json &j, SmoothingLengthConfig &p) {
@@ -1311,6 +1317,8 @@ namespace shammodels::sph {
         } else {
             shambase::throw_unimplemented();
         }
+
+        p.newton_fallback = j.value("newton_fallback", false);
     }
 
     /// JSON serialization for SelfGravConfig

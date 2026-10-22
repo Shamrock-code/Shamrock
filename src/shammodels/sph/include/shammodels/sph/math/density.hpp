@@ -39,4 +39,22 @@ namespace shamrock::sph {
 
         return h_a - f_iter / df_iter;
     }
+
+    /**
+     * @brief newton_iterate_new_h with a fallback when the Newton step goes the wrong way
+     *
+     * With df <= 0 the Newton step goes away from the root and h diverges. Fall back to the fixed
+     * point update h = hfact (m  rho_sum)^(1/dim) which moves towards it. Useful for particles at
+     * the surface of a torus.
+     */
+    template<class flt, i32 dim = 3>
+    inline flt newton_iterate_new_h_fallback(flt rho_ha, flt rho_sum, flt sumdWdh, flt h_a) {
+        flt df_iter = sumdWdh + dim * rho_ha / h_a;
+
+        if (!(df_iter > 0)) {
+            return h_a * sycl::rootn(rho_ha / rho_sum, dim);
+        }
+
+        return newton_iterate_new_h<flt, dim>(rho_ha, rho_sum, sumdWdh, h_a);
+    }
 } // namespace shamrock::sph

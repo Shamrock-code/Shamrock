@@ -46,6 +46,7 @@ namespace shammodels::sph::modules {
         Tscal epsilon_h;
 
         u32 trigger_threshold;
+        bool newton_fallback;
 
         public:
         IterateSmoothingLengthDensityNeighLim(
@@ -53,9 +54,11 @@ namespace shammodels::sph::modules {
             Tscal h_evol_max,
             Tscal h_evol_iter_max,
             u32 trigger_threshold,
-            Tscal epsilon_h)
+            Tscal epsilon_h,
+            bool newton_fallback = false)
             : gpart_mass(gpart_mass), h_evol_max(h_evol_max), h_evol_iter_max(h_evol_iter_max),
-              epsilon_h(epsilon_h), trigger_threshold(trigger_threshold) {}
+              epsilon_h(epsilon_h), trigger_threshold(trigger_threshold),
+              newton_fallback(newton_fallback) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 

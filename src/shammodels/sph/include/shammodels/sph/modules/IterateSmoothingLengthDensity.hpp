@@ -43,12 +43,17 @@ namespace shammodels::sph::modules {
         Tscal h_evol_max;
         Tscal h_evol_iter_max;
         Tscal epsilon_h;
+        bool newton_fallback;
 
         public:
         IterateSmoothingLengthDensity(
-            Tscal gpart_mass, Tscal h_evol_max, Tscal h_evol_iter_max, Tscal epsilon_h)
+            Tscal gpart_mass,
+            Tscal h_evol_max,
+            Tscal h_evol_iter_max,
+            Tscal epsilon_h,
+            bool newton_fallback = false)
             : gpart_mass(gpart_mass), h_evol_max(h_evol_max), h_evol_iter_max(h_evol_iter_max),
-              epsilon_h(epsilon_h) {}
+              epsilon_h(epsilon_h), newton_fallback(newton_fallback) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 

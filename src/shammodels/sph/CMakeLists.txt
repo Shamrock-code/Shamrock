@@ -57,6 +57,7 @@ set(Sources
     src/modules/NodeComputePressureGrad.cpp
     src/modules/NodeEvolveDustCOALASourceTerm.cpp
     src/modules/setup/GeneratorMCDisc.cpp
+    src/modules/setup/GeneratorMCTorus.cpp
     src/modules/setup/ModifierApplyDiscWarp.cpp
     src/modules/setup/ModifierApplyCustomWarp.cpp
     src/modules/setup/ModifierOffset.cpp

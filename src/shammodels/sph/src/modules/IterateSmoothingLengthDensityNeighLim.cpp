@@ -60,7 +60,8 @@ void IterateSmoothingLengthDensityNeighLim<Tvec, SPHKernel>::_impl_evaluate_inte
          h_evol_max        = this->h_evol_max,
          h_evol_iter_max   = this->h_evol_iter_max,
          trigger_threshold = this->trigger_threshold,
-         epsilon_h         = this->epsilon_h](
+         epsilon_h         = this->epsilon_h,
+         newton_fallback   = this->newton_fallback](
             u32 id_a,
             auto ploop_ptrs,
             const Tvec *__restrict r,
@@ -112,7 +113,9 @@ void IterateSmoothingLengthDensityNeighLim<Tvec, SPHKernel>::_impl_evaluate_inte
                 using namespace shamrock::sph;
 
                 Tscal rho_ha = rho_h(part_mass, h_a, SPHKernel::hfactd);
-                Tscal new_h  = newton_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
+                Tscal new_h  = newton_fallback
+                                   ? newton_iterate_new_h_fallback(rho_ha, rho_sum, sumdWdh, h_a)
+                                   : newton_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                 bool exceed_inner_threshold = count_within > trigger_threshold;
                 bool exceed_outer_threshold = count_within_next > trigger_threshold;

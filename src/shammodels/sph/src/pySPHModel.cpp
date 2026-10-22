@@ -39,6 +39,7 @@
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shammodels/sph/sink_edges_helper.hpp"
+#include "shamphys/PolytropicTorus.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -121,6 +122,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "set_smoothing_length_density_based_neigh_lim",
             &TConfig::set_smoothing_length_density_based_neigh_lim)
+        .def(
+            "set_smoothing_length_newton_fallback",
+            &TConfig::set_smoothing_length_newton_fallback,
+            py::arg("enable"),
+            R"==(
+    Fall back to a fixed point update of h when the Newton step of the smoothing length iteration goes away from the root.
+)==")
         .def("set_enable_particle_reordering", &TConfig::set_enable_particle_reordering)
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_show_ghost_zone_graph", &TConfig::set_show_ghost_zone_graph)
@@ -778,6 +786,105 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             If the solver uses a locally isothermal EOS, exactly one of ``cs_field``
             or ``cs_profile`` must be provided. Otherwise both sound-speed profiles
             are ignored and a warning is emitted if either is supplied.
+
+        Returns:
+            A setup node to pass to :py:meth:`apply_setup`.
+    )pbdoc")
+        .def(
+            "make_generator_torus_mc",
+            [](TSPHSetup &self,
+               Tscal part_mass,
+               Tscal torus_mass,
+               Tscal central_mass,
+               Tscal r0,
+               Tscal r_in,
+               Tscal a_ang,
+               Tscal n_poly,
+               const std::string &potential,
+               std::optional<Tscal> plasma_beta,
+               Tscal A_cut,
+               u64 random_seed,
+               Tscal init_h_factor) {
+                Tscal GM = self.solver_config.get_constant_G() * central_mass;
+
+                Tscal r_s;
+                if (potential == "point_mass") {
+                    r_s = 0;
+                } else if (potential == "paczynski_wiita") {
+                    Tscal c = self.solver_config.get_constant_c();
+                    r_s     = 2 * GM / (c * c);
+                } else {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "make_generator_torus_mc: potential must be \"point_mass\" or "
+                        "\"paczynski_wiita\", got \""
+                        + potential + "\"");
+                }
+
+                return self.make_generator_torus_mc(
+                    shamphys::PolytropicTorus(GM, r_s, r0, r_in, a_ang, n_poly),
+                    part_mass,
+                    torus_mass,
+                    plasma_beta,
+                    A_cut,
+                    std::mt19937_64(random_seed),
+                    init_h_factor);
+            },
+            py::kw_only(),
+            py::arg("part_mass"),
+            py::arg("torus_mass"),
+            py::arg("central_mass"),
+            py::arg("r0"),
+            py::arg("r_in"),
+            py::arg("a_ang")       = 0.0,
+            py::arg("n_poly")      = 3.0,
+            py::arg("potential")   = "point_mass",
+            py::arg("plasma_beta") = std::nullopt,
+            py::arg("A_cut")       = 0.2,
+            py::arg("random_seed"),
+            py::arg("init_h_factor") = 0.8,
+            R"pbdoc(
+        Create a Monte Carlo generator of a polytropic torus in equilibrium.
+
+        The torus is not self-gravitating, has a specific angular momentum
+        ``l = L0 * varpi^a_ang`` (Keplerian at ``r0``) and a polytropic structure
+        ``P = K rho^(1 + 1/n_poly)``, in the potential of a ``central_mass`` at the origin:
+        ``-GM / r`` (``potential="point_mass"``) or ``-GM / (r - r_s)`` with
+        ``r_s = 2 GM / c^2`` (``potential="paczynski_wiita"``). The matching external force
+        (``add_ext_force_point_mass`` / ``add_ext_force_paczynski_wiita``) must be added to
+        the solver config separately.
+
+        ``a_ang = 0`` gives the constant angular momentum torus (Papaloizou & Pringle 1984,
+        "Polish doughnut"), ``0 < a_ang < 1/2`` the tori of Okada et al. (1989) and
+        Kato et al. (2004). See :py:class:`shamrock.phys.PolytropicTorus` for the analytic
+        profiles.
+
+        Particle positions are sampled in C++ and the generator sets the velocity
+        (``vxyz``), the smoothing length, and either the internal energy (adiabatic EOS)
+        or the sound speed (locally isothermal EOS) of the equilibrium.
+
+        Args:
+            part_mass: Mass of each SPH particle.
+            torus_mass: Total torus mass. The particle count is ``torus_mass / part_mass``.
+            central_mass: Mass of the central object.
+            r0: Radius of the pressure maximum.
+            r_in: Inner edge of the torus on the midplane. Must lie between the cusp of
+                the effective potential (only for Paczynski-Wiita) and ``r0``.
+            a_ang: Power-law index of the specific angular momentum, in ``[0, 1/2)``.
+            n_poly: Polytropic index of the equilibrium.
+            potential: ``"point_mass"`` or ``"paczynski_wiita"``.
+            plasma_beta: If set, adds a poloidal magnetic field
+                ``A_phi = A0 * max(rho / rho0 - A_cut, 0)`` (field loops inside the torus)
+                normalised so that the volume averaged ``int P dV / int B^2 / (2 mu_0) dV``
+                equals ``plasma_beta``. Requires an MHD solver.
+            A_cut: Density cut of the vector potential, in ``[0, 1)``.
+            random_seed: Seed for the Monte Carlo sampler.
+            init_h_factor: Multiplier applied to the smoothing length inferred from the
+                analytic density. Defaults to ``0.8``.
+
+        Notes:
+            The magnetic field normalisation uses the analytic density. The SPH density
+            differs near the torus surface, so the measured beta can differ by a few tens
+            of percent at low resolution.
 
         Returns:
             A setup node to pass to :py:meth:`apply_setup`.

@@ -11,6 +11,18 @@
 
 option(SHAMROCK_USE_PCH "use precompiled headers" Off)
 
+# Clang's PCH validation rejects reuse across a PIC/PIE mismatch ("is pie differs in PCH
+# file vs. current file"). Shared library targets already get -fPIC from CMake; plain
+# executables (shamrock_exe, shamrock_test) otherwise fall back to -fPIE (either the
+# toolchain's own default, or what CMAKE_POSITION_INDEPENDENT_CODE would pick for an
+# executable target), which does not match the PCH built by the (shared) shambackends
+# target. Force the same raw -fPIC flag everywhere so reuse is consistent; this bypasses
+# CMake's per-target-type PIC/PIE selection, mirroring the object-lib-mode workaround
+# below for the same underlying requirement.
+if(SHAMROCK_USE_PCH)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+endif()
+
 ######################
 # Shared/Object libs
 ######################

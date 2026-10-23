@@ -19,6 +19,11 @@ set(Sources
     src/modules/GSPHGhostHandler.cpp
     src/modules/ComputeLoadBalanceValue.cpp
     src/modules/io/VTKDump.cpp
+    src/modules/GSPHSetup.cpp
+    src/modules/GeneratorMCDisc.cpp
+    src/modules/ComputeLoadBalanceValue.cpp
+    src/modules/SinkParticlesUpdate.cpp
+    src/modules/ExternalForces.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

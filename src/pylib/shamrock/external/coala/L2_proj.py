@@ -227,3 +227,57 @@ def L2projDL(eps, nbins, kpol, massgrid, massbins, Q, vecnodes, vecweights):
         gij[:, 0][gij[:, 0] < eps] = eps
 
     return gij
+
+
+def init_power_law_rho_dust(
+    nbins, massgrid, massbins, bin_scut, coeff_pl, dtg, rho_gas, eps_rhodust
+):
+    """
+    Function to compute the initial rhodust distribution following a power-law and cut at the bin containing scut
+
+    Parameters
+    ----------
+    nbins : scalar, type -> integer
+       number of dust bins
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+    massbins : 1D array (dim = nbins), type -> float
+       arithmetic mean value of massgrid for each mass bins
+    bin_scut : scalar, type -> integer
+       index of bins containing scut
+    coeff_pl : scalar, type -> float
+       power law for initial distribution in size
+    dtg : scalar, type -> float
+       mass dust to gas ratio
+    rho_gas : scalar, type -> float
+       mass gas density
+    eps : scalar, type -> float
+       minimum value for rho_dust
+
+    Returns
+    -------
+    rhodust : 1D array (dim = nbins), type -> float
+       dust mass density distribution
+
+    """
+
+    mcut = massgrid[bin_scut + 1]
+    m_min = massgrid[0]
+
+    coeff_norm = (
+        dtg
+        * rho_gas
+        * ((4.0 + coeff_pl) / 3.0)
+        / (mcut ** ((4.0 + coeff_pl) / 3.0) - m_min ** ((4.0 + coeff_pl) / 3.0))
+    )
+
+    rho_dust = eps_rhodust * np.ones(nbins)
+
+    for j in range(nbins):
+        if j <= bin_scut:
+            xj = massbins[j]
+            hj = massgrid[j + 1] - massgrid[j]
+
+            rho_dust[j] = max(eps_rhodust, coeff_norm * hj * xj ** ((1.0 + coeff_pl) / 3.0))
+
+    return rho_dust

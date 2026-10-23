@@ -19,6 +19,7 @@ namespace {
     using EOS        = shammodels::basegodunov::EOSConfig<f64_3>;
     using Adiabatic  = EOS::Adiabatic;
     using Barotropic = EOS::Barotropic;
+    using ResetBaro  = EOS::ResetBarotropic;
 
     Config json_roundtrip(const Config &in) {
         nlohmann::json j = in;
@@ -65,6 +66,45 @@ NEW_TEST(Unittest, "shammodels/ramses/SolverConfig::eos", 1) {
         }
     }
 
+    { // reset barotropic json roundtrip
+        Config in{};
+        in.eos_config.set_reset_barotropic(1e-13, 0.2, 1.4, 1.001);
+        Config out         = json_roundtrip(in);
+        const ResetBaro *b = std::get_if<ResetBaro>(&out.eos_config.config);
+        REQUIRE(b != nullptr);
+        if (b != nullptr) {
+            REQUIRE_EQUAL(b->rho_crit, 1e-13);
+            REQUIRE_EQUAL(b->cs0, 0.2);
+            REQUIRE_EQUAL(b->gamma_baro, 1.4);
+            REQUIRE_EQUAL(b->gamma, 1.001);
+        }
+    }
+
+    { // reset barotropic: the hydro step is adiabatic with gamma, the barotrope uses gamma_baro
+        Config cfg{};
+        cfg.eos_config.set_reset_barotropic(1e-13, 0.2, 1.4, 1.001);
+        cfg.check_config();
+        REQUIRE(cfg.eos_config.is_hydro_adiabatic());
+        REQUIRE_EQUAL(cfg.get_eos_gamma(), 1.001);
+
+        const ResetBaro &b = std::get<ResetBaro>(cfg.eos_config.config);
+        REQUIRE_EQUAL(b.get_spec().gamma(), 1.001);
+        REQUIRE_EQUAL(b.get_barotrope().gamma_adiab(), 1.4);
+        // at rho_crit the isothermal and adiabatic parts of the pressure are equal
+        REQUIRE_FLOAT_EQUAL(
+            b.get_barotrope().pressure(1e-13) / (2 * 0.2 * 0.2 * 1e-13), 1.0, 1e-14);
+    }
+
+    { // reset barotropic: invalid parameters are rejected
+        Config cfg{};
+        cfg.eos_config.set_reset_barotropic(1e-13, 0.2, 1.4, 1.0);
+        REQUIRE_EXCEPTION_THROW(cfg.check_config(), std::invalid_argument);
+        cfg.eos_config.set_reset_barotropic(0.0, 0.2, 1.4, 1.001);
+        REQUIRE_EXCEPTION_THROW(cfg.check_config(), std::invalid_argument);
+        cfg.eos_config.set_reset_barotropic(1e-13, 0.0, 1.4, 1.001);
+        REQUIRE_EXCEPTION_THROW(cfg.check_config(), std::invalid_argument);
+    }
+
     { // configs dumped before eos_config existed only store eos_gamma
         nlohmann::json j = Config{};
         j.erase("eos_config");
@@ -79,6 +119,7 @@ NEW_TEST(Unittest, "shammodels/ramses/SolverConfig::eos", 1) {
         cfg.eos_config.set_barotropic(1e-13, 0.2, 1.4);
         REQUIRE_EXCEPTION_THROW(cfg.check_config(), std::invalid_argument);
         REQUIRE_EXCEPTION_THROW(cfg.get_eos_gamma(), std::invalid_argument);
+        REQUIRE(!cfg.eos_config.is_hydro_adiabatic());
     }
 
     { // gamma <= 1 is rejected

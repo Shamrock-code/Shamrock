@@ -1122,6 +1122,25 @@ namespace shamunits {
         /// Construct the \ref shamunits::Constants class with a unit system
         constexpr explicit Constants(const UnitSystem<T> units) : units(units) {}
 
+        /// Value of the constant (or unit) `u` in this unit system, e.g. get<constants::G>().
+        /// Same as units.get<u, Tret>(); see UnitSystem::get.
+        template<Unit u, class Tret = T>
+        constexpr Tret get() const noexcept {
+            return units.template get<u, Tret>();
+        }
+
+        /// Value of a constant only known at run time, e.g. get(constants::from_name("G"))
+        template<class Tret = T, class Tu>
+        constexpr Tret get(Unit<Tu> u) const noexcept {
+            return units.template get<Tret>(u);
+        }
+
+        /// get(u) raised to a runtime power: the Python path, Constants(usys).G(power=2)
+        template<class Tret = T, class Tu>
+        constexpr Tret get(Unit<Tu> u, int power) const noexcept {
+            return units.template get<Tret>(u, power);
+        }
+
 /// Define the constant conversions functions
 #define X(name, conv)                                                                              \
     addconstant(name) { return Cget(Si::name, 1) * conv; }

@@ -1,6 +1,5 @@
 name: Compile & Unit tests
 
-
 on:
   workflow_call:
     inputs:
@@ -20,7 +19,6 @@ on:
         default: false
 
 jobs:
-
   # matrix is not available in job-level if; filter here instead.
   # Entries with "light_ci": true are kept when inputs.light_ci is true.
   set_matrix:
@@ -126,6 +124,7 @@ jobs:
               "imagename": "MacOS-15",
               "runtest": true,
               "runtest_rscript": true,
+              "runtestpy": true,
               "mpiargs": "--oversubscribe",
               "ccache-key-extra": "macos15",
               "build_nproc": 4
@@ -136,6 +135,7 @@ jobs:
               "imagename": "MacOS-26",
               "runtest": true,
               "runtest_rscript": true,
+              "runtestpy": true,
               "mpiargs": "--oversubscribe",
               "ccache-key-extra": "macos26"
             }
@@ -239,15 +239,14 @@ jobs:
 
     timeout-minutes: 120
     steps:
-
       # if archlinux container
-      - name : Install archlinux dependencies
+      - name: Install archlinux dependencies
         if: matrix.container == 'archlinux/archlinux:base-devel'
         run: |
           sudo pacman -Syu --noconfirm base-devel git python python-pip cmake boost ninja openmp openmpi doxygen llvm20 clang20 lld
 
       # if macos container
-      - name : Install macos dependencies
+      - name: Install macos dependencies
         if: matrix.machine == 'macos-generic.acpp'
         timeout-minutes: 10
         run: |
@@ -262,7 +261,7 @@ jobs:
           set -e
 
       # if ubuntu container
-      - name : Install ubuntu dependencies
+      - name: Install ubuntu dependencies
         if: matrix.machine == 'debian-generic.acpp'
         run: |
           sudo ln -fs /usr/share/zoneinfo/Europe/Paris /etc/localtime
@@ -279,8 +278,8 @@ jobs:
 
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
-      - name : Reconfigure git
-        run:  |
+      - name: Reconfigure git
+        run: |
           git config --global --add safe.directory '*'
           git config --global --list
       - uses: actions/checkout@v7
@@ -331,12 +330,12 @@ jobs:
       - uses: ./.github/actions/configure_ccache
 
       - name: ls local
-        run : ls -la
+        run: ls -la
 
       - name: Setup env
         env:
           SHAMROCK_BUILD_NPROC: ${{ matrix.build_nproc }}
-        run : ./env/new-env --machine ${{ matrix.machine }} --builddir build -- ${{ matrix.args }}
+        run: ./env/new-env --machine ${{ matrix.machine }} --builddir build -- ${{ matrix.args }}
 
       - name: Cat activate file
         run: |

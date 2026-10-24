@@ -211,15 +211,16 @@ follow this format (try to stay under 70 total characters if possible):
 
 ### Commit authorship
 
-Commit-msg hooks can rewrite the author and inject `Co-authored-by` (often
-with a model name). After every `git commit`, amend with `--no-verify`
-before pushing (a plain amend re-runs the hook):
+Commit-msg hooks can rewrite the author and inject `Co-authored-by`. After
+every `git commit`, amend with `--no-verify` before pushing (a plain amend
+re-runs the hook):
 
 - **Author** = the human who initiated the work. Use `--author`; do not
-  change gitconfig.
-- Trailer = `Assisted-by: <agent>` only. No model names. No
-  `Co-authored-by` (`Co-authored-by` is for extra human authors only). Also
-  no session url.
+  change gitconfig. If that identity appears in `.mailmap`, use the
+  canonical name and email it maps to (`git check-mailmap "<name> <email>"`
+  prints it).
+- Trailer = `Assisted-by: <agent>` only. No `Co-authored-by`
+  (`Co-authored-by` is for extra human authors only). Also no session url.
 
 Check `git log -1 --format='Author: %an <%ae>%n%B'` before push.
 

@@ -11,8 +11,9 @@
  * @file main.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Shamrock control GUI: for now a Dear ImGui (docking branch) frame loop showing an empty
- * dock area that fills the window, in the dark theme with IBM Plex fonts, with headless modes
- * (deterministic 60 fps clock for --screenshot and --bench).
+ * dock area that fills the window, in the dark theme with IBM Plex fonts, laid out in logical
+ * pixels scaled by the UI scale (--ui-scale), with headless modes (deterministic 60 fps clock for
+ * --screenshot and --bench).
  *
  * Interactive runs remember the dock arrangement in shamrock_gui_layout.ini. The fonts are read
  * from assets/fonts (or --assets DIR), falling back to the assets folder next to the executable.
@@ -20,6 +21,7 @@
  * Usage:
  *
  *     ./shamrock_gui                        interactive
+ *     ./shamrock_gui --ui-scale 1.5         start at 150 % (clamped to [0.5, 3])
  *     ./shamrock_gui --screenshot shot.png  render 45 frames (or --frames N), save PNG, exit
  *     ./shamrock_gui --bench 300            print per-frame CPU timings as JSON
  *     ./shamrock_gui --assets DIR           read the fonts from DIR/fonts
@@ -31,9 +33,11 @@
 #include "imgui_impl_opengl3.h"
 #include "sham/gui/FrameTimings.hpp"
 #include "sham/gui/GuiClock.hpp"
+#include "sham/gui/ScaledDrawList.hpp"
 #include "sham/gui/font.hpp"
 #include "sham/gui/screenshot.hpp"
 #include "sham/gui/style.hpp"
+#include "sham/gui/ui.hpp"
 #include <GLFW/glfw3.h>
 #if defined(__APPLE__)
     #include <OpenGL/gl3.h>
@@ -41,6 +45,7 @@
     #include <GL/gl.h>
 #endif
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
@@ -56,8 +61,9 @@ namespace sham::gui {
     static Fonts g_fonts;
 
     /// Build one frame: a full-screen host window holding the dock area.
-    void gui() {
+    void gui(UI &ui) {
         const ImGuiViewport *vp = ImGui::GetMainViewport();
+        ui.origin               = vp->Pos;
         ImGui::SetNextWindowPos(vp->Pos);
         ImGui::SetNextWindowSize(vp->Size);
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove
@@ -83,6 +89,9 @@ namespace sham::gui {
 
         /// --bench N: render N frames (after 30 warm-up frames) and print per-frame timings
         std::optional<int> bench = std::nullopt;
+
+        /// --ui-scale S: initial UI scale (clamped to [UI::MIN, UI::MAX])
+        std::optional<double> ui_scale = std::nullopt;
 
         /// --assets DIR: folder holding fonts/
         std::optional<std::string> assets = std::nullopt;
@@ -135,6 +144,8 @@ namespace sham::gui {
             } else if (a == "--bench") {
                 if (int n = std::stoi(next()); n > 0)
                     cli.bench = n;
+            } else if (a == "--ui-scale") {
+                cli.ui_scale = std::stod(next());
             } else if (a == "--assets") {
                 cli.assets = next();
             } else if (a == "-h" || a == "--help") {
@@ -155,7 +166,9 @@ int main(int argc, char **argv) {
     const CliArgs cli = parse_cli(argc, argv);
     if (std::optional<int> code = cli.exit_code()) {
         std::printf(
-            "usage: %s [--screenshot out.png] [--frames N] [--bench N] [--assets DIR]\n", argv[0]);
+            "usage: %s [--ui-scale S] [--screenshot out.png] [--frames N] [--bench N] [--assets "
+            "DIR]\n",
+            argv[0]);
         return *code;
     }
     if (cli.assets)
@@ -189,12 +202,23 @@ int main(int argc, char **argv) {
     g_fonts = load_fonts(g_assets / "fonts");
     setup_style();
 
+    UI ui;
+    // applied before the first frame, and again whenever ui_scale changes
+    double ui_scale    = std::min(UI::MAX, std::max(UI::MIN, cli.ui_scale.value_or(1.0)));
+    bool style_applied = false;
+
     GuiClock gui_clock(!cli.interactive_mode());
     FrameTimings timings; // only filled with --bench
 
     int fbw = 0, fbh = 0;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+        // before ImGui::NewFrame(): ImGui reads the base font size (used by dock tabs) there
+        if (ui.scale != ui_scale || !style_applied) {
+            ui.scale = ui_scale;
+            apply_scale(ui.scale);
+            style_applied = true;
+        }
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -204,27 +228,23 @@ int main(int argc, char **argv) {
         // so its format stays stable once the update step lands
         if (cli.bench)
             timings.mark_update();
-        gui();
+        gui(ui);
         if (cli.bench)
             timings.mark_ui();
         gui_clock.end_frame();
         const bool want_exit
             = cli.frames_before_exit() && gui_clock.frame_counter >= *cli.frames_before_exit();
-        // temporary: something moving to check --screenshot, with a label to check the fonts,
-        // removed with the real panes
+        // temporary: something moving to check --screenshot, with a label to check the fonts and
+        // the UI scale, removed with the real panes
         {
             const double t = gui_clock.now();
             const ImVec2 c(360 + 200 * float(std::cos(t)), 240 + 120 * float(std::sin(2 * t)));
-            ImDrawList *dl = ImGui::GetForegroundDrawList();
-            dl->AddRectFilled(
+            ScaledDrawList dl{.d = ImGui::GetForegroundDrawList(), .ui = ui};
+            dl.AddRectFilled(
                 ImVec2(c.x - 20, c.y - 20),
                 ImVec2(c.x + 20, c.y + 20),
                 IM_COL32(232, 163, 61, 255));
-            const char *label       = "Placeholder text";
-            const float size        = 13.0f;
-            const ImVec2 label_size = g_fonts.sans->CalcTextSizeA(size, FLT_MAX, 0.0f, label);
-            dl->AddText(
-                g_fonts.sans, size, ImVec2(c.x + 28, c.y - label_size.y / 2), theme::TEXT, label);
+            draw_text_vc(dl, g_fonts.sans, 13, c.x + 28, c.y, theme::TEXT, "Placeholder text");
         }
         ImGui::Render();
         glfwGetFramebufferSize(window, &fbw, &fbh);

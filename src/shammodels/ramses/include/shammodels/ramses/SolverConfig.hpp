@@ -142,7 +142,7 @@ namespace shammodels::basegodunov {
     /**
      * @brief Equation of state of the gas, each alternative maps to a shammath FluidStateSpec
      *
-     * The solver only supports the Adiabatic alternative for now.
+     * The solver supports the Adiabatic and ResetBarotropic alternatives for now.
      */
     template<class Tvec>
     struct EOSConfig {
@@ -168,13 +168,46 @@ namespace shammodels::basegodunov {
             }
         };
 
-        using Variant = std::variant<Adiabatic, Barotropic>;
+        /**
+         * @brief Adiabatic hydro step, then internal energy reset onto a barotrope (RAMSES-like)
+         *
+         * The hydro step is the adiabatic one with the ideal gas index gamma (get_spec() is
+         * shammath::FluidStateAdiabatic). At the end of each timestep, before the CFL condition,
+         * the internal energy of every cell is overwritten by \f$ P_{\rm baro}(\rho) / (\gamma -
+         * 1) \f$, where \f$ P_{\rm baro} \f$ is the pressure of get_barotrope() (isothermal with
+         * sound speed cs0 below rho_crit, adiabatic with index gamma_baro above).
+         */
+        struct ResetBarotropic {
+            Tscal rho_crit;
+            Tscal cs0;
+            Tscal gamma_baro = 5. / 3.;
+            Tscal gamma      = 5. / 3.;
+
+            inline shammath::FluidStateAdiabatic<Tvec> get_spec() const {
+                return shammath::FluidStateAdiabatic<Tvec>{.m_gamma = gamma};
+            }
+
+            inline shammath::FluidStateBarotropic<Tvec> get_barotrope() const {
+                return shammath::FluidStateBarotropic<Tvec>(rho_crit, cs0, gamma_baro);
+            }
+        };
+
+        using Variant = std::variant<Adiabatic, Barotropic, ResetBarotropic>;
 
         Variant config = Adiabatic{};
 
         inline void set_adiabatic(Tscal gamma) { config = Adiabatic{gamma}; }
         inline void set_barotropic(Tscal rho_crit, Tscal cs0, Tscal gamma) {
             config = Barotropic{rho_crit, cs0, gamma};
+        }
+        inline void set_reset_barotropic(Tscal rho_crit, Tscal cs0, Tscal gamma_baro, Tscal gamma) {
+            config = ResetBarotropic{rho_crit, cs0, gamma_baro, gamma};
+        }
+
+        /// True if the hydro step is the adiabatic one (Adiabatic and ResetBarotropic)
+        inline bool is_hydro_adiabatic() const {
+            return std::holds_alternative<Adiabatic>(config)
+                   || std::holds_alternative<ResetBarotropic>(config);
         }
     };
 
@@ -215,14 +248,19 @@ struct shammodels::basegodunov::SolverConfig {
     /// Set an adiabatic equation of state (kept for backward compatibility)
     inline void set_eos_gamma(Tscal gamma) { eos_config.set_adiabatic(gamma); }
 
-    /// Adiabatic index of the gas, throws if the equation of state is not adiabatic
+    /// Adiabatic index of the hydro step, throws if the hydro step is not adiabatic
     inline Tscal get_eos_gamma() const {
-        using Adiabatic = typename EOSConfig<Tvec>::Adiabatic;
+        using Adiabatic       = typename EOSConfig<Tvec>::Adiabatic;
+        using ResetBarotropic = typename EOSConfig<Tvec>::ResetBarotropic;
         if (const Adiabatic *cfg = std::get_if<Adiabatic>(&eos_config.config)) {
             return cfg->gamma;
         }
+        if (const ResetBarotropic *cfg = std::get_if<ResetBarotropic>(&eos_config.config)) {
+            return cfg->gamma;
+        }
         shambase::throw_with_loc<std::invalid_argument>(
-            "The Ramses solver only supports the adiabatic equation of state for now");
+            "The Ramses solver only supports an adiabatic hydro step (Adiabatic or "
+            "ResetBarotropic equation of state) for now");
         return {};
     }
 
@@ -342,11 +380,24 @@ struct shammodels::basegodunov::SolverConfig {
                     mode));
         }
 
-        using EOSAdiabatic = typename EOSConfig<Tvec>::Adiabatic;
+        using EOSAdiabatic       = typename EOSConfig<Tvec>::Adiabatic;
+        using EOSResetBarotropic = typename EOSConfig<Tvec>::ResetBarotropic;
         if (const EOSAdiabatic *cfg = std::get_if<EOSAdiabatic>(&eos_config.config)) {
             if (!(cfg->gamma > 1.0)) {
                 shambase::throw_with_loc<std::invalid_argument>(
                     sham::format("Gamma must be > 1, currently Gamma = {}", cfg->gamma));
+            }
+        } else if (
+            const EOSResetBarotropic *cfg = std::get_if<EOSResetBarotropic>(&eos_config.config)) {
+            if (!(cfg->gamma > 1.0)) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    sham::format("Gamma must be > 1, currently Gamma = {}", cfg->gamma));
+            }
+            if (!(cfg->rho_crit > 0.0) || !(cfg->cs0 > 0.0)) {
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
+                    "rho_crit and cs0 must be > 0, currently rho_crit = {}, cs0 = {}",
+                    cfg->rho_crit,
+                    cfg->cs0));
             }
         } else {
             shambase::throw_with_loc<std::invalid_argument>(
@@ -483,6 +534,14 @@ namespace shammodels::basegodunov {
                            {"cs0", cfg.cs0},
                            {"gamma", cfg.gamma}};
                 },
+                [&](const typename EOS::ResetBarotropic &cfg) {
+                    j
+                        = {{"type", "reset_barotropic"},
+                           {"rho_crit", cfg.rho_crit},
+                           {"cs0", cfg.cs0},
+                           {"gamma_baro", cfg.gamma_baro},
+                           {"gamma", cfg.gamma}};
+                },
             },
             p.config);
     }
@@ -498,6 +557,12 @@ namespace shammodels::basegodunov {
             p.set_barotropic(
                 j.at("rho_crit").get<Tscal>(),
                 j.at("cs0").get<Tscal>(),
+                j.at("gamma").get<Tscal>());
+        } else if (type == "reset_barotropic") {
+            p.set_reset_barotropic(
+                j.at("rho_crit").get<Tscal>(),
+                j.at("cs0").get<Tscal>(),
+                j.at("gamma_baro").get<Tscal>(),
                 j.at("gamma").get<Tscal>());
         } else {
             shambase::throw_with_loc<std::runtime_error>("Invalid EOS type: " + type);

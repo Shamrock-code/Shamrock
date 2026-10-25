@@ -1050,6 +1050,13 @@
          "parsing_time_s": 2560.5,
          "codegen_time_s": 2165.3,
          "total_time_s": 4725.8
+      },
+      {
+         "datetime": "2026-10-25T22:51:03Z",
+         "translation_unit_count": 476,
+         "parsing_time_s": 3874.3,
+         "codegen_time_s": 2836.0,
+         "total_time_s": 6710.3
       }
    ]
 }

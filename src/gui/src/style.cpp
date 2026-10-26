@@ -10,15 +10,19 @@
 /**
  * @file style.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Dark theme of shamrock_gui applied to ImGui's style.
+ * @brief Dark theme of shamrock_gui applied to ImGui's style, and its UI scaling.
  *
  */
 
 #include "sham/gui/style.hpp"
 #include "imgui.h"
+#include <algorithm>
 #include <utility>
 
 namespace sham::gui {
+
+    // unscaled style from setup_style(); apply_scale() starts from it
+    static ImGuiStyle base_style;
 
     void setup_style() {
         ImGuiStyle &style                       = ImGui::GetStyle();
@@ -72,6 +76,15 @@ namespace sham::gui {
         };
         for (auto &[k, v] : cols)
             style.Colors[k] = ImGui::ColorConvertU32ToFloat4(v);
+        base_style = style;
+    }
+
+    void apply_scale(double s) {
+        ImGuiStyle &style = ImGui::GetStyle();
+        style             = base_style;
+        style.ScaleAllSizes(float(s));
+        style.FontSizeBase         = float(13 * s);
+        style.DockingSeparatorSize = std::max(1.0f, float(s));
     }
 
 } // namespace sham::gui

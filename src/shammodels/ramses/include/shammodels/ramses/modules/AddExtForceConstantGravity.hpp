@@ -11,8 +11,8 @@
 
 /**
  * @file AddExtForceConstantGravity.hpp
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Node adding a constant gravitational acceleration to the external forces acceleration
  *
  * Adapted from the PhD work of Léodasce Sewanou.

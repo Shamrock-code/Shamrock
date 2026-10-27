@@ -32,9 +32,9 @@ namespace shamrock::solvergraph {
         edges.spans_y.check_sizes(edges.sizes.indexes);
         edges.spans_z.ensure_sizes(edges.sizes.indexes);
 
-        Tscal alpha_0 = edges.alpha_0.value;
-        Tscal alpha_1 = edges.alpha_1.value;
-        Tscal alpha_2 = edges.alpha_2.value;
+        Tscal alpha_0 = edges.alpha_0.data;
+        Tscal alpha_1 = edges.alpha_1.data;
+        Tscal alpha_2 = edges.alpha_2.data;
 
         // as in BLAS, z is not read when alpha_0 == 0, so that it can be freshly allocated
         bool read_z = alpha_0 != 0;

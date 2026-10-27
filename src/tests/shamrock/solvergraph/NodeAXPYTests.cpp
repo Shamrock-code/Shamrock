@@ -31,7 +31,7 @@ namespace {
             std::vector<T> xh = to_host(*x, id_patch);
             std::vector<T> yh = to_host(*y, id_patch);
             for (u32 i = 0; i < yh.size(); i++) {
-                yh[i] = yh[i] + alpha->value * xh[i];
+                yh[i] = yh[i] + alpha->data * xh[i];
             }
             expected.push_back(yh);
         }

@@ -21,7 +21,7 @@
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
@@ -29,8 +29,8 @@
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
     X_RO(shamrock::solvergraph::IFieldSpan<T>, spans_x)                                            \
     X_RO(shamrock::solvergraph::IFieldSpan<T>, spans_y)                                            \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, alpha)                                          \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, beta)                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, alpha)                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, beta)                                            \
                                                                                                    \
     /* ------------------- outputs ------------------- */                                          \
     X_RW(shamrock::solvergraph::IFieldSpan<T>, spans_z)

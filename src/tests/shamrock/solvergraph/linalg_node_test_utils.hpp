@@ -26,7 +26,7 @@
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include <memory>
 #include <utility>
 #include <vector>
@@ -94,9 +94,9 @@ namespace shamrock::solvergraph::test_utils {
 
     /// Build a scalar edge holding `value`
     template<class T>
-    inline std::shared_ptr<shamrock::solvergraph::ScalarEdge<T>> make_scalar(T value) {
-        auto edge   = std::make_shared<shamrock::solvergraph::ScalarEdge<T>>("scalar", "a");
-        edge->value = value;
+    inline std::shared_ptr<shamrock::solvergraph::IDataEdge<T>> make_scalar(T value) {
+        auto edge  = std::make_shared<shamrock::solvergraph::IDataEdge<T>>("scalar", "a");
+        edge->data = value;
         return edge;
     }
 

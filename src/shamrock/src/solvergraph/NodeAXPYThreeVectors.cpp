@@ -32,8 +32,8 @@ namespace shamrock::solvergraph {
         edges.spans_y.check_sizes(edges.sizes.indexes);
         edges.spans_z.check_sizes(edges.sizes.indexes);
 
-        Tscal alpha = edges.alpha.value;
-        Tscal beta  = edges.beta.value;
+        Tscal alpha = edges.alpha.data;
+        Tscal beta  = edges.beta.data;
 
         shambase::DistributedData<u32> val_cnts
             = edges.sizes.indexes.template map<u32>([&](u64 id, u32 obj_cnt) {

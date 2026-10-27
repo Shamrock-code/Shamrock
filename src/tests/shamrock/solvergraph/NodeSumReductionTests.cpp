@@ -41,20 +41,20 @@ namespace {
             }
         }
 
-        auto result = std::make_shared<shamrock::solvergraph::ScalarEdge<T>>("sum", "S");
+        auto result = std::make_shared<shamrock::solvergraph::IDataEdge<T>>("sum", "S");
 
         shamrock::solvergraph::NodeSumReduction<T> node(nvar);
         node.set_edges(sizes, field, result);
 
         node.evaluate();
-        T first = result->value;
+        T first = result->data;
 
         REQUIRE_FLOAT_EQUAL(first, T(expected), 1e-14 * T(abs_sum));
 
         // determinism: a second evaluation must give the bitwise identical result
-        result->value = 0;
+        result->data = 0;
         node.evaluate();
-        T second = result->value;
+        T second = result->data;
 
         REQUIRE_EQUAL(std::bit_cast<u64>(first), std::bit_cast<u64>(second));
     }

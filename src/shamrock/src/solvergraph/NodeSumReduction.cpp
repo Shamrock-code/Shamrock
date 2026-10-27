@@ -57,7 +57,7 @@ namespace shamrock::solvergraph {
                 loc_val += shamalgs::primitives::sum(dev_sched, field.get_buf(), 0, val_cnt);
             });
 
-        edges.out_scal.value = shamalgs::collective::allreduce_sum(loc_val);
+        edges.out_scal.data = shamalgs::collective::allreduce_sum(loc_val);
     }
 
     template<class T>

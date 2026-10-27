@@ -44,7 +44,7 @@ namespace shamrock::solvergraph::test_utils {
         const std::vector<std::pair<u64, u32>> &obj_cnts = patch_obj_cnts) {
         auto sizes = std::make_shared<shamrock::solvergraph::Indexes<u32>>("sizes", "N");
         for (auto [id_patch, obj_cnt] : obj_cnts) {
-            sizes->indexes.add_obj(id_patch, obj_cnt);
+            sizes->indexes.add_obj(id_patch, u32{obj_cnt});
         }
         return sizes;
     }

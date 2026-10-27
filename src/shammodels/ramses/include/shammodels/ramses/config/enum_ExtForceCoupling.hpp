@@ -11,6 +11,7 @@
 
 /**
  * @file enum_ExtForceCoupling.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief External forces time coupling enum + json serialization/deserialization
  */

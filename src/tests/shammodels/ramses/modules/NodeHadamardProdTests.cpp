@@ -1,0 +1,51 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#include "shambackends/math.hpp"
+#include "shammodels/ramses/modules/NodeHadamardProd.hpp"
+#include "shamtest/shamtest.hpp"
+#include "tests/shammodels/ramses/modules/linalg_node_test_utils.hpp"
+#include <memory>
+#include <vector>
+
+namespace {
+
+    /// Check NodeHadamardProd (out <- in1 * in2) against a host-side reference
+    template<class T>
+    void test_hadamard_prod(u32 block_size) {
+        using namespace shammodels::ramses::test_utils;
+
+        auto sizes = make_sizes();
+        auto in1   = make_dyadic_field<T>(*sizes, block_size, 0x111);
+        auto in2   = make_dyadic_field<T>(*sizes, block_size, 0x222);
+        // empty output: the node must allocate it
+        auto out = std::make_shared<shamrock::solvergraph::Field<T>>(block_size, "out", "out");
+
+        shammodels::basegodunov::modules::NodeHadamardProd<T> node(block_size);
+        node.set_edges(sizes, in1, in2, out);
+        node.evaluate();
+
+        for (auto [id_patch, block_count] : patch_block_counts) {
+            std::vector<T> in1h = to_host(*in1, id_patch);
+            std::vector<T> in2h = to_host(*in2, id_patch);
+            std::vector<T> expected(in1h.size());
+            for (u32 i = 0; i < in1h.size(); i++) {
+                expected[i] = in1h[i] * in2h[i];
+            }
+            REQUIRE_EQUAL_CUSTOM_COMP(to_host(*out, id_patch), expected, sham::equals);
+        }
+    }
+
+} // namespace
+
+NEW_TEST(Unittest, "shammodels/ramses/modules/NodeHadamardProd", 1) {
+    for (u32 block_size : shammodels::ramses::test_utils::block_sizes) {
+        test_hadamard_prod<f64>(block_size);
+    }
+}

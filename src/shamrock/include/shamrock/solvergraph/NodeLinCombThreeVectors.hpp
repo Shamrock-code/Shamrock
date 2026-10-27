@@ -14,7 +14,7 @@
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Node computing the linear combination z <- alpha_0 * z + alpha_1 * x + alpha_2 * y on
- * cell fields
+ * fields
  *
  * Adapted from the PhD work of Léodasce Sewanou.
  */
@@ -37,12 +37,13 @@
     /* ------------------- outputs ------------------- */                                          \
     X_RW(shamrock::solvergraph::IFieldSpan<T>, spans_z)
 
-namespace shammodels::basegodunov::modules {
+namespace shamrock::solvergraph {
 
     /**
-     * @brief Compute `z <- alpha_0 * z + alpha_1 * x + alpha_2 * y` on every cell of every patch.
+     * @brief Compute `z <- alpha_0 * z + alpha_1 * x + alpha_2 * y` on every value of every patch.
      *
-     * `sizes` holds the block counts, each block containing `block_size` cells. `spans_z` is
+     * `sizes` holds the object counts per patch, each object holding `nvar` values (e.g. the cells
+     * of an AMR block). `spans_z` is
      * resized to match `sizes` if needed. As in BLAS, when `alpha_0 == 0` the previous content of
      * `z` is not read, so `z` may be freshly allocated (uninitialized, or holding NaNs) in that
      * case.
@@ -51,10 +52,10 @@ namespace shammodels::basegodunov::modules {
     class NodeLinCombThreeVectors : public shamrock::solvergraph::INode {
         using Tscal = shambase::VecComponent<T>;
 
-        u32 block_size;
+        u32 nvar;
 
         public:
-        NodeLinCombThreeVectors(u32 block_size) : block_size(block_size) {}
+        NodeLinCombThreeVectors(u32 nvar) : nvar(nvar) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
@@ -65,6 +66,6 @@ namespace shammodels::basegodunov::modules {
         virtual std::string _impl_get_tex() const;
     };
 
-} // namespace shammodels::basegodunov::modules
+} // namespace shamrock::solvergraph
 
 #undef NODE_EDGES

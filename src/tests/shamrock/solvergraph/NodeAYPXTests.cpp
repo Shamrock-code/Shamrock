@@ -8,49 +8,49 @@
 // -------------------------------------------------------//
 
 #include "shambackends/math.hpp"
-#include "shammodels/ramses/modules/NodeAXPY.hpp"
+#include "shamrock/solvergraph/NodeAYPX.hpp"
 #include "shamtest/shamtest.hpp"
-#include "tests/shammodels/ramses/modules/linalg_node_test_utils.hpp"
+#include "tests/shamrock/solvergraph/linalg_node_test_utils.hpp"
 #include <vector>
 
 namespace {
 
-    /// Check NodeAXPY (y <- y + alpha * x) against a host-side reference
+    /// Check NodeAYPX (y <- alpha * y + x) against a host-side reference
     template<class T>
-    void test_axpy(u32 block_size) {
+    void test_aypx(u32 nvar) {
         using Tscal = shambase::VecComponent<T>;
-        using namespace shammodels::ramses::test_utils;
+        using namespace shamrock::solvergraph::test_utils;
 
         auto sizes = make_sizes();
-        auto x     = make_dyadic_field<T>(*sizes, block_size, 0x111);
-        auto y     = make_dyadic_field<T>(*sizes, block_size, 0x222);
+        auto x     = make_dyadic_field<T>(*sizes, nvar, 0x111);
+        auto y     = make_dyadic_field<T>(*sizes, nvar, 0x222);
         auto alpha = make_scalar<Tscal>(-0.75);
 
         std::vector<std::vector<T>> expected;
-        for (auto [id_patch, block_count] : patch_block_counts) {
+        for (auto [id_patch, obj_cnt] : patch_obj_cnts) {
             std::vector<T> xh = to_host(*x, id_patch);
             std::vector<T> yh = to_host(*y, id_patch);
             for (u32 i = 0; i < yh.size(); i++) {
-                yh[i] = yh[i] + alpha->value * xh[i];
+                yh[i] = alpha->value * yh[i] + xh[i];
             }
             expected.push_back(yh);
         }
 
-        shammodels::basegodunov::modules::NodeAXPY<T> node(block_size);
+        shamrock::solvergraph::NodeAYPX<T> node(nvar);
         node.set_edges(sizes, x, alpha, y);
         node.evaluate();
 
-        for (u32 i = 0; i < patch_block_counts.size(); i++) {
+        for (u32 i = 0; i < patch_obj_cnts.size(); i++) {
             REQUIRE_EQUAL_CUSTOM_COMP(
-                to_host(*y, patch_block_counts[i].first), expected[i], sham::equals);
+                to_host(*y, patch_obj_cnts[i].first), expected[i], sham::equals);
         }
     }
 
 } // namespace
 
-NEW_TEST(Unittest, "shammodels/ramses/modules/NodeAXPY", 1) {
-    for (u32 block_size : shammodels::ramses::test_utils::block_sizes) {
-        test_axpy<f64>(block_size);
-        test_axpy<f64_3>(block_size);
+NEW_TEST(Unittest, "shamrock/solvergraph/NodeAYPX", 1) {
+    for (u32 nvar : shamrock::solvergraph::test_utils::nvars) {
+        test_aypx<f64>(nvar);
+        test_aypx<f64_3>(nvar);
     }
 }

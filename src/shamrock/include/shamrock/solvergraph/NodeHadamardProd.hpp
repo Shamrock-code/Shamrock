@@ -10,10 +10,10 @@
 #pragma once
 
 /**
- * @file NodeOverwrite.hpp
+ * @file NodeHadamardProd.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Node copying a cell field into another one (y <- x)
+ * @brief Node computing the elementwise (Hadamard) product of two fields
  *
  * Adapted from the PhD work of Léodasce Sewanou.
  */
@@ -26,35 +26,37 @@
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* ------------------- inputs ------------------- */                                           \
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
-    X_RO(shamrock::solvergraph::IFieldSpan<T>, spans_x)                                            \
+    X_RO(shamrock::solvergraph::IFieldSpan<T>, spans_in1)                                          \
+    X_RO(shamrock::solvergraph::IFieldSpan<T>, spans_in2)                                          \
                                                                                                    \
     /* ------------------- outputs ------------------- */                                          \
-    X_RW(shamrock::solvergraph::IFieldSpan<T>, spans_y)
+    X_RW(shamrock::solvergraph::IFieldSpan<T>, spans_out)
 
-namespace shammodels::basegodunov::modules {
+namespace shamrock::solvergraph {
 
     /**
-     * @brief Copy `x` into `y` on every cell of every patch.
+     * @brief Compute `out <- in1 * in2` (elementwise) on every value of every patch.
      *
-     * `sizes` holds the block counts, each block containing `block_size` cells. `spans_y` is
+     * `sizes` holds the object counts per patch, each object holding `nvar` values (e.g. the cells
+     * of an AMR block). `spans_out` is
      * resized to match `sizes` if needed.
      */
     template<class T>
-    class NodeOverwrite : public shamrock::solvergraph::INode {
-        u32 block_size;
+    class NodeHadamardProd : public shamrock::solvergraph::INode {
+        u32 nvar;
 
         public:
-        NodeOverwrite(u32 block_size) : block_size(block_size) {}
+        NodeHadamardProd(u32 nvar) : nvar(nvar) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "NodeOverwrite"; }
+        inline virtual std::string _impl_get_label() const { return "NodeHadamardProd"; }
 
         virtual std::string _impl_get_tex() const;
     };
 
-} // namespace shammodels::basegodunov::modules
+} // namespace shamrock::solvergraph
 
 #undef NODE_EDGES

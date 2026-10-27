@@ -18,10 +18,11 @@
 
 #include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
-#include "shammodels/ramses/modules/NodeAXPYThreeVectors.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
+#include "shamrock/solvergraph/NodeAXPYThreeVectors.hpp"
 #include "shamsys/NodeInstance.hpp"
 
-namespace shammodels::basegodunov::modules {
+namespace shamrock::solvergraph {
 
     template<class T>
     void NodeAXPYThreeVectors<T>::_impl_evaluate_internal() {
@@ -34,16 +35,16 @@ namespace shammodels::basegodunov::modules {
         Tscal alpha = edges.alpha.value;
         Tscal beta  = edges.beta.value;
 
-        shambase::DistributedData<u32> cell_counts
-            = edges.sizes.indexes.template map<u32>([&](u64 id, u32 block_count) {
-                  return block_count * block_size;
+        shambase::DistributedData<u32> val_cnts
+            = edges.sizes.indexes.template map<u32>([&](u64 id, u32 obj_cnt) {
+                  return obj_cnt * nvar;
               });
 
         sham::distributed_data_kernel_call(
             shamsys::instance::get_compute_scheduler_ptr(),
             sham::DDMultiRef{edges.spans_x.get_spans(), edges.spans_y.get_spans()},
             sham::DDMultiRef{edges.spans_z.get_spans()},
-            cell_counts,
+            val_cnts,
             [alpha, beta](u32 i, const T *__restrict x, const T *__restrict y, T *__restrict z) {
                 z[i] = z[i] + alpha * x[i] + beta * y[i];
             });
@@ -63,6 +64,6 @@ namespace shammodels::basegodunov::modules {
         return tex;
     }
 
-} // namespace shammodels::basegodunov::modules
+} // namespace shamrock::solvergraph
 
-template class shammodels::basegodunov::modules::NodeAXPYThreeVectors<f64>;
+template class shamrock::solvergraph::NodeAXPYThreeVectors<f64>;

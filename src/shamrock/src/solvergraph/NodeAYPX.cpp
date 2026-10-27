@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file NodeAXPY.cpp
+ * @file NodeAYPX.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
@@ -18,13 +18,14 @@
 
 #include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
-#include "shammodels/ramses/modules/NodeAXPY.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
+#include "shamrock/solvergraph/NodeAYPX.hpp"
 #include "shamsys/NodeInstance.hpp"
 
-namespace shammodels::basegodunov::modules {
+namespace shamrock::solvergraph {
 
     template<class T>
-    void NodeAXPY<T>::_impl_evaluate_internal() {
+    void NodeAYPX<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
 
         edges.spans_x.check_sizes(edges.sizes.indexes);
@@ -32,27 +33,27 @@ namespace shammodels::basegodunov::modules {
 
         Tscal alpha = edges.alpha.value;
 
-        shambase::DistributedData<u32> cell_counts
-            = edges.sizes.indexes.template map<u32>([&](u64 id, u32 block_count) {
-                  return block_count * block_size;
+        shambase::DistributedData<u32> val_cnts
+            = edges.sizes.indexes.template map<u32>([&](u64 id, u32 obj_cnt) {
+                  return obj_cnt * nvar;
               });
 
         sham::distributed_data_kernel_call(
             shamsys::instance::get_compute_scheduler_ptr(),
             sham::DDMultiRef{edges.spans_x.get_spans()},
             sham::DDMultiRef{edges.spans_y.get_spans()},
-            cell_counts,
+            val_cnts,
             [alpha](u32 i, const T *__restrict x, T *__restrict y) {
-                y[i] = y[i] + alpha * x[i];
+                y[i] = alpha * y[i] + x[i];
             });
     }
 
     template<class T>
-    std::string NodeAXPY<T>::_impl_get_tex() const {
+    std::string NodeAYPX<T>::_impl_get_tex() const {
         std::string tex = R"tex(
-            AXPY update
+            AYPX update
             \begin{equation}
-            {spans_y}_i \leftarrow {spans_y}_i + {alpha} \, {spans_x}_i
+            {spans_y}_i \leftarrow {alpha} \, {spans_y}_i + {spans_x}_i
             \end{equation}
         )tex";
 
@@ -61,7 +62,7 @@ namespace shammodels::basegodunov::modules {
         return tex;
     }
 
-} // namespace shammodels::basegodunov::modules
+} // namespace shamrock::solvergraph
 
-template class shammodels::basegodunov::modules::NodeAXPY<f64>;
-template class shammodels::basegodunov::modules::NodeAXPY<f64_3>;
+template class shamrock::solvergraph::NodeAYPX<f64>;
+template class shamrock::solvergraph::NodeAYPX<f64_3>;

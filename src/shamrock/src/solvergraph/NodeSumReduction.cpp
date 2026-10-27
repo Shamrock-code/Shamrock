@@ -20,11 +20,11 @@
 #include "shambase/string.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/primitives/reduction.hpp"
-#include "shammodels/ramses/modules/NodeSumReduction.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
+#include "shamrock/solvergraph/NodeSumReduction.hpp"
 #include "shamsys/NodeInstance.hpp"
 
-namespace shammodels::basegodunov::modules {
+namespace shamrock::solvergraph {
 
     template<class T>
     void NodeSumReduction<T>::_impl_evaluate_internal() {
@@ -40,21 +40,21 @@ namespace shammodels::basegodunov::modules {
         edges.spans_in.get_refs().for_each_ordered(
             [&](u64 id_patch, const std::reference_wrapper<PatchDataField<T>> &field_ref) {
                 const PatchDataField<T> &field = field_ref.get();
-                u32 cell_count                 = edges.sizes.indexes.get(id_patch) * block_size;
+                u32 val_cnt                    = edges.sizes.indexes.get(id_patch) * nvar;
 
-                if (field.get_val_cnt() != cell_count) {
+                if (field.get_val_cnt() != val_cnt) {
                     shambase::throw_with_loc<std::runtime_error>(sham::format(
                         "field size mismatch on patch {}: expected {} values, got {}",
                         id_patch,
-                        cell_count,
+                        val_cnt,
                         field.get_val_cnt()));
                 }
 
-                if (cell_count == 0) {
+                if (val_cnt == 0) {
                     return;
                 }
 
-                loc_val += shamalgs::primitives::sum(dev_sched, field.get_buf(), 0, cell_count);
+                loc_val += shamalgs::primitives::sum(dev_sched, field.get_buf(), 0, val_cnt);
             });
 
         edges.out_scal.value = shamalgs::collective::allreduce_sum(loc_val);
@@ -74,6 +74,6 @@ namespace shammodels::basegodunov::modules {
         return tex;
     }
 
-} // namespace shammodels::basegodunov::modules
+} // namespace shamrock::solvergraph
 
-template class shammodels::basegodunov::modules::NodeSumReduction<f64>;
+template class shamrock::solvergraph::NodeSumReduction<f64>;

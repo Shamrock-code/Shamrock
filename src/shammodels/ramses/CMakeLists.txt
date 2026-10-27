@@ -45,13 +45,6 @@ set(Sources
     src/modules/CGInit.cpp
     src/modules/ComputeAMRLevel.cpp
     src/modules/ResidualDot.cpp
-    src/modules/NodeAXPY.cpp
-    src/modules/NodeAYPX.cpp
-    src/modules/NodeAXPYThreeVectors.cpp
-    src/modules/NodeLinCombThreeVectors.cpp
-    src/modules/NodeHadamardProd.cpp
-    src/modules/NodeOverwrite.cpp
-    src/modules/NodeSumReduction.cpp
     src/modules/FindGhostLayerCandidates.cpp
     src/modules/FindGhostLayerIndices.cpp
     src/modules/ExtractGhostLayer.cpp

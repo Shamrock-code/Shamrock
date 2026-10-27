@@ -10,10 +10,10 @@
 #pragma once
 
 /**
- * @file NodeAYPX.hpp
+ * @file NodeOverwrite.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Node computing the in place update y <- alpha * y + x on cell fields
+ * @brief Node copying a field into another one (y <- x)
  *
  * Adapted from the PhD work of Léodasce Sewanou.
  */
@@ -21,44 +21,41 @@
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* ------------------- inputs ------------------- */                                           \
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
     X_RO(shamrock::solvergraph::IFieldSpan<T>, spans_x)                                            \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, alpha)                                          \
                                                                                                    \
     /* ------------------- outputs ------------------- */                                          \
     X_RW(shamrock::solvergraph::IFieldSpan<T>, spans_y)
 
-namespace shammodels::basegodunov::modules {
+namespace shamrock::solvergraph {
 
     /**
-     * @brief Compute `y <- alpha * y + x` on every cell of every patch.
+     * @brief Copy `x` into `y` on every value of every patch.
      *
-     * `sizes` holds the block counts, each block containing `block_size` cells. `spans_y` is
-     * updated in place, so it must already be allocated with the right sizes.
+     * `sizes` holds the object counts per patch, each object holding `nvar` values (e.g. the cells
+     * of an AMR block). `spans_y` is
+     * resized to match `sizes` if needed.
      */
     template<class T>
-    class NodeAYPX : public shamrock::solvergraph::INode {
-        using Tscal = shambase::VecComponent<T>;
-
-        u32 block_size;
+    class NodeOverwrite : public shamrock::solvergraph::INode {
+        u32 nvar;
 
         public:
-        NodeAYPX(u32 block_size) : block_size(block_size) {}
+        NodeOverwrite(u32 nvar) : nvar(nvar) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "NodeAYPX"; }
+        inline virtual std::string _impl_get_label() const { return "NodeOverwrite"; }
 
         virtual std::string _impl_get_tex() const;
     };
 
-} // namespace shammodels::basegodunov::modules
+} // namespace shamrock::solvergraph
 
 #undef NODE_EDGES

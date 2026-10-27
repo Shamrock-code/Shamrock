@@ -18,10 +18,11 @@
 
 #include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
-#include "shammodels/ramses/modules/NodeLinCombThreeVectors.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
+#include "shamrock/solvergraph/NodeLinCombThreeVectors.hpp"
 #include "shamsys/NodeInstance.hpp"
 
-namespace shammodels::basegodunov::modules {
+namespace shamrock::solvergraph {
 
     template<class T>
     void NodeLinCombThreeVectors<T>::_impl_evaluate_internal() {
@@ -38,16 +39,16 @@ namespace shammodels::basegodunov::modules {
         // as in BLAS, z is not read when alpha_0 == 0, so that it can be freshly allocated
         bool read_z = alpha_0 != 0;
 
-        shambase::DistributedData<u32> cell_counts
-            = edges.sizes.indexes.template map<u32>([&](u64 id, u32 block_count) {
-                  return block_count * block_size;
+        shambase::DistributedData<u32> val_cnts
+            = edges.sizes.indexes.template map<u32>([&](u64 id, u32 obj_cnt) {
+                  return obj_cnt * nvar;
               });
 
         sham::distributed_data_kernel_call(
             shamsys::instance::get_compute_scheduler_ptr(),
             sham::DDMultiRef{edges.spans_x.get_spans(), edges.spans_y.get_spans()},
             sham::DDMultiRef{edges.spans_z.get_spans()},
-            cell_counts,
+            val_cnts,
             [alpha_0, alpha_1, alpha_2, read_z](
                 u32 i, const T *__restrict x, const T *__restrict y, T *__restrict z) {
                 T xy_part = alpha_1 * x[i] + alpha_2 * y[i];
@@ -69,6 +70,6 @@ namespace shammodels::basegodunov::modules {
         return tex;
     }
 
-} // namespace shammodels::basegodunov::modules
+} // namespace shamrock::solvergraph
 
-template class shammodels::basegodunov::modules::NodeLinCombThreeVectors<f64>;
+template class shamrock::solvergraph::NodeLinCombThreeVectors<f64>;

@@ -10,52 +10,54 @@
 #pragma once
 
 /**
- * @file NodeHadamardProd.hpp
+ * @file NodeSumReduction.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Node computing the elementwise (Hadamard) product of two cell fields
+ * @brief Node computing the global sum of a field over all patches and ranks
  *
  * Adapted from the PhD work of Léodasce Sewanou.
  */
 
 #include "shambackends/vec.hpp"
-#include "shamrock/solvergraph/IFieldSpan.hpp"
+#include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* ------------------- inputs ------------------- */                                           \
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
-    X_RO(shamrock::solvergraph::IFieldSpan<T>, spans_in1)                                          \
-    X_RO(shamrock::solvergraph::IFieldSpan<T>, spans_in2)                                          \
+    X_RO(shamrock::solvergraph::IFieldRefs<T>, spans_in)                                           \
                                                                                                    \
     /* ------------------- outputs ------------------- */                                          \
-    X_RW(shamrock::solvergraph::IFieldSpan<T>, spans_out)
+    X_RW(shamrock::solvergraph::ScalarEdge<T>, out_scal)
 
-namespace shammodels::basegodunov::modules {
+namespace shamrock::solvergraph {
 
     /**
-     * @brief Compute `out <- in1 * in2` (elementwise) on every cell of every patch.
+     * @brief Compute the sum of `spans_in` over every value of every patch on every rank.
      *
-     * `sizes` holds the block counts, each block containing `block_size` cells. `spans_out` is
-     * resized to match `sizes` if needed.
+     * `sizes` holds the object counts per patch, each object holding `nvar` values (e.g. the cells
+     * of an AMR block). The result is
+     * deterministic: each patch is reduced with the `shamalgs` primitives, the patches are
+     * accumulated in increasing patch id order, then summed across ranks.
      */
     template<class T>
-    class NodeHadamardProd : public shamrock::solvergraph::INode {
-        u32 block_size;
+    class NodeSumReduction : public shamrock::solvergraph::INode {
+        u32 nvar;
 
         public:
-        NodeHadamardProd(u32 block_size) : block_size(block_size) {}
+        NodeSumReduction(u32 nvar) : nvar(nvar) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "NodeHadamardProd"; }
+        inline virtual std::string _impl_get_label() const { return "NodeSumReduction"; }
 
         virtual std::string _impl_get_tex() const;
     };
 
-} // namespace shammodels::basegodunov::modules
+} // namespace shamrock::solvergraph
 
 #undef NODE_EDGES

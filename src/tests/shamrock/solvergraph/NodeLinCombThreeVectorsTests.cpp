@@ -8,9 +8,9 @@
 // -------------------------------------------------------//
 
 #include "shambackends/math.hpp"
-#include "shammodels/ramses/modules/NodeLinCombThreeVectors.hpp"
+#include "shamrock/solvergraph/NodeLinCombThreeVectors.hpp"
 #include "shamtest/shamtest.hpp"
-#include "tests/shammodels/ramses/modules/linalg_node_test_utils.hpp"
+#include "tests/shamrock/solvergraph/linalg_node_test_utils.hpp"
 #include <limits>
 #include <vector>
 
@@ -19,20 +19,20 @@ namespace {
     /// Check NodeLinCombThreeVectors (z <- alpha_0 * z + alpha_1 * x + alpha_2 * y) against a
     /// host-side reference
     template<class T>
-    void test_lin_comb_three_vectors(u32 block_size, shambase::VecComponent<T> alpha_0_val) {
+    void test_lin_comb_three_vectors(u32 nvar, shambase::VecComponent<T> alpha_0_val) {
         using Tscal = shambase::VecComponent<T>;
-        using namespace shammodels::ramses::test_utils;
+        using namespace shamrock::solvergraph::test_utils;
 
         auto sizes   = make_sizes();
-        auto x       = make_dyadic_field<T>(*sizes, block_size, 0x111);
-        auto y       = make_dyadic_field<T>(*sizes, block_size, 0x222);
-        auto z       = make_dyadic_field<T>(*sizes, block_size, 0x333);
+        auto x       = make_dyadic_field<T>(*sizes, nvar, 0x111);
+        auto y       = make_dyadic_field<T>(*sizes, nvar, 0x222);
+        auto z       = make_dyadic_field<T>(*sizes, nvar, 0x333);
         auto alpha_0 = make_scalar<Tscal>(alpha_0_val);
         auto alpha_1 = make_scalar<Tscal>(-0.75);
         auto alpha_2 = make_scalar<Tscal>(2.5);
 
         std::vector<std::vector<T>> expected;
-        for (auto [id_patch, block_count] : patch_block_counts) {
+        for (auto [id_patch, obj_cnt] : patch_obj_cnts) {
             std::vector<T> xh = to_host(*x, id_patch);
             std::vector<T> yh = to_host(*y, id_patch);
             std::vector<T> zh = to_host(*z, id_patch);
@@ -45,41 +45,40 @@ namespace {
 
         if (alpha_0_val == 0) {
             // z must not be read when alpha_0 == 0: poison it to check that
-            for (auto [id_patch, block_count] : patch_block_counts) {
-                std::vector<T> nans(
-                    block_count * block_size, T(std::numeric_limits<Tscal>::quiet_NaN()));
+            for (auto [id_patch, obj_cnt] : patch_obj_cnts) {
+                std::vector<T> nans(obj_cnt * nvar, T(std::numeric_limits<Tscal>::quiet_NaN()));
                 z->get_buf(id_patch).copy_from_stdvec(nans);
             }
         }
 
-        shammodels::basegodunov::modules::NodeLinCombThreeVectors<T> node(block_size);
+        shamrock::solvergraph::NodeLinCombThreeVectors<T> node(nvar);
         node.set_edges(sizes, x, y, alpha_0, alpha_1, alpha_2, z);
         node.evaluate();
 
-        for (u32 i = 0; i < patch_block_counts.size(); i++) {
+        for (u32 i = 0; i < patch_obj_cnts.size(); i++) {
             REQUIRE_EQUAL_CUSTOM_COMP(
-                to_host(*z, patch_block_counts[i].first), expected[i], sham::equals);
+                to_host(*z, patch_obj_cnts[i].first), expected[i], sham::equals);
         }
     }
 
     /// Check that the output field is allocated by the node when it is empty (alpha_0 == 0)
-    void test_lin_comb_three_vectors_alloc(u32 block_size) {
+    void test_lin_comb_three_vectors_alloc(u32 nvar) {
         using T = f64;
-        using namespace shammodels::ramses::test_utils;
+        using namespace shamrock::solvergraph::test_utils;
 
         auto sizes   = make_sizes();
-        auto x       = make_dyadic_field<T>(*sizes, block_size, 0x111);
-        auto y       = make_dyadic_field<T>(*sizes, block_size, 0x222);
-        auto z       = std::make_shared<shamrock::solvergraph::Field<T>>(block_size, "z", "z");
+        auto x       = make_dyadic_field<T>(*sizes, nvar, 0x111);
+        auto y       = make_dyadic_field<T>(*sizes, nvar, 0x222);
+        auto z       = std::make_shared<shamrock::solvergraph::Field<T>>(nvar, "z", "z");
         auto alpha_0 = make_scalar<T>(0);
         auto alpha_1 = make_scalar<T>(0.5);
         auto alpha_2 = make_scalar<T>(-4);
 
-        shammodels::basegodunov::modules::NodeLinCombThreeVectors<T> node(block_size);
+        shamrock::solvergraph::NodeLinCombThreeVectors<T> node(nvar);
         node.set_edges(sizes, x, y, alpha_0, alpha_1, alpha_2, z);
         node.evaluate();
 
-        for (auto [id_patch, block_count] : patch_block_counts) {
+        for (auto [id_patch, obj_cnt] : patch_obj_cnts) {
             std::vector<T> xh = to_host(*x, id_patch);
             std::vector<T> yh = to_host(*y, id_patch);
             std::vector<T> expected(xh.size());
@@ -92,10 +91,10 @@ namespace {
 
 } // namespace
 
-NEW_TEST(Unittest, "shammodels/ramses/modules/NodeLinCombThreeVectors", 1) {
-    for (u32 block_size : shammodels::ramses::test_utils::block_sizes) {
-        test_lin_comb_three_vectors<f64>(block_size, 1.5);
-        test_lin_comb_three_vectors<f64>(block_size, 0);
-        test_lin_comb_three_vectors_alloc(block_size);
+NEW_TEST(Unittest, "shamrock/solvergraph/NodeLinCombThreeVectors", 1) {
+    for (u32 nvar : shamrock::solvergraph::test_utils::nvars) {
+        test_lin_comb_three_vectors<f64>(nvar, 1.5);
+        test_lin_comb_three_vectors<f64>(nvar, 0);
+        test_lin_comb_three_vectors_alloc(nvar);
     }
 }

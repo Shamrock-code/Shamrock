@@ -18,10 +18,11 @@
 
 #include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
-#include "shammodels/ramses/modules/NodeOverwrite.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
+#include "shamrock/solvergraph/NodeOverwrite.hpp"
 #include "shamsys/NodeInstance.hpp"
 
-namespace shammodels::basegodunov::modules {
+namespace shamrock::solvergraph {
 
     template<class T>
     void NodeOverwrite<T>::_impl_evaluate_internal() {
@@ -30,16 +31,16 @@ namespace shammodels::basegodunov::modules {
         edges.spans_x.check_sizes(edges.sizes.indexes);
         edges.spans_y.ensure_sizes(edges.sizes.indexes);
 
-        shambase::DistributedData<u32> cell_counts
-            = edges.sizes.indexes.template map<u32>([&](u64 id, u32 block_count) {
-                  return block_count * block_size;
+        shambase::DistributedData<u32> val_cnts
+            = edges.sizes.indexes.template map<u32>([&](u64 id, u32 obj_cnt) {
+                  return obj_cnt * nvar;
               });
 
         sham::distributed_data_kernel_call(
             shamsys::instance::get_compute_scheduler_ptr(),
             sham::DDMultiRef{edges.spans_x.get_spans()},
             sham::DDMultiRef{edges.spans_y.get_spans()},
-            cell_counts,
+            val_cnts,
             [](u32 i, const T *__restrict x, T *__restrict y) {
                 y[i] = x[i];
             });
@@ -59,6 +60,6 @@ namespace shammodels::basegodunov::modules {
         return tex;
     }
 
-} // namespace shammodels::basegodunov::modules
+} // namespace shamrock::solvergraph
 
-template class shammodels::basegodunov::modules::NodeOverwrite<f64>;
+template class shamrock::solvergraph::NodeOverwrite<f64>;

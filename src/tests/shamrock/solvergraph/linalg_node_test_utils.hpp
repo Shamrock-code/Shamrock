@@ -12,9 +12,9 @@
 /**
  * @file linalg_node_test_utils.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Helpers to build the edges of the ramses linear algebra node tests by hand.
+ * @brief Helpers to build the edges of the linear algebra node tests by hand.
  *
- * The fields span several patches of different block counts (with sparse patch ids). The values
+ * The fields span several patches of different object counts (with sparse patch ids). The values
  * are small dyadic rationals (k / 8 with |k| <= 64), so that the elementwise operations tested
  * with dyadic coefficients are exact in floating point, whatever the evaluation order or FMA
  * contraction, and can be compared bitwise to a host-side reference.
@@ -31,20 +31,20 @@
 #include <utility>
 #include <vector>
 
-namespace shammodels::ramses::test_utils {
+namespace shamrock::solvergraph::test_utils {
 
-    /// (patch id, block count) of the patches used by the tests
-    inline const std::vector<std::pair<u64, u32>> patch_block_counts = {{0, 3}, {5, 11}, {7, 1}};
+    /// (patch id, object count) of the patches used by the tests
+    inline const std::vector<std::pair<u64, u32>> patch_obj_cnts = {{0, 3}, {5, 11}, {7, 1}};
 
-    /// block sizes the nodes are tested with (1 cell per block and an AMR block of 2^3 cells)
-    inline const std::vector<u32> block_sizes = {1, 8};
+    /// numbers of values per object the nodes are tested with (1, and an AMR block of 2^3 cells)
+    inline const std::vector<u32> nvars = {1, 8};
 
-    /// Build the `sizes` edge (block counts per patch)
+    /// Build the `sizes` edge (object counts per patch)
     inline std::shared_ptr<shamrock::solvergraph::Indexes<u32>> make_sizes(
-        const std::vector<std::pair<u64, u32>> &block_counts = patch_block_counts) {
+        const std::vector<std::pair<u64, u32>> &obj_cnts = patch_obj_cnts) {
         auto sizes = std::make_shared<shamrock::solvergraph::Indexes<u32>>("sizes", "N");
-        for (auto [id_patch, block_count] : block_counts) {
-            sizes->indexes.add_obj(id_patch, block_count);
+        for (auto [id_patch, obj_cnt] : obj_cnts) {
+            sizes->indexes.add_obj(id_patch, obj_cnt);
         }
         return sizes;
     }
@@ -70,19 +70,15 @@ namespace shammodels::ramses::test_utils {
         return ret;
     }
 
-    /// Build a field with `block_size` cells per block, filled with `values_gen(seed, len)` per
+    /// Build a field with `nvar` values per object, filled with `values_gen(seed, len)` per
     /// patch (the seed is offset by the patch id)
     template<class T, class Gen>
     inline std::shared_ptr<shamrock::solvergraph::Field<T>> make_field(
-        const shamrock::solvergraph::Indexes<u32> &sizes,
-        u32 block_size,
-        u64 seed,
-        Gen &&values_gen) {
-        auto field = std::make_shared<shamrock::solvergraph::Field<T>>(block_size, "field", "f");
+        const shamrock::solvergraph::Indexes<u32> &sizes, u32 nvar, u64 seed, Gen &&values_gen) {
+        auto field = std::make_shared<shamrock::solvergraph::Field<T>>(nvar, "field", "f");
         field->ensure_sizes(sizes.indexes);
-        sizes.indexes.for_each_ordered([&](u64 id_patch, const u32 &block_count) {
-            field->get_buf(id_patch).copy_from_stdvec(
-                values_gen(seed + id_patch, block_count * block_size));
+        sizes.indexes.for_each_ordered([&](u64 id_patch, const u32 &obj_cnt) {
+            field->get_buf(id_patch).copy_from_stdvec(values_gen(seed + id_patch, obj_cnt * nvar));
         });
         return field;
     }
@@ -90,8 +86,8 @@ namespace shammodels::ramses::test_utils {
     /// Build a field filled with dyadic values (see dyadic_values)
     template<class T>
     inline std::shared_ptr<shamrock::solvergraph::Field<T>> make_dyadic_field(
-        const shamrock::solvergraph::Indexes<u32> &sizes, u32 block_size, u64 seed) {
-        return make_field<T>(sizes, block_size, seed, [](u64 s, u32 len) {
+        const shamrock::solvergraph::Indexes<u32> &sizes, u32 nvar, u64 seed) {
+        return make_field<T>(sizes, nvar, seed, [](u64 s, u32 len) {
             return dyadic_values<T>(s, len);
         });
     }
@@ -110,4 +106,4 @@ namespace shammodels::ramses::test_utils {
         return field.get_buf(id_patch).copy_to_stdvec();
     }
 
-} // namespace shammodels::ramses::test_utils
+} // namespace shamrock::solvergraph::test_utils

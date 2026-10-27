@@ -8,9 +8,9 @@
 // -------------------------------------------------------//
 
 #include "shambackends/math.hpp"
-#include "shammodels/ramses/modules/NodeHadamardProd.hpp"
+#include "shamrock/solvergraph/NodeHadamardProd.hpp"
 #include "shamtest/shamtest.hpp"
-#include "tests/shammodels/ramses/modules/linalg_node_test_utils.hpp"
+#include "tests/shamrock/solvergraph/linalg_node_test_utils.hpp"
 #include <memory>
 #include <vector>
 
@@ -18,20 +18,20 @@ namespace {
 
     /// Check NodeHadamardProd (out <- in1 * in2) against a host-side reference
     template<class T>
-    void test_hadamard_prod(u32 block_size) {
-        using namespace shammodels::ramses::test_utils;
+    void test_hadamard_prod(u32 nvar) {
+        using namespace shamrock::solvergraph::test_utils;
 
         auto sizes = make_sizes();
-        auto in1   = make_dyadic_field<T>(*sizes, block_size, 0x111);
-        auto in2   = make_dyadic_field<T>(*sizes, block_size, 0x222);
+        auto in1   = make_dyadic_field<T>(*sizes, nvar, 0x111);
+        auto in2   = make_dyadic_field<T>(*sizes, nvar, 0x222);
         // empty output: the node must allocate it
-        auto out = std::make_shared<shamrock::solvergraph::Field<T>>(block_size, "out", "out");
+        auto out = std::make_shared<shamrock::solvergraph::Field<T>>(nvar, "out", "out");
 
-        shammodels::basegodunov::modules::NodeHadamardProd<T> node(block_size);
+        shamrock::solvergraph::NodeHadamardProd<T> node(nvar);
         node.set_edges(sizes, in1, in2, out);
         node.evaluate();
 
-        for (auto [id_patch, block_count] : patch_block_counts) {
+        for (auto [id_patch, obj_cnt] : patch_obj_cnts) {
             std::vector<T> in1h = to_host(*in1, id_patch);
             std::vector<T> in2h = to_host(*in2, id_patch);
             std::vector<T> expected(in1h.size());
@@ -44,8 +44,8 @@ namespace {
 
 } // namespace
 
-NEW_TEST(Unittest, "shammodels/ramses/modules/NodeHadamardProd", 1) {
-    for (u32 block_size : shammodels::ramses::test_utils::block_sizes) {
-        test_hadamard_prod<f64>(block_size);
+NEW_TEST(Unittest, "shamrock/solvergraph/NodeHadamardProd", 1) {
+    for (u32 nvar : shamrock::solvergraph::test_utils::nvars) {
+        test_hadamard_prod<f64>(nvar);
     }
 }

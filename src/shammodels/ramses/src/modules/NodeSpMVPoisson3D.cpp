@@ -17,10 +17,10 @@
  */
 
 #include "shambase/memory.hpp"
-#include "shammodels/ramses/modules/NodeSpMVPoisson3D.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/modules/CGLaplacianStencil.hpp"
+#include "shammodels/ramses/modules/NodeSpMVPoisson3D.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
 

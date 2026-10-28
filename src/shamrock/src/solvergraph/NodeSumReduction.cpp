@@ -44,6 +44,11 @@ namespace shamrock::solvergraph {
 
                 // the field may hold more values than summed (e.g. ghost blocks stored after the
                 // patch blocks), but never less
+                // TODO: this is only allowed to keep the behaviour of the self-gravity solver of
+                // #1942, whose CG/BiCGSTAB loops pass sizes without ghost zones with fields that
+                // include them. Check how this impacts the self-gravity solver, then change it to
+                // pass sizes matching the field (e.g. a field without the ghost blocks) and
+                // require an exact size match here.
                 if (field.get_val_cnt() < val_cnt) {
                     shambase::throw_with_loc<std::runtime_error>(sham::format(
                         "field too small on patch {}: expected at least {} values, got {}",

@@ -40,7 +40,8 @@ namespace shamrock::solvergraph {
      *
      * `sizes` holds the object counts per patch, each object holding `nvar` values (e.g. the cells
      * of an AMR block). Only the first `sizes * nvar` values of each patch are summed, so `sizes`
-     * may exclude objects stored at the end of the field (e.g. ghost blocks). The result is
+     * may exclude objects stored at the end of the field (e.g. ghost blocks, see the TODO in
+     * `_impl_evaluate_internal`). The result is
      * deterministic: each patch is reduced with the `shamalgs` primitives, the patches are
      * accumulated in increasing patch id order, then summed across ranks.
      */

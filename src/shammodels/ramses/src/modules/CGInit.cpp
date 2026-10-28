@@ -88,8 +88,9 @@ namespace {
 
                             Tscal delta_cell = cell_sizes[block_id];
                             auto Aphi        = shammodels::basegodunov::laplacian_7pt<Tscal, Tvec>(
+                                cell_sizes,
+                                block_size,
                                 cell_global_id,
-                                delta_cell,
                                 graph_iter_xp,
                                 graph_iter_xm,
                                 graph_iter_yp,
@@ -100,7 +101,11 @@ namespace {
                                     return phi[id];
                                 });
 
-                            auto res = fourPiG * (rho[cell_global_id] - mean_rho) - Aphi;
+                            // laplacian_7pt is volume integrated, hence the dV factor
+                            auto dV    = delta_cell * delta_cell * delta_cell;
+                            auto b_rhs = -fourPiG * (rho[cell_global_id] - mean_rho) * dV;
+
+                            auto res                = b_rhs - Aphi;
                             phi_res[cell_global_id] = res;
                             phi_p[cell_global_id]   = res;
                         });

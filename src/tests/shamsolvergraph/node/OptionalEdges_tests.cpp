@@ -37,6 +37,27 @@ namespace {
 
 #undef NODE_EDGES
 
+#define NODE_EDGES(X_RO, X_RW, X_RO_OPTIONAL, X_RW_OPTIONAL)                                       \
+    X_RO(shamrock::solvergraph::IDataEdge<u32>, in)                                                \
+    X_RW_OPTIONAL(shamrock::solvergraph::IDataEdge<u32>, opt_out)
+
+    class OptionalRWEdgeProbeNode : public shamrock::solvergraph::INode {
+        public:
+        EXPAND_NODE_EDGES_OPTIONAL(NODE_EDGES)
+
+        void _impl_evaluate_internal() override {
+            auto edges = get_edges();
+            if (edges.opt_out.has_value()) {
+                edges.opt_out.value().get().data = edges.in.data;
+            }
+        }
+
+        std::string _impl_get_label() const override { return "OptionalRWEdgeProbe"; }
+        std::string _impl_get_tex() const override { return ""; }
+    };
+
+#undef NODE_EDGES
+
 } // namespace
 
 NEW_TEST(Unittest, "shamsolvergraph/node/OptionalEdges", 1) {
@@ -84,5 +105,28 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OptionalEdges", 1) {
         node.set_edges(a, b, out);
         node.evaluate();
         REQUIRE_EQUAL(out->data, u32{3});
+    }
+}
+
+NEW_TEST(Unittest, "shamsolvergraph/node/OptionalRWEdges", 1) {
+    using namespace shamrock::solvergraph;
+
+    {
+        auto in  = IDataEdge<u32>::make_shared("in", "in");
+        in->data = 42;
+        OptionalRWEdgeProbeNode node;
+        node.set_edges(in, std::nullopt);
+        node.evaluate();
+    }
+
+    {
+        auto in   = IDataEdge<u32>::make_shared("in", "in");
+        auto out  = IDataEdge<u32>::make_shared("out", "out");
+        in->data  = 42;
+        out->data = 0;
+        OptionalRWEdgeProbeNode node;
+        node.set_edges(in, out);
+        node.evaluate();
+        REQUIRE_EQUAL(out->data, u32{42});
     }
 }

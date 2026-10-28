@@ -59,10 +59,45 @@ namespace {
         REQUIRE_EQUAL(std::bit_cast<u64>(first), std::bit_cast<u64>(second));
     }
 
+    /// Check that only the first `sizes * nvar` values are summed when the field holds extra
+    /// objects at the end of each patch (e.g. ghost blocks, as with sizes without ghost zones)
+    void test_sum_reduction_partial(u32 nvar) {
+        using T = f64;
+        using namespace shamrock::solvergraph::test_utils;
+
+        std::vector<std::pair<u64, u32>> obj_cnts_all  = {{0, 37}, {3, 129}};
+        std::vector<std::pair<u64, u32>> obj_cnts_summ = {{0, 30}, {3, 100}};
+
+        auto sizes_all  = make_sizes(obj_cnts_all);
+        auto sizes_summ = make_sizes(obj_cnts_summ);
+        auto field      = make_field<T>(*sizes_all, nvar, 0x555, [](u64 seed, u32 len) {
+            return shamalgs::primitives::mock_vector<T>(seed, len, -1., 1.);
+        });
+
+        long double expected = 0;
+        long double abs_sum  = 0;
+        for (auto [id_patch, obj_cnt] : obj_cnts_summ) {
+            std::vector<T> vals = to_host(*field, id_patch);
+            for (u32 i = 0; i < obj_cnt * nvar; i++) {
+                expected += vals[i];
+                abs_sum += std::abs(vals[i]);
+            }
+        }
+
+        auto result = std::make_shared<shamrock::solvergraph::IDataEdge<T>>("sum", "S");
+
+        shamrock::solvergraph::NodeSumReduction<T> node(nvar);
+        node.set_edges(sizes_summ, field, result);
+        node.evaluate();
+
+        REQUIRE_FLOAT_EQUAL(result->data, T(expected), 1e-14 * T(abs_sum));
+    }
+
 } // namespace
 
 NEW_TEST(Unittest, "shamrock/solvergraph/NodeSumReduction", 1) {
     for (u32 nvar : shamrock::solvergraph::test_utils::nvars) {
         test_sum_reduction(nvar);
+        test_sum_reduction_partial(nvar);
     }
 }

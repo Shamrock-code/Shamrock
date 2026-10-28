@@ -42,9 +42,11 @@ namespace shamrock::solvergraph {
                 const PatchDataField<T> &field = field_ref.get();
                 u32 val_cnt                    = edges.sizes.indexes.get(id_patch) * nvar;
 
-                if (field.get_val_cnt() != val_cnt) {
+                // the field may hold more values than summed (e.g. ghost blocks stored after the
+                // patch blocks), but never less
+                if (field.get_val_cnt() < val_cnt) {
                     shambase::throw_with_loc<std::runtime_error>(sham::format(
-                        "field size mismatch on patch {}: expected {} values, got {}",
+                        "field too small on patch {}: expected at least {} values, got {}",
                         id_patch,
                         val_cnt,
                         field.get_val_cnt()));

@@ -35,10 +35,12 @@
 namespace shamrock::solvergraph {
 
     /**
-     * @brief Compute the sum of `spans_in` over every value of every patch on every rank.
+     * @brief Compute the sum of `spans_in` over the first `sizes * nvar` values of every patch on
+     * every rank.
      *
      * `sizes` holds the object counts per patch, each object holding `nvar` values (e.g. the cells
-     * of an AMR block). The result is
+     * of an AMR block). Only the first `sizes * nvar` values of each patch are summed, so `sizes`
+     * may exclude objects stored at the end of the field (e.g. ghost blocks). The result is
      * deterministic: each patch is reduced with the `shamalgs` primitives, the patches are
      * accumulated in increasing patch id order, then summed across ranks.
      */

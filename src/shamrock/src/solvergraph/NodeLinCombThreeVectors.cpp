@@ -51,8 +51,10 @@ namespace shamrock::solvergraph {
             val_cnts,
             [alpha_0, alpha_1, alpha_2, read_z](
                 u32 i, const T *__restrict x, const T *__restrict y, T *__restrict z) {
-                T xy_part = alpha_1 * x[i] + alpha_2 * y[i];
-                z[i]      = read_z ? alpha_0 * z[i] + xy_part : xy_part;
+                // keep the left to right evaluation order, so that the rounding does not depend on
+                // read_z
+                z[i] = read_z ? alpha_0 * z[i] + alpha_1 * x[i] + alpha_2 * y[i]
+                              : alpha_1 * x[i] + alpha_2 * y[i];
             });
     }
 

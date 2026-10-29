@@ -286,8 +286,7 @@ namespace shammodels::sph {
                 storage.ghost_handler.set(
                     GhostHandle{
                         scheduler(),
-                        BCShearingPeriodic{
-                            c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
+                        BCShearingPeriodic{c->shear_base, c->shear_dir, time_val, c->shear_speed},
                         storage.patch_rank_owner,
                         storage.xyzh_ghost_layout});
             }

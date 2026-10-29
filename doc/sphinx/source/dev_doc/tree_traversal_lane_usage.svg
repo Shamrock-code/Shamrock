@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="tt-diagram" width="720" height="152" viewBox="0 0 720 152" role="img" aria-label="Active lanes per region in the original kernel: node test 27 of 32, leaf particle test 6.1, contribution body 3.2.">
+  <title>Active lanes per region of the original column kernel</title>
+  <style>
+    /* Colours follow the pydata-sphinx-theme variables (and so the light/dark switch) when the
+       SVG is inlined in the doc; the fallbacks are used when the file is viewed on its own. */
+    .tt-diagram {
+      --tt-ink: var(--pst-color-text-base, #19211e);
+      --tt-mut: var(--pst-color-text-muted, #5b6763);
+      --tt-line: var(--pst-color-border, #c6cec9);
+      --tt-surface: var(--pst-color-background, #fcfcfb);
+      --tt-faint: var(--pst-color-surface, #e7ece8);
+      --tt-hot: var(--pst-color-warning, #b8641b);
+      --tt-hot-soft: var(--pst-color-warning-bg, #f3e4d6);
+      --tt-display: var(--pst-font-family-base, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif);
+      --tt-mono: var(--pst-font-family-monospace, ui-monospace, Menlo, monospace);
+      color: var(--tt-ink);
+      max-width: 100%;
+      height: auto;
+    }
+    .tt-diagram .tt-lbl { font: 500 12.5px var(--tt-display); fill: currentColor; }
+    .tt-diagram .tt-small { font: 400 11.5px var(--tt-display); fill: currentColor; }
+    .tt-diagram .tt-b { font-weight: 700; }
+    .tt-diagram .tt-tick { font: 400 10.5px var(--tt-mono); fill: var(--tt-mut); }
+    .tt-diagram .tt-val { font: 500 11.5px var(--tt-mono); fill: currentColor; }
+    .tt-diagram .tt-mono { font: 12px var(--tt-mono); fill: currentColor; }
+    .tt-diagram .tt-mut { fill: var(--tt-mut); }
+    .tt-diagram .tt-ln { stroke: currentColor; stroke-width: 1.4; fill: none; }
+    .tt-diagram .tt-dash { stroke-dasharray: 4 3; }
+    .tt-diagram .tt-grid { stroke: var(--tt-line); stroke-width: 1; }
+    .tt-diagram .tt-box { fill: var(--tt-surface); stroke: currentColor; stroke-width: 1.2; }
+    .tt-diagram .tt-box.tt-hotB { fill: var(--tt-hot-soft); stroke: var(--tt-hot); }
+    .tt-diagram .tt-cell { fill: var(--tt-faint); stroke: var(--tt-line); stroke-width: 1; }
+    .tt-diagram .tt-hotF, .tt-diagram .tt-cell.tt-hotF { fill: var(--tt-hot); stroke: none; }
+    .tt-diagram .tt-cell.tt-idle { fill: none; stroke: var(--tt-line); stroke-dasharray: 2 2; }
+    .tt-diagram .tt-track { fill: var(--tt-faint); stroke: none; }
+    .tt-diagram .tt-nodeC { fill: var(--tt-surface); stroke: currentColor; stroke-width: 1.2; }
+  </style>
+<line x1="230.0" y1="18" x2="230.0" y2="124" class="tt-grid" />
+<text x="230.0" y="14" class="tt-tick" text-anchor="middle" >0</text>
+<line x1="342.5" y1="18" x2="342.5" y2="124" class="tt-grid" />
+<text x="342.5" y="14" class="tt-tick" text-anchor="middle" >8</text>
+<line x1="455.0" y1="18" x2="455.0" y2="124" class="tt-grid" />
+<text x="455.0" y="14" class="tt-tick" text-anchor="middle" >16</text>
+<line x1="567.5" y1="18" x2="567.5" y2="124" class="tt-grid" />
+<text x="567.5" y="14" class="tt-tick" text-anchor="middle" >24</text>
+<line x1="680.0" y1="18" x2="680.0" y2="124" class="tt-grid" />
+<text x="680.0" y="14" class="tt-tick" text-anchor="middle" >32</text>
+<text x="220" y="38" class="tt-lbl" text-anchor="end" >node AABB test</text>
+<text x="220" y="52" class="tt-small tt-mut" text-anchor="end" >2.6 M warp passes</text>
+<rect x="230" y="26" width="450.0" height="16" rx="2" class="tt-track" />
+<rect x="230" y="26" width="379.6875" height="16" rx="2" class="tt-hotF" />
+<text x="615.6875" y="38" class="tt-val" text-anchor="start" >27 / 32 lanes</text>
+<text x="220" y="72" class="tt-lbl" text-anchor="end" >leaf particle test</text>
+<text x="220" y="86" class="tt-small tt-mut" text-anchor="end" >32.8 M warp passes</text>
+<rect x="230" y="60" width="450.0" height="16" rx="2" class="tt-track" />
+<rect x="230" y="60" width="85.78125" height="16" rx="2" class="tt-hotF" />
+<text x="321.78125" y="72" class="tt-val" text-anchor="start" >6.1 / 32 lanes</text>
+<text x="220" y="106" class="tt-lbl" text-anchor="end" >contribution body</text>
+<text x="220" y="120" class="tt-small tt-mut" text-anchor="end" >10.3 M warp passes · ~75 % of FP64</text>
+<rect x="230" y="94" width="450.0" height="16" rx="2" class="tt-track" />
+<rect x="230" y="94" width="45.0" height="16" rx="2" class="tt-hotF" />
+<text x="281.0" y="106" class="tt-val" text-anchor="start" >3.2 / 32 lanes</text>
+<text x="230" y="148" class="tt-small tt-mut" text-anchor="start" >active lanes per executed warp instruction</text>
+</svg>

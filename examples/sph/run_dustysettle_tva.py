@@ -992,8 +992,8 @@ t = np.array(t) - tinject
 
 St = np.zeros(ndust)
 
+t_dyn = 1 / omega_k(R0)
 for k in range(ndust):
-    t_dyn = 1
     ts = shamrock.phys.epstein_stopping_time(
         rho_grain=mrn_distribution.rho_grains[k],
         s_grain=mrn_distribution.grain_size[k],

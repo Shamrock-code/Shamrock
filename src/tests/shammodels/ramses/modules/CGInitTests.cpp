@@ -119,7 +119,7 @@ NEW_TEST(Unittest, "shammodels/ramses/modules/CGInit", 1) {
         std::vector<Tscal> rhs_got   = rhs->get_buf(0).copy_to_stdvec();
         std::vector<Tscal> phi_z_got = phi_z->get_buf(0).copy_to_stdvec();
 
-        // reference: b = -4 pi G (rho - mean_rho) dV, res = b - A phi, z = res / diag(A)
+        // reference: b = -4 pi G (rho - mean_rho) dV, res = b - A phi, z = p = res / diag(A)
         std::vector<Tscal> Aphi = apply_spmv(grid, graph, phi);
         std::vector<Tscal> Aii  = get_expected_Aii(grid, *graph);
         std::vector<Tscal> b(grid.cell_count());
@@ -138,6 +138,6 @@ NEW_TEST(Unittest, "shammodels/ramses/modules/CGInit", 1) {
         REQUIRE(err_rhs < 1e-14 * scale);
         REQUIRE(err_res < 1e-14 * scale);
         REQUIRE(err_z < 1e-14 * scale);
-        REQUIRE_EQUAL(p_got, res_got);
+        REQUIRE_EQUAL(p_got, phi_z_got);
     }
 }

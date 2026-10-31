@@ -44,6 +44,7 @@ namespace shammodels::basegodunov {
 
         if (is_gravity_on()) {
             pdl.add_field<Tscal>("phi", AMRBlock::block_size);
+            pdl.add_field<Tscal>("phi_old", AMRBlock::block_size);
         }
 
         if (is_gas_passive_scalar_on()) {
@@ -66,6 +67,8 @@ namespace shammodels::basegodunov {
             {"gravity_solver", p.gravity_config.gravity_mode},
             {"analytical_gravity", p.gravity_config.analytical_gravity},
             {"gravity_tol", p.gravity_config.tol},
+            {"gravity_tol_happy_breakdown", p.gravity_config.tol_hp_bk},
+            {"gravity_Niter_max", p.gravity_config.Niter_max},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
             {"hydro_riemann_solver", p.riemann_config},
             {"passive_scalar_mode", p.npscal_gas_config.npscal_gas},
@@ -124,6 +127,8 @@ namespace shammodels::basegodunov {
         _get_to_if_contains("gravity_solver", p.gravity_config.gravity_mode);
         _get_to_if_contains("analytical_gravity", p.gravity_config.analytical_gravity);
         _get_to_if_contains("gravity_tol", p.gravity_config.tol);
+        _get_to_if_contains("gravity_tol_happy_breakdown", p.gravity_config.tol_hp_bk);
+        _get_to_if_contains("gravity_Niter_max", p.gravity_config.Niter_max);
         _get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
         _get_to_if_contains("hydro_riemann_solver", p.riemann_config);
         _get_to_if_contains("passive_scalar_mode", p.npscal_gas_config.npscal_gas);

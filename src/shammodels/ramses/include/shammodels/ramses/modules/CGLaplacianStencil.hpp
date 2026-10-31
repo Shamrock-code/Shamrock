@@ -174,4 +174,73 @@ namespace shammodels::basegodunov {
             field_access,
             Aii_unused);
     }
+
+    /**
+     * @brief Get the weight of the Jacobi preconditioner of the 7-point Laplacian
+     *
+     * Sum over the directions having at least one neighbour of \f$ \Delta x^2 / d \f$, \f$ d \f$
+     * being the distance between the cell centers used in laplacian_7pt_with_Aii (\f$ 6 \Delta x
+     * \f$ on a uniform grid).
+     *
+     * TODO: (kept from new_amr_plus_grav) unlike the Aii output of laplacian_7pt_with_Aii (used by
+     * CGInit for z_0), a direction without neighbour does not contribute here, so the two differ
+     * on the cells missing a neighbour (outer ghost cells, non periodic boundaries).
+     *
+     * @tparam T field type
+     * @tparam Tvec vector type
+     * @param cell_sizes cell size per block
+     * @param block_size number of cells per block
+     * @param cell_global_id id of the cell
+     * @param graph_iter_xp neighbour graph accessor in the +x direction
+     * @param graph_iter_xm neighbour graph accessor in the -x direction
+     * @param graph_iter_yp neighbour graph accessor in the +y direction
+     * @param graph_iter_ym neighbour graph accessor in the -y direction
+     * @param graph_iter_zp neighbour graph accessor in the +z direction
+     * @param graph_iter_zm neighbour graph accessor in the -z direction
+     * @return T the Jacobi weight of the cell
+     */
+    template<class T, class Tvec>
+    inline T jacobi_weight_7pt(
+        const shambase::VecComponent<Tvec> *cell_sizes,
+        const u32 block_size,
+        const u32 cell_global_id,
+        const AMRGraphLinkiterator &graph_iter_xp,
+        const AMRGraphLinkiterator &graph_iter_xm,
+        const AMRGraphLinkiterator &graph_iter_yp,
+        const AMRGraphLinkiterator &graph_iter_ym,
+        const AMRGraphLinkiterator &graph_iter_zp,
+        const AMRGraphLinkiterator &graph_iter_zm) {
+
+        auto cur_cell_block_id = cell_global_id / block_size;
+
+        auto get_face_weight = [&](auto &graph_links) -> T {
+            auto cell_center_dist = cell_sizes[cur_cell_block_id];
+
+            auto fac = 1.;
+            u32 cnt  = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+                auto neigh_block_id = id_b / block_size;
+
+                if (cell_sizes[neigh_block_id] > cell_sizes[cur_cell_block_id]) {
+                    fac = 3. / 2.;
+                }
+                if (cell_sizes[neigh_block_id] < cell_sizes[cur_cell_block_id]) {
+                    fac = 3. / 4.;
+                }
+            });
+
+            return (cnt > 0) ? 1.0 / (cell_center_dist * fac)
+                             : shambase::VectorProperties<T>::get_zero();
+        };
+
+        T res = shambase::VectorProperties<T>::get_zero();
+        res += get_face_weight(graph_iter_xp);
+        res += get_face_weight(graph_iter_xm);
+        res += get_face_weight(graph_iter_yp);
+        res += get_face_weight(graph_iter_ym);
+        res += get_face_weight(graph_iter_zp);
+        res += get_face_weight(graph_iter_zm);
+
+        auto S = cell_sizes[cur_cell_block_id] * cell_sizes[cur_cell_block_id];
+        return S * res;
+    }
 } // namespace shammodels::basegodunov

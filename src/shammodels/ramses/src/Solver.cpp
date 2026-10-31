@@ -26,6 +26,7 @@
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/AddExtForceConstantGravity.hpp"
+#include "shammodels/ramses/modules/AddExtForceField.hpp"
 #include "shammodels/ramses/modules/ApplyExtForceDust.hpp"
 #include "shammodels/ramses/modules/ApplyExtForceDustTrapezoidal.hpp"
 #include "shammodels/ramses/modules/ApplyExtForceGas.hpp"
@@ -38,6 +39,7 @@
 #include "shammodels/ramses/modules/ComputeCoordinates.hpp"
 #include "shammodels/ramses/modules/ComputeLevel0CellSize.hpp"
 #include "shammodels/ramses/modules/ComputeMass.hpp"
+#include "shammodels/ramses/modules/ComputeNextRho.hpp"
 #include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGasAdiabatic.hpp"
@@ -51,7 +53,10 @@
 #include "shammodels/ramses/modules/FindGhostLayerIndices.hpp"
 #include "shammodels/ramses/modules/FuseGhostLayer.hpp"
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
+#include "shammodels/ramses/modules/NodeBiCGSTABLoop.hpp"
+#include "shammodels/ramses/modules/NodeCGLoop.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
+#include "shammodels/ramses/modules/NodeSelfGravityAcceleration.hpp"
 #include "shammodels/ramses/modules/ResetExtForceAcc.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
 #include "shammodels/ramses/modules/SumFluxDust.hpp"
@@ -314,6 +319,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         if (solver_config.is_gravity_on()) {
             ghost_layout.add_field<Tscal>("phi", AMRBlock::block_size);
+            ghost_layout.add_field<Tscal>("phi_old", AMRBlock::block_size);
         }
 
         if (solver_config.is_gas_passive_scalar_on()) {
@@ -1637,11 +1643,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
     }
 
-    if (solver_config.has_ext_forces()) { // external forces
+    if (solver_config.has_ext_forces() || solver_config.is_gravity_on()) { // external forces
 
         // The external forces are applied to the state at t^n (patch data without ghosts) before
         // the time integration, so that they are taken into account by every integrator (with or
-        // without drag).
+        // without drag). Self-gravity is one of them.
 
         using ExtForceConfig  = typename Config::ExtForceConfig;
         using ConstantGravity = typename ExtForceConfig::ConstantGravity;
@@ -1680,6 +1686,266 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             ext_force_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
         }
 
+        shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
+
+        // refs to the fields of the patch data without ghosts (the ones that are integrated)
+        auto attach_source_field = [&]<class T>(
+                                       std::shared_ptr<shamrock::solvergraph::FieldRefs<T>> &refs,
+                                       const std::string &field_name) {
+            shamrock::solvergraph::GetFieldRefFromLayer<T> attach{pdl, field_name};
+            attach.set_edges(storage.source_patches, refs);
+            ext_force_sequence.push_back(std::make_shared<decltype(attach)>(std::move(attach)));
+        };
+
+        if (solver_config.is_gravity_on()) {
+            if (trapezoidal) {
+                // Self-gravity scheme of the `new_amr_plus_grav` branch of Léodasce Sewanou (from
+                // #1942): g^n is computed from rho^n and g^{n+1} from rho^{n+1} = rho^n + dt
+                // drho/dt, known before the kick, then the momentum and energy get the trapezoidal
+                // kick of ApplyExtForceGasTrapezoidal (the update of its NodeGetNextConsVar).
+                const u32 block_size = AMRBlock::block_size;
+
+                storage.refs_phi     = std::make_shared<FieldRefs<Tscal>>("phi_old", "\\phi^{n}");
+                storage.refs_phi_new = std::make_shared<FieldRefs<Tscal>>("phi", "\\phi^{n+1}");
+                storage.rho_next
+                    = std::make_shared<Field<Tscal>>(block_size, "rho_next", "\\rho^{n+1}");
+                storage.phi_g
+                    = std::make_shared<Field<Tvec>>(block_size, "phi_g", "\\mathbf{g}_{\\rm sg}");
+
+                auto &work = storage.poisson_work;
+                auto field = [&](const std::string &name) {
+                    return std::make_shared<Field<Tscal>>(block_size, name, name);
+                };
+                auto scal = [&](const std::string &name) {
+                    return IDataEdge<Tscal>::make_shared(name, name);
+                };
+                work.res              = field("phi_res");
+                work.res_bis          = field("phi_res_bis");
+                work.p                = field("phi_p");
+                work.a_p              = field("phi_Ap");
+                work.s                = field("phi_s");
+                work.a_s              = field("phi_As");
+                work.z                = field("phi_z");
+                work.rhs              = field("phi_rhs");
+                work.hadamard_prod    = field("phi_hadamard_prod");
+                work.rz_hadamard_prod = field("rz_hadamard_prod");
+                work.old_values       = scal("old_values");
+                work.new_values       = scal("new_values");
+                work.e_norm           = scal("e_norm");
+                work.alpha            = scal("alpha");
+                work.beta             = scal("beta");
+                work.w_stab           = scal("w_stab");
+                work.shadow_res_norm  = scal("shadow_res_norm");
+                work.rhs_norm         = scal("rhs_norm");
+                work.rz_old_values    = scal("rz_old_values");
+                work.rz_new_values    = scal("rz_new_values");
+
+                // mean density subtracted from the Poisson source term, zero if the boundaries
+                // are not periodic (as in the reference)
+                std::shared_ptr<ScalarEdge<Tscal>> rho_mean_n, rho_mean_np1;
+                if (solver_config.should_compute_rho_mean()) {
+                    storage.rho_mean_next
+                        = std::make_shared<ScalarEdge<Tscal>>("rho_mean_next", "< \\rho^{n+1} >");
+                    rho_mean_n   = storage.rho_mean;
+                    rho_mean_np1 = storage.rho_mean_next;
+                } else {
+                    rho_mean_n        = std::make_shared<ScalarEdge<Tscal>>("rho_mean_zero", "0");
+                    rho_mean_n->value = 0;
+                    rho_mean_np1      = rho_mean_n;
+                }
+
+                // phi^n and phi^{n+1} with ghosts, they start from the values of the previous step
+                // (warm start of the Poisson solvers)
+                {
+                    GetFieldRefFromLayer<Tscal> attach_phi{storage.ghost_layout, "phi_old"};
+                    attach_phi.set_edges(storage.merged_patchdata_ghost, storage.refs_phi);
+                    ext_force_sequence.push_back(
+                        std::make_shared<decltype(attach_phi)>(std::move(attach_phi)));
+
+                    GetFieldRefFromLayer<Tscal> attach_phi_new{storage.ghost_layout, "phi"};
+                    attach_phi_new.set_edges(storage.merged_patchdata_ghost, storage.refs_phi_new);
+                    ext_force_sequence.push_back(
+                        std::make_shared<decltype(attach_phi_new)>(std::move(attach_phi_new)));
+                }
+
+                for (auto &[a_ext_level, dt_level] : a_ext_levels) {
+
+                    std::shared_ptr<IFieldSpan<Tscal>> rho_level;
+                    std::shared_ptr<ScalarEdge<Tscal>> rho_mean_level;
+                    std::shared_ptr<FieldRefs<Tscal>> phi_level;
+
+                    if (dt_level == 0) {
+                        rho_level      = storage.refs_rho;
+                        rho_mean_level = rho_mean_n;
+                        phi_level      = storage.refs_phi;
+                    } else if (dt_level == 1) {
+                        // rho^{n+1} = rho^n + dt drho/dt on the patch cells, the ghost cells keep
+                        // rho^n (the reference updated rho^n in place on the patch cells only)
+                        modules::ComputeNextRho<Tvec> node_rho_next{block_size};
+                        node_rho_next.set_edges(
+                            storage.dt,
+                            storage.block_counts,
+                            storage.block_counts_with_ghost,
+                            storage.refs_rho,
+                            storage.dtrho,
+                            storage.rho_next);
+                        ext_force_sequence.push_back(
+                            std::make_shared<decltype(node_rho_next)>(std::move(node_rho_next)));
+
+                        if (solver_config.should_compute_rho_mean()) {
+                            modules::NodeComputeMass<Tvec, TgridVec> node_mass{block_size};
+                            node_mass.set_edges(
+                                storage.block_counts,
+                                storage.block_cell_sizes,
+                                storage.rho_next,
+                                storage.cell_mass);
+                            ext_force_sequence.push_back(
+                                std::make_shared<decltype(node_mass)>(std::move(node_mass)));
+
+                            modules::NodeComputeSumOverV<Tscal> node_mean{block_size};
+                            node_mean.set_edges(
+                                storage.block_counts,
+                                storage.cell_mass,
+                                storage.simulation_volume,
+                                storage.rho_mean_next);
+                            ext_force_sequence.push_back(
+                                std::make_shared<decltype(node_mean)>(std::move(node_mean)));
+                        }
+
+                        rho_level      = storage.rho_next;
+                        rho_mean_level = rho_mean_np1;
+                        phi_level      = storage.refs_phi_new;
+                    } else {
+                        shambase::throw_unimplemented(
+                            sham::format("self-gravity at the time level t^n + {} dt", dt_level));
+                    }
+
+                    // Poisson solve, the solvers end with the ghost exchange of phi
+                    switch (solver_config.gravity_config.gravity_mode) {
+                    case CG: {
+                        modules::NodeCGLoop<Tvec, TgridVec> node{
+                            block_size,
+                            solver_config.get_constant_4piG(),
+                            solver_config.gravity_config.Niter_max,
+                            solver_config.get_grav_tol()};
+                        node.set_edges(
+                            storage.block_counts_with_ghost,
+                            storage.block_counts,
+                            storage.cell_graph_edge,
+                            storage.block_cell_sizes,
+                            rho_level,
+                            rho_mean_level,
+                            storage.idx_in_ghost,
+                            storage.patch_rank_owner,
+                            phi_level,
+                            work.res,
+                            work.p,
+                            work.a_p,
+                            work.hadamard_prod,
+                            work.rhs,
+                            work.z,
+                            work.old_values,
+                            work.new_values,
+                            work.e_norm,
+                            work.alpha,
+                            work.beta,
+                            work.rhs_norm,
+                            work.rz_old_values,
+                            work.rz_new_values,
+                            work.rz_hadamard_prod);
+                        ext_force_sequence.push_back(
+                            std::make_shared<decltype(node)>(std::move(node)));
+                        break;
+                    }
+                    case BICGSTAB: {
+                        modules::NodeBiCGSTABLoop<Tvec, TgridVec> node{
+                            block_size,
+                            solver_config.get_constant_4piG(),
+                            solver_config.gravity_config.Niter_max,
+                            solver_config.get_grav_tol(),
+                            solver_config.get_happy_bk_grav_tol()};
+                        node.set_edges(
+                            storage.block_counts_with_ghost,
+                            storage.block_counts,
+                            storage.cell_graph_edge,
+                            storage.block_cell_sizes,
+                            rho_level,
+                            rho_mean_level,
+                            storage.idx_in_ghost,
+                            storage.patch_rank_owner,
+                            phi_level,
+                            work.res,
+                            work.res_bis,
+                            work.p,
+                            work.a_p,
+                            work.s,
+                            work.a_s,
+                            work.hadamard_prod,
+                            work.old_values,
+                            work.new_values,
+                            work.e_norm,
+                            work.alpha,
+                            work.beta,
+                            work.w_stab,
+                            work.shadow_res_norm,
+                            work.rhs,
+                            work.rhs_norm);
+                        ext_force_sequence.push_back(
+                            std::make_shared<decltype(node)>(std::move(node)));
+                        break;
+                    }
+                    default:
+                        shambase::throw_unimplemented(
+                            "self-gravity: only the cg and bicgstab Poisson solvers are "
+                            "implemented");
+                    }
+
+                    // g = -grad phi on the patch cells (the stencil reads the ghost cells)
+                    {
+                        modules::NodeSelfGravityAcceleration<Tvec, TgridVec> node{block_size};
+                        node.set_edges(
+                            storage.block_counts,
+                            storage.cell_graph_edge,
+                            storage.block_cell_sizes,
+                            phi_level,
+                            storage.phi_g);
+                        ext_force_sequence.push_back(
+                            std::make_shared<decltype(node)>(std::move(node)));
+                    }
+
+                    {
+                        modules::AddExtForceField<Tvec> node{block_size};
+                        node.set_edges(storage.block_counts, storage.phi_g, a_ext_level);
+                        ext_force_sequence.push_back(
+                            std::make_shared<decltype(node)>(std::move(node)));
+                    }
+                }
+
+                // save phi^n and phi^{n+1} in the patch data, as warm starts for the next step
+                {
+                    auto refs_phi_source
+                        = std::make_shared<FieldRefs<Tscal>>("phi_old_source", "\\phi^{n}");
+                    auto refs_phi_new_source
+                        = std::make_shared<FieldRefs<Tscal>>("phi_source", "\\phi^{n+1}");
+                    attach_source_field(refs_phi_source, "phi_old");
+                    attach_source_field(refs_phi_new_source, "phi");
+
+                    CopyPatchDataField<Tscal> copy_phi{};
+                    copy_phi.set_edges(storage.refs_phi, refs_phi_source);
+                    ext_force_sequence.push_back(
+                        std::make_shared<decltype(copy_phi)>(std::move(copy_phi)));
+
+                    CopyPatchDataField<Tscal> copy_phi_new{};
+                    copy_phi_new.set_edges(storage.refs_phi_new, refs_phi_new_source);
+                    ext_force_sequence.push_back(
+                        std::make_shared<decltype(copy_phi_new)>(std::move(copy_phi_new)));
+                }
+            } else {
+                shambase::throw_unimplemented(
+                    "self-gravity requires the trapezoidal coupling of the external forces");
+            }
+        }
+
         // Time at which the forces must be evaluated to keep the scheme second order in time:
         //  - midpoint rule: at the half step t^{n+1/2}. This does not matter for a constant
         //    acceleration, but velocity dependent forces would need the half step velocity,
@@ -1704,17 +1970,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 },
                 var_force);
         }
-
-        shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
-
-        // refs to the fields of the patch data without ghosts (the ones that are integrated)
-        auto attach_source_field = [&]<class T>(
-                                       std::shared_ptr<shamrock::solvergraph::FieldRefs<T>> &refs,
-                                       const std::string &field_name) {
-            shamrock::solvergraph::GetFieldRefFromLayer<T> attach{pdl, field_name};
-            attach.set_edges(storage.source_patches, refs);
-            ext_force_sequence.push_back(std::make_shared<decltype(attach)>(std::move(attach)));
-        };
 
         { // apply to the gas
             auto refs_rho

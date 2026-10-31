@@ -117,9 +117,16 @@ namespace shammodels::basegodunov::test_utils {
         return grid;
     }
 
-    /// Build the face neighbour graph of the grid (periodic boundaries)
-    inline std::shared_ptr<CellGraphEdge> build_graph(const TestGrid &grid) {
-        u32 L = grid.lattice;
+    /**
+     * @brief Build the face neighbour graph of the grid
+     *
+     * The cells must cover the box [0, extent)^3 of lattice cells (extent = 0 means
+     * grid.lattice). With periodic boundaries the neighbours wrap around the box, otherwise the
+     * cells at the boundary have no neighbour outside of it.
+     */
+    inline std::shared_ptr<CellGraphEdge> build_graph(
+        const TestGrid &grid, u32 extent = 0, bool periodic = true) {
+        u32 L = (extent == 0) ? grid.lattice : extent;
 
         std::vector<u32> owner(L * L * L);
         for (u32 c = 0; c < grid.cell_count(); c++) {
@@ -153,8 +160,11 @@ namespace shammodels::basegodunov::test_utils {
                 pos[axis]
                     = (positive ? grid.cell_lo[c][axis] + s : grid.cell_lo[c][axis] + L - 1) % L;
 
+                bool outside
+                    = positive ? (grid.cell_lo[c][axis] + s == L) : (grid.cell_lo[c][axis] == 0);
+
                 u32 start = links.size();
-                for (u32 a = 0; a < s; a++) {
+                for (u32 a = 0; a < s && (periodic || !outside); a++) {
                     for (u32 b = 0; b < s; b++) {
                         pos[t1]    = grid.cell_lo[c][t1] + a;
                         pos[t2]    = grid.cell_lo[c][t2] + b;

@@ -121,6 +121,10 @@ jobs:
           - worldsize: 2
             testfile: ramses_ext_force_coupling.py
           - worldsize: 1
+            testfile: ramses_self_gravity_jeans.py
+          - worldsize: 2
+            testfile: ramses_self_gravity_jeans.py
+          - worldsize: 1
             testfile: regression_sph_disc.py
           - worldsize: 1
             testfile: regression_sph_kh.py
@@ -256,6 +260,8 @@ jobs:
             artifact_name: gallery_sph_dustywave_tva
           - testfile: "examples/sph/run_dustysettle_tva.py"
             artifact_name: gallery_sph_dustysettle_tva
+          - testfile: "examples/sph/run_dustysettle_coala.py"
+            artifact_name: gallery_sph_dustysettle_coala
           - testfile: "examples/sph/run_sod.py"
             artifact_name: gallery_sph_sod
           - testfile: "examples/sph/run_sod_dust_tva.py"

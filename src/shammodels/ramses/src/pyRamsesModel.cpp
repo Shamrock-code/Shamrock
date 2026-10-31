@@ -270,7 +270,14 @@ namespace shammodels::basegodunov {
                 "set_gravity_mode_cg",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = CG;
-                })
+                },
+                R"==(
+    Enable self-gravity, with the Jacobi preconditioned conjugate gradient Poisson solver.
+
+    Self-gravity is applied as an external force and requires the trapezoidal coupling
+    (``cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)``). The gravitational constant
+    is the one of the unit system (``cfg.set_units``).
+)==")
             .def(
                 "set_gravity_mode_pcg",
                 [](TConfig &self) {
@@ -280,7 +287,56 @@ namespace shammodels::basegodunov {
                 "set_gravity_mode_bicgstab",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = BICGSTAB;
-                })
+                },
+                R"==(
+    Enable self-gravity, with the BiCGSTAB Poisson solver.
+
+    Self-gravity is applied as an external force and requires the trapezoidal coupling
+    (``cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)``). The gravitational constant
+    is the one of the unit system (``cfg.set_units``).
+)==")
+            .def(
+                "set_units",
+                &TConfig::set_units,
+                py::arg("units"),
+                R"==(
+    Set the unit system of the simulation (SI if not set).
+
+    It sets the gravitational constant used by self-gravity.
+)==")
+            .def(
+                "set_self_gravity_Niter_max",
+                [](TConfig &self, u32 Niter) {
+                    self.gravity_config.Niter_max = Niter;
+                },
+                py::arg("Niter"),
+                R"==(
+    Set the maximum number of iterations of the self-gravity Poisson solver.
+)==")
+            .def(
+                "set_self_gravity_tol",
+                [](TConfig &self, Tscal tol) {
+                    self.gravity_config.tol = tol;
+                },
+                py::arg("tol"),
+                R"==(
+    Set the convergence tolerance of the self-gravity Poisson solver.
+
+    The solver stops when the L2 norm of the residual is below tol relative to the
+    one of the right-hand side.
+)==")
+            .def(
+                "set_self_gravity_happy_breakdown_tol",
+                [](TConfig &self, Tscal tol) {
+                    self.gravity_config.tol_hp_bk = tol;
+                },
+                py::arg("tol"),
+                R"==(
+    Set the tolerance of the BiCGSTAB lucky breakdown test.
+
+    BiCGSTAB restarts (shadow residual and search direction reset to the residual)
+    when |<r_k, r'_0>| < tol |r_k| |r'_0|.
+)==")
             .def(
                 "add_ext_force_constant_gravity",
                 [](TConfig &self, Tvec g) {

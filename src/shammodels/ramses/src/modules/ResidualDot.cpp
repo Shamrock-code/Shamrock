@@ -11,13 +11,18 @@
  * @file ResidualDot.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Squared L2 norm of a field, summed over all patches and ranks.
  *
+ * Adapted from the PhD work of Léodasce Sewanou.
  */
 
-#include "shammodels/ramses/modules/ResidualDot.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shamalgs/collective/reduction.hpp"
+#include "shamalgs/primitives/dot_sum.hpp"
+#include "shammodels/ramses/modules/ResidualDot.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
+#include <functional>
 
 namespace shammodels::basegodunov::modules {
 
@@ -26,16 +31,31 @@ namespace shammodels::basegodunov::modules {
         auto edges = get_edges();
 
         Tscal loc_val = {};
-        edges.spans_phi_res.get_refs().for_each([&](u32 i, PatchDataField<T> &res_field_ref) {
-            loc_val += res_field_ref.compute_dot_sum();
-        });
 
-        edges.res_ddot.value = shamalgs::collective::allreduce_sum(loc_val);
+        // floating-point addition is not associative: accumulate the patches in a fixed order
+        edges.spans_phi_res.get_refs().for_each_ordered(
+            [&](u64 id_patch, const std::reference_wrapper<PatchDataField<T>> &field_ref) {
+                PatchDataField<T> &field = field_ref.get();
+                u32 val_cnt              = edges.sizes.indexes.get(id_patch) * nvar;
+
+                // the field may hold more values than summed (ghost blocks), but never less
+                if (field.get_val_cnt() < val_cnt) {
+                    shambase::throw_with_loc<std::runtime_error>(sham::format(
+                        "field too small on patch {}: expected at least {} values, got {}",
+                        id_patch,
+                        val_cnt,
+                        field.get_val_cnt()));
+                }
+
+                loc_val += shamalgs::primitives::dot_sum(field.get_buf(), 0, val_cnt);
+            });
+
+        edges.res_ddot.data = shamalgs::collective::allreduce_sum(loc_val);
     }
 
     template<class T>
     std::string ResidualDot<T>::_impl_get_tex() const {
-        auto field        = get_ro_edge_base(0).get_tex_symbol();
+        auto field        = get_ro_edge_base(1).get_tex_symbol();
         auto residual_dot = get_rw_edge_base(0).get_tex_symbol();
 
         std::string tex = R"tex(

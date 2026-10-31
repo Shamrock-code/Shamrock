@@ -18,6 +18,8 @@ set(Sources
     src/modules/TimeIntegrator.cpp
     src/modules/ResetExtForceAcc.cpp
     src/modules/AddExtForceConstantGravity.cpp
+    src/modules/AddExtForceField.cpp
+    src/modules/ComputeNextRho.cpp
     src/modules/ApplyExtForceGas.cpp
     src/modules/ApplyExtForceDust.cpp
     src/modules/ApplyExtForceGasTrapezoidal.cpp
@@ -44,6 +46,11 @@ set(Sources
     src/modules/InterpolateToFace.cpp
     src/modules/CGInit.cpp
     src/modules/NodeSpMVPoisson3D.cpp
+    src/modules/NodeCGLoop.cpp
+    src/modules/NodeJacobiPreconditioner.cpp
+    src/modules/BiCGSTABInit.cpp
+    src/modules/NodeBiCGSTABLoop.cpp
+    src/modules/NodeSelfGravityAcceleration.cpp
     src/modules/ComputeAMRLevel.cpp
     src/modules/ResidualDot.cpp
     src/modules/FindGhostLayerCandidates.cpp

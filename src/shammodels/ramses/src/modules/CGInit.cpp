@@ -114,9 +114,10 @@ namespace {
                         auto res                = b_rhs - Aphi;
                         phi_res[cell_global_id] = res;
                         rhs[cell_global_id]     = b_rhs;
-                        // Jacobi preconditioned residual, z = M^-1 res with M = diag(A)
+                        // Jacobi preconditioned residual, z = M^-1 res with M = diag(A), and the
+                        // first search direction of the preconditioned CG, p = z
                         phi_z[cell_global_id] = res / Aii;
-                        phi_p[cell_global_id] = res;
+                        phi_p[cell_global_id] = res / Aii;
                     });
                 });
 

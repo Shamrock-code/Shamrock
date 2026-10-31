@@ -26,6 +26,29 @@
 #include <stdexcept>
 #include <variant>
 
+namespace {
+
+    /**
+     * @brief Local index, in the merged block, of the cell covering the sibling block
+     * `sibling_min`
+     *
+     * The position of a sibling in the merged block is deduced from its geometry, not from its
+     * position in memory: the siblings are stored in Morton order (z fastest), while the cells of
+     * a block are indexed x fastest (`AMRBlock::get_index`).
+     *
+     * @param sibling_min lower bound of the sibling block
+     * @param merged_min lower bound of the merged block
+     */
+    template<class AMRBlock, class TgridVec>
+    inline u32 get_merged_cell_index(TgridVec sibling_min, TgridVec merged_min) {
+        return AMRBlock::get_index(
+            {static_cast<u32>(sibling_min.x() != merged_min.x()),
+             static_cast<u32>(sibling_min.y() != merged_min.y()),
+             static_cast<u32>(sibling_min.z() != merged_min.z())});
+    }
+
+} // namespace
+
 template<class Tvec, class TgridVec>
 template<class UserAcc, class... T>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
@@ -88,9 +111,16 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
         sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 
+        // The kernel below reads the flags of the 8 blocks following each block while writing the
+        // flag of the current one, so the input flags are read from a copy (otherwise the result
+        // depends on the execution order of the work-items)
+        sham::DeviceBuffer<u32> derefine_flags_in(obj_cnt, dev_sched);
+        derefine_flags.copy_range(0, obj_cnt, derefine_flags_in);
+
         sham::EventList depends_list;
         auto acc_min        = buf_cell_min.get_read_access(depends_list);
         auto acc_max        = buf_cell_max.get_read_access(depends_list);
+        auto acc_want_merge = derefine_flags_in.get_read_access(depends_list);
         auto acc_merge_flag = derefine_flags.get_write_access(depends_list);
 
         // keep only derefine flags on only if the eight cells want to merge and if they can
@@ -108,7 +138,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
                     for (u32 lid = 0; lid < split_count; lid++) {
                         blocks[lid]       = BlockCoord{acc_min[gid + lid], acc_max[gid + lid]};
-                        all_want_to_merge = all_want_to_merge && acc_merge_flag[gid + lid];
+                        all_want_to_merge = all_want_to_merge && acc_want_merge[gid + lid];
                     }
 
                     do_merge = all_want_to_merge && BlockCoord::are_mergeable(blocks);
@@ -123,6 +153,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         buf_cell_min.complete_event_state(e);
         buf_cell_max.complete_event_state(e);
+        derefine_flags_in.complete_event_state(e);
         derefine_flags.complete_event_state(e);
 
         ////////////////////////////////////////////////////////////////////////////////
@@ -945,11 +976,18 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
         sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 
+        // The kernel below reads the flags of the 8 blocks following each block while writing the
+        // flag of the current one, so the input flags are read from a copy (otherwise the result
+        // depends on the execution order of the work-items)
+        sham::DeviceBuffer<u32> patch_derefine_flag_in(obj_cnt, dev_sched);
+        patch_derefine_flag.copy_range(0, obj_cnt, patch_derefine_flag_in);
+
         sham::EventList depends_list;
         auto acc_min        = buf_cell_min.get_read_access(depends_list);
         auto acc_max        = buf_cell_max.get_read_access(depends_list);
         auto acc_amr_levels = buf_amr_block_levels.get_read_access(depends_list);
 
+        auto acc_want_merge  = patch_derefine_flag_in.get_read_access(depends_list);
         auto acc_merge_flag  = patch_derefine_flag.get_write_access(depends_list);
         auto acc_refine_flag = patch_refine_flag.get_read_access(depends_list);
 
@@ -965,6 +1003,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 // avoid the out-of-bound read
                 if (id + split_count <= obj_cnt) {
                     bool all_want_to_merge = true;
+                    bool any_to_refine     = false;
 
                     auto get_coord = [](u32 i) -> std::array<u32, dim> {
                         constexpr u32 NsideBlockPow = 1;
@@ -998,7 +1037,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
                     for (u32 b_lid = 0; b_lid < split_count; b_lid++) {
                         blocks[b_lid]     = BlockCoord{acc_min[id + b_lid], acc_max[id + b_lid]};
-                        all_want_to_merge = all_want_to_merge && acc_merge_flag[id + b_lid];
+                        all_want_to_merge = all_want_to_merge && acc_want_merge[id + b_lid];
+                        any_to_refine     = any_to_refine || acc_refine_flag[id + b_lid];
                         all_same_level
                             = all_same_level && (acc_amr_levels[id] == acc_amr_levels[id + b_lid]);
                     }
@@ -1010,10 +1050,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                                    && sham::equals(blocks[lid].bmax, splitted[lid].bmax);
                     }
 
-                    do_merge = do_merge && all_want_to_merge && all_same_level;
-                    if (acc_refine_flag[id] && do_merge) {
-                        do_merge = false;
-                    }
+                    // none of the siblings can be refined in the same pass
+                    do_merge = do_merge && all_want_to_merge && all_same_level && !any_to_refine;
 
                 } else {
                     do_merge = false;
@@ -1024,6 +1062,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         buf_cell_min.complete_event_state(e);
         buf_cell_max.complete_event_state(e);
         buf_amr_block_levels.complete_event_state(e);
+        patch_derefine_flag_in.complete_event_state(e);
         patch_derefine_flag.complete_event_state(e);
         patch_refine_flag.complete_event_state(e);
 
@@ -1791,26 +1830,23 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             std::array<f64_3, AMRBlock::block_size> rho_vel_block;
             std::array<f64, AMRBlock::block_size> rhoE_block;
 
-            for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
-                rho_block[cell_id]     = {};
-                rho_vel_block[cell_id] = {};
-                rhoE_block[cell_id]    = {};
-            }
-
             // for each siblings block, perform restriction from its 8 children cells
             for (u32 pid = 0; pid < 8; pid++) {
-                auto rho_pid     = rho_block[pid];
-                auto rho_vel_pid = rho_vel_block[pid];
-                auto rhoe_pid    = rhoE_block[pid];
+                f64 rho_pid       = {};
+                f64_3 rho_vel_pid = {};
+                f64 rhoe_pid      = {};
 
                 for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
                     rho_pid += acc.rho[old_blocks[pid] * AMRBlock::block_size + cell_id];
                     rho_vel_pid += acc.rho_vel[old_blocks[pid] * AMRBlock::block_size + cell_id];
                     rhoe_pid += acc.rhoE[old_blocks[pid] * AMRBlock::block_size + cell_id];
                 }
-                rho_block[pid]     = rho_pid * (1. / 8.);
-                rho_vel_block[pid] = rho_vel_pid * (1. / 8.);
-                rhoE_block[pid]    = rhoe_pid * (1. / 8.);
+                // the siblings are in memory order, the cells of the merged block are x fastest
+                u32 cell_id = get_merged_cell_index<AMRBlock>(old_coords[pid].bmin, new_coord.bmin);
+
+                rho_block[cell_id]     = rho_pid * (1. / 8.);
+                rho_vel_block[cell_id] = rho_vel_pid * (1. / 8.);
+                rhoE_block[cell_id]    = rhoe_pid * (1. / 8.);
             }
 
             for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
@@ -2516,20 +2552,17 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             std::array<f64, AMRBlock::block_size> phi_new_block;
 
             for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
-                rho_block[cell_id]     = {};
-                rho_vel_block[cell_id] = {};
-                rhoE_block[cell_id]    = {};
                 phi_old_block[cell_id] = {};
                 phi_new_block[cell_id] = {};
             }
 
             // for each siblings block, perform restriction from its 8 children cells
             for (u32 pid = 0; pid < 8; pid++) {
-                auto rho_pid     = rho_block[pid];
-                auto rho_vel_pid = rho_vel_block[pid];
-                auto rhoe_pid    = rhoE_block[pid];
-                auto phi_old_pid = phi_old_block[pid];
-                auto phi_new_pid = phi_new_block[pid];
+                f64 rho_pid       = {};
+                f64_3 rho_vel_pid = {};
+                f64 rhoe_pid      = {};
+                f64 phi_old_pid   = {};
+                f64 phi_new_pid   = {};
 
                 for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
                     rho_pid += acc.rho[old_blocks[pid] * AMRBlock::block_size + cell_id];
@@ -2538,11 +2571,14 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     phi_old_pid += acc.phi_old[old_blocks[pid] * AMRBlock::block_size + cell_id];
                     phi_new_pid += acc.phi_new[old_blocks[pid] * AMRBlock::block_size + cell_id];
                 }
-                rho_block[pid]     = rho_pid * (1. / 8.);
-                rho_vel_block[pid] = rho_vel_pid * (1. / 8.);
-                rhoE_block[pid]    = rhoe_pid * (1. / 8.);
-                // phi_old_block[pid]    = phi_old_pid * (1. / 8.);
-                // phi_new_block[pid]    = phi_new_pid * (1. / 8.);
+                // the siblings are in memory order, the cells of the merged block are x fastest
+                u32 cell_id = get_merged_cell_index<AMRBlock>(old_coords[pid].bmin, new_coord.bmin);
+
+                rho_block[cell_id]     = rho_pid * (1. / 8.);
+                rho_vel_block[cell_id] = rho_vel_pid * (1. / 8.);
+                rhoE_block[cell_id]    = rhoe_pid * (1. / 8.);
+                // phi_old_block[cell_id]    = phi_old_pid * (1. / 8.);
+                // phi_new_block[cell_id]    = phi_new_pid * (1. / 8.);
             }
 
             for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {

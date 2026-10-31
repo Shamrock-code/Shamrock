@@ -22,6 +22,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import animation
 
 import shamrock
 
@@ -49,7 +50,7 @@ x_s = 0.2  # initial shock position
 A0 = 0.2  # amplitude of the density perturbation
 fp = 5.0  # frequency of the density perturbation
 
-timestep_list = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]
+timestep_list = [0.18, 0.20, 0.25, 0.30, 0.35, 0.40, 0.42, 0.44, 0.45, 0.47, 0.50]
 
 # A RAMSES block has 2 cells per side, so each block is ``sz`` grid units wide.
 sz = 1 << 1
@@ -147,6 +148,8 @@ for t in timestep_list:
 # %%
 # Plot the results
 # ^^^^^^^^^^^^^^^^
+# One frame per output time, with the same axis limits for every frame so that they can be
+# assembled into an animation.
 
 arr_x = [x[0] for x in positions_plot]
 
@@ -158,20 +161,52 @@ fields = [
 ]
 
 
-def plot_frame(frame, t):
+def get_ylim(key):
+    vmin = min(np.min(frame[key]) for frame in results)
+    vmax = max(np.max(frame[key]) for frame in results)
+    margin = 0.05 * (vmax - vmin)
+    return vmin - margin, vmax + margin
+
+
+ylims = {key: get_ylim(key) for key, _ in fields}
+
+
+def plot_frame(frame, t, iplot):
     fig, axs = plt.subplots(2, 2, figsize=(8, 8), dpi=100, constrained_layout=True)
     fig.suptitle(f"Shu-Osher test, $t = {t:.2f}$, $n_x = {nx}$")
     for ax, (key, label) in zip(axs.flat, fields):
         ax.set_xlabel("$x$")
         ax.set_ylabel(label)
+        ax.set_ylim(*ylims[key])
         ax.grid(True, alpha=0.3)
         ax.scatter(arr_x, frame[key], s=4)
-    plt.savefig(os.path.join(output_folder, f"shu_osher_t_{t:.2f}_nx_{nx}.png"))
-    return fig
+    plt.savefig(os.path.join(output_folder, f"frame_{iplot:04d}.png"))
+    plt.close(fig)
 
+
+if shamrock.sys.world_rank() == 0:
+    for iplot, (t, frame) in enumerate(zip(timestep_list, results)):
+        plot_frame(frame, t, iplot)
+
+# %%
+# Animation
+# ^^^^^^^^^
+
+from shamrock.utils.plot import show_image_sequence
+
+# If the animation is not returned only a static image will be shown in the doc
+ani = show_image_sequence(os.path.join(output_folder, "frame_*.png"), interval=400)
+
+if shamrock.sys.world_rank() == 0:
+    # To save the animation using Pillow as a gif
+    writer = animation.PillowWriter(fps=3, metadata=dict(artist="Me"), bitrate=1800)
+    ani.save(os.path.join(output_folder, "shu_osher.gif"), writer=writer)
+
+plt.show()
 
 # %%
 # Density evolution
+# ^^^^^^^^^^^^^^^^^
 
 cmap = plt.get_cmap("viridis")
 fig, ax = plt.subplots(figsize=(8, 5), dpi=100, constrained_layout=True)
@@ -182,13 +217,5 @@ ax.set_ylabel("$\\rho$")
 ax.grid(True, alpha=0.3)
 ax.legend(ncol=2, fontsize=8)
 plt.savefig(os.path.join(output_folder, f"shu_osher_rho_evolution_nx_{nx}.png"))
-
-# %%
-# State at intermediate time
-plot_frame(results[7], timestep_list[7])
-
-# %%
-# Final state
-plot_frame(results[-1], timestep_list[-1])
 
 plt.show()

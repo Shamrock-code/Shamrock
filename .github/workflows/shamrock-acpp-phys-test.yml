@@ -121,6 +121,10 @@ jobs:
           - worldsize: 2
             testfile: ramses_ext_force_coupling.py
           - worldsize: 1
+            testfile: ramses_self_gravity_jeans.py
+          - worldsize: 2
+            testfile: ramses_self_gravity_jeans.py
+          - worldsize: 1
             testfile: regression_sph_disc.py
           - worldsize: 1
             testfile: regression_sph_kh.py

@@ -270,7 +270,14 @@ namespace shammodels::basegodunov {
                 "set_gravity_mode_cg",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = CG;
-                })
+                },
+                R"==(
+    Enable self-gravity, with the Jacobi preconditioned conjugate gradient Poisson solver.
+
+    Self-gravity is applied as an external force and requires the trapezoidal coupling
+    (``cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)``). The gravitational constant
+    is the one of the unit system (``cfg.set_units``).
+)==")
             .def(
                 "set_gravity_mode_pcg",
                 [](TConfig &self) {
@@ -280,7 +287,23 @@ namespace shammodels::basegodunov {
                 "set_gravity_mode_bicgstab",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = BICGSTAB;
-                })
+                },
+                R"==(
+    Enable self-gravity, with the BiCGSTAB Poisson solver.
+
+    Self-gravity is applied as an external force and requires the trapezoidal coupling
+    (``cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)``). The gravitational constant
+    is the one of the unit system (``cfg.set_units``).
+)==")
+            .def(
+                "set_units",
+                &TConfig::set_units,
+                py::arg("units"),
+                R"==(
+    Set the unit system of the simulation (SI if not set).
+
+    It sets the gravitational constant used by self-gravity.
+)==")
             .def(
                 "set_self_gravity_Niter_max",
                 [](TConfig &self, u32 Niter) {

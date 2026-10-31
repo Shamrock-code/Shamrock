@@ -371,7 +371,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal rhodust_eps,
                Tscal vfrag_threshold,
                std::vector<Tscal> massgrid,
-               py::array_t<Tscal> tabflux_coag) {
+               py::array_t<Tscal> tabflux_coag,
+               Tscal tau_frac) {
                 if (massgrid.size() == 0) {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
                         "massgrid must not be empty");
@@ -415,6 +416,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
                 self.dust_config.set_dust_evol_coala(
                     {.rhodust_eps     = rhodust_eps,
+                     .tau_frac        = tau_frac,
                      .vfrag_threshold = vfrag_threshold,
                      .massgrid        = massgrid,
                      .tabflux_coag    = tabflux_coag_vec});
@@ -423,6 +425,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("vfrag_threshold"),
             py::arg("massgrid"),
             py::arg("tabflux_coag"),
+            py::arg("tau_frac") = Tscal(10),
             R"pbdoc(
         Enable the COALA dust coagulation source term.
 
@@ -437,6 +440,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             massgrid: Dust mass grid bin edges, of size ``nbins + 1``.
             tabflux_coag: Tabulated coagulation flux, of shape
                 ``(nbins, nbins, nbins)``.
+            tau_frac: The source term on ``s_j`` is integrated implicitly over
+                ``dt_eff = max(dt, tau_frac * rhodust_eps / |S|)``, that is over at
+                least the time needed to move ``tau_frac * rhodust_eps``. This bounds
+                the rate of an empty bin when ``dt`` is null or tiny (e.g. right after
+                a dust injection). Must be positive.
         )pbdoc")
         .def(
             "set_dust_ballabio_ts_limiter",

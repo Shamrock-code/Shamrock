@@ -424,8 +424,7 @@ void shammodels::sph::modules::FindGhostInterfacesShearingPeriodic<
     const shammath::AABB<Tvec> &sim_box = edges.sim_box.value;
     Tvec bsize                          = sim_box.upper - sim_box.lower;
 
-    ShearPeriodicInfo<Tscal> shear_info{
-        shear_base, shear_dir, shear_speed * edges.time.data, shear_speed};
+    ShearPeriodicInfo<Tscal> shear_info{shear_base, shear_dir, edges.shear_value.data, shear_speed};
 
     SerialPatchTree<Tvec> &sptree                         = edges.patch_tree.get_patch_tree();
     const shambase::DistributedData<Tscal> &int_range_max = edges.interact_radius.values;

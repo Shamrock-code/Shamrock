@@ -114,14 +114,14 @@ namespace shammodels::sph::modules {
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     FIND_GHOST_INTERFACES_EDGES_IN(X_RO)                                                           \
-    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, time)                                            \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, shear_value)                                     \
     FIND_GHOST_INTERFACES_EDGES_OUT(X_RW)
 
     /**
      * @brief Ghost interface finder for shearing periodic boundaries
      *
-     * The periodic images along `shear_base` are shifted by `shear_speed * time` along
-     * `shear_dir`, and move at `shear_speed`.
+     * The periodic images along `shear_base` are shifted by `shear_value` (the current shear
+     * displacement) along `shear_dir`, and move at `shear_speed`.
      */
     template<class Tvec>
     class FindGhostInterfacesShearingPeriodic : public shamrock::solvergraph::INode {

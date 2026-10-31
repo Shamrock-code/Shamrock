@@ -89,8 +89,8 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
             interface_infos);
         node.evaluate();
     } else if (BCShearingPeriodic *cfg = std::get_if<BCShearingPeriodic>(&ghost_config)) {
-        auto time  = IDataEdge<flt>::make_shared("", "");
-        time->data = cfg->time;
+        auto shear_value  = IDataEdge<flt>::make_shared("", "");
+        shear_value->data = cfg->shear_value;
 
         modules::FindGhostInterfacesShearingPeriodic<vec> node(
             cfg->shear_base, cfg->shear_dir, cfg->shear_speed);
@@ -100,7 +100,7 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
             interact_radius_tree,
             interact_radius,
             local_patch_boxes,
-            time,
+            shear_value,
             interface_infos);
         node.evaluate();
     } else {

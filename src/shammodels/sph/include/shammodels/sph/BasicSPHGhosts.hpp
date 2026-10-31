@@ -46,8 +46,7 @@ namespace shammodels::sph {
         struct ShearingPeriodic {
             i32_3 shear_base;
             i32_3 shear_dir;
-            /// time at which the shear displacement (shear_speed * time) is evaluated
-            Tscal time;
+            Tscal shear_value;
             Tscal shear_speed;
         };
 

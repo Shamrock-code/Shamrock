@@ -17,8 +17,10 @@ onto the barotrope
 isothermal at low density and adiabatic above the critical density :math:`\\rho_c`.
 
 The box is periodic (the Poisson solver is periodic), its size is four times the sphere radius.
-The grid is uniform: this low resolution is chosen so that the example runs in a few minutes
-(adaptive refinement on the Jeans length would be needed to follow the collapse further).
+The grid is refined so that the local Jeans length :math:`\\lambda_J = \\sqrt{\\pi c_s^2 / (G
+\\rho)}` is always resolved by at least :math:`N_J` cells
+(``cfg.set_amr_mode_jeans_length_based``), up to a maximum number of refinement levels. The
+resolution parameters are kept low so that the example runs in a few minutes.
 
 Adapted from the collapse setup of the PhD work of Léodasce Sewanou.
 """
@@ -73,9 +75,14 @@ gamma = 5.0 / 3.0
 
 L0 = 4 * R0  # box size
 
-# Resolution: uniform grid of (sz * base)^3 cells
-sz = 1 << 1
-base = 32
+# Resolution: base grid of base^3 blocks of 2^3 cells, refined up to max_amr_lev levels such that
+# the Jeans length is resolved by at least N_J cells
+base = 16
+max_amr_lev = 3
+N_J = 8
+
+# int coords size of a base block, such that a cell of the finest level is one int coords unit
+sz = 2 << max_amr_lev
 
 t_end_tff = 1.2  # end time in units of the free-fall time
 n_frames = 49
@@ -93,14 +100,15 @@ lambda_J = np.sqrt(np.pi * cs0**2 / (G * rho0))  # Jeans length
 # thermal to gravitational energy ratio of the sphere
 alpha = (1.5 * M0 * cs0**2) / (3.0 / 5.0 * G * M0**2 / R0)
 
-N = sz * base  # cells per side
-scale_fact = L0 / N  # grid int coords to [0, L0]^3 (a cell spans one unit of int coords)
-dx = scale_fact  # cell size
+scale_fact = L0 / (sz * base)  # grid int coords to [0, L0]^3
+dx_base = L0 / (2 * base)  # cell size of the base grid
+dx_min = scale_fact  # cell size of the finest level
 
 if shamrock.sys.world_rank() == 0:
     print(f"M0 = {M0 / sicte.sol_mass():.3f} Msun, alpha = {alpha:.3f}")
     print(f"cs0 = {cs0:.2f} m/s, t_ff = {t_ff / year:.4e} yr")
-    print(f"Jeans length = {lambda_J / au:.1f} au = {lambda_J / dx:.1f} cells")
+    print(f"Jeans length = {lambda_J / au:.1f} au = {lambda_J / dx_base:.1f} base cells")
+    print(f"base cell size = {dx_base / au:.1f} au, finest cell size = {dx_min / au:.1f} au")
 
 # %%
 # Create the dump directory if it does not exist
@@ -128,6 +136,8 @@ cfg.set_gravity_mode_cg()
 cfg.set_self_gravity_tol(1e-6)
 cfg.set_self_gravity_Niter_max(3000)
 cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)
+cfg.set_amr_mode_old(False)
+cfg.set_amr_mode_jeans_length_based(N_jeans=N_J)
 model.set_solver_config(cfg)
 
 model.init_scheduler(int(1e7), 1)
@@ -173,38 +183,52 @@ model.set_field_value_lambda_f64("phi_old", lambda rmin, rmax: 0.0)
 # %%
 # Data extraction utilities
 # ^^^^^^^^^^^^^^^^^^^^^^^^^
-# At each output we render a density slice in the :math:`z = L_0 / 2` plane, and compute for every
-# cell its distance to the center :math:`r`, the density, pressure, temperature
-# :math:`T = \mu m_H P / (k_B \rho)` and radial velocity :math:`v_r = \mathbf{v} \cdot
-# \mathbf{r} / r`.
+# At each output we render density slices in the :math:`z = L_0 / 2` plane (the whole box and a
+# zoom on its center), and compute for every cell its distance to the center :math:`r`, the
+# density, pressure, temperature :math:`T = \mu m_H P / (k_B \rho)` and radial velocity
+# :math:`v_r = \mathbf{v} \cdot \mathbf{r} / r`.
 
 n_slice = 256
-slice_x = np.linspace(0, L0, n_slice + 1)[:-1] + 0.5 * L0 / n_slice
-slice_xx, slice_yy = np.meshgrid(slice_x, slice_x, indexing="ij")
-slice_positions = [
-    (x, y, 0.5 * L0) for x, y in zip(slice_xx.ravel().tolist(), slice_yy.ravel().tolist())
-]
+zoom = 8  # the zoomed slice spans L0 / zoom
 
 
-def render_rho_slice():
-    return np.array(model.render_slice("rho", "f64", slice_positions)).reshape(n_slice, n_slice)
+def slice_positions(width):
+    x = 0.5 * L0 + width * ((np.arange(n_slice) + 0.5) / n_slice - 0.5)
+    xx, yy = np.meshgrid(x, x, indexing="ij")
+    return [(x, y, 0.5 * L0) for x, y in zip(xx.ravel().tolist(), yy.ravel().tolist())]
+
+
+slice_positions_box = slice_positions(L0)
+slice_positions_zoom = slice_positions(L0 / zoom)
+
+
+def render_rho_slices():
+    return [
+        np.array(model.render_slice("rho", "f64", pos)).reshape(n_slice, n_slice)
+        for pos in (slice_positions_box, slice_positions_zoom)
+    ]
 
 
 def get_profiles():
     dic = ctx.collect_data()
 
-    # cell centers, from the block bounds (cells are ordered block by block, x fastest)
+    # cell centers, from the block bounds (blocks of 2^3 cells, ordered block by block, x fastest)
+    nside = 2
     block_min = np.array(dic["cell_min"], dtype=float)
     block_max = np.array(dic["cell_max"], dtype=float)
-    lid = np.arange(sz**3)
-    local_coord = np.stack([lid % sz, (lid // sz) % sz, lid // (sz * sz)], axis=1)
-    cell_size = (block_max - block_min) / sz
+    lid = np.arange(nside**3)
+    local_coord = np.stack([lid % nside, (lid // nside) % nside, lid // (nside * nside)], axis=1)
+    cell_size = (block_max - block_min) / nside
     pos = block_min[:, None, :] + (local_coord[None, :, :] + 0.5) * cell_size[:, None, :]
     pos = pos.reshape(-1, 3) * scale_fact - 0.5 * L0
 
     rho = np.array(dic["rho"])
     rhovel = np.array(dic["rhovel"]).reshape(-1, 3)
     rhoetot = np.array(dic["rhoetot"])
+
+    # refinement level of the cells
+    level = np.log2(dx_base / (cell_size[:, 0] * scale_fact))
+    level = np.repeat(np.rint(level), nside**3)
 
     r = np.linalg.norm(pos, axis=1)
     ekin = 0.5 * np.sum(rhovel**2, axis=1) / rho
@@ -219,6 +243,7 @@ def get_profiles():
         "P": (P * 10).astype(np.float32),
         "T": T.astype(np.float32),
         "vr": (vr * 1e-3).astype(np.float32),
+        "level": level.astype(np.int8),
     }
 
 
@@ -228,7 +253,7 @@ def get_profiles():
 # The frames are saved on the fly during the run, so the plot limits are fixed beforehand (shared
 # by every frame of the animations): the density ranges from the diffuse medium up to ten times
 # the critical density of the barotrope, and the infall velocity up to 1.5 times the free-fall
-# velocity of the sphere mass at the scale of a cell.
+# velocity of the sphere mass at the scale of a cell of the finest level.
 
 
 def barotrope_temperature(rho):
@@ -237,9 +262,9 @@ def barotrope_temperature(rho):
 
 rho_plot_min = rho_ext / 3  # [kg/m^3]
 rho_plot_max = 10 * rho_crit  # [kg/m^3]
-v_ff_cell = np.sqrt(2 * G * M0 / dx)  # [m/s]
+v_ff_cell = np.sqrt(2 * G * M0 / dx_min)  # [m/s]
 
-lim_r = (0.4 * dx / au, np.sqrt(3) * 0.5 * L0 / au * 1.1)  # [au]
+lim_r = (0.4 * dx_min / au, np.sqrt(3) * 0.5 * L0 / au * 1.1)  # [au]
 lim_rho = (rho_plot_min * 1e-3, rho_plot_max * 1e-3)  # [g/cm^3]
 lim_P = (
     barotrope_pressure(rho_plot_min) * 10,
@@ -254,37 +279,50 @@ rho_baro = np.logspace(np.log10(lim_rho[0]), np.log10(lim_rho[1]), 200)
 P_baro = barotrope_pressure(rho_baro * 1e3) * 10
 
 
-def plot_slice(arr_rho, t, iplot, dpi=150):
-    plt.figure(dpi=dpi)
-    extent = np.array([-0.5 * L0, 0.5 * L0, -0.5 * L0, 0.5 * L0]) / au
-    res = plt.imshow(
-        np.log10(arr_rho.T * 1e-3),
-        cmap=matplotlib.colormaps["magma"],
-        origin="lower",
-        extent=extent,
-        vmin=log_rho_slice_lim[0],
-        vmax=log_rho_slice_lim[1],
-        interpolation="nearest",
-        aspect="equal",
-    )
-    plt.xlabel("x [au]")
-    plt.ylabel("y [au]")
-    plt.title(f"t = {t / t_ff:0.3f} $t_{{\\rm ff}}$")
-    cbar = plt.colorbar(res)
+def plot_slices(arr_rho_box, arr_rho_zoom, t, iplot, dpi=150):
+    fig, axs = plt.subplots(1, 2, figsize=(10, 4.4), dpi=dpi)
+
+    for ax, arr_rho, width in zip(axs, (arr_rho_box, arr_rho_zoom), (L0, L0 / zoom)):
+        extent = np.array([-0.5, 0.5, -0.5, 0.5]) * width / au
+        res = ax.imshow(
+            np.log10(arr_rho.T * 1e-3),
+            cmap=matplotlib.colormaps["magma"],
+            origin="lower",
+            extent=extent,
+            vmin=log_rho_slice_lim[0],
+            vmax=log_rho_slice_lim[1],
+            interpolation="nearest",
+            aspect="equal",
+        )
+        ax.set_xlabel("x [au]")
+        ax.set_ylabel("y [au]")
+
+    axs[0].set_title("whole box")
+    axs[1].set_title(f"zoom x{zoom}")
+    fig.suptitle(f"t = {t / t_ff:0.3f} $t_{{\\rm ff}}$")
+    cbar = fig.colorbar(res, ax=axs)
     cbar.set_label(r"$\log_{10} \rho$ [g/cm$^3$]")
-    plt.tight_layout()
-    plt.savefig(os.path.join(sim_folder, f"rho_slice_{iplot:04d}.png"))
-    plt.close()
+    fig.savefig(os.path.join(sim_folder, f"rho_slice_{iplot:04d}.png"))
+    plt.close(fig)
 
 
-scatter_kwargs = dict(s=1, alpha=0.3, linewidths=0, rasterized=True)
+# points colored by refinement level
+scatter_kwargs = dict(
+    s=1,
+    alpha=0.5,
+    linewidths=0,
+    rasterized=True,
+    cmap=matplotlib.colormaps["viridis"].resampled(max_amr_lev + 1),
+    vmin=-0.5,
+    vmax=max_amr_lev + 0.5,
+)
 
 
 def plot_profiles(prof, t, iplot, dpi=250):
     fig, axs = plt.subplots(2, 2, figsize=(9, 7))
     ax_rho, ax_P, ax_T, ax_vr = axs.ravel()
 
-    ax_rho.scatter(prof["r"], prof["rho"], **scatter_kwargs)
+    sc = ax_rho.scatter(prof["r"], prof["rho"], c=prof["level"], **scatter_kwargs)
     ax_rho.set_xscale("log")
     ax_rho.set_yscale("log")
     ax_rho.set_xlim(lim_r)
@@ -292,7 +330,7 @@ def plot_profiles(prof, t, iplot, dpi=250):
     ax_rho.set_xlabel("r [au]")
     ax_rho.set_ylabel(r"$\rho$ [g/cm$^3$]")
 
-    ax_P.scatter(prof["rho"], prof["P"], **scatter_kwargs)
+    ax_P.scatter(prof["rho"], prof["P"], c=prof["level"], **scatter_kwargs)
     ax_P.plot(rho_baro, P_baro, color="red", linestyle="--", label="barotrope")
     ax_P.axvline(rho_crit * 1e-3, color="grey", linestyle=":", label=r"$\rho_c$")
     ax_P.set_xscale("log")
@@ -303,7 +341,7 @@ def plot_profiles(prof, t, iplot, dpi=250):
     ax_P.set_ylabel(r"$P$ [dyn/cm$^2$]")
     ax_P.legend(loc="upper left")
 
-    ax_T.scatter(prof["r"], prof["T"], **scatter_kwargs)
+    ax_T.scatter(prof["r"], prof["T"], c=prof["level"], **scatter_kwargs)
     ax_T.set_xscale("log")
     ax_T.set_yscale("log")
     ax_T.set_xlim(lim_r)
@@ -311,7 +349,7 @@ def plot_profiles(prof, t, iplot, dpi=250):
     ax_T.set_xlabel("r [au]")
     ax_T.set_ylabel("T [K]")
 
-    ax_vr.scatter(prof["r"], prof["vr"], **scatter_kwargs)
+    ax_vr.scatter(prof["r"], prof["vr"], c=prof["level"], **scatter_kwargs)
     ax_vr.axhline(0, color="grey", linewidth=0.5)
     ax_vr.set_xscale("log")
     ax_vr.set_xlim(lim_r)
@@ -324,6 +362,9 @@ def plot_profiles(prof, t, iplot, dpi=250):
 
     fig.suptitle(f"t = {t / t_ff:0.3f} $t_{{\\rm ff}}$")
     fig.tight_layout()
+    cbar = fig.colorbar(sc, ax=axs, ticks=np.arange(max_amr_lev + 1), shrink=0.6)
+    cbar.set_label("AMR level")
+    cbar.solids.set(alpha=1)
     fig.savefig(os.path.join(sim_folder, f"profiles_{iplot:04d}.png"), dpi=dpi)
     plt.close(fig)
 
@@ -339,16 +380,17 @@ hist_rho_max = []
 for i, t in enumerate(frames_t):
     model.evolve_until(t)
 
-    arr_rho = render_rho_slice()
+    arr_rho_box, arr_rho_zoom = render_rho_slices()
     prof = get_profiles()
     hist_rho_max.append(np.max(prof["rho"]))
 
     if shamrock.sys.world_rank() == 0:
-        plot_slice(arr_rho, t, i)
+        plot_slices(arr_rho_box, arr_rho_zoom, t, i)
         plot_profiles(prof, t, i)
         print(
             f"frame {i:3d} / {n_frames}, t = {t / t_ff:.3f} t_ff, "
-            f"max rho = {hist_rho_max[-1]:.3e} g/cm^3"
+            f"max rho = {hist_rho_max[-1]:.3e} g/cm^3, "
+            f"{len(prof['rho'])} cells, max level = {np.max(prof['level'])}"
         )
 
 # %%
@@ -370,7 +412,7 @@ plt.show()
 # %%
 # Radial profiles
 # ^^^^^^^^^^^^^^^
-# One point per cell: density and temperature versus radius, pressure versus density with the
+# One point per cell, colored by its refinement level: density and temperature versus radius, pressure versus density with the
 # barotrope overlaid (every cell lies on it, as the internal energy is reset at the end of each
 # timestep), and radial velocity versus radius. The dotted vertical lines mark the initial radius
 # of the sphere (and the critical density on the pressure plot).

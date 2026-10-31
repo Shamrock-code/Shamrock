@@ -7,7 +7,7 @@ interaction produces a train of high-frequency waves behind the shock, which is
 a classic test of how well a scheme resolves both shocks and smooth structures.
 
 The problem is set on :math:`x \\in [0, 2]` with outflow boundaries in :math:`x`
-(the transverse directions are periodic and only a few cells thick):
+(the transverse directions are periodic):
 
 +---------------------+------------------------------------+-------------+----------+
 | Region              | :math:`\\rho`                       | :math:`v_x` | :math:`P`|
@@ -39,8 +39,9 @@ shamrock.matplotlib.set_shamrock_mpl_style()
 # Setup parameters
 # ^^^^^^^^^^^^^^^^
 #
-# The resolution is kept low so that the example runs quickly in the documentation build.
-# Increase ``blocks_x`` (e.g. to 512 for 1024 cells along x) for a sharper post-shock wave train.
+# The resolution is kept low so that the example runs in a reasonable time in the documentation
+# build. Increase ``blocks_x`` (e.g. to 512 for 1024 cells along x) for a sharper post-shock
+# wave train.
 
 gamma = 1.4
 
@@ -52,8 +53,8 @@ timestep_list = [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50
 
 # A RAMSES block has 2 cells per side, so each block is ``sz`` grid units wide.
 sz = 1 << 1
-blocks_x = 128  # number of blocks along x
-blocks_yz = 1  # number of blocks along y and z (periodic, the problem is 1D)
+blocks_x = 160  # number of blocks along x
+blocks_yz = 8  # number of blocks along y and z (periodic, the problem is 1D)
 
 nx = 2 * blocks_x  # number of cells along x
 scale_fact = 2 / (sz * blocks_x)  # box length along x is 2

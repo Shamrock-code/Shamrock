@@ -29,6 +29,9 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
+# the new AMR is experimental
+shamrock.enable_experimental_features()
+
 gamma = 5.0 / 3.0
 
 # sphere of radius R0 centered in the unit box

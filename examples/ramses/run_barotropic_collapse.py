@@ -104,6 +104,12 @@ scale_fact = L0 / (sz * base)  # grid int coords to [0, L0]^3
 dx_base = L0 / (2 * base)  # cell size of the base grid
 dx_min = scale_fact  # cell size of the finest level
 
+# refinement levels as in RAMSES: a cell of level l is L0 / 2^l wide. Where the Jeans length is
+# well resolved (the diffuse medium), the blocks are merged below the base level.
+level_base = int(np.log2(2 * base))
+level_max = level_base + max_amr_lev
+level_min = 1
+
 if shamrock.sys.world_rank() == 0:
     print(f"M0 = {M0 / sicte.sol_mass():.3f} Msun, alpha = {alpha:.3f}")
     print(f"cs0 = {cs0:.2f} m/s, t_ff = {t_ff / year:.4e} yr")
@@ -227,7 +233,7 @@ def get_profiles():
     rhoetot = np.array(dic["rhoetot"])
 
     # refinement level of the cells
-    level = np.log2(dx_base / (cell_size[:, 0] * scale_fact))
+    level = np.log2(L0 / (cell_size[:, 0] * scale_fact))
     level = np.repeat(np.rint(level), nside**3)
 
     r = np.linalg.norm(pos, axis=1)
@@ -312,9 +318,9 @@ scatter_kwargs = dict(
     alpha=0.5,
     linewidths=0,
     rasterized=True,
-    cmap=matplotlib.colormaps["viridis"].resampled(max_amr_lev + 1),
-    vmin=-0.5,
-    vmax=max_amr_lev + 0.5,
+    cmap=matplotlib.colormaps["viridis"].resampled(level_max - level_min + 1),
+    vmin=level_min - 0.5,
+    vmax=level_max + 0.5,
 )
 
 
@@ -362,7 +368,7 @@ def plot_profiles(prof, t, iplot, dpi=250):
 
     fig.suptitle(f"t = {t / t_ff:0.3f} $t_{{\\rm ff}}$")
     fig.tight_layout()
-    cbar = fig.colorbar(sc, ax=axs, ticks=np.arange(max_amr_lev + 1), shrink=0.6)
+    cbar = fig.colorbar(sc, ax=axs, ticks=np.arange(level_min, level_max + 1), shrink=0.6)
     cbar.set_label("AMR level")
     cbar.solids.set(alpha=1)
     fig.savefig(os.path.join(sim_folder, f"profiles_{iplot:04d}.png"), dpi=dpi)

@@ -84,8 +84,11 @@ N_J = 8
 # int coords size of a base block, such that a cell of the finest level is one int coords unit
 sz = 2 << max_amr_lev
 
-t_end_tff = 1.2  # end time in units of the free-fall time
-n_frames = 49
+# output times in units of the free-fall time: most of the collapse happens at the end, from the
+# isothermal phase to the formation of the adiabatic core (rho > rho_crit), around 1.1 t_ff
+frames_t_tff = np.concatenate([np.linspace(0, 1.0, 21), np.linspace(1.0, 1.125, 26)[1:]])
+n_frames = len(frames_t_tff)
+t_end_tff = frames_t_tff[-1]
 
 sim_folder = "_to_trash/ramses_barotropic_collapse/"
 
@@ -258,7 +261,7 @@ def get_profiles():
 # ^^^^^^^^^^^^^^^^^^
 # The frames are saved on the fly during the run, so the plot limits are fixed beforehand (shared
 # by every frame of the animations): the density ranges from the diffuse medium up to ten times
-# the critical density of the barotrope, and the infall velocity up to 1.5 times the free-fall
+# the critical density of the barotrope, and the infall velocity up to 0.4 times the free-fall
 # velocity of the sphere mass at the scale of a cell of the finest level.
 
 
@@ -277,7 +280,7 @@ lim_P = (
     barotrope_pressure(rho_plot_max) * 10,
 )  # [dyn/cm^2]
 lim_T = (T0 / 2, 2 * barotrope_temperature(rho_plot_max))  # [K]
-lim_vr = (-1.5 * v_ff_cell * 1e-3, 0.2 * v_ff_cell * 1e-3)  # [km/s]
+lim_vr = (-0.4 * v_ff_cell * 1e-3, 0.1 * v_ff_cell * 1e-3)  # [km/s]
 log_rho_slice_lim = np.log10(lim_rho)
 
 # barotrope (cgs) for the overlay
@@ -380,7 +383,7 @@ def plot_profiles(prof, t, iplot, dpi=250):
 # ^^^^^^^^^^^^^^^^^^
 # The frames are rendered and saved at each output.
 
-frames_t = np.linspace(0, t_end_tff, n_frames) * t_ff
+frames_t = frames_t_tff * t_ff
 hist_rho_max = []
 
 for i, t in enumerate(frames_t):

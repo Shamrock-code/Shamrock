@@ -113,6 +113,11 @@ namespace shammodels::sph {
     struct DustEvolCoalaCoag {
         Tscal rhodust_eps;
 
+        /// The implicit source term on s_j integrates over at least the time needed to move
+        /// tau_frac * rhodust_eps (dt_eff = max(dt, tau_frac * rhodust_eps / |S|)), must be
+        /// positive. It bounds the rate of an empty bin when dt is null or tiny.
+        Tscal tau_frac;
+
         /// Fragmentation velocity threshold, must be positive (infinity disables it).
         /// In coagulation-only mode, a dust pair whose differential velocity exceeds it gets
         /// dv_ij = 0 ("poor man" fragmentation, not a real fragmentation model).
@@ -341,6 +346,7 @@ namespace shammodels::sph {
                         j
                             = {{"type", "coala_coag"},
                                {"rhodust_eps", cfg.rhodust_eps},
+                               {"tau_frac", cfg.tau_frac},
                                {"vfrag_threshold", cfg.vfrag_threshold},
                                {"massgrid", cfg.massgrid},
                                {"tabflux_coag", cfg.tabflux_coag}};
@@ -354,7 +360,9 @@ namespace shammodels::sph {
                 dust_evol_config = None{};
             } else if (j.at("type").get<std::string>() == "coala_coag") {
                 dust_evol_config = DustEvolCoalaCoag<Tscal>{
-                    .rhodust_eps     = j.at("rhodust_eps").get<Tscal>(),
+                    .rhodust_eps = j.at("rhodust_eps").get<Tscal>(),
+                    // older dumps predate tau_frac, use the python default
+                    .tau_frac        = j.value("tau_frac", Tscal(10)),
                     .vfrag_threshold = j.at("vfrag_threshold").get<Tscal>(),
                     .massgrid        = j.at("massgrid").get<std::vector<Tscal>>(),
                     .tabflux_coag    = j.at("tabflux_coag").get<std::vector<Tscal>>()};
@@ -428,6 +436,11 @@ namespace shammodels::sph {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
                             "rhodust_eps must be positive, got "
                             + std::to_string(cfg->rhodust_eps));
+                    }
+
+                    if (!(cfg->tau_frac > 0)) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "tau_frac must be positive, got " + std::to_string(cfg->tau_frac));
                     }
 
                     if (cfg->vfrag_threshold <= 0) {

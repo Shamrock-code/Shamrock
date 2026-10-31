@@ -51,26 +51,45 @@ shamrock.enable_experimental_features()
 shamrock.matplotlib.set_shamrock_mpl_style()
 
 # %%
-# Setup parameters
-# ^^^^^^^^^^^^^^^^
-# The simulation runs in SI units.
+# Units
+# ^^^^^
+# The simulation runs in code units (au, yr, solar mass), the plots are in SI units.
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
-G = sicte.G()
-kb = sicte.kb()
-m_H = sicte.proton_mass()
+codeu = shamrock.UnitSystem(
+    unit_time=sicte.year(),
+    unit_length=sicte.au(),
+    unit_mass=sicte.sol_mass(),
+)
+ucte = shamrock.Constants(codeu)
+G = ucte.G()
+kb = ucte.kb()
+m_H = ucte.proton_mass()
 
-au = si.get("au")
-year = si.get("yr")
+# SI to code units
+u_m = codeu.get("m")
+u_kg = codeu.get("kg")
+u_s = codeu.get("s")
+u_dens = u_kg / u_m**3
+
+# code units to SI
+to_m = 1 / u_m
+to_dens = 1 / u_dens  # [kg/m^3]
+to_pressure = u_m * u_s**2 / u_kg  # [Pa]
+to_vel = u_s / u_m  # [m/s]
+
+# %%
+# Setup parameters
+# ^^^^^^^^^^^^^^^^
 
 # Physical parameters
 T0 = 10.0  # [K]
 mu = 2.3  # mean molecular weight of the molecular gas
-R0 = 7.07e16 * 1e-2  # sphere radius [cm -> m]
-rho0 = 1.38e-18 * 1e3  # sphere density [g/cm^3 -> kg/m^3]
+R0 = 7.07e14 * u_m  # sphere radius (7.07e16 cm)
+rho0 = 1.38e-15 * u_dens  # sphere density (1.38e-18 g/cm^3)
 rho_ext = rho0 / 100  # density of the surrounding medium
-rho_crit = 3.7e-13 * 1e3  # critical density of the barotrope [g/cm^3 -> kg/m^3]
+rho_crit = 3.7e-10 * u_dens  # critical density of the barotrope (3.7e-13 g/cm^3)
 gamma = 5.0 / 3.0
 
 L0 = 4 * R0  # box size
@@ -114,10 +133,10 @@ level_max = level_base + max_amr_lev
 level_min = 1
 
 if shamrock.sys.world_rank() == 0:
-    print(f"M0 = {M0 / sicte.sol_mass():.3f} Msun, alpha = {alpha:.3f}")
-    print(f"cs0 = {cs0:.2f} m/s, t_ff = {t_ff / year:.4e} yr")
-    print(f"Jeans length = {lambda_J / au:.1f} au = {lambda_J / dx_base:.1f} base cells")
-    print(f"base cell size = {dx_base / au:.1f} au, finest cell size = {dx_min / au:.1f} au")
+    print(f"M0 = {M0:.3f} Msun, alpha = {alpha:.3f}")
+    print(f"cs0 = {cs0 * to_vel:.2f} m/s, t_ff = {t_ff:.4e} yr")
+    print(f"Jeans length = {lambda_J:.1f} au = {lambda_J / dx_base:.1f} base cells")
+    print(f"base cell size = {dx_base:.1f} au, finest cell size = {dx_min:.1f} au")
 
 # %%
 # Create the dump directory if it does not exist
@@ -140,7 +159,7 @@ cfg.set_eos_reset_barotropic(rho_crit=rho_crit, cs0=cs0, gamma_baro=gamma, gamma
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
 cfg.set_riemann_solver_hllc()
-cfg.set_units(si)
+cfg.set_units(codeu)
 cfg.set_gravity_mode_cg()
 cfg.set_self_gravity_tol(1e-6)
 cfg.set_self_gravity_Niter_max(3000)
@@ -245,13 +264,13 @@ def get_profiles():
     T = mu * m_H * P / (kb * rho)
     vr = np.sum(rhovel * pos, axis=1) / (rho * r)
 
-    # in the units of the plots (au, g/cm^3, dyn/cm^2, K, km/s)
+    # in SI units for the plots
     return {
-        "r": (r / au).astype(np.float32),
-        "rho": (rho * 1e-3).astype(np.float32),
-        "P": (P * 10).astype(np.float32),
+        "r": (r * to_m).astype(np.float32),
+        "rho": (rho * to_dens).astype(np.float32),
+        "P": (P * to_pressure).astype(np.float32),
         "T": T.astype(np.float32),
-        "vr": (vr * 1e-3).astype(np.float32),
+        "vr": (vr * to_vel).astype(np.float32),
         "level": level.astype(np.int8),
     }
 
@@ -269,32 +288,33 @@ def barotrope_temperature(rho):
     return T0 * (1.0 + (rho / rho_crit) ** (gamma - 1.0))
 
 
-rho_plot_min = rho_ext / 3  # [kg/m^3]
-rho_plot_max = 10 * rho_crit  # [kg/m^3]
-v_ff_cell = np.sqrt(2 * G * M0 / dx_min)  # [m/s]
+rho_plot_min = rho_ext / 3
+rho_plot_max = 10 * rho_crit
+v_ff_cell = np.sqrt(2 * G * M0 / dx_min)
 
-lim_r = (0.4 * dx_min / au, np.sqrt(3) * 0.5 * L0 / au * 1.1)  # [au]
-lim_rho = (rho_plot_min * 1e-3, rho_plot_max * 1e-3)  # [g/cm^3]
+# plot limits, in SI units
+lim_r = (0.4 * dx_min * to_m, np.sqrt(3) * 0.5 * L0 * to_m * 1.1)  # [m]
+lim_rho = (rho_plot_min * to_dens, rho_plot_max * to_dens)  # [kg/m^3]
 lim_P = (
-    barotrope_pressure(rho_plot_min) * 10,
-    barotrope_pressure(rho_plot_max) * 10,
-)  # [dyn/cm^2]
+    barotrope_pressure(rho_plot_min) * to_pressure,
+    barotrope_pressure(rho_plot_max) * to_pressure,
+)  # [Pa]
 lim_T = (T0 / 2, 2 * barotrope_temperature(rho_plot_max))  # [K]
-lim_vr = (-0.4 * v_ff_cell * 1e-3, 0.1 * v_ff_cell * 1e-3)  # [km/s]
+lim_vr = (-0.4 * v_ff_cell * to_vel, 0.1 * v_ff_cell * to_vel)  # [m/s]
 log_rho_slice_lim = np.log10(lim_rho)
 
-# barotrope (cgs) for the overlay
-rho_baro = np.logspace(np.log10(lim_rho[0]), np.log10(lim_rho[1]), 200)
-P_baro = barotrope_pressure(rho_baro * 1e3) * 10
+# barotrope (SI) for the overlay
+rho_baro = np.logspace(np.log10(lim_rho[0]), np.log10(lim_rho[1]), 200)  # [kg/m^3]
+P_baro = barotrope_pressure(rho_baro / to_dens) * to_pressure  # [Pa]
 
 
 def plot_slices(arr_rho_box, arr_rho_zoom, t, iplot, dpi=150):
-    fig, axs = plt.subplots(1, 2, figsize=(10, 4.4), dpi=dpi)
+    fig, axs = plt.subplots(1, 2, figsize=(10, 4.4), dpi=dpi, layout="constrained")
 
     for ax, arr_rho, width in zip(axs, (arr_rho_box, arr_rho_zoom), (L0, L0 / zoom)):
-        extent = np.array([-0.5, 0.5, -0.5, 0.5]) * width / au
+        extent = np.array([-0.5, 0.5, -0.5, 0.5]) * width * to_m
         res = ax.imshow(
-            np.log10(arr_rho.T * 1e-3),
+            np.log10(arr_rho.T * to_dens),
             cmap=matplotlib.colormaps["magma"],
             origin="lower",
             extent=extent,
@@ -303,32 +323,37 @@ def plot_slices(arr_rho_box, arr_rho_zoom, t, iplot, dpi=150):
             interpolation="nearest",
             aspect="equal",
         )
-        ax.set_xlabel("x [au]")
-        ax.set_ylabel("y [au]")
+        ax.set_xlabel("x [m]")
+        ax.set_ylabel("y [m]")
 
     axs[0].set_title("whole box")
     axs[1].set_title(f"zoom x{zoom}")
     fig.suptitle(f"t = {t / t_ff:0.3f} $t_{{\\rm ff}}$")
     cbar = fig.colorbar(res, ax=axs)
-    cbar.set_label(r"$\log_{10} \rho$ [g/cm$^3$]")
+    cbar.set_label(r"$\log_{10} \rho$ [kg/m$^3$]")
     fig.savefig(os.path.join(sim_folder, f"rho_slice_{iplot:04d}.png"))
     plt.close(fig)
 
 
-# points colored by refinement level
+# points colored by refinement level, with a colormap that stays dark enough to be read on a white
+# background (plasma without its light yellow end)
+level_cmap = matplotlib.colors.ListedColormap(
+    matplotlib.colormaps["plasma"](np.linspace(0.0, 0.8, level_max - level_min + 1))
+)
 scatter_kwargs = dict(
     s=1,
     alpha=0.5,
     linewidths=0,
     rasterized=True,
-    cmap=matplotlib.colormaps["viridis"].resampled(level_max - level_min + 1),
+    cmap=level_cmap,
     vmin=level_min - 0.5,
     vmax=level_max + 0.5,
+    zorder=2,
 )
 
 
 def plot_profiles(prof, t, iplot, dpi=250):
-    fig, axs = plt.subplots(2, 2, figsize=(9, 7))
+    fig, axs = plt.subplots(2, 2, figsize=(9, 7), layout="constrained")
     ax_rho, ax_P, ax_T, ax_vr = axs.ravel()
 
     sc = ax_rho.scatter(prof["r"], prof["rho"], c=prof["level"], **scatter_kwargs)
@@ -336,18 +361,19 @@ def plot_profiles(prof, t, iplot, dpi=250):
     ax_rho.set_yscale("log")
     ax_rho.set_xlim(lim_r)
     ax_rho.set_ylim(lim_rho)
-    ax_rho.set_xlabel("r [au]")
-    ax_rho.set_ylabel(r"$\rho$ [g/cm$^3$]")
+    ax_rho.set_xlabel("r [m]")
+    ax_rho.set_ylabel(r"$\rho$ [kg/m$^3$]")
 
     ax_P.scatter(prof["rho"], prof["P"], c=prof["level"], **scatter_kwargs)
-    ax_P.plot(rho_baro, P_baro, color="red", linestyle="--", label="barotrope")
-    ax_P.axvline(rho_crit * 1e-3, color="grey", linestyle=":", label=r"$\rho_c$")
+    # the barotrope is drawn below the points (zorder) so that it does not hide them
+    ax_P.plot(rho_baro, P_baro, color="red", linewidth=1.5, label="barotrope", zorder=1)
+    ax_P.axvline(rho_crit * to_dens, color="grey", linestyle=":", label=r"$\rho_c$", zorder=1)
     ax_P.set_xscale("log")
     ax_P.set_yscale("log")
     ax_P.set_xlim(lim_rho)
     ax_P.set_ylim(lim_P)
-    ax_P.set_xlabel(r"$\rho$ [g/cm$^3$]")
-    ax_P.set_ylabel(r"$P$ [dyn/cm$^2$]")
+    ax_P.set_xlabel(r"$\rho$ [kg/m$^3$]")
+    ax_P.set_ylabel(r"$P$ [Pa]")
     ax_P.legend(loc="upper left")
 
     ax_T.scatter(prof["r"], prof["T"], c=prof["level"], **scatter_kwargs)
@@ -355,7 +381,7 @@ def plot_profiles(prof, t, iplot, dpi=250):
     ax_T.set_yscale("log")
     ax_T.set_xlim(lim_r)
     ax_T.set_ylim(lim_T)
-    ax_T.set_xlabel("r [au]")
+    ax_T.set_xlabel("r [m]")
     ax_T.set_ylabel("T [K]")
 
     ax_vr.scatter(prof["r"], prof["vr"], c=prof["level"], **scatter_kwargs)
@@ -363,14 +389,13 @@ def plot_profiles(prof, t, iplot, dpi=250):
     ax_vr.set_xscale("log")
     ax_vr.set_xlim(lim_r)
     ax_vr.set_ylim(lim_vr)
-    ax_vr.set_xlabel("r [au]")
-    ax_vr.set_ylabel(r"$v_r$ [km/s]")
+    ax_vr.set_xlabel("r [m]")
+    ax_vr.set_ylabel(r"$v_r$ [m/s]")
 
     for ax in (ax_rho, ax_T, ax_vr):
-        ax.axvline(R0 / au, color="grey", linestyle=":", linewidth=0.8)
+        ax.axvline(R0 * to_m, color="grey", linestyle=":", linewidth=0.8, zorder=1)
 
     fig.suptitle(f"t = {t / t_ff:0.3f} $t_{{\\rm ff}}$")
-    fig.tight_layout()
     cbar = fig.colorbar(sc, ax=axs, ticks=np.arange(level_min, level_max + 1), shrink=0.6)
     cbar.set_label("AMR level")
     cbar.solids.set(alpha=1)
@@ -398,7 +423,7 @@ for i, t in enumerate(frames_t):
         plot_profiles(prof, t, i)
         print(
             f"frame {i:3d} / {n_frames}, t = {t / t_ff:.3f} t_ff, "
-            f"max rho = {hist_rho_max[-1]:.3e} g/cm^3, "
+            f"max rho = {hist_rho_max[-1]:.3e} kg/m^3, "
             f"{len(prof['rho'])} cells, max level = {np.max(prof['level'])}"
         )
 
@@ -421,8 +446,8 @@ plt.show()
 # %%
 # Radial profiles
 # ^^^^^^^^^^^^^^^
-# One point per cell, colored by its refinement level: density and temperature versus radius, pressure versus density with the
-# barotrope overlaid (every cell lies on it, as the internal energy is reset at the end of each
+# One point per cell, colored by its refinement level: density and temperature versus radius,
+# pressure versus density with the barotrope (below the points) (every cell lies on it, as the internal energy is reset at the end of each
 # timestep), and radial velocity versus radius. The dotted vertical lines mark the initial radius
 # of the sphere (and the critical density on the pressure plot).
 
@@ -444,16 +469,16 @@ plt.show()
 
 xi = np.linspace(0, 0.5 * np.pi * 0.999, 1000)
 t_freefall = 2.0 * (xi + np.sin(xi) * np.cos(xi)) / np.pi
-rho_freefall = rho0 * 1e-3 / np.cos(xi) ** 6
+rho_freefall = rho0 * to_dens / np.cos(xi) ** 6
 
 plt.figure()
 plt.plot(frames_t / t_ff, hist_rho_max, "o-", label="simulation")
 plt.plot(t_freefall, rho_freefall, color="red", linestyle="--", label="pressureless free-fall")
 plt.yscale("log")
 plt.xlim(0, t_end_tff)
-plt.ylim(rho0 * 1e-3 / 2, 2 * max(hist_rho_max))
+plt.ylim(rho0 * to_dens / 2, 2 * max(hist_rho_max))
 plt.xlabel(r"$t / t_{\rm ff}$")
-plt.ylabel(r"$\max \rho$ [g/cm$^3$]")
+plt.ylabel(r"$\max \rho$ [kg/m$^3$]")
 plt.legend()
 plt.tight_layout()
 plt.show()

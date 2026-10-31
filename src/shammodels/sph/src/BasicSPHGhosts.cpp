@@ -37,7 +37,7 @@ using namespace shammodels::sph;
 template<class vec>
 auto BasicSPHGhostHandler<vec>::find_interfaces(
     SerialPatchTree<vec> &sptree,
-    shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
+    shamrock::patch::PatchtreeField<flt> &&int_range_max_tree,
     shamrock::patch::PatchField<flt> &int_range_max) -> GeneratorMap {
 
     StackEntry stack_loc{};
@@ -57,10 +57,8 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
     auto patch_tree_edge        = std::make_shared<SerialPatchTreeRefEdge<vec>>("", "");
     patch_tree_edge->patch_tree = std::ref(sptree);
 
-    // sycl buffers have reference semantics, this copy shares the storage of the tree field
-    auto interact_radius_tree = std::make_shared<PatchtreeFieldEdge<flt>>("", "");
-    interact_radius_tree->patchtree_field.internal_buf = std::make_unique<sycl::buffer<flt>>(
-        shambase::get_check_ref(int_range_max_tree.internal_buf));
+    auto interact_radius_tree             = std::make_shared<PatchtreeFieldEdge<flt>>("", "");
+    interact_radius_tree->patchtree_field = std::move(int_range_max_tree);
 
     // borrow the per patch field (O(1) move instead of a copy over all global patches), it is
     // moved back once the node has been evaluated

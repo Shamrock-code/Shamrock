@@ -53,7 +53,8 @@ shamrock.matplotlib.set_shamrock_mpl_style()
 # %%
 # Units
 # ^^^^^
-# The simulation runs in code units (au, yr, solar mass), the plots are in SI units.
+# The simulation runs in code units (au, yr, solar mass), the plots are in SI units, except for
+# the radius which is in au.
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
@@ -264,9 +265,9 @@ def get_profiles():
     T = mu * m_H * P / (kb * rho)
     vr = np.sum(rhovel * pos, axis=1) / (rho * r)
 
-    # in SI units for the plots
+    # in the units of the plots (the radius in au, i.e. code units, the rest in SI)
     return {
-        "r": (r * to_m).astype(np.float32),
+        "r": r.astype(np.float32),
         "rho": (rho * to_dens).astype(np.float32),
         "P": (P * to_pressure).astype(np.float32),
         "T": T.astype(np.float32),
@@ -292,8 +293,8 @@ rho_plot_min = rho_ext / 3
 rho_plot_max = 10 * rho_crit
 v_ff_cell = np.sqrt(2 * G * M0 / dx_min)
 
-# plot limits, in SI units
-lim_r = (0.4 * dx_min * to_m, np.sqrt(3) * 0.5 * L0 * to_m * 1.1)  # [m]
+# plot limits, in SI units (au for the radius)
+lim_r = (0.1, np.sqrt(3) * 0.5 * L0 * 1.1)  # [au]
 lim_rho = (rho_plot_min * to_dens, rho_plot_max * to_dens)  # [kg/m^3]
 lim_P = (
     barotrope_pressure(rho_plot_min) * to_pressure,
@@ -361,7 +362,7 @@ def plot_profiles(prof, t, iplot, dpi=250):
     ax_rho.set_yscale("log")
     ax_rho.set_xlim(lim_r)
     ax_rho.set_ylim(lim_rho)
-    ax_rho.set_xlabel("r [m]")
+    ax_rho.set_xlabel("r [au]")
     ax_rho.set_ylabel(r"$\rho$ [kg/m$^3$]")
 
     ax_P.scatter(prof["rho"], prof["P"], c=prof["level"], **scatter_kwargs)
@@ -381,7 +382,7 @@ def plot_profiles(prof, t, iplot, dpi=250):
     ax_T.set_yscale("log")
     ax_T.set_xlim(lim_r)
     ax_T.set_ylim(lim_T)
-    ax_T.set_xlabel("r [m]")
+    ax_T.set_xlabel("r [au]")
     ax_T.set_ylabel("T [K]")
 
     ax_vr.scatter(prof["r"], prof["vr"], c=prof["level"], **scatter_kwargs)
@@ -389,11 +390,11 @@ def plot_profiles(prof, t, iplot, dpi=250):
     ax_vr.set_xscale("log")
     ax_vr.set_xlim(lim_r)
     ax_vr.set_ylim(lim_vr)
-    ax_vr.set_xlabel("r [m]")
+    ax_vr.set_xlabel("r [au]")
     ax_vr.set_ylabel(r"$v_r$ [m/s]")
 
     for ax in (ax_rho, ax_T, ax_vr):
-        ax.axvline(R0 * to_m, color="grey", linestyle=":", linewidth=0.8, zorder=1)
+        ax.axvline(R0, color="grey", linestyle=":", linewidth=0.8, zorder=1)
 
     fig.suptitle(f"t = {t / t_ff:0.3f} $t_{{\\rm ff}}$")
     cbar = fig.colorbar(sc, ax=axs, ticks=np.arange(level_min, level_max + 1), shrink=0.6)

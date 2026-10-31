@@ -212,7 +212,7 @@ def get_profiles():
     T = mu * m_H * P / (kb * rho)
     vr = np.sum(rhovel * pos, axis=1) / (rho * r)
 
-    # stored in the units of the plots (au, g/cm^3, dyn/cm^2, K, km/s)
+    # in the units of the plots (au, g/cm^3, dyn/cm^2, K, km/s)
     return {
         "r": (r / au).astype(np.float32),
         "rho": (rho * 1e-3).astype(np.float32),
@@ -223,54 +223,35 @@ def get_profiles():
 
 
 # %%
-# Run the simulation
-# ^^^^^^^^^^^^^^^^^^
-
-frames_t = np.linspace(0, t_end_tff, n_frames) * t_ff
-frames_slice = []
-frames_prof = []
-
-for i, t in enumerate(frames_t):
-    model.evolve_until(t)
-    frames_slice.append(render_rho_slice())
-    frames_prof.append(get_profiles())
-
-    if shamrock.sys.world_rank() == 0:
-        print(
-            f"frame {i:3d} / {n_frames}, t = {t / t_ff:.3f} t_ff, "
-            f"max rho = {np.max(frames_prof[-1]['rho']):.3e} g/cm^3"
-        )
-
-# %%
 # Plotting utilities
 # ^^^^^^^^^^^^^^^^^^
-# The plots are made once the simulation is over so that every frame shares the same limits.
+# The frames are saved on the fly during the run, so the plot limits are fixed beforehand (shared
+# by every frame of the animations): the density ranges from the diffuse medium up to ten times
+# the critical density of the barotrope, and the infall velocity up to 1.5 times the free-fall
+# velocity of the sphere mass at the scale of a cell.
 
 
-def get_lim(key, log=True, margin=1.3):
-    vmin = min(np.min(p[key]) for p in frames_prof)
-    vmax = max(np.max(p[key]) for p in frames_prof)
-    if log:
-        return vmin / margin, vmax * margin
-    else:
-        delta = (margin - 1) * (vmax - vmin)
-        return vmin - delta, vmax + delta
+def barotrope_temperature(rho):
+    return T0 * (1.0 + (rho / rho_crit) ** (gamma - 1.0))
 
 
-lim_r = (0.4 * dx / au, np.sqrt(3) * 0.5 * L0 / au * 1.1)
-lim_rho = get_lim("rho")
-lim_P = get_lim("P")
-lim_T = get_lim("T")
-lim_vr = get_lim("vr", log=False, margin=1.1)
+rho_plot_min = rho_ext / 3  # [kg/m^3]
+rho_plot_max = 10 * rho_crit  # [kg/m^3]
+v_ff_cell = np.sqrt(2 * G * M0 / dx)  # [m/s]
+
+lim_r = (0.4 * dx / au, np.sqrt(3) * 0.5 * L0 / au * 1.1)  # [au]
+lim_rho = (rho_plot_min * 1e-3, rho_plot_max * 1e-3)  # [g/cm^3]
+lim_P = (
+    barotrope_pressure(rho_plot_min) * 10,
+    barotrope_pressure(rho_plot_max) * 10,
+)  # [dyn/cm^2]
+lim_T = (T0 / 2, 2 * barotrope_temperature(rho_plot_max))  # [K]
+lim_vr = (-1.5 * v_ff_cell * 1e-3, 0.2 * v_ff_cell * 1e-3)  # [km/s]
+log_rho_slice_lim = np.log10(lim_rho)
 
 # barotrope (cgs) for the overlay
 rho_baro = np.logspace(np.log10(lim_rho[0]), np.log10(lim_rho[1]), 200)
 P_baro = barotrope_pressure(rho_baro * 1e3) * 10
-
-log_rho_slice_lim = (
-    np.log10(min(np.min(s) for s in frames_slice) * 1e-3),
-    np.log10(max(np.max(s) for s in frames_slice) * 1e-3),
-)
 
 
 def plot_slice(arr_rho, t, iplot, dpi=150):
@@ -347,10 +328,28 @@ def plot_profiles(prof, t, iplot, dpi=250):
     plt.close(fig)
 
 
-if shamrock.sys.world_rank() == 0:
-    for i, (t, arr_rho, prof) in enumerate(zip(frames_t, frames_slice, frames_prof)):
+# %%
+# Run the simulation
+# ^^^^^^^^^^^^^^^^^^
+# The frames are rendered and saved at each output.
+
+frames_t = np.linspace(0, t_end_tff, n_frames) * t_ff
+hist_rho_max = []
+
+for i, t in enumerate(frames_t):
+    model.evolve_until(t)
+
+    arr_rho = render_rho_slice()
+    prof = get_profiles()
+    hist_rho_max.append(np.max(prof["rho"]))
+
+    if shamrock.sys.world_rank() == 0:
         plot_slice(arr_rho, t, i)
         plot_profiles(prof, t, i)
+        print(
+            f"frame {i:3d} / {n_frames}, t = {t / t_ff:.3f} t_ff, "
+            f"max rho = {hist_rho_max[-1]:.3e} g/cm^3"
+        )
 
 # %%
 # Density slice
@@ -397,11 +396,11 @@ t_freefall = 2.0 * (xi + np.sin(xi) * np.cos(xi)) / np.pi
 rho_freefall = rho0 * 1e-3 / np.cos(xi) ** 6
 
 plt.figure()
-plt.plot(frames_t / t_ff, [np.max(p["rho"]) for p in frames_prof], "o-", label="simulation")
+plt.plot(frames_t / t_ff, hist_rho_max, "o-", label="simulation")
 plt.plot(t_freefall, rho_freefall, color="red", linestyle="--", label="pressureless free-fall")
 plt.yscale("log")
 plt.xlim(0, t_end_tff)
-plt.ylim(rho0 * 1e-3 / 2, lim_rho[1])
+plt.ylim(rho0 * 1e-3 / 2, 2 * max(hist_rho_max))
 plt.xlabel(r"$t / t_{\rm ff}$")
 plt.ylabel(r"$\max \rho$ [g/cm$^3$]")
 plt.legend()

@@ -60,7 +60,7 @@ kb = sicte.kb()
 m_H = sicte.proton_mass()
 
 au = si.get("au")
-year = si.get("year")
+year = si.get("yr")
 
 # Physical parameters
 T0 = 10.0  # [K]

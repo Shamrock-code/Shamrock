@@ -392,6 +392,32 @@ struct shammodels::basegodunov::SolverConfig {
         }
 
         if (is_gravity_on()) {
+            if (gravity_config.gravity_mode != CG && gravity_config.gravity_mode != BICGSTAB) {
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
+                    "self-gravity: only the cg and bicgstab Poisson solvers are implemented, got "
+                    "gravity mode {}",
+                    nlohmann::json(gravity_config.gravity_mode).dump()));
+            }
+
+            // self-gravity is applied through the external forces, its acceleration at t^{n+1}
+            // only depending on the density at t^{n+1} (see Solver::init_solver_graph)
+            if (ext_force_config.coupling != ExtForceCoupling::Trapezoidal) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "self-gravity requires the trapezoidal coupling of the external forces");
+            }
+
+            // Combinations that were not validated with this self-gravity scheme (only gas
+            // self-gravity was). The external forces path would apply the self-gravity
+            // acceleration to the dust as well, and the drag integrator is not coupled to it.
+            if (is_dust_on()) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "self-gravity with dust is not supported yet");
+            }
+            if (drag_config.drag_solver_config != NoDrag) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "self-gravity with drag is not supported yet");
+            }
+
             ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental"));
             u32 mode = gravity_config.gravity_mode;
 

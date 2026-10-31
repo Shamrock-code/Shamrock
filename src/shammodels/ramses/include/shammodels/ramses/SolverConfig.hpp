@@ -114,9 +114,17 @@ namespace shammodels::basegodunov {
             Tscal error_max;
         };
 
+        /**
+         * @brief Refine the blocks where the Jeans length is resolved by less than N_J cells
+         *
+         * A block is refined if one of its cells has \f$ N_J \Delta x > \lambda_J =
+         * \sqrt{\pi c_s^2 / (G \rho)} \f$, with the sound speed of the equation of state (of
+         * the barotrope for the ResetBarotropic one). It is derefined if the coarse cells of size
+         * \f$ 2 \Delta x \f$ would still resolve the Jeans length of all its cells by more than
+         * \f$ \sqrt{2} N_J \f$ cells (hysteresis margin).
+         */
         struct JeansLengthBased {
-            u32 N_J   = 4;
-            Tscal T_0 = 10.;
+            u32 N_J = 4;
         };
 
         struct ShearBased {
@@ -136,9 +144,7 @@ namespace shammodels::basegodunov {
             config = PseudoGradientBased{error_min, error_max};
         }
 
-        void set_refine_jeans_length_based(u32 N_J, Tscal T_0) {
-            config = JeansLengthBased{N_J, T_0};
-        }
+        void set_refine_jeans_length_based(u32 N_J) { config = JeansLengthBased{N_J}; }
 
         void set_refine_shear_based(Tscal thresh) { config = ShearBased{thresh}; }
 
@@ -465,6 +471,18 @@ struct shammodels::basegodunov::SolverConfig {
         if (!amr_mode.old_amr) {
             shamrock::experimental_feature_check("new AMR is experimental");
         }
+
+        using AMRJeansLengthBased = typename AMRMode<Tvec, TgridVec>::JeansLengthBased;
+        if (const AMRJeansLengthBased *cfg = std::get_if<AMRJeansLengthBased>(&amr_mode.config)) {
+            if (amr_mode.old_amr) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "the Jeans length based refinement is only implemented in the new AMR "
+                    "(cfg.set_amr_mode_old(False))");
+            }
+            if (cfg->N_J == 0) {
+                shambase::throw_with_loc<std::invalid_argument>("N_J must be > 0");
+            }
+        }
     }
 
     void set_layout(shamrock::patch::PatchDataLayerLayout &pdl);
@@ -537,7 +555,7 @@ namespace shammodels::basegodunov {
                    {"error_min", cfg->error_min},
                    {"error_max", cfg->error_max}};
         } else if (const auto *cfg = std::get_if<typename AMR::JeansLengthBased>(&p.config)) {
-            j = {{"type", "jeans_length_based"}, {"N_J", cfg->N_J}, {"T_0", cfg->T_0}};
+            j = {{"type", "jeans_length_based"}, {"N_J", cfg->N_J}};
         } else if (const auto *cfg = std::get_if<typename AMR::ShearBased>(&p.config)) {
             j = {{"type", "shear_based"}, {"threshold", cfg->threshold}};
         } else {
@@ -558,7 +576,7 @@ namespace shammodels::basegodunov {
             p.set_refine_pseudo_gradient_based(
                 j.at("error_min").get<Tscal>(), j.at("error_max").get<Tscal>());
         } else if (type == "jeans_length_based") {
-            p.set_refine_jeans_length_based(j.at("N_J").get<u32>(), j.at("T_0").get<Tscal>());
+            p.set_refine_jeans_length_based(j.at("N_J").get<u32>());
         } else if (type == "shear_based") {
             p.set_refine_shear_based(j.at("threshold").get<Tscal>());
         } else {

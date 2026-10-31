@@ -78,7 +78,7 @@ L0 = 4 * R0  # box size
 # Resolution: base grid of base^3 blocks of 2^3 cells, refined up to max_amr_lev levels such that
 # the Jeans length is resolved by at least N_J cells
 base = 16
-max_amr_lev = 3
+max_amr_lev = 5
 N_J = 8
 
 # int coords size of a base block, such that a cell of the finest level is one int coords unit

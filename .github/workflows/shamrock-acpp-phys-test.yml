@@ -270,6 +270,8 @@ jobs:
           # Tests CI
           - testfile: "examples/tests_ci/run_compare_shamrock_ph_disc.py"
             artifact_name: gallery_tests_ci_run_compare_shamrock_ph_disc
+          - testfile: "examples/tests_ci/run_ramses_amr_mirror_symmetry.py"
+            artifact_name: gallery_tests_ci_run_ramses_amr_mirror_symmetry
 
       fail-fast: ${{ inputs.fail_fast }}
 

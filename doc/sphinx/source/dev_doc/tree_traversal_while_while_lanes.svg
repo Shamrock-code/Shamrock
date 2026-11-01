@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="tt-diagram" width="720" height="270" viewBox="0 0 720 270" role="img" aria-label="Lane by iteration grid: in the single loop, leaf scans happen at different iterations for each lane; with the while-while loop, every lane reaches its leaf before the warp scans leaves together.">
+  <title>Leaf processing per lane: single loop against while-while loop</title>
+  <style>
+    /* Colours follow the pydata-sphinx-theme variables (and so the light/dark switch) when the
+       SVG is inlined in the doc; the fallbacks are used when the file is viewed on its own. */
+    .tt-diagram {
+      --tt-ink: var(--pst-color-text-base, #19211e);
+      --tt-mut: var(--pst-color-text-muted, #5b6763);
+      --tt-line: var(--pst-color-border, #c6cec9);
+      --tt-surface: var(--pst-color-background, #fcfcfb);
+      --tt-faint: var(--pst-color-surface, #e7ece8);
+      --tt-hot: var(--pst-color-warning, #b8641b);
+      --tt-hot-soft: var(--pst-color-warning-bg, #f3e4d6);
+      --tt-display: var(--pst-font-family-base, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif);
+      --tt-mono: var(--pst-font-family-monospace, ui-monospace, Menlo, monospace);
+      color: var(--tt-ink);
+      max-width: 100%;
+      height: auto;
+    }
+    .tt-diagram .tt-lbl { font: 500 12.5px var(--tt-display); fill: currentColor; }
+    .tt-diagram .tt-small { font: 400 11.5px var(--tt-display); fill: currentColor; }
+    .tt-diagram .tt-b { font-weight: 700; }
+    .tt-diagram .tt-tick { font: 400 10.5px var(--tt-mono); fill: var(--tt-mut); }
+    .tt-diagram .tt-val { font: 500 11.5px var(--tt-mono); fill: currentColor; }
+    .tt-diagram .tt-mono { font: 12px var(--tt-mono); fill: currentColor; }
+    .tt-diagram .tt-mut { fill: var(--tt-mut); }
+    .tt-diagram .tt-ln { stroke: currentColor; stroke-width: 1.4; fill: none; }
+    .tt-diagram .tt-dash { stroke-dasharray: 4 3; }
+    .tt-diagram .tt-grid { stroke: var(--tt-line); stroke-width: 1; }
+    .tt-diagram .tt-box { fill: var(--tt-surface); stroke: currentColor; stroke-width: 1.2; }
+    .tt-diagram .tt-box.tt-hotB { fill: var(--tt-hot-soft); stroke: var(--tt-hot); }
+    .tt-diagram .tt-cell { fill: var(--tt-faint); stroke: var(--tt-line); stroke-width: 1; }
+    .tt-diagram .tt-hotF, .tt-diagram .tt-cell.tt-hotF { fill: var(--tt-hot); stroke: none; }
+    .tt-diagram .tt-cell.tt-idle { fill: none; stroke: var(--tt-line); stroke-dasharray: 2 2; }
+    .tt-diagram .tt-track { fill: var(--tt-faint); stroke: none; }
+    .tt-diagram .tt-nodeC { fill: var(--tt-surface); stroke: currentColor; stroke-width: 1.2; }
+  </style>
+<defs>
+<marker id="tt-ww-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+</defs>
+<text x="60" y="30" class="tt-lbl tt-b" text-anchor="start" >single loop: leaves met at different iterations</text>
+<text x="54" y="51" class="tt-tick" text-anchor="end" >lane 0</text>
+<text x="54" y="68" class="tt-tick" text-anchor="end" >lane 1</text>
+<text x="54" y="85" class="tt-tick" text-anchor="end" >lane 2</text>
+<text x="54" y="102" class="tt-tick" text-anchor="end" >lane 3</text>
+<text x="54" y="119" class="tt-tick" text-anchor="end" >lane 4</text>
+<text x="54" y="136" class="tt-tick" text-anchor="end" >lane 5</text>
+<text x="60" y="155" class="tt-lbl tt-b" text-anchor="start" >while-while: traverse until every lane has a leaf</text>
+<text x="54" y="176" class="tt-tick" text-anchor="end" >lane 0</text>
+<text x="54" y="193" class="tt-tick" text-anchor="end" >lane 1</text>
+<text x="54" y="210" class="tt-tick" text-anchor="end" >lane 2</text>
+<text x="54" y="227" class="tt-tick" text-anchor="end" >lane 3</text>
+<text x="54" y="244" class="tt-tick" text-anchor="end" >lane 4</text>
+<text x="54" y="261" class="tt-tick" text-anchor="end" >lane 5</text>
+<rect x="60" y="40" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="80" y="40" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="100" y="40" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="120" y="40" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="140" y="40" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="160" y="40" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="40" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="200" y="40" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="220" y="40" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="60" y="57" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="80" y="57" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="100" y="57" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="120" y="57" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="140" y="57" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="160" y="57" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="57" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="200" y="57" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="220" y="57" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="60" y="74" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="80" y="74" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="100" y="74" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="120" y="74" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="140" y="74" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="160" y="74" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="74" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="200" y="74" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="220" y="74" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="60" y="91" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="80" y="91" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="100" y="91" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="120" y="91" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="140" y="91" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="160" y="91" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="91" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="200" y="91" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="220" y="91" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="60" y="108" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="80" y="108" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="100" y="108" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="120" y="108" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="140" y="108" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="160" y="108" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="108" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="200" y="108" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="220" y="108" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="60" y="125" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="80" y="125" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="100" y="125" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="120" y="125" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="140" y="125" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="160" y="125" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="125" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="200" y="125" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="220" y="125" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="60" y="165" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="80" y="165" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="100" y="165" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="120" y="165" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="140" y="165" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="160" y="165" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="165" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="200" y="165" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="220" y="165" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="240" y="165" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="260" y="165" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="280" y="165" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="300" y="165" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="60" y="182" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="80" y="182" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="100" y="182" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="120" y="182" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="140" y="182" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="160" y="182" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="182" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="200" y="182" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="220" y="182" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="240" y="182" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="260" y="182" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="280" y="182" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="300" y="182" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="60" y="199" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="80" y="199" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="100" y="199" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="120" y="199" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="140" y="199" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="160" y="199" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="199" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="200" y="199" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="220" y="199" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="240" y="199" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="260" y="199" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="280" y="199" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="300" y="199" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="60" y="216" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="80" y="216" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="100" y="216" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="120" y="216" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="140" y="216" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="160" y="216" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="216" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="200" y="216" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="220" y="216" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="240" y="216" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="260" y="216" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="280" y="216" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="300" y="216" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="60" y="233" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="80" y="233" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="100" y="233" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="120" y="233" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="140" y="233" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="160" y="233" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="233" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="200" y="233" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="220" y="233" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="240" y="233" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="260" y="233" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="280" y="233" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="300" y="233" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="60" y="250" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="80" y="250" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="100" y="250" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="120" y="250" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="140" y="250" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="160" y="250" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="180" y="250" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="200" y="250" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="220" y="250" width="18" height="14" rx="2" class="tt-cell tt-idle" />
+<rect x="240" y="250" width="18" height="14" rx="2" class="tt-cell tt-hotF" />
+<rect x="260" y="250" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="280" y="250" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="300" y="250" width="18" height="14" rx="2" class="tt-cell" />
+<rect x="390" y="60" width="16" height="12" rx="2" class="tt-cell" />
+<text x="412" y="70" class="tt-small" text-anchor="start" >node test (cheap)</text>
+<rect x="390" y="84" width="16" height="12" rx="2" class="tt-cell tt-hotF" />
+<text x="412" y="94" class="tt-small" text-anchor="start" >leaf scan of ~15 particles (expensive)</text>
+<rect x="390" y="108" width="16" height="12" rx="2" class="tt-cell tt-idle" />
+<text x="412" y="118" class="tt-small" text-anchor="start" >lane idle, waiting for the other lanes</text>
+<text x="390" y="200" class="tt-small" text-anchor="start" >Same node tests and leaves per lane. The</text>
+<text x="390" y="216" class="tt-small" text-anchor="start" >while-while warp runs the leaf scan in 2</text>
+<text x="390" y="232" class="tt-small" text-anchor="start" >passes with all lanes, instead of 7.</text>
+</svg>

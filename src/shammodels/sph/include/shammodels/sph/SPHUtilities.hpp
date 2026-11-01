@@ -21,6 +21,7 @@
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversal.hpp"
+#include <utility>
 
 namespace shammodels::sph {
 
@@ -68,7 +69,8 @@ namespace shammodels::sph {
                     return sham::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
                 });
 
-            return interf_handle.make_interface_cache(sptree, interactR_mpi_tree, interactR_patch);
+            return interf_handle.make_interface_cache(
+                sptree, std::move(interactR_mpi_tree), interactR_patch);
         }
 
         static void iterate_smoothing_length_cache(

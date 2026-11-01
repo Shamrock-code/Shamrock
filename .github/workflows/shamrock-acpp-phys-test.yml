@@ -216,6 +216,8 @@ jobs:
             artifact_name: gallery_ramses_run_compare_amr_refine_sod
           - testfile: "examples/ramses/run_rayleigh_taylor.py"
             artifact_name: gallery_ramses_run_rayleigh_taylor
+          - testfile: "examples/ramses/run_jeans_instability_timescales.py"
+            artifact_name: gallery_ramses_run_jeans_instability_timescales
 
           # GSPH examples
           - testfile: "examples/gsph/run_sod.py"

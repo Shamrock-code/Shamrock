@@ -322,6 +322,7 @@ if not derefined:
     errors.append("no block has been merged, the test setup is not exercising the derefinement")
 
 for (field, name), hist in hist_asym.items():
+    print(f"max {field} {name} asymmetry: {max(hist):.2e}")
     for t, v in zip(hist_t, hist):
         if not v < tol:
             errors.append(f"t = {t:.3f}: {field} {name} asymmetry {v:.2e} >= {tol:.0e}")

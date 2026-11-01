@@ -76,18 +76,24 @@ namespace shammodels::ramses::modules {
                     const TgridVec *__restrict ptr_block_max,
                     Tvec *cell_min,
                     Tvec *cell_max) {
-                    Tvec block_min = ptr_block_min[id_a].template convert<Tscal>() * dxfact;
-                    Tvec block_max = ptr_block_max[id_a].template convert<Tscal>() * dxfact;
+                    // The cell bounds are computed in int coords and then converted, so that two
+                    // adjacent cells share exactly the same float value for their common face.
+                    // Otherwise rounding can make them overlap (or leave a gap), and a position on
+                    // a face is then summed over several cells (or none).
+                    TgridVec block_min = ptr_block_min[id_a];
+                    TgridVec block_max = ptr_block_max[id_a];
 
-                    Tvec delta_cell = (block_max - block_min) / Block::side_size;
+                    TgridVec delta_cell = (block_max - block_min) / Block::side_size;
                     for (u32 ix = 0; ix < Block::side_size; ix++) {
                         for (u32 iy = 0; iy < Block::side_size; iy++) {
                             for (u32 iz = 0; iz < Block::side_size; iz++) {
-                                u32 i          = Block::get_index({ix, iy, iz});
-                                Tvec delta_val = delta_cell * Tvec{ix, iy, iz};
-                                cell_min[id_a * Block::block_size + i] = block_min + delta_val;
+                                u32 i         = Block::get_index({ix, iy, iz});
+                                TgridVec cmin = block_min + delta_cell * TgridVec{ix, iy, iz};
+                                TgridVec cmax = cmin + delta_cell;
+                                cell_min[id_a * Block::block_size + i]
+                                    = cmin.template convert<Tscal>() * dxfact;
                                 cell_max[id_a * Block::block_size + i]
-                                    = block_min + (delta_cell) + delta_val;
+                                    = cmax.template convert<Tscal>() * dxfact;
                             }
                         }
                     }

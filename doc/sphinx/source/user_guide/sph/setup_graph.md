@@ -26,6 +26,7 @@ The available factories are currently:
 
 - Generators:
     - `make_generator_lattice_hcp`
+    - `make_generator_lattice_fcc`
     - `make_generator_lattice_cubic`
     - `make_generator_disc_mc`
     - `make_generator_from_context`
@@ -52,8 +53,8 @@ Or for the Sod tube:
 
 ```python
 setup = model.get_setup()
-gen1 = setup.make_generator_lattice_hcp(dr, (-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
-gen2 = setup.make_generator_lattice_hcp(dr*fact, (0,-ys/2,-zs/2),(xs,ys/2,zs/2))
-comb = setup.make_combiner_add(gen1,gen2)
+gen1 = setup.make_generator_lattice_hcp(dr, (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
+gen2 = setup.make_generator_lattice_hcp(dr * fact, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
+comb = setup.make_combiner_add(gen1, gen2)
 setup.apply_setup(comb)
 ```

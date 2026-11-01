@@ -51,7 +51,7 @@ If you run the `shamrock` executable, you should set the flag `--pypath-from-bin
 I'm still not sure if I like the name of that flag `--pypath-from-bin`; it is still open to discussion.
 :::
 
-If you are using Shamrock as a Python package, it does not change (except that you can type `python` instead of `python3`):
+If you are using Shamrock as a Python package, it does not change (except that you can type `python` instead of `python3`). The `PYTHONPATH` is still required, see {ref}`the Python package mode <quickstart-python-package>`:
 
 ```bash
 PYTHONPATH=./pysham:$PYTHONPATH python <the path to your .py script>

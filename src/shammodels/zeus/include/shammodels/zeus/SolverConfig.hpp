@@ -36,6 +36,8 @@ namespace shammodels::zeus {
 
         Tscal grid_coord_to_pos_fact = 1;
 
+        Tscal Csafe = 0.9;
+
         static constexpr u32 NsideBlockPow = 1;
         using AMRBlock                     = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>;
 
@@ -50,6 +52,10 @@ namespace shammodels::zeus {
             if (grid_coord_to_pos_fact <= 0) {
                 shambase::throw_with_loc<std::runtime_error>(sham::format(
                     "grid_coord_to_pos_fact must be > 0, got {}", grid_coord_to_pos_fact));
+            }
+            if (Csafe <= 0) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    sham::format("Csafe must be > 0, got {}", Csafe));
             }
         }
     };

@@ -17,6 +17,7 @@
  */
 
 #include "shambackends/vec.hpp"
+#include "shammath/riemann_common.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/SolverStorage.hpp"
@@ -46,11 +47,16 @@ namespace shammodels::basegodunov::modules {
         ComputeCFL(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
+        /// Gas CFL timestep, using the equation of state selected in solver_config.eos_config
         Tscal compute_cfl();
         Tscal compute_dust_cfl();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+
+        /// Fill cfl_dt with the gas CFL timestep of each cell for the fluid spec FSpec
+        template<shammath::FluidStateSpec FSpec>
+        void compute_cfl_gas(shamrock::ComputeField<Tscal> &cfl_dt, FSpec fluid);
     };
 
 } // namespace shammodels::basegodunov::modules

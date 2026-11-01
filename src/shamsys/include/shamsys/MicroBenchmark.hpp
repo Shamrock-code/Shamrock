@@ -29,8 +29,9 @@ namespace shamsys {
 
     /**
      * @brief Get the microbench results
+     * @param allow_run if true and the microbenchmarks were not run yet, run them now
      * @return const std::unordered_map<std::string, double> &
      */
-    const std::unordered_map<std::string, double> &get_microbench_results();
+    const std::unordered_map<std::string, double> &get_microbench_results(bool allow_run = false);
 
 } // namespace shamsys

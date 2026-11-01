@@ -30,6 +30,7 @@
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, rhodust_eps)                                     \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, tau_frac)                                        \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, dt_hydro)                                        \
                                                                                                    \
     /* fields */                                                                                   \
@@ -70,30 +71,38 @@ namespace shammodels::sph::modules {
                     return count * nbins;
                 });
 
-            auto epsilon  = sycl::sqrt(rhodust_eps);
             auto dt_hydro = edges.dt_hydro.data;
+            auto drho_min = edges.tau_frac.data * rhodust_eps;
 
             sham::distributed_data_kernel_call(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 sham::DDMultiRef{edges.S.get_spans(), edges.s_j.get_spans()},
                 sham::DDMultiRef{edges.ds_j_dt.get_spans()},
                 counts,
-                [rhodust_eps, epsilon, dt_hydro, nbins = this->nbins](
+                [drho_min, dt_hydro, nbins = this->nbins](
                     u32 id,
                     const Tscal *__restrict S,
                     const Tscal *__restrict s_j,
                     Tscal *__restrict ds_j_dt) {
-                    Tscal sj = s_j[id];
+                    Tscal src = S[id];
 
-                    Tscal ds_j_dt_val = S[id] / (2 * (sham::abs(sj) + epsilon));
-
-                    if (sham::abs(dt_hydro * ds_j_dt_val) > 1e-2 * sham::abs(sj) || dt_hydro == 0) {
-                        // here there is high likelihood of overshoot, so we go semi implicit
-                        Tscal s_next = sycl::sqrt(sj * sj + S[id] * dt_hydro);
-                        ds_j_dt_val  = (dt_hydro > 0) ? (s_next - sj) / dt_hydro : 0;
+                    // no source, no contribution (and dt_eff below would be infinite)
+                    if (src == 0) {
+                        return;
                     }
 
-                    ds_j_dt[id] += ds_j_dt_val;
+                    Tscal sj = s_j[id];
+
+                    // implicit step with a floor on dt: dividing by a tiny dt_hydro (e.g. right
+                    // before a normal step) would give a very large derivative, that explodes at
+                    // the next step when the leapfrog applies it over a larger dt.
+
+                    // dt_eps = time to fill the fraction tau_frac of rho_eps at the current rate
+                    Tscal dt_eps = drho_min / sham::abs(src);
+                    Tscal dt_eff = sham::max(dt_hydro, dt_eps);
+                    Tscal s_next = sycl::sqrt(sham::max(sj * sj + src * dt_eff, Tscal(0)));
+
+                    ds_j_dt[id] += (s_next - sj) / dt_eff;
                 });
         }
 
@@ -102,13 +111,6 @@ namespace shammodels::sph::modules {
         };
 
         inline virtual std::string _impl_get_tex() const {
-
-            auto S_edge           = get_ro_edge_base(2).get_tex_symbol();
-            auto s_j_edge         = get_ro_edge_base(3).get_tex_symbol();
-            auto ds_j_dt_edge     = get_rw_edge_base(0).get_tex_symbol();
-            auto rhodust_eps_edge = get_ro_edge_base(1).get_tex_symbol();
-            auto part_counts_edge = get_ro_edge_base(0).get_tex_symbol();
-
             std::string tex = R"tex(
                 Monofluid TVA: dust-density source term $\rightarrow$ ${s_j}$ time derivative
 
@@ -117,26 +119,25 @@ namespace shammodels::sph::modules {
                 \begin{align}
                 \rho_{{\rm d},j,a} &= {s_j}_{j,a}^2 \\
                 {S}_{j,a} &= \text{dust density source term } (\mathrm{d}\rho_{{\rm d},j,a}/\mathrm{d}t) \\
-                \delta_{j,a} &= \begin{cases}
-                    {S}_{j,a} / (2 |{s_j}_{j,a}|) & |{s_j}_{j,a}|^2 > \rho_{\rm eps} \\
-                    {S}_{j,a} / \bigl(2 (|{s_j}_{j,a}| + \sqrt{\rho_{\rm eps}})\bigr) & \text{otherwise}
-                \end{cases} \\
+                \Delta t_{{\rm eff},j,a} &= \max\bigl({dt_hydro}, {tau_frac}\, \rho_{\rm eps} / |{S}_{j,a}|\bigr) \\
+                \delta_{j,a} &= \Bigl(\sqrt{\max({s_j}_{j,a}^2 + {S}_{j,a} \Delta t_{{\rm eff},j,a}, 0)}
+                    - {s_j}_{j,a}\Bigr) / \Delta t_{{\rm eff},j,a} \\
                 {ds_j_dt}_{j,a} &\mathrel{+}= \delta_{j,a}
                 \end{align}
 
-                Unsaturated: $\mathrm{d}{s_j}_{j,a}^2/\mathrm{d}t = {S}_{j,a}
-                \Rightarrow \mathrm{d}{s_j}_{j,a}/\mathrm{d}t = {S}_{j,a}/(2|{s_j}_{j,a}|)$.
-                The floor ($\sqrt{\rho_{\rm eps}}$ in the denominator) lets bins with $|{s_j}_{j,a}|^2 \le \rho_{\rm eps}$ start accumulating.
+                Implicit in $\rho_{{\rm d},j,a}$: $\delta_{j,a}$ is the mean rate of ${s_j}_{j,a}$ over
+                $\Delta t_{\rm eff}$ when $\rho_{{\rm d},j,a}$ moves by ${S}_{j,a} \Delta t_{\rm eff}$
+                (clamped at $0$), which tends to ${S}_{j,a}/(2|{s_j}_{j,a}|)$ for small steps.
+                $\Delta t_{\rm eff}$ moves at least ${tau_frac}\, \rho_{\rm eps}$, so that a null or tiny
+                ${dt_hydro}$ cannot give a large rate for an empty bin.
+                ${S}_{j,a} = 0$ gives $\delta_{j,a} = 0$.
 
                 $a \in [0, {part_counts})$, $j \in [0, N_{\rm bins})$,
                 $\rho_{\rm eps} = {rhodust_eps}$, $N_{\rm bins} = {nbins}$
             )tex";
 
-            shambase::replace_all(tex, "{S}", S_edge);
-            shambase::replace_all(tex, "{s_j}", s_j_edge);
-            shambase::replace_all(tex, "{ds_j_dt}", ds_j_dt_edge);
-            shambase::replace_all(tex, "{rhodust_eps}", rhodust_eps_edge);
-            shambase::replace_all(tex, "{part_counts}", part_counts_edge);
+            replace_edges_tex_symbols(tex);
+
             shambase::replace_all(tex, "{nbins}", sham::format("{}", nbins));
 
             return tex;

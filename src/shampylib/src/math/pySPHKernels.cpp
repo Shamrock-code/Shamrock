@@ -55,7 +55,9 @@ namespace {
         m.def(get_name("_dW3d"), &Kernel::dW_3d);
         m.def(get_name("_ddW3d"), &Kernel::ddW_3d);
         m.def(get_name("_dhW3d"), &Kernel::dhW_3d);
-        m.def(get_name("_f3d_integ_z"), &Kernel::f3d_integ_z);
+        m.def(get_name("_f3d_integ_z"), [](typename Kernel::Tscal x, int np) {
+            return Kernel::f3d_integ_z(x, np);
+        });
     }
 
 } // namespace

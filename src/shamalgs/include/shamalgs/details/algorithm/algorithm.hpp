@@ -16,7 +16,7 @@
  *
  */
 
-#include "shamalgs/primitives/sort_by_keys.hpp"
+#include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/sycl.hpp"
@@ -97,27 +97,6 @@ namespace shamalgs::algorithm {
     template<class T>
     sycl::buffer<T> index_remap(
         sycl::queue &q, sycl::buffer<T> &source_buf, sycl::buffer<u32> &index_map, u32 len);
-
-    /**
-     * @brief remap a buffer (with multiple variable per index) according to a given index map
-     * result[i] = result[index_map[i]]
-     *
-     * This function can be used to apply a sort to another object
-     *
-     * @tparam T type of the buffer
-     * @param q the sycl queue
-     * @param buf the buffer to apply the remapping on
-     * @param index_map the index map
-     * @param len length of the index map
-     * @param nvar the number of variable per index
-     */
-    template<class T>
-    sycl::buffer<T> index_remap_nvar(
-        sycl::queue &q,
-        sycl::buffer<T> &source_buf,
-        sycl::buffer<u32> &index_map,
-        u32 len,
-        u32 nvar);
 
     template<class T>
     void index_remap(

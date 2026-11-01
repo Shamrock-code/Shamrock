@@ -1,0 +1,70 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file SolverLog.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief
+ *
+ */
+
+#include "shambase/aliases_float.hpp"
+#include "shambase/aliases_int.hpp"
+#include "shamsys/system_metrics.hpp"
+#include <optional>
+#include <vector>
+
+namespace shammodels {
+    struct SolverLog;
+} // namespace shammodels
+
+/**
+ * @brief Class holding the logs of the solver
+ * /todo add a variable to keep only a definite number of steps in the step_logs
+ */
+struct shammodels::SolverLog {
+
+    struct StepInfo {
+        f64 solver_t;
+        f64 solver_dt;
+        i32 world_rank;
+        u64 rank_count;
+        f64 rate;
+        f64 elasped_sec;
+        f64 wtime;
+        shamsys::SystemMetrics system_metrics;
+    };
+
+    std::vector<StepInfo> step_logs = {};
+
+    f64 cumulated_step_time = 0;
+    u64 step_count          = 0;
+
+    inline void register_log(StepInfo info) {
+        step_logs.push_back(info);
+        cumulated_step_time += info.elasped_sec;
+        step_count++;
+    }
+
+    f64 get_last_rate();
+    u64 get_last_obj_count();
+    shamsys::SystemMetrics get_last_system_metrics();
+
+    u64 get_iteration_count() { return step_logs.size(); }
+
+    f64 get_cumulated_step_time() { return cumulated_step_time; }
+
+    void reset_cumulated_step_time() { cumulated_step_time = 0; }
+
+    u64 get_step_count() { return step_count; }
+    void reset_step_count() { step_count = 0; }
+};

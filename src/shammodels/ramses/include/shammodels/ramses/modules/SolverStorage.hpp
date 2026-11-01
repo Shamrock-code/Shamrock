@@ -37,6 +37,7 @@
 #include "shamrock/solvergraph/DDSharedBuffers.hpp"
 #include "shamrock/solvergraph/DDSharedScalar.hpp"
 #include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
@@ -45,6 +46,7 @@
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamsolvergraph/SolverGraph.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/OperationSequence.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/RadixTree.hpp"
@@ -73,6 +75,11 @@ namespace shammodels::basegodunov {
 
         std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner;
 
+        /// Time step of the current iteration
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt;
+
+        /// Half time step used for the time interpolation of the face states
+        /// TODO: bug prone, it stays 0 if `face_half_time_interpolation` is off; use `dt` instead
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt_over2;
 
         std::shared_ptr<shamrock::solvergraph::FieldRefs<TgridVec>> refs_block_min;
@@ -117,6 +124,18 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dy_v_dust;
         /// dust fields gradients (d vdust / d z)
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dz_v_dust;
+
+        /// Euler time derivative of the gas primitive density (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_rho;
+        /// Euler time derivative of the gas primitive velocity (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> euler_dt_vel;
+        /// Euler time derivative of the gas primitive pressure (predictor term), adiabatic EOS
+        /// only (null with a barotropic EOS)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_press;
+        /// Euler time derivative of the dust primitive density (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> euler_dt_rho_dust;
+        /// Euler time derivative of the dust primitive velocity (predictor term)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> euler_dt_vel_dust;
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> rho_mean;
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> simulation_volume;
@@ -215,6 +234,48 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> dtrho;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dtrhov;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> dtrhoe;
+
+        /// Sum of the accelerations of the external forces (at t^{n+1/2} with the midpoint
+        /// coupling, at t^n with the trapezoidal one)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> a_ext;
+        /// Sum of the accelerations of the external forces at t^{n+1} (trapezoidal coupling only)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> a_ext_next;
+
+        /// Self-gravity potential at t^n (the "phi_old" field of the patch data with ghosts)
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi;
+        /// Self-gravity potential at t^{n+1} (the "phi" field of the patch data with ghosts)
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi_new;
+        /// Gas density at t^{n+1}, source of the self-gravity potential at t^{n+1}
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rho_next;
+        /// Mean gas density at t^{n+1}
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> rho_mean_next;
+        /// Self-gravity acceleration of the time level being computed
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> phi_g;
+
+        /// Work fields of the Poisson solvers (shared by the solves at t^n and t^{n+1})
+        struct PoissonSolverWorkFields {
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> res;
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> res_bis;
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> p;
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> a_p;
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> s;
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> a_s;
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> z;
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rhs;
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> hadamard_prod;
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rz_hadamard_prod;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> old_values;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> new_values;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> e_norm;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> alpha;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> beta;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> w_stab;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> shadow_res_norm;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> rhs_norm;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> rz_old_values;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> rz_new_values;
+        };
+        PoissonSolverWorkFields poisson_work;
 
         Component<shamrock::ComputeField<Tscal>> rho_next_no_drag;
         Component<shamrock::ComputeField<Tvec>> rhov_next_no_drag;

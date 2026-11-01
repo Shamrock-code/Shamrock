@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: repo
           submodules: recursive
@@ -69,7 +69,7 @@ jobs:
             CLANGVERSION=18
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ci-phys-test-image
           path: /tmp/ci-phys-test-image.tar
@@ -117,6 +117,14 @@ jobs:
           - worldsize: 1
             testfile: dustywave_godunov.py
           - worldsize: 1
+            testfile: ramses_ext_force_coupling.py
+          - worldsize: 2
+            testfile: ramses_ext_force_coupling.py
+          - worldsize: 1
+            testfile: ramses_self_gravity_jeans.py
+          - worldsize: 2
+            testfile: ramses_self_gravity_jeans.py
+          - worldsize: 1
             testfile: regression_sph_disc.py
           - worldsize: 1
             testfile: regression_sph_kh.py
@@ -127,6 +135,8 @@ jobs:
           - worldsize: 1
             testfile: run_sg_compare_error_sph.py
           - worldsize: 1
+            testfile: run_mhd_wavedamping.py
+          - worldsize: 1
             testfile: run_compare_shamrock_ph_disc.py
           - worldsize: 1
             testfile: run_test_sink_synchro.py
@@ -136,12 +146,22 @@ jobs:
             testfile: run_test_ext_forces_accretion.py
           - worldsize: 2
             testfile: run_test_ext_forces_accretion.py
+          - worldsize: 1
+            testfile: run_mhd_alfven_wave.py
+          - worldsize: 1
+            testfile: run_mhd_orszag_tang.py
+          - worldsize: 1
+            testfile: run_mhd_rotor.py
+          - worldsize: 1
+            testfile: run_field_collect_data_alignment.py
+          - worldsize: 2
+            testfile: run_field_collect_data_alignment.py
       fail-fast: ${{ inputs.fail_fast }}
 
     timeout-minutes: 60
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ci-phys-test-image
           path: /tmp
@@ -194,6 +214,10 @@ jobs:
             artifact_name: gallery_ramses_run_sod_amr_reflective
           - testfile: "examples/ramses/run_compare_amr_refine_sod.py"
             artifact_name: gallery_ramses_run_compare_amr_refine_sod
+          - testfile: "examples/ramses/run_rayleigh_taylor.py"
+            artifact_name: gallery_ramses_run_rayleigh_taylor
+          - testfile: "examples/ramses/run_jeans_instability_timescales.py"
+            artifact_name: gallery_ramses_run_jeans_instability_timescales
 
           # GSPH examples
           - testfile: "examples/gsph/run_sod.py"
@@ -226,6 +250,8 @@ jobs:
             artifact_name: gallery_sph_run_sphsetup_logs
           - testfile: "examples/sph/run_orzag_tang.py"
             artifact_name: gallery_sph_run_orzag_tang
+          - testfile: "examples/sph/run_mhd_wavedamping.py"
+            artifact_name: gallery_sph_run_mhd_wavedamping
           - testfile: "examples/sph/run_pairing_instab.py"
             artifact_name: gallery_sph_pairing_instab
           - testfile: "examples/sph/run_cubic_reorganisation.py"
@@ -236,6 +262,8 @@ jobs:
             artifact_name: gallery_sph_dustywave_tva
           - testfile: "examples/sph/run_dustysettle_tva.py"
             artifact_name: gallery_sph_dustysettle_tva
+          - testfile: "examples/sph/run_dustysettle_coala.py"
+            artifact_name: gallery_sph_dustysettle_coala
           - testfile: "examples/sph/run_sod.py"
             artifact_name: gallery_sph_sod
           - testfile: "examples/sph/run_sod_dust_tva.py"
@@ -244,13 +272,15 @@ jobs:
           # Tests CI
           - testfile: "examples/tests_ci/run_compare_shamrock_ph_disc.py"
             artifact_name: gallery_tests_ci_run_compare_shamrock_ph_disc
+          - testfile: "examples/tests_ci/run_ramses_amr_mirror_symmetry.py"
+            artifact_name: gallery_tests_ci_run_ramses_amr_mirror_symmetry
 
       fail-fast: ${{ inputs.fail_fast }}
 
     timeout-minutes: 60
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ci-phys-test-image
           path: /tmp
@@ -264,14 +294,14 @@ jobs:
         run: |
           git config --global --add safe.directory '*'
           git config --global --list
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
         with:
           fetch-depth: 0
           submodules: recursive
           ref: "refs/pull/${{ github.event.number }}/merge"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name != 'pull_request_target'
         with:
           fetch-depth: 0
@@ -299,7 +329,7 @@ jobs:
           sudo find . -type d -name "_to_trash" -exec rm -rfv {} +
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: ./doc
@@ -312,7 +342,7 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ci-phys-test-image
           path: /tmp
@@ -326,14 +356,14 @@ jobs:
         run: |
           git config --global --add safe.directory '*'
           git config --global --list
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
         with:
           fetch-depth: 0
           submodules: recursive
           ref: "refs/pull/${{ github.event.number }}/merge"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name != 'pull_request_target'
         with:
           fetch-depth: 0
@@ -346,7 +376,7 @@ jobs:
 
       # download the artifact from the example gallery
       - name: Download example gallery artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: gallery_*
           path: ./doc
@@ -364,7 +394,7 @@ jobs:
             bash /work/doc/sphinx/gen_sphinx_doc.sh
 
       - name: Upload doc artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sphinx_doc
           path: doc/sphinx/build/html

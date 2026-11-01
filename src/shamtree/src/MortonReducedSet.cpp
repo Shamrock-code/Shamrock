@@ -90,6 +90,7 @@ namespace shamtree {
 
 template class shamtree::MortonCodeSortedSet<u32, f64_3, 3>;
 template class shamtree::MortonCodeSortedSet<u64, f64_3, 3>;
+template class shamtree::MortonCodeSortedSet<u64, i64_3, 3>;
 
 template shamtree::MortonReducedSet<u32, f64_3, 3> shamtree::reduce_morton_set<u32, f64_3, 3>(
     const sham::DeviceScheduler_ptr &dev_sched,
@@ -98,6 +99,10 @@ template shamtree::MortonReducedSet<u32, f64_3, 3> shamtree::reduce_morton_set<u
 template shamtree::MortonReducedSet<u64, f64_3, 3> shamtree::reduce_morton_set<u64, f64_3, 3>(
     const sham::DeviceScheduler_ptr &dev_sched,
     shamtree::MortonCodeSortedSet<u64, f64_3, 3> &&morton_codes_set,
+    u32 reduction_level);
+template shamtree::MortonReducedSet<u64, i64_3, 3> shamtree::reduce_morton_set<u64, i64_3, 3>(
+    const sham::DeviceScheduler_ptr &dev_sched,
+    shamtree::MortonCodeSortedSet<u64, i64_3, 3> &&morton_codes_set,
     u32 reduction_level);
 
 template shamtree::MortonReducedSet<u32, f64_3, 3> shamtree::reduce_morton_set<u32, f64_3, 3>(
@@ -109,6 +114,12 @@ template shamtree::MortonReducedSet<u32, f64_3, 3> shamtree::reduce_morton_set<u
 template shamtree::MortonReducedSet<u64, f64_3, 3> shamtree::reduce_morton_set<u64, f64_3, 3>(
     const sham::DeviceScheduler_ptr &dev_sched,
     shamtree::MortonCodeSortedSet<u64, f64_3, 3> &&morton_codes_set,
+    u32 reduction_level,
+    sham::DeviceBuffer<u32> &&cache_buf_reduc_index_map,
+    sham::DeviceBuffer<u64> &&cache_reduced_morton_codes);
+template shamtree::MortonReducedSet<u64, i64_3, 3> shamtree::reduce_morton_set<u64, i64_3, 3>(
+    const sham::DeviceScheduler_ptr &dev_sched,
+    shamtree::MortonCodeSortedSet<u64, i64_3, 3> &&morton_codes_set,
     u32 reduction_level,
     sham::DeviceBuffer<u32> &&cache_buf_reduc_index_map,
     sham::DeviceBuffer<u64> &&cache_reduced_morton_codes);

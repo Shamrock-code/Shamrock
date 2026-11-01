@@ -9,7 +9,9 @@
 
 #include "sham/format/format.hpp"
 #include "sham/format/human_readable.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamtest/shamtest.hpp"
+#include <fmt/ranges.h>
 #include <string_view>
 #include <iostream>
 
@@ -46,6 +48,14 @@ NEW_TEST(Unittest, "shamformat/format(throwing_builder_reset)", 1) {
     REQUIRE_EXCEPTION_THROW(throwing_format_fmt(), fmt::format_error);
     sham::set_format_exception_builder(current_handle);
     REQUIRE_EXCEPTION_THROW(throwing_format_fmt(), fmt::format_error);
+}
+
+NEW_TEST(Unittest, "shamformat/format(sycl::marray)", 1) {
+    // sycl::marray exposes begin()/end(), so fmt formats it as a range
+    // (relies on <fmt/ranges.h>) without needing a custom formatter.
+    sycl::marray<f64, 3> v{1.0, 2.5, -3.0};
+    std::string s = sham::format("{}", v);
+    REQUIRE_EQUAL(s, "[1, 2.5, -3]");
 }
 
 NEW_TEST(Unittest, "shamformat/human_readable", 1) {

@@ -48,32 +48,6 @@ namespace shamalgs::algorithm {
     }
 
     template<class T>
-    sycl::buffer<T> index_remap_nvar(
-        sycl::queue &q, sycl::buffer<T> &buf, sycl::buffer<u32> &index_map, u32 len, u32 nvar) {
-
-        sycl::buffer<T> ret(len * nvar);
-
-        q.submit([&](sycl::handler &cgh) {
-            sycl::accessor in{buf, cgh, sycl::read_only};
-            sycl::accessor out{ret, cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor permut{index_map, cgh, sycl::read_only};
-
-            u32 nvar_loc = nvar;
-
-            cgh.parallel_for(sycl::range<1>(len), [=](sycl::item<1> item) {
-                u32 in_id  = permut[item] * nvar_loc;
-                u32 out_id = item.get_linear_id() * nvar_loc;
-
-                for (u32 a = 0; a < nvar_loc; a++) {
-                    out[out_id + a] = in[in_id + a];
-                }
-            });
-        });
-
-        return std::move(ret);
-    }
-
-    template<class T>
     void index_remap(
         const sham::DeviceScheduler_ptr &sched_ptr,
         sham::DeviceBuffer<T> &source,
@@ -158,13 +132,6 @@ namespace shamalgs::algorithm {
 #define X(_arg_)                                                                                   \
     template sycl::buffer<_arg_> index_remap(                                                      \
         sycl::queue &q, sycl::buffer<_arg_> &buf, sycl::buffer<u32> &index_map, u32 len);          \
-                                                                                                   \
-    template sycl::buffer<_arg_> index_remap_nvar(                                                 \
-        sycl::queue &q,                                                                            \
-        sycl::buffer<_arg_> &buf,                                                                  \
-        sycl::buffer<u32> &index_map,                                                              \
-        u32 len,                                                                                   \
-        u32 nvar);                                                                                 \
                                                                                                    \
     template void index_remap(                                                                     \
         const sham::DeviceScheduler_ptr &sched,                                                    \

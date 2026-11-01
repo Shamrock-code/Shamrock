@@ -105,8 +105,8 @@ namespace shammodels::sph::modules {
     auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
         std::string field_name,
         const sham::DeviceBuffer<Tvec> &positions,
-        std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>> custom_getter)
-        -> sham::DeviceBuffer<Tfield> {
+        std::optional<std::function<py::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
+            custom_getter) -> sham::DeviceBuffer<Tfield> {
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
@@ -138,11 +138,37 @@ namespace shammodels::sph::modules {
     }
 
     template<class Tvec, class Tfield, template<class> class SPHKernel>
+    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
+        shamrock::solvergraph::Field<Tfield> &field, const sham::DeviceBuffer<Tvec> &positions)
+        -> sham::DeviceBuffer<Tfield> {
+
+        if (field.get_nvar() != 1) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "render only supports fields with nvar == 1");
+        }
+
+        shambase::DistributedData<u32> sizes{};
+        scheduler().for_each_patchdata_nonempty(
+            [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                sizes.add_obj(p.id_patch, pdat.get_obj_cnt());
+            });
+        field.check_sizes(sizes);
+
+        auto field_getter
+            = [&](const shamrock::patch::Patch cur_p,
+                  shamrock::patch::PatchDataLayer &pdat) -> const sham::DeviceBuffer<Tfield> & {
+            return field.get_buf(cur_p.id_patch);
+        };
+
+        return compute_slice(field_getter, positions);
+    }
+
+    template<class Tvec, class Tfield, template<class> class SPHKernel>
     auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_column_integ(
         std::string field_name,
         const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays,
-        std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>> custom_getter)
-        -> sham::DeviceBuffer<Tfield> {
+        std::optional<std::function<py::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
+            custom_getter) -> sham::DeviceBuffer<Tfield> {
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
@@ -175,11 +201,37 @@ namespace shammodels::sph::modules {
     }
 
     template<class Tvec, class Tfield, template<class> class SPHKernel>
+    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_column_integ(
+        shamrock::solvergraph::Field<Tfield> &field,
+        const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays) -> sham::DeviceBuffer<Tfield> {
+
+        if (field.get_nvar() != 1) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "render only supports fields with nvar == 1");
+        }
+
+        shambase::DistributedData<u32> sizes{};
+        scheduler().for_each_patchdata_nonempty(
+            [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                sizes.add_obj(p.id_patch, pdat.get_obj_cnt());
+            });
+        field.check_sizes(sizes);
+
+        auto field_getter
+            = [&](const shamrock::patch::Patch cur_p,
+                  shamrock::patch::PatchDataLayer &pdat) -> const sham::DeviceBuffer<Tfield> & {
+            return field.get_buf(cur_p.id_patch);
+        };
+
+        return compute_column_integ(field_getter, rays);
+    }
+
+    template<class Tvec, class Tfield, template<class> class SPHKernel>
     auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_azymuthal_integ(
         std::string field_name,
         const sham::DeviceBuffer<shammath::RingRay<Tvec>> &ring_rays,
-        std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>> custom_getter)
-        -> sham::DeviceBuffer<Tfield> {
+        std::optional<std::function<py::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
+            custom_getter) -> sham::DeviceBuffer<Tfield> {
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
@@ -428,6 +480,33 @@ namespace shammodels::sph::modules {
     }
 
     template<class Tvec, class Tfield, template<class> class SPHKernel>
+    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_azymuthal_integ(
+        shamrock::solvergraph::Field<Tfield> &field,
+        const sham::DeviceBuffer<shammath::RingRay<Tvec>> &ring_rays)
+        -> sham::DeviceBuffer<Tfield> {
+
+        if (field.get_nvar() != 1) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "render only supports fields with nvar == 1");
+        }
+
+        shambase::DistributedData<u32> sizes{};
+        scheduler().for_each_patchdata_nonempty(
+            [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                sizes.add_obj(p.id_patch, pdat.get_obj_cnt());
+            });
+        field.check_sizes(sizes);
+
+        auto field_getter
+            = [&](const shamrock::patch::Patch cur_p,
+                  shamrock::patch::PatchDataLayer &pdat) -> const sham::DeviceBuffer<Tfield> & {
+            return field.get_buf(cur_p.id_patch);
+        };
+
+        return compute_azymuthal_integ(field_getter, ring_rays);
+    }
+
+    template<class Tvec, class Tfield, template<class> class SPHKernel>
     auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
         std::function<field_getter_t> field_getter,
         Tvec center,
@@ -457,16 +536,45 @@ namespace shammodels::sph::modules {
 
     template<class Tvec, class Tfield, template<class> class SPHKernel>
     auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
+        shamrock::solvergraph::Field<Tfield> &field,
+        Tvec center,
+        Tvec delta_x,
+        Tvec delta_y,
+        u32 nx,
+        u32 ny) -> sham::DeviceBuffer<Tfield> {
+
+        auto positions = pixel_to_positions(center, delta_x, delta_y, nx, ny);
+
+        return compute_slice(field, positions);
+    }
+
+    template<class Tvec, class Tfield, template<class> class SPHKernel>
+    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_column_integ(
+        shamrock::solvergraph::Field<Tfield> &field,
+        Tvec center,
+        Tvec delta_x,
+        Tvec delta_y,
+        u32 nx,
+        u32 ny) -> sham::DeviceBuffer<Tfield> {
+
+        auto rays = pixel_to_orthographic_rays(center, delta_x, delta_y, nx, ny);
+
+        return compute_column_integ(field, rays);
+    }
+
+    template<class Tvec, class Tfield, template<class> class SPHKernel>
+    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
         std::string field_name,
         Tvec center,
         Tvec delta_x,
         Tvec delta_y,
         u32 nx,
         u32 ny,
-        std::optional<std::function<pybind11::array_t<Tfield>(size_t, pybind11::dict &)>>
+        std::optional<
+            std::function<pybind11::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
             custom_getter) -> sham::DeviceBuffer<Tfield> {
         auto positions = pixel_to_positions(center, delta_x, delta_y, nx, ny);
-        return compute_slice(field_name, positions, custom_getter);
+        return compute_slice(std::move(field_name), positions, std::move(custom_getter));
     }
 
     template<class Tvec, class Tfield, template<class> class SPHKernel>
@@ -477,10 +585,11 @@ namespace shammodels::sph::modules {
         Tvec delta_y,
         u32 nx,
         u32 ny,
-        std::optional<std::function<pybind11::array_t<Tfield>(size_t, pybind11::dict &)>>
+        std::optional<
+            std::function<pybind11::array_t<Tfield>(size_t, shamrock::PatchDataLazyGetter &)>>
             custom_getter) -> sham::DeviceBuffer<Tfield> {
         auto rays = pixel_to_orthographic_rays(center, delta_x, delta_y, nx, ny);
-        return compute_column_integ(field_name, rays, custom_getter);
+        return compute_column_integ(std::move(field_name), rays, std::move(custom_getter));
     }
 
 } // namespace shammodels::sph::modules

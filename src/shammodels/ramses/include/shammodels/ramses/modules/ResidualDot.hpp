@@ -13,41 +13,45 @@
  * @file ResidualDot.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Squared L2 norm of a field, summed over all patches and ranks.
  *
+ * Adapted from the PhD work of Léodasce Sewanou.
  */
-#include "shammodels/ramses/SolverConfig.hpp"
+#include "shambase/aliases_int.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+    X_RO(shamrock::solvergraph::IFieldRefs<T>, spans_phi_res)                                      \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IDataEdge<Tscal>, res_ddot)
 
 namespace shammodels::basegodunov::modules {
 
+    /**
+     * @brief Compute `res_ddot <- sum_i <res_i, res_i>` over the first `sizes * nvar` values of
+     * every patch on every rank.
+     *
+     * `sizes` holds the object counts per patch, each object holding `nvar` values (e.g. the cells
+     * of an AMR block). As in NodeSumReduction, the field may hold more values than summed (e.g.
+     * ghost blocks stored after the patch blocks), but never less. The result is deterministic:
+     * the patches are accumulated in increasing patch id order, then summed across ranks.
+     */
     template<class T>
     class ResidualDot : public shamrock::solvergraph::INode {
         using Tscal = shambase::VecComponent<T>;
 
+        u32 nvar;
+
         public:
-        ResidualDot() {}
+        ResidualDot(u32 nvar) : nvar(nvar) {}
 
-        struct Edges {
-            const shamrock::solvergraph::IFieldRefs<T> &spans_phi_res;
-            shamrock::solvergraph::ScalarEdge<Tscal> &res_ddot;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> spans_phi_res,
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> res_ddot) {
-            __internal_set_ro_edges({spans_phi_res});
-            __internal_set_rw_edges({res_ddot});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<T>>(0),
-                get_rw_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(0),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -57,3 +61,5 @@ namespace shammodels::basegodunov::modules {
     };
 
 } // namespace shammodels::basegodunov::modules
+
+#undef NODE_EDGES

@@ -112,6 +112,12 @@ class shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator {
 
     Tscal f_func(Tscal r) { return r * sigma_profile(r); }
 
+    /// upper bound of f_func on [r_in, r_out] used for the rejection sampling
+    Tscal compute_fmax();
+
+    /// max of f_func on [r_in, r_out], set in the constructor
+    Tscal fmax;
+
     DiscOutput next(u64 seed);
 
     public:
@@ -158,6 +164,10 @@ class shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator {
             r_out,
             "Npart",
             Npart);
+
+        fmax = compute_fmax();
+
+        shamlog_debug_ln("GeneratorMCDisc", "fmax", fmax);
     }
 
     inline bool is_done() {

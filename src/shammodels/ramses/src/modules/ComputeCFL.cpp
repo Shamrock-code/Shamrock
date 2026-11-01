@@ -21,16 +21,15 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class Tvec, class TgridVec>
-auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl() -> Tscal {
+template<shammath::FluidStateSpec FSpec>
+void shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl_gas(
+    shamrock::ComputeField<Tscal> &cfl_dt, FSpec fluid) {
 
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
     using namespace shamrock;
     using namespace shammath;
-
-    SchedulerUtility utility(scheduler());
-    ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", AMRBlock::block_size);
 
     // load layout info
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
@@ -72,11 +71,13 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal C_safe = solver_config.Csafe;
-            Tscal gamma  = solver_config.eos_gamma;
 
             Tscal one_over_Nside = 1. / AMRBlock::Nside;
 
             Tscal dxfact = solver_config.grid_coord_to_pos_fact;
+
+            auto fspec = fluid;
+
             shambase::parallel_for(cgh, cell_count, "compute_cfl", [=](u64 gid) {
                 const u32 cell_global_id = (u32) gid;
 
@@ -90,13 +91,14 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
                 Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
                 Tscal dx             = block_cell_size.x();
 
+                // rhoe is ignored by the barotropic cons_to_prim
                 auto conststate = shammath::ConsState<Tvec>{rho[gid], rhoe[gid], rhov[gid]};
 
-                auto prim_state = shammath::cons_to_prim(conststate, gamma);
+                auto prim_state = fspec.cons_to_prim(conststate);
 
                 constexpr Tscal div = 1. / 3.;
 
-                Tscal cs    = sound_speed(prim_state, gamma);
+                Tscal cs    = fspec.sound_speed(prim_state);
                 Tscal vnorm = sycl::length(prim_state.vel);
                 Tscal dt    = C_safe * dx * div / (cs + vnorm);
 
@@ -111,6 +113,25 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
         buf_rhov.complete_event_state(e);
         buf_rhoe.complete_event_state(e);
     });
+}
+
+template<class Tvec, class TgridVec>
+auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl() -> Tscal {
+
+    StackEntry stack_loc{};
+
+    using namespace shamrock;
+
+    SchedulerUtility utility(scheduler());
+    ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", AMRBlock::block_size);
+
+    // each EOSConfig alternative maps to its shammath fluid spec (FluidStateAdiabatic or
+    // FluidStateBarotropic) through get_spec()
+    std::visit(
+        [&](const auto &eos_cfg) {
+            compute_cfl_gas(cfl_dt, eos_cfg.get_spec());
+        },
+        solver_config.eos_config.config);
 
     Tscal rank_dt = cfl_dt.compute_rank_min();
 
@@ -186,7 +207,8 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
                     rhov_dust[ndust * cell_global_id + ndust_off_loc]};
                 Tscal dx = acc_aabb_cell_size[block_id];
 
-                auto prim_state = shammath::d_cons_to_prim(conststate);
+                shammath::FluidStateDust<Tvec> dust_fluid{};
+                auto prim_state = dust_fluid.cons_to_prim(conststate);
 
                 constexpr Tscal div = 1. / 3.;
 

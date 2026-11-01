@@ -27,7 +27,7 @@ using Direction             = shammodels::basegodunov::modules::Direction;
 template<class Tvec, class TgridVec, RiemannSolverMode mode, Direction dir>
 void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, dir>::
     _impl_evaluate_internal() {
-    StackEntry stack_loc{};
+    __shamrock_stack_entry();
 
     auto edges = get_edges();
 
@@ -48,8 +48,6 @@ void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec,
               return graph.get().link_count; //* ndust;
           });
 
-    using Flux = FluxCompute<Tvec, mode, dir>;
-
     sham::distributed_data_kernel_call(
         dev_sched,
         sham::DDMultiRef{
@@ -61,21 +59,23 @@ void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec,
         counts_dir,
         [gamma = this->gamma](
             u32 link_id,
-            const std::array<Tscal, 2> *rho_face,
-            const std::array<Tvec, 2> *vel_face,
-            const std::array<Tscal, 2> *press_face,
-            Tscal *flux_rho_face,
-            Tvec *flux_rhov_face,
-            Tscal *flux_rhoe_face) {
+            const std::array<Tscal, 2> *__restrict rho_face,
+            const std::array<Tvec, 2> *__restrict vel_face,
+            const std::array<Tscal, 2> *__restrict press_face,
+            Tscal *__restrict flux_rho_face,
+            Tvec *__restrict flux_rhov_face,
+            Tscal *__restrict flux_rhoe_face) {
             auto rho_ij   = rho_face[link_id];
             auto vel_ij   = vel_face[link_id];
             auto press_ij = press_face[link_id];
 
-            using Tprim   = shammath::PrimState<Tvec>;
-            auto flux_dir = Flux::flux(
+            using Tprim = shammath::PrimState<Tvec>;
+            shammath::FluidStateAdiabatic<Tvec> adiab_fluid{.m_gamma = gamma};
+
+            auto flux_dir = riemann_flux<decltype(adiab_fluid), mode, dir>(
+                adiab_fluid,
                 Tprim{rho_ij[0], press_ij[0], vel_ij[0]},
-                Tprim{rho_ij[1], press_ij[1], vel_ij[1]},
-                gamma);
+                Tprim{rho_ij[1], press_ij[1], vel_ij[1]});
 
             flux_rho_face[link_id]  = flux_dir.rho;
             flux_rhov_face[link_id] = flux_dir.rhovel;
@@ -111,24 +111,24 @@ void shammodels::basegodunov::modules::NodeComputeFluxDustDirMode<Tvec, TgridVec
               return graph.get().link_count * ndust;
           });
 
-    using Flux = DustFluxCompute<Tvec, mode, dir>;
-
     sham::distributed_data_kernel_call(
         dev_sched,
         sham::DDMultiRef{edges.rho_face.link_fields, edges.vel_face.link_fields},
         sham::DDMultiRef{edges.flux_rho_face.link_fields, edges.flux_rhov_face.link_fields},
         counts_dir,
         [](u32 link_id,
-           const std::array<Tscal, 2> *rho_face,
-           const std::array<Tvec, 2> *vel_face,
-           Tscal *flux_rho_face,
-           Tvec *flux_rhov_face) {
+           const std::array<Tscal, 2> *__restrict rho_face,
+           const std::array<Tvec, 2> *__restrict vel_face,
+           Tscal *__restrict flux_rho_face,
+           Tvec *__restrict flux_rhov_face) {
             auto rho_ij = rho_face[link_id];
             auto vel_ij = vel_face[link_id];
 
             using Tprim = shammath::DustPrimState<Tvec>;
-            auto flux_dust_dir
-                = Flux::dustflux(Tprim{rho_ij[0], vel_ij[0]}, Tprim{rho_ij[1], vel_ij[1]});
+            shammath::FluidStateDust<Tvec> dust_fluid{};
+
+            auto flux_dust_dir = riemann_dust_flux<decltype(dust_fluid), mode, dir>(
+                dust_fluid, Tprim{rho_ij[0], vel_ij[0]}, Tprim{rho_ij[1], vel_ij[1]});
 
             flux_rho_face[link_id]  = flux_dust_dir.rho;
             flux_rhov_face[link_id] = flux_dust_dir.rhovel;

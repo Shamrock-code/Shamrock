@@ -56,6 +56,7 @@ namespace shamalgs::collective {
     /// fetch u64_2 from global message data
     std::vector<u64_2> fetch_global_message_data(
         const std::vector<CommMessageInfo> &messages_send) {
+        __shamrock_stack_entry();
 
         std::vector<u64_2> local_data = std::vector<u64_2>(messages_send.size());
 
@@ -84,6 +85,7 @@ namespace shamalgs::collective {
 
     /// decode message to get message
     std::vector<CommMessageInfo> decode_all_message(const std::vector<u64_2> &global_data) {
+        __shamrock_stack_entry();
         std::vector<CommMessageInfo> message_all(global_data.size());
         for (u64 i = 0; i < global_data.size(); i++) {
             message_all[i] = unpack(global_data[i]);
@@ -94,6 +96,7 @@ namespace shamalgs::collective {
 
     /// compute message tags
     void compute_tags(std::vector<CommMessageInfo> &message_all) {
+        __shamrock_stack_entry();
 
         std::vector<i32> tag_map(shamcomm::world_size(), 0);
 
@@ -245,7 +248,7 @@ namespace shamalgs::collective {
     }
 
     void sparse_exchange(
-        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        const std::shared_ptr<sham::DeviceScheduler> &dev_sched,
         const std::vector<const u8 *> &bytebuffer_send,
         const std::vector<u8 *> &bytebuffer_recv,
         const CommTable &comm_table) {
@@ -294,7 +297,7 @@ namespace shamalgs::collective {
 
     template<sham::USMKindTarget target>
     void sparse_exchange(
-        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        const std::shared_ptr<sham::DeviceScheduler> &dev_sched,
         std::vector<std::unique_ptr<sham::DeviceBuffer<u8, target>>> &bytebuffer_send,
         std::vector<std::unique_ptr<sham::DeviceBuffer<u8, target>>> &bytebuffer_recv,
         const CommTable &comm_table) {
@@ -382,13 +385,13 @@ namespace shamalgs::collective {
 
     // template instantiations
     template void sparse_exchange<sham::device>(
-        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        const std::shared_ptr<sham::DeviceScheduler> &dev_sched,
         std::vector<std::unique_ptr<sham::DeviceBuffer<u8, sham::device>>> &bytebuffer_send,
         std::vector<std::unique_ptr<sham::DeviceBuffer<u8, sham::device>>> &bytebuffer_recv,
         const CommTable &comm_table);
 
     template void sparse_exchange<sham::host>(
-        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        const std::shared_ptr<sham::DeviceScheduler> &dev_sched,
         std::vector<std::unique_ptr<sham::DeviceBuffer<u8, sham::host>>> &bytebuffer_send,
         std::vector<std::unique_ptr<sham::DeviceBuffer<u8, sham::host>>> &bytebuffer_recv,
         const CommTable &comm_table);

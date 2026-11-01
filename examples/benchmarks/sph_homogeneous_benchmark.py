@@ -15,7 +15,7 @@ import shamrock
 
 device_properties = shamrock.sys.get_compute_device_properties()
 
-microbench_results = shamrock.sys.get_microbench_results()
+microbench_results = shamrock.sys.get_microbench_results(allow_run=True)
 if len(microbench_results) == 0:
     print("no microbench results, please run with --benchmark-mpi")
     raise ValueError("no microbench results")

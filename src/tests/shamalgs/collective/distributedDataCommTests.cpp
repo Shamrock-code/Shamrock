@@ -18,8 +18,11 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
+#include <algorithm>
 #include <map>
 #include <memory>
+#include <random>
+#include <vector>
 
 void distribdata_sparse_comm_test(
     u32 npatch,
@@ -122,4 +125,53 @@ NEW_TEST(Unittest, "shamalgs/collective/distributedDataComm", -1) {
     // test with lowered limit to test splitting
     distribdata_sparse_comm_test(
         npatch, nbuf_p_patch, max_msg_len, seed, "", 1e4); // max message len in test
+}
+
+NEW_TEST(Unittest, "shamalgs/collective/fetch_all_simple", -1) {
+
+    using namespace shamalgs::collective;
+
+    const i32 wsize = shamcomm::world_size();
+    const i32 wrank = shamcomm::world_rank();
+
+    u64 nid = 1000 * wsize;
+
+    // ids handed to the ranks in a shuffled order so that global = allgatherv(local) is not
+    // sorted by id
+    std::vector<u64> ids(nid);
+    for (u64 i = 0; i < nid; i++) {
+        ids[i] = 3 * i + 7;
+    }
+    std::mt19937 eng(0x111);
+    std::shuffle(ids.begin(), ids.end(), eng);
+
+    auto value_of = [](u64 id) {
+        return f64(id) * 0.5 + 1;
+    };
+
+    std::vector<u64> local_ids;
+    shambase::DistributedData<f64> src;
+    for (u64 i = 0; i < nid; i++) {
+        if (i64(i % wsize) == wrank) {
+            local_ids.push_back(ids[i]);
+            src.add_obj(ids[i], value_of(ids[i]));
+        }
+    }
+
+    std::vector<u64> global_ids;
+    vector_allgatherv(
+        local_ids, get_mpi_type<u64>(), global_ids, get_mpi_type<u64>(), MPI_COMM_WORLD);
+
+    shambase::DistributedData<f64> ret
+        = fetch_all_simple<f64, u64>(src, local_ids, global_ids, [](u64 id) {
+              return id;
+          });
+
+    REQUIRE_EQUAL(ret.get_element_count(), nid);
+
+    bool all_correct = true;
+    for (u64 id : ids) {
+        all_correct = all_correct && ret.has_key(id) && (ret.get(id) == value_of(id));
+    }
+    REQUIRE_NAMED("every id mapped to its own value", all_correct);
 }

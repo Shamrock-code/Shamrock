@@ -55,15 +55,6 @@ namespace shamalgs::numeric {
     sham::DeviceBuffer<T> scan_exclusive(
         sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len);
 
-    template<class T>
-    sycl::buffer<T> scan_inclusive(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
-
-    template<class T>
-    void scan_exclusive_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
-
-    template<class T>
-    void scan_inclusive_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
-
     /**
      * @brief Stream compaction algorithm
      *

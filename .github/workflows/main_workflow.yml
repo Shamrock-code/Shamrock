@@ -49,7 +49,7 @@ jobs:
           mkdir -p ./pr
           echo $PR_NUMBER > ./pr_number.txt
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: report_pr_number
           path: ./pr_number.txt
@@ -58,7 +58,7 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -75,7 +75,7 @@ jobs:
         if: ${{ endsWith(steps.author.outputs.EMAIL, 'noreply.github.com')  }}
         run: echo "You are using github private e-mail. This prevent proper tracing of who contributed what, please disable it (see [Keep my email addresses private](https://github.com/settings/emails))." >> report_______email.md
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: report_email
           path: ./report_______email.md
@@ -90,7 +90,7 @@ jobs:
           git config --global --add safe.directory '*'
           git config --global --list
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Count lines of code
         shell: bash
@@ -99,7 +99,7 @@ jobs:
           cat metric__loc.json
 
       - name: Upload lines of code metric
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: metric__loc.json
           path: metric__loc.json
@@ -156,16 +156,9 @@ jobs:
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  shamrock_linux_dpcpp:
-    name: Tests
-    needs: [src_check]
-    uses: ./.github/workflows/shamrock-dpcpp.yml
-    with:
-      light_ci: ${{ inputs.light_ci }}
-
   build_push_docker:
     name: Build dockerfiles
-    needs: [src_check, shamrock_linux_dpcpp]
+    needs: [src_check, env_tests]
     if: ${{ inputs.run_build_push_docker && !inputs.light_ci }}
     uses: ./.github/workflows/build-dockerfiles.yml
 
@@ -176,6 +169,27 @@ jobs:
     uses: ./.github/workflows/shamrock-acpp-phys-test.yml
     with:
       fail_fast: ${{ inputs.is_merge_queue }}
+
+  # On the Mergify merge queue, dockerbuild/doc/phystest failing means the
+  # merge gate ("all") will fail anyway, so cancel the whole run early
+  # instead of waiting on the remaining CI jobs (asan, ubsan, tidy, coverage,
+  # pylib) to finish.
+  cancel_on_merge_queue_phystest_failure:
+    name: Cancel run (merge queue phystest failure)
+    needs:
+      [build_push_docker, make_documentation, shamrock_linux_acpp_phystests]
+    if: ${{ always() && inputs.is_merge_queue && contains(needs.*.result, 'failure') }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Cancel this workflow run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          echo "Mergify merge queue: dockerbuild/doc/phystest failed, cancelling run ${{ github.run_id }}."
+          gh run cancel "${{ github.run_id }}"
 
   shamrock_linux_acpp_pylib:
     needs: [src_check]
@@ -193,7 +207,7 @@ jobs:
       image: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: main
@@ -221,7 +235,7 @@ jobs:
           doxygen dox.conf
 
       - name: Archive doxygen warnings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: doxygen_warning_main
           path: doc/doxygen/warn_doxygen.txt
@@ -239,13 +253,13 @@ jobs:
         run:  |
           git config --global --add safe.directory '*'
           git config --global --list
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
         with:
           fetch-depth: 0
           ref: "refs/pull/${{ github.event.number }}/merge"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name != 'pull_request_target'
         with:
           fetch-depth: 0
@@ -260,13 +274,13 @@ jobs:
           python-version: '3.10'
 
       - name: 'Download PR doxygen warning'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: doxygen_warning
           path: PR_dox_output
 
       - name: 'Download PR doxygen warning'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: doxygen_warning_main
           path: main_dox_output
@@ -287,7 +301,7 @@ jobs:
         run: |
           cat report_doc_diff.md
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: report_doc_diff

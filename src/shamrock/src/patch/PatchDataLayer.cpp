@@ -47,6 +47,19 @@ namespace shamrock::patch {
         return pdat;
     }
 
+    PatchDataLayer::PatchDataLayer(const PatchDataLayer &other) : pdl_ptr(other.get_layout_ptr()) {
+
+        NamedStackEntry stack_loc{"PatchDataLayer::copy_constructor", true};
+
+        for (auto &field_var : other.fields) {
+
+            field_var.visit([&](auto &field) {
+                using base_t = typename std::remove_reference<decltype(field)>::type::Field_type;
+                fields.emplace_back(PatchDataField<base_t>(field));
+            });
+        };
+    }
+
     void PatchDataLayer::init_fields() {
 
         pdl().for_each_field_any([&](auto &field) {
@@ -430,15 +443,6 @@ namespace shamrock::patch {
         StackEntry stack_loc{};
 
         PatchDataField<T> &main_field = fields[0].get_if_ref_throw<T>();
-
-        // auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
-        //     return main_field.get_elements_with_range(
-        //         [&](T val, T vmin, T vmax) {
-        //             return Patch::is_in_patch_converted(val, vmin, vmax);
-        //         },
-        //         vmin,
-        //         vmax);
-        // };
 
         auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
             return main_field.get_ids_vec_where(

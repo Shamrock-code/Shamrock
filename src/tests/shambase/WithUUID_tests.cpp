@@ -92,10 +92,11 @@ void test_move_invalidate() {
     B1 b(std::move(a));
     REQUIRE(b.get_uuid() == a_uuid);
     REQUIRE(b.is_alive());
-    // NOLINTBEGIN(bugprone-use-after-move): checking the moved-from state is the point here.
+    // NOLINTBEGIN(bugprone-use-after-move,clang-analyzer-cplusplus.Move): checking the
+    // moved-from state is the point here.
     REQUIRE(a.is_alive() == false);
     REQUIRE(a.get_uuid() == decltype(a)::invalid_uuid);
-    // NOLINTEND(bugprone-use-after-move)
+    // NOLINTEND(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
 
     // Move assignment does the same: transfers the uuid over, invalidates the source, on top of
     // whatever uuid the destination held before (which is simply discarded here -- WithUUID
@@ -106,10 +107,11 @@ void test_move_invalidate() {
     c = std::move(b);
     REQUIRE(c.get_uuid() == a_uuid);
     REQUIRE(c.is_alive());
-    // NOLINTBEGIN(bugprone-use-after-move): checking the moved-from state is the point here.
+    // NOLINTBEGIN(bugprone-use-after-move,clang-analyzer-cplusplus.Move): checking the
+    // moved-from state is the point here.
     REQUIRE(b.is_alive() == false);
     REQUIRE(b.get_uuid() == decltype(b)::invalid_uuid);
-    // NOLINTEND(bugprone-use-after-move)
+    // NOLINTEND(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
 
     // Self move-assignment must not invalidate the only instance holding the uuid.
     c = std::move(c);

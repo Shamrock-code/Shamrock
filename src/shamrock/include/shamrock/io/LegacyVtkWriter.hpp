@@ -458,7 +458,9 @@ namespace shamrock {
         LegacyVtkWriter &operator=(const LegacyVtkWriter &) = delete;
         LegacyVtkWriter(LegacyVtkWriter &&other)
             : mfile(other.mfile), fname(std::move(other.fname)), binary(other.binary),
-              file_head_ptr(other.file_head_ptr) {}                   // move constructor
+              file_head_ptr(other.file_head_ptr), points_count(other.points_count),
+              has_written_points(other.has_written_points), cells_count(other.cells_count),
+              has_written_cells(other.has_written_cells) {}           // move constructor
         LegacyVtkWriter &operator=(LegacyVtkWriter &&other) = delete; // move assignment
     };
 } // namespace shamrock

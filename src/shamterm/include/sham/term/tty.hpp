@@ -63,4 +63,22 @@ namespace sham::term {
      * Calls set_tty_columns(0) to restore the default behavior of get_tty_columns().
      */
     inline void reset_tty_columns() { set_tty_columns(0); }
+
+    /**
+     * @brief Query whether the current terminal/locale supports UTF-8 output
+     *
+     * This reflects the result of the last call to parse_terminal_support() (see
+     * sham/term/env.hpp), which derives it from the LC_ALL/LC_CTYPE/LANG environment variables.
+     *
+     * @return true if UTF-8 output is supported
+     * @return false otherwise
+     */
+    bool support_utf8();
+
+    /**
+     * @brief Set whether the current terminal/locale supports UTF-8 output
+     *
+     * @param support the new UTF-8 support state
+     */
+    void set_support_utf8(bool support);
 } // namespace sham::term

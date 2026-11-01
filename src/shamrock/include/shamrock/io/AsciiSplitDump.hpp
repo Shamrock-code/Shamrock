@@ -81,15 +81,6 @@ class AsciiSplitDump {
         void write_table(std::vector<T> buf, u32 len);
 
         /**
-         * @brief Write a table to the file
-         *
-         * @param buf the table to write
-         * @param len the length of the table
-         */
-        template<class T>
-        void write_table(sycl::buffer<T> buf, u32 len);
-
-        /**
          * @brief Close the file
          */
         void close() { file.close(); }

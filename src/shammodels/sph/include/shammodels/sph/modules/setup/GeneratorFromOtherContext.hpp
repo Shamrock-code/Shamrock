@@ -66,7 +66,7 @@ namespace shammodels::sph::modules {
             // Make a patchdata to receive the data from the other context
             PatchDataLayer tmp(sched.get_layout_ptr_old());
 
-            data_other.for_each([&](u64 id_patch, shamrock::patch::PatchDataLayer &pdat) {
+            data_other.for_each_ordered([&](u64 id_patch, shamrock::patch::PatchDataLayer &pdat) {
                 if (pdat.get_obj_cnt() > 0 && tmp.get_obj_cnt() < nmax) {
 
                     u32 remain_to_gen = nmax - tmp.get_obj_cnt();

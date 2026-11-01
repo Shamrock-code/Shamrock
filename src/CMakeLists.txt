@@ -61,6 +61,11 @@ add_subdirectory(shammodels/ramses)
 add_subdirectory(shammodels/sph)
 add_subdirectory(shammodels/gsph)
 
+# Standalone control GUI (option and dependencies in cmake/ShamConfigureGUILibs.cmake)
+if(SHAMROCK_BUILD_GUI)
+    add_subdirectory(gui)
+endif()
+
 ######################
 # Shamrock lib & exe targets
 ######################

@@ -58,20 +58,4 @@ class RadixTreeMortonBuilder {
         u32 cnt_obj,
         std::unique_ptr<sycl::buffer<morton_t>> &out_buf_morton,
         std::unique_ptr<sycl::buffer<u32>> &out_buf_particle_index_map);
-
-    /**
-     * @brief build a raw mrton table from a position buffer (no sorting & index map)
-     *
-     * @param queue the SYCL queue to run on
-     * @param bounding_box bounding box of the corresponding input coordinates
-     * @param pos_buf buffer of position to build morton codes from
-     * @param cnt_obj number of position given in the buffer
-     * @param out_buf_morton resulting morton buffer (unsorted)
-     */
-    static void build_raw(
-        sycl::queue &queue,
-        std::tuple<pos_t, pos_t> bounding_box,
-        sycl::buffer<pos_t> &pos_buf,
-        u32 cnt_obj,
-        std::unique_ptr<sycl::buffer<morton_t>> &out_buf_morton);
 };

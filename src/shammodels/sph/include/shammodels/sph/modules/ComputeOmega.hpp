@@ -21,6 +21,14 @@
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamsolvergraph/node/INode.hpp"
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
+    X_RO(shammodels::sph::solvergraph::NeighCache, neigh_cache)                                    \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, xyz)                                             \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, omega)
 
 namespace shammodels::sph::modules {
 
@@ -35,33 +43,7 @@ namespace shammodels::sph::modules {
         public:
         NodeComputeOmega(Tscal part_mass) : part_mass(part_mass) {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &part_counts;
-            const shammodels::sph::solvergraph::NeighCache &neigh_cache;
-            const shamrock::solvergraph::IFieldSpan<Tvec> &xyz;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &hpart;
-            shamrock::solvergraph::IFieldSpan<Tscal> &omega;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts,
-            std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> xyz,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> hpart,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> omega) {
-            __internal_set_ro_edges({part_counts, neigh_cache, xyz, hpart});
-            __internal_set_rw_edges({omega});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shammodels::sph::solvergraph::NeighCache>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -69,6 +51,17 @@ namespace shammodels::sph::modules {
 
         virtual std::string _impl_get_tex() const;
     };
+
+} // namespace shammodels::sph::modules
+
+#undef NODE_EDGES
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
+    X_RO(shamrock::solvergraph::IFieldSpan<u32>, mask)                                             \
+    X_RW(shamrock::solvergraph::IFieldSpan<T>, field_to_set)
+
+namespace shammodels::sph::modules {
 
     template<class T>
     class SetWhenMask : public shamrock::solvergraph::INode {
@@ -78,27 +71,7 @@ namespace shammodels::sph::modules {
         public:
         SetWhenMask(T val_to_set) : val_to_set(val_to_set) {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &part_counts;
-            const shamrock::solvergraph::IFieldSpan<u32> &mask;
-            shamrock::solvergraph::IFieldSpan<T> &field_to_set;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<u32>> mask,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<T>> field_to_set) {
-            __internal_set_ro_edges({part_counts, mask});
-            __internal_set_rw_edges({field_to_set});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<u32>>(1),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<T>>(0),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -108,3 +81,5 @@ namespace shammodels::sph::modules {
     };
 
 } // namespace shammodels::sph::modules
+
+#undef NODE_EDGES

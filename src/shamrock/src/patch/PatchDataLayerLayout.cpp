@@ -14,7 +14,10 @@
  * @brief
  */
 
+#include "shambase/string.hpp"
+#include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
 
 namespace shamrock::patch {
@@ -102,6 +105,59 @@ namespace shamrock::patch {
             }
         }
         return false;
+    }
+
+    template<class T>
+    void PatchDataLayerLayout::add_field(
+        const std::string &field_name, u32 nvar, SourceLocation loc) {
+        if (has_field_name(field_name)) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "add_field -> the name already exists");
+        }
+
+        shamlog_debug_ln(
+            "PatchDataLayerLayout",
+            "adding field :",
+            field_name,
+            nvar,
+            "loc :",
+            loc.format_one_line());
+
+        fields.push_back(var_t{FieldDescriptor<T>(field_name, nvar)});
+    }
+
+    template<class T>
+    u32 PatchDataLayerLayout::get_field_idx(const std::string &field_name) const {
+        for (u32 i = 0; i < fields.size(); i++) {
+            if (const FieldDescriptor<T> *pval
+                = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
+                if (pval->name == field_name) {
+                    return i;
+                }
+            }
+        }
+
+        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
+            "the requested field does not exists\n    the function : {}\n    the field name : {}\n "
+            "   current table : \n{}",
+            __PRETTY_FUNCTION__,
+            field_name,
+            get_description_str()));
+    }
+
+    template<class T>
+    u32 PatchDataLayerLayout::get_field_idx(const std::string &field_name, u32 nvar) const {
+        for (u32 i = 0; i < fields.size(); i++) {
+            if (const FieldDescriptor<T> *pval
+                = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
+                if ((pval->name == field_name) && (pval->nvar == nvar)) {
+                    return i;
+                }
+            }
+        }
+
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "the requested field does not exists\n    current table : " + get_description_str());
     }
 
     void to_json(nlohmann::json &j, const PatchDataLayerLayout &p) {
@@ -198,3 +254,20 @@ namespace shamrock::patch {
     }
 
 } // namespace shamrock::patch
+
+//////////////////////////////////////////////////////////////////////////
+// Explicitly instantiate add_field/get_field_idx for all classes in
+// XMAC_LIST_ENABLED_FIELD
+//////////////////////////////////////////////////////////////////////////
+
+#ifndef DOXYGEN
+    #define X(a)                                                                                   \
+        template void shamrock::patch::PatchDataLayerLayout::add_field<a>(                         \
+            const std::string &field_name, u32 nvar, SourceLocation loc);                          \
+        template u32 shamrock::patch::PatchDataLayerLayout::get_field_idx<a>(                      \
+            const std::string &field_name) const;                                                  \
+        template u32 shamrock::patch::PatchDataLayerLayout::get_field_idx<a>(                      \
+            const std::string &field_name, u32 nvar) const;
+XMAC_LIST_ENABLED_FIELD
+    #undef X
+#endif

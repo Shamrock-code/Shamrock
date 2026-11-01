@@ -58,28 +58,9 @@ namespace shamalgs::numeric {
 #endif
     }
 
-    template<class T>
-    sycl::buffer<T> scan_inclusive(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
-        return details::inclusive_sum_fallback(q, buf1, len);
-    }
-
-    template<class T>
-    void scan_exclusive_in_place(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
-        buf1 = details::exclusive_sum_atomic_decoupled_v5<T, 256>(q, buf1, len);
-    }
-
-    template<class T>
-    void scan_inclusive_in_place(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
-        buf1 = details::inclusive_sum_fallback(q, buf1, len);
-    }
-
     template sycl::buffer<u32> scan_exclusive(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
     template sham::DeviceBuffer<u32> scan_exclusive(
         sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<u32> &buf1, u32 len);
-    template sycl::buffer<u32> scan_inclusive(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
-
-    template void scan_exclusive_in_place(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
-    template void scan_inclusive_in_place(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
     std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact(
         sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len) {

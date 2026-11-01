@@ -105,7 +105,7 @@ namespace shamalgs::collective {
             std::unique_ptr<SerializeHelper> serializer      = {};
             std::unique_ptr<sham::DeviceBuffer<u8>> send_buf = {};
 
-            void allocate_serializer(std::shared_ptr<sham::DeviceScheduler> dev_sched) {
+            void allocate_serializer(const std::shared_ptr<sham::DeviceScheduler> &dev_sched) {
                 serializer = std::make_unique<SerializeHelper>(dev_sched);
                 serializer->allocate(sz);
             }

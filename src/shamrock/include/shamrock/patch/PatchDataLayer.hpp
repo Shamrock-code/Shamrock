@@ -79,19 +79,15 @@ namespace shamrock::patch {
             init_fields();
         }
 
-        inline PatchDataLayer(const PatchDataLayer &other) : pdl_ptr(other.get_layout_ptr()) {
-
-            NamedStackEntry stack_loc{"PatchDataLayer::copy_constructor", true};
-
-            for (auto &field_var : other.fields) {
-
-                field_var.visit([&](auto &field) {
-                    using base_t =
-                        typename std::remove_reference<decltype(field)>::type::Field_type;
-                    fields.emplace_back(PatchDataField<base_t>(field));
-                });
-            };
-        }
+        /**
+         * @brief PatchDataLayer copy constructor
+         *
+         * Defined out of line: visiting every FieldVariant alternative instantiates the copy
+         * of all PatchDataField types, which is costly to compile in every includer.
+         *
+         * @param other
+         */
+        PatchDataLayer(const PatchDataLayer &other);
 
         /**
          * @brief PatchDataLayer move constructor
@@ -436,8 +432,7 @@ namespace shamrock::patch {
         void override_patch_field(std::string field_name, std::vector<T> &vec) {
             u32 len              = vec.size();
             PatchDataField<T> &f = get_field<T>(pdl().get_field_idx<T>(field_name));
-            sycl::buffer<T> buf(vec.data(), len);
-            f.override(buf, len);
+            f.override(vec, len);
         }
 
         /**
@@ -513,20 +508,6 @@ namespace shamrock::patch {
                 vmin,
                 vmax);
         };
-
-        // auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
-        //     return main_field.get_elements_with_range(
-        //         [&](T val, T vmin, T vmax) {
-        //             if (shambase::VectorProperties<T>::dimension == 3) {
-        //                 return shammath::is_in_half_open(val, vmin, vmax);
-        //             } else {
-        //                 throw shambase::make_except_with_loc<std::runtime_error>(
-        //                     "dimension != 3 is not handled");
-        //             }
-        //         },
-        //         vmin,
-        //         vmax);
-        // };
 
         std::vector<u32> idx_lst = get_vec_idx(bmin, bmax);
 

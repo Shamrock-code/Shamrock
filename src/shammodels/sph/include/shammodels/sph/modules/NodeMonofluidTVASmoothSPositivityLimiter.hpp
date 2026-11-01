@@ -91,12 +91,6 @@ namespace shammodels::sph::modules {
         };
 
         inline virtual std::string _impl_get_tex() const {
-
-            auto part_counts = get_ro_edge_base(0).get_tex_symbol();
-            auto s_j         = get_ro_edge_base(1).get_tex_symbol();
-            auto Ttilde_sj   = get_ro_edge_base(2).get_tex_symbol();
-            auto ds_j_dt     = get_rw_edge_base(0).get_tex_symbol();
-
             std::string tex = R"tex(
                 NodeMonofluidTVASmoothSPositivityLimiter
 
@@ -118,10 +112,8 @@ namespace shammodels::sph::modules {
                 $a \in [0,{part_counts})$, $j \in [0,{ndust})$.
             )tex";
 
-            shambase::replace_all(tex, "{part_counts}", part_counts);
-            shambase::replace_all(tex, "{s_j}", s_j);
-            shambase::replace_all(tex, "{Ttilde_sj}", Ttilde_sj);
-            shambase::replace_all(tex, "{ds_j_dt}", ds_j_dt);
+            replace_edges_tex_symbols(tex);
+
             shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
 
             return tex;

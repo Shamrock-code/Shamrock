@@ -84,29 +84,21 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
     std::string NodeComputeCoordinates<Tvec, TgridVec>::_impl_get_tex() const {
-
-        auto block_count = get_ro_edge_base(0).get_tex_symbol();
-        auto block_min   = get_ro_edge_base(1).get_tex_symbol();
-        auto block_max   = get_ro_edge_base(2).get_tex_symbol();
-        auto cell_coord  = get_rw_edge_base(0).get_tex_symbol();
-
         std::string tex = R"tex(
             Compute cell coordinates:
 
             \begin{align}
-            s_i &= \mathbf{e}_x \cdot ({block_max}_i - {block_min}_i) \chi \\
-            {cell_coord}_i &= \frac{s_i}{2} + {block_min}_i  \chi + \delta_{i \mod 8} \chi
-            i &\in [0,{block_count} \cdot {block_nside}^3)\\
+            s_i &= \mathbf{e}_x \cdot ({spans_block_max}_i - {spans_block_min}_i) \chi \\
+            {spans_coordinates}_i &= \frac{s_i}{2} + {spans_block_min}_i  \chi + \delta_{i \mod 8} \chi
+            i &\in [0,{sizes} \cdot {block_nside}^3)\\
             \chi &= {grid_coord_to_pos_fact} / block_{\rm nside} \\
              \delta_{i \mod 8} &= \text{local cell offset within block} \\
             block_{\rm nside} &= {block_nside}
             \end{align}
         )tex";
 
-        shambase::replace_all(tex, "{block_count}", block_count);
-        shambase::replace_all(tex, "{block_min}", block_min);
-        shambase::replace_all(tex, "{block_max}", block_max);
-        shambase::replace_all(tex, "{cell_coord}", cell_coord);
+        replace_edges_tex_symbols(tex);
+
         shambase::replace_all(tex, "{block_nside}", sham::format("{}", block_nside));
         shambase::replace_all(
             tex, "{grid_coord_to_pos_fact}", sham::format("{}", grid_coord_to_pos_fact));

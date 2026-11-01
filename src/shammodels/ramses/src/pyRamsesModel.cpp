@@ -63,6 +63,30 @@ namespace shammodels::basegodunov {
                     self.set_eos_gamma(eos_gamma);
                 })
             .def(
+                "set_eos_adiabatic",
+                [](TConfig &self, Tscal gamma) {
+                    self.eos_config.set_adiabatic(gamma);
+                })
+            .def(
+                "set_eos_barotropic",
+                [](TConfig &self, Tscal rho_crit, Tscal cs0, Tscal gamma) {
+                    self.eos_config.set_barotropic(rho_crit, cs0, gamma);
+                },
+                py::kw_only(),
+                py::arg("rho_crit"),
+                py::arg("cs0"),
+                py::arg("gamma"))
+            .def(
+                "set_eos_reset_barotropic",
+                [](TConfig &self, Tscal rho_crit, Tscal cs0, Tscal gamma_baro, Tscal gamma) {
+                    self.eos_config.set_reset_barotropic(rho_crit, cs0, gamma_baro, gamma);
+                },
+                py::kw_only(),
+                py::arg("rho_crit"),
+                py::arg("cs0"),
+                py::arg("gamma_baro"),
+                py::arg("gamma"))
+            .def(
                 "set_riemann_solver_hll",
                 [](TConfig &self) {
                     self.riemann_config = HLL;
@@ -251,7 +275,14 @@ namespace shammodels::basegodunov {
                 "set_gravity_mode_cg",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = CG;
-                })
+                },
+                R"==(
+    Enable self-gravity, with the Jacobi preconditioned conjugate gradient Poisson solver.
+
+    Self-gravity is applied as an external force and requires the trapezoidal coupling
+    (``cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)``). The gravitational constant
+    is the one of the unit system (``cfg.set_units``).
+)==")
             .def(
                 "set_gravity_mode_pcg",
                 [](TConfig &self) {
@@ -261,7 +292,77 @@ namespace shammodels::basegodunov {
                 "set_gravity_mode_bicgstab",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = BICGSTAB;
-                })
+                },
+                R"==(
+    Enable self-gravity, with the BiCGSTAB Poisson solver.
+
+    Self-gravity is applied as an external force and requires the trapezoidal coupling
+    (``cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)``). The gravitational constant
+    is the one of the unit system (``cfg.set_units``).
+)==")
+            .def(
+                "set_units",
+                &TConfig::set_units,
+                py::arg("units"),
+                R"==(
+    Set the unit system of the simulation (SI if not set).
+
+    It sets the gravitational constant used by self-gravity.
+)==")
+            .def(
+                "set_self_gravity_Niter_max",
+                [](TConfig &self, u32 Niter) {
+                    self.gravity_config.Niter_max = Niter;
+                },
+                py::arg("Niter"),
+                R"==(
+    Set the maximum number of iterations of the self-gravity Poisson solver.
+)==")
+            .def(
+                "set_self_gravity_tol",
+                [](TConfig &self, Tscal tol) {
+                    self.gravity_config.tol = tol;
+                },
+                py::arg("tol"),
+                R"==(
+    Set the convergence tolerance of the self-gravity Poisson solver.
+
+    The solver stops when the L2 norm of the residual is below tol relative to the
+    one of the right-hand side.
+)==")
+            .def(
+                "set_self_gravity_happy_breakdown_tol",
+                [](TConfig &self, Tscal tol) {
+                    self.gravity_config.tol_hp_bk = tol;
+                },
+                py::arg("tol"),
+                R"==(
+    Set the tolerance of the BiCGSTAB lucky breakdown test.
+
+    BiCGSTAB restarts (shadow residual and search direction reset to the residual)
+    when |<r_k, r'_0>| < tol |r_k| |r'_0|.
+)==")
+            .def(
+                "add_ext_force_constant_gravity",
+                [](TConfig &self, Tvec g) {
+                    self.ext_force_config.add_constant_gravity(g);
+                },
+                py::arg("g"))
+            .def(
+                "set_ext_force_coupling",
+                [](TConfig &self, ExtForceCoupling mode) {
+                    self.ext_force_config.set_coupling(mode);
+                },
+                py::arg("mode"),
+                R"==(
+    Set the time quadrature coupling the external forces to the solver.
+
+    Parameters
+    ----------
+    mode : ExtForceCoupling
+        Either ``ExtForceCoupling.Midpoint`` (the default) or ``ExtForceCoupling.Trapezoidal``,
+        as obtained from ``from shamrock.model_ramses import ExtForceCoupling``.
+)==")
             .def("set_npscal_gas", [](TConfig &self, u32 npscal_gas) {
                 self.npscal_gas_config.npscal_gas = npscal_gas;
             });
@@ -291,6 +392,28 @@ namespace shammodels::basegodunov {
                 py::kw_only(),
                 py::arg("niter_max") = -1)
             .def("timestep", &T::timestep)
+            .def("solver_logs_last_rate", &T::solver_logs_last_rate)
+            .def("solver_logs_last_obj_count", &T::solver_logs_last_obj_count)
+            .def(
+                "solver_logs_last_system_metrics",
+                [](T &self) {
+                    auto system_metrics = self.solver.solve_logs.get_last_system_metrics();
+                    py::dict ret;
+                    ret["duration"] = system_metrics.wall_time;
+                    if (system_metrics.rank_energy_consummed.has_value()) {
+                        ret["rank_energy_consummed"] = system_metrics.rank_energy_consummed.value();
+                    }
+                    if (system_metrics.gpu_energy_consummed.has_value()) {
+                        ret["gpu_energy_consummed"] = system_metrics.gpu_energy_consummed.value();
+                    }
+                    if (system_metrics.cpu_energy_consummed.has_value()) {
+                        ret["cpu_energy_consummed"] = system_metrics.cpu_energy_consummed.value();
+                    }
+                    if (system_metrics.dram_energy_consummed.has_value()) {
+                        ret["dram_energy_consummed"] = system_metrics.dram_energy_consummed.value();
+                    }
+                    return ret;
+                })
             .def(
                 "set_field_value_lambda_f64",
                 [](T &self,
@@ -356,6 +479,17 @@ namespace shammodels::basegodunov {
                         x_max);
                 })
             .def(
+                "add_timestep_callback",
+                [](T &self,
+                   std::optional<std::function<void(void)>> step_begin_callback,
+                   std::optional<std::function<void(void)>> step_end_callback) {
+                    self.solver.timestep_callbacks.push_back(
+                        {std::move(step_begin_callback), std::move(step_end_callback)});
+                },
+                py::kw_only(),
+                py::arg("step_begin") = std::nullopt,
+                py::arg("step_end")   = std::nullopt)
+            .def(
                 "get_solver_tex",
                 [](T &self) {
                     return shambase::get_check_ref(self.solver.storage.solver_sequence).get_tex();
@@ -412,6 +546,43 @@ ON_PYTHON_INIT {
 
     std::string base_name = "RamsesModel";
     using namespace shammodels::basegodunov;
+
+    py::enum_<ExtForceCoupling>(
+        mramses,
+        "ExtForceCoupling",
+        R"==(
+    Time quadrature used to couple the external forces source term to the solver.
+    Both modes are second order in time, and give the same momentum update for a constant
+    acceleration.
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import ExtForceCoupling
+    >>> cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)
+)==")
+        .value(
+            "Midpoint",
+            ExtForceCoupling::Midpoint,
+            R"==(
+    Explicit midpoint rule. This is the default.
+
+    The forces are evaluated once, at :math:`t^{n+1/2}`, from the time centered state (e.g.
+    :math:`\rho^{n+1/2} = \rho^n + \frac{\Delta t}{2} \partial_t \rho`, and the momentum for a
+    velocity dependent force), and applied over the whole time step.
+)==")
+        .value(
+            "Trapezoidal",
+            ExtForceCoupling::Trapezoidal,
+            R"==(
+    Trapezoidal rule (time centred source term, as in RAMSES).
+
+    The forces are evaluated at :math:`t^n` and :math:`t^{n+1}`, each with the state at the same
+    time, and the average of the two source terms is applied over the whole time step:
+    :math:`\Delta (\rho \mathbf{v}) = \Delta t \, \frac{1}{2}
+    (\rho^n \mathbf{a}^n + \rho^{n+1} \mathbf{a}^{n+1})`.
+    A force evaluated at :math:`t^{n+1}` may only depend on the density there (e.g.
+    self-gravity), since it is known before the kick.
+)==");
 
     add_instance<f64_3, i64_3>(
         mramses, base_name + "_f64_3_i64_3_SolverConfig", base_name + "_f64_3_i64_3_Model");

@@ -288,10 +288,13 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
     }
 
     {
-        if (shamalgs::reduction::has_nan(
-                queue,
-                *buf_cell_int_rad_buf,
-                tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count)) {
+        u32 int_rad_cnt
+            = tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count;
+
+        sham::DeviceBuffer<coord_t> int_rad_dev_buf(
+            *buf_cell_int_rad_buf, int_rad_cnt, shamsys::instance::get_compute_scheduler_ptr());
+
+        if (shamalgs::reduction::has_nan(int_rad_dev_buf, int_rad_cnt)) {
             shamalgs::memory::print_buf(
                 *buf_cell_int_rad_buf,
                 tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count,

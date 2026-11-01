@@ -133,13 +133,6 @@ class PatchDataField {
         check_nvar();
     }
 
-    inline PatchDataField(sycl::buffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
-        : field_name(name), nvar(nvar), buf(std::forward<sycl::buffer<T>>(moved_buf),
-                                            obj_cnt * nvar,
-                                            shamsys::instance::get_compute_scheduler_ptr()) {
-        check_nvar();
-    }
-
     PatchDataField &operator=(const PatchDataField &other) = delete;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -428,27 +421,6 @@ class PatchDataField {
         }
     }
 
-    template<class Lambdacd>
-    [[deprecated("please use one of the PatchDataField::get_ids_..._where functions instead")]]
-    std::vector<u32> get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax);
-
-    /**
-     * @brief Get the indices of the elements in half open interval
-     *
-     * @tparam LambdaCd
-     * @param vmin
-     * @param vmax
-     * @return std::tuple<std::optional<sycl::buffer<u32>>, u32>
-     */
-    template<class LambdaCd>
-    [[deprecated("please use one of the PatchDataField::get_ids_..._where functions instead")]]
-    std::tuple<std::optional<sycl::buffer<u32>>, u32> get_elements_in_half_open(T vmin, T vmax);
-
-    template<class Lambdacd>
-    [[deprecated("please use one of the PatchDataField::get_ids_..._where functions instead")]]
-    std::unique_ptr<sycl::buffer<u32>> get_elements_with_range_buf(
-        Lambdacd &&cd_true, T vmin, T vmax);
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -476,12 +448,6 @@ class PatchDataField {
     void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield);
     void append_subset_to(
         const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const;
-
-    inline PatchDataField make_new_from_subset(sycl::buffer<u32> &idxs_buf, u32 sz) {
-        PatchDataField pfield(field_name, nvar);
-        append_subset_to(idxs_buf, sz, pfield);
-        return pfield;
-    }
 
     inline PatchDataField make_new_from_subset(sham::DeviceBuffer<u32> &idxs_buf, u32 sz) {
         PatchDataField pfield(field_name, nvar);
@@ -652,67 +618,6 @@ template<class T>
 inline void PatchDataField<T>::override(const T val) {
     StackEntry stack_loc{};
     buf.fill(val);
-}
-
-template<class T>
-template<class Lambdacd>
-inline std::vector<u32> PatchDataField<T>::get_elements_with_range(
-    Lambdacd &&cd_true, T vmin, T vmax) {
-    StackEntry stack_loc{};
-    std::vector<u32> idxs;
-
-    /* Possible GPU version
-    sycl::buffer<u32> valid {size()};
-
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-        sycl::accessor acc {shambase::get_check_ref(get_buf()), cgh, sycl::read_only};
-        sycl::accessor bools {valid, cgh,sycl::write_only,sycl::no_init};
-
-        shambase::parallel_for(cgh,size(),"get_element_with_range",[=](u32 i){
-            bools[i] = (cd_true(acc[i], vmin, vmax)) ? 1 : 0;
-        });
-
-    });
-
-    std::tuple<std::optional<sycl::buffer<u32>>, u32> ret =
-        shamalgs::numeric::stream_compact(shamsys::instance::get_compute_queue(), valid, size());
-
-    std::vector<u32> idxs;
-
-    {
-        if(std::get<0>(ret).has_value()){
-            idxs = shamalgs::memory::buf_to_vec(*std::get<0>(ret), std::get<1>(ret));
-        }
-    }
-    */
-
-    if (nvar != 1) {
-        shambase::throw_unimplemented();
-    }
-
-    {
-        auto acc = buf.copy_to_stdvec();
-
-        for (u32 i = 0; i < get_val_cnt(); i++) {
-            if (cd_true(acc[i], vmin, vmax)) {
-                idxs.push_back(i);
-            }
-        }
-    }
-
-    return idxs;
-}
-
-template<class T>
-template<class Lambdacd>
-inline std::unique_ptr<sycl::buffer<u32>> PatchDataField<T>::get_elements_with_range_buf(
-    Lambdacd &&cd_true, T vmin, T vmax) {
-    std::vector<u32> idxs = get_elements_with_range(std::forward<Lambdacd>(cd_true), vmin, vmax);
-    if (idxs.empty()) {
-        return {};
-    } else {
-        return std::make_unique<sycl::buffer<u32>>(shamalgs::memory::vec_to_buf(idxs));
-    }
 }
 
 class PatchDataRangeCheckError : public std::exception {

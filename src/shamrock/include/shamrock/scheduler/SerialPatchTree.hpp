@@ -169,6 +169,12 @@ class SerialPatchTree {
      */
     inline u32 get_element_count() { return serial_tree.size(); }
 
+    /**
+     * @brief accessor to the ids of the roots in the serial tree, in the order of
+     * PatchTree::roots_id
+     */
+    inline const std::vector<u64> &get_roots_ids() const { return roots_ids; }
+
     inline static SerialPatchTree<fp_prec_vec> build(PatchScheduler &sched) {
         return SerialPatchTree<fp_prec_vec>(
             sched.patch_tree, sched.get_patch_transform<fp_prec_vec>());
@@ -178,12 +184,15 @@ class SerialPatchTree {
     inline shamrock::patch::PatchtreeField<T> make_patch_tree_field(
         PatchScheduler &sched,
         sycl::queue &queue,
-        shamrock::patch::PatchField<T> pfield,
+        const shamrock::patch::PatchField<T> &pfield,
         Func &&reducer) {
+        __shamrock_stack_entry();
+
         shamrock::patch::PatchtreeField<T> ptfield;
         ptfield.allocate(get_element_count());
 
         {
+            __shamrock_stack_entry();
             sycl::host_accessor lpid{
                 shambase::get_check_ref(linked_patch_ids_buf), sycl::read_only};
             sycl::host_accessor tree_field{
@@ -191,6 +200,8 @@ class SerialPatchTree {
 
             // init reduction
             std::unordered_map<u64, u64> &idp_to_gid = sched.patch_list.id_patch_to_global_idx;
+
+#pragma omp parallel for
             for (u64 idx = 0; idx < get_element_count(); idx++) {
                 tree_field[idx] = (lpid[idx] != u64_max) ? pfield.get(lpid[idx]) : T();
             }
@@ -246,32 +257,45 @@ class SerialPatchTree {
     sycl::buffer<u64> compute_patch_owner(
         sham::DeviceScheduler_ptr dev_sched,
         sham::DeviceBuffer<fp_prec_vec> &position_buffer,
-        u32 len);
+        u32 len,
+        u64 current_patch_id          = u64_max,
+        fp_prec_vec current_patch_min = {},
+        fp_prec_vec current_patch_max = {});
 };
 
 template<class vec>
 sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
-    sham::DeviceScheduler_ptr dev_sched, sham::DeviceBuffer<vec> &position_buffer, u32 len) {
+    sham::DeviceScheduler_ptr dev_sched,
+    sham::DeviceBuffer<vec> &position_buffer,
+    u32 len,
+    u64 current_patch_id,
+    vec current_patch_min,
+    vec current_patch_max) {
     sycl::buffer<u64> new_owned_id(len);
 
     using namespace shamrock::patch;
 
-    sycl::buffer<u64> roots = shamalgs::vec_to_buf(roots_ids);
+    sham::DeviceBuffer<u64> roots(roots_ids.size(), dev_sched);
+    roots.copy_from_stdvec(roots_ids);
 
     auto &q = dev_sched->get_queue();
 
     sham::EventList depends_list;
-    auto pos = position_buffer.get_read_access(depends_list);
+    auto pos      = position_buffer.get_read_access(depends_list);
+    auto roots_id = roots.get_read_access(depends_list);
 
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         sycl::accessor tnode{shambase::get_check_ref(serial_tree_buf), cgh, sycl::read_only};
         sycl::accessor linked_node_id{
             shambase::get_check_ref(linked_patch_ids_buf), cgh, sycl::read_only};
-        sycl::accessor roots_id{roots, cgh, sycl::read_only};
         sycl::accessor new_id{new_owned_id, cgh, sycl::write_only, sycl::no_init};
 
-        u32 root_cnt = roots_id.size();
+        u32 root_cnt = roots_ids.size();
         auto max_lev = get_level_count();
+
+        u64 cur_pid     = current_patch_id;
+        vec cur_box_min = current_patch_min;
+        vec cur_box_max = current_patch_max;
 
         using PtNode = shamrock::scheduler::SerialPatchNode<vec>;
 
@@ -279,6 +303,12 @@ sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
             u32 i = (u32) item.get_id(0);
 
             auto xyz = pos[i];
+
+            // the object is still in its current patch, skip the tree traversal
+            if (cur_pid != u64_max && Patch::is_in_patch_converted(xyz, cur_box_min, cur_box_max)) {
+                new_id[i] = cur_pid;
+                return;
+            }
 
             u64 current_node = 0;
 
@@ -361,6 +391,7 @@ sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
     });
 
     position_buffer.complete_event_state(e);
+    roots.complete_event_state(e);
 
     return new_owned_id;
 }

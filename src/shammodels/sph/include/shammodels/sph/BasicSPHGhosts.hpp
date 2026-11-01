@@ -99,13 +99,13 @@ namespace shammodels::sph {
          * @brief Find interfaces and their metadata
          *
          * @param sptree the serial patch tree
-         * @param int_range_max_tree the smoothing length maximas hierachy
+         * @param int_range_max_tree the smoothing length maximas hierachy (consumed)
          * @param int_range_max the smoothing length maximas hierachy
          * @return GeneratorMap the generator map containing the metadata to build interfaces
          */
         GeneratorMap find_interfaces(
             SerialPatchTree<vec> &sptree,
-            shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
+            shamrock::patch::PatchtreeField<flt> &&int_range_max_tree,
             shamrock::patch::PatchField<flt> &int_range_max);
 
         /**
@@ -125,18 +125,18 @@ namespace shammodels::sph {
          * @brief utility to generate both the metadata and index tables
          *
          * @param sptree
-         * @param int_range_max_tree
+         * @param int_range_max_tree (consumed)
          * @param int_range_max
          * @return shambase::DistributedDataShared<InterfaceIdTable>
          */
         CacheMap make_interface_cache(
             SerialPatchTree<vec> &sptree,
-            shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
+            shamrock::patch::PatchtreeField<flt> &&int_range_max_tree,
             shamrock::patch::PatchField<flt> &int_range_max) {
             StackEntry stack_loc{};
 
             return gen_id_table_interfaces(
-                find_interfaces(sptree, int_range_max_tree, int_range_max));
+                find_interfaces(sptree, std::move(int_range_max_tree), int_range_max));
         }
 
         /**

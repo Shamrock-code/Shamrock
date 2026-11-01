@@ -41,10 +41,7 @@ namespace shammodels::sph::modules {
         SinkParticlesUpdate(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void predictor_step(Tscal dt);
         void compute_sph_forces();
-        void compute_ext_forces();
-        void corrector_step(Tscal dt);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

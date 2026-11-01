@@ -27,6 +27,7 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include <numeric>
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -42,7 +43,8 @@ std::string shammodels::report_perf_timestep(
     size_t max_mem_device,
     size_t max_mem_host,
     shamsys::SystemMetrics system_metrics,
-    bool report_power_usage) {
+    bool report_power_usage,
+    std::optional<u64> nobj_ghost) {
 
     __shamrock_stack_entry();
 
@@ -55,6 +57,11 @@ std::string shammodels::report_perf_timestep(
     std::vector<f64> alloc_time_host_all_ranks   = shamalgs::collective::gather(alloc_time_host);
     std::vector<size_t> max_mem_device_all_ranks = shamalgs::collective::gather(max_mem_device);
     std::vector<size_t> max_mem_host_all_ranks   = shamalgs::collective::gather(max_mem_host);
+
+    // all ranks call the same solver, so either all or none of them report ghost counts
+    bool report_ghost = nobj_ghost.has_value();
+    std::vector<u64> nobj_ghost_all_ranks
+        = (report_ghost) ? shamalgs::collective::gather(*nobj_ghost) : std::vector<u64>{};
 
     auto rank_metrics = (report_power_usage) ? shamsys::gather_rank_metrics(system_metrics)
                                              : std::vector<shamsys::SystemMetrics>{};
@@ -77,6 +84,8 @@ std::string shammodels::report_perf_timestep(
         = std::accumulate(max_mem_device_all_ranks.begin(), max_mem_device_all_ranks.end(), 0_u64);
     size_t sum_mem_host_total
         = std::accumulate(max_mem_host_all_ranks.begin(), max_mem_host_all_ranks.end(), 0_u64);
+    u64 nobj_ghost_total
+        = std::accumulate(nobj_ghost_all_ranks.begin(), nobj_ghost_all_ranks.end(), 0_u64);
 
     shamsys::SystemMetrics aggregated_metrics = shamsys::aggregate_rank_metrics(rank_metrics);
 
@@ -89,7 +98,15 @@ std::string shammodels::report_perf_timestep(
         formatted_aggregated_metrics = shamsys::format_system_metrics(aggregated_metrics);
     }
 
+    // ghost count followed by the ratio ghost count / object count
+    auto format_ghost_ratio = [](u64 ghost, u64 nobj) {
+        return sham::format("{} (x{:.3f})", ghost, f64(ghost) / f64(nobj));
+    };
+
     u32 cols_count = 9_u32;
+    if (report_ghost) {
+        cols_count += 1_u32;
+    }
     if (report_power_usage) {
         if (shamsys::support_rank_energy_consummed()) {
             cols_count += 1_u32;
@@ -119,6 +136,9 @@ std::string shammodels::report_perf_timestep(
            "alloc d% h%",
            "mem (max) d",
            "mem (max) h"};
+    if (report_ghost) {
+        header.insert(header.begin() + 3, "Nghost");
+    }
     if (report_power_usage) {
         if (shamsys::support_rank_energy_consummed()) {
             header.push_back("power");
@@ -152,6 +172,14 @@ std::string shammodels::report_perf_timestep(
             sham::format("{}", shambase::readable_sizeof(max_mem_device_all_ranks[i])),
             sham::format("{}", shambase::readable_sizeof(max_mem_host_all_ranks[i])),
         };
+        if (report_ghost) {
+            // with a single rank there is no total row, so show the ratio here
+            row.insert(
+                row.begin() + 3,
+                (shamcomm::world_size() > 1)
+                    ? sham::format("{:}", nobj_ghost_all_ranks[i])
+                    : format_ghost_ratio(nobj_ghost_all_ranks[i], nobj_all_ranks[i]));
+        }
         if (report_power_usage) {
             if (shamsys::support_rank_energy_consummed()) {
                 row.push_back(formatted_rank_metrics[i].rank_power.value_or("N/A"));
@@ -171,6 +199,9 @@ std::string shammodels::report_perf_timestep(
     if (shamcomm::world_size() > 1) {
         std::vector<std::string> ruled
             = {"", "<sum N/max t>", "<sum>", "<sum>", "<max>", "<avg>", "<avg>", "<sum>", "<sum>"};
+        if (report_ghost) {
+            ruled.insert(ruled.begin() + 3, "<sum (x ratio)>");
+        }
         if (report_power_usage) {
             if (shamsys::support_rank_energy_consummed()) {
                 ruled.push_back("<sum>");
@@ -200,6 +231,9 @@ std::string shammodels::report_perf_timestep(
             sham::format("{}", shambase::readable_sizeof(sum_mem_device_total)),
             sham::format("{}", shambase::readable_sizeof(sum_mem_host_total)),
         };
+        if (report_ghost) {
+            all_row.insert(all_row.begin() + 3, format_ghost_ratio(nobj_ghost_total, obj_total));
+        }
         if (report_power_usage) {
             if (shamsys::support_rank_energy_consummed()) {
                 all_row.push_back(formatted_aggregated_metrics.rank_power.value_or("N/A"));

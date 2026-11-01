@@ -33,6 +33,7 @@ AUTH_BLACKLIST = [
     "autofix-ci[bot]",
     "gemini-code-assist[bot]",
     "github-actions[bot]",
+    "mergify[bot]",
     "pre-commit-ci[bot]",
 ]
 

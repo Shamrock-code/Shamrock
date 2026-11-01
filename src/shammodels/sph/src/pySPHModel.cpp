@@ -24,6 +24,7 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/modules/ComputeGravWave.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
@@ -39,7 +40,9 @@
 #include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shammodels/sph/sink_edges_helper.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include <experimental/mdspan>
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pytypes.h>
@@ -61,7 +64,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
 
-    using custom_getter_t = std::function<pybind11::array_t<f64>(size_t, pybind11::dict &)>;
+    using custom_getter_t
+        = std::function<pybind11::array_t<f64>(size_t, shamrock::PatchDataLazyGetter &)>;
 
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
@@ -82,7 +86,27 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("split_load_value"),
             py::arg("merge_load_value"))
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
-        .def("set_two_stage_search", &TConfig::set_two_stage_search)
+        .def(
+            "set_neigh_cache_strategy",
+            &TConfig::set_neigh_cache_strategy,
+            R"==(
+    Set the strategy used to build the neighbours cache.
+
+    Parameters
+    ----------
+    strategy : NeighCacheStrategy
+        Either ``NeighCacheStrategy.SingleStage`` or ``NeighCacheStrategy.TwoStage``
+        (the default), as obtained from ``from shamrock import NeighCacheStrategy``.
+)==")
+        .def(
+            "set_two_stage_search",
+            &TConfig::set_two_stage_search,
+            R"==(
+    Set the neighbours cache strategy from a boolean.
+
+    .. deprecated::
+        Use :py:meth:`set_neigh_cache_strategy` instead.
+)==")
         .def("set_show_neigh_stats", &TConfig::set_show_neigh_stats)
         .def(
             "set_max_neigh_cache_size",
@@ -97,10 +121,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "set_smoothing_length_density_based_neigh_lim",
             &TConfig::set_smoothing_length_density_based_neigh_lim)
+        .def(
+            "set_smoothing_length_density_based_bisecting_nr",
+            &TConfig::set_smoothing_length_density_based_bisecting_nr)
         .def("set_enable_particle_reordering", &TConfig::set_enable_particle_reordering)
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_show_ghost_zone_graph", &TConfig::set_show_ghost_zone_graph)
+        .def("set_show_ghost_stats", &TConfig::set_show_ghost_stats)
         .def("use_luminosity", &TConfig::use_luminosity)
+        .def("compute_GW", &TConfig::use_GW)
         .def("set_save_dt_to_fields", &TConfig::set_save_dt_to_fields)
         .def("should_save_dt_to_fields", &TConfig::should_save_dt_to_fields)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
@@ -195,12 +224,23 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("beta_AV"))
         .def(
             "set_IdealMHD",
-            [](TConfig &self, Tscal sigma_mhd, Tscal sigma_u) {
-                self.set_IdealMHD({sigma_mhd, sigma_u});
+            [](TConfig &self, Tscal sigma_mhd, Tscal alpha_B) {
+                self.set_ideal_mhd({sigma_mhd, alpha_B});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
-            py::arg("sigma_u"))
+            py::arg("alpha_B") = 1.0)
+        .def(
+            "set_NonIdealMHD",
+            [](TConfig &self, Tscal sigma_mhd, Tscal etaO, Tscal etaH, Tscal etaAD, Tscal alpha_B) {
+                self.set_non_ideal_mhd({sigma_mhd, alpha_B, etaO, etaH, etaAD});
+            },
+            py::kw_only(),
+            py::arg("sigma_mhd"),
+            py::arg("etaO"),
+            py::arg("etaH"),
+            py::arg("etaAD"),
+            py::arg("alpha_B") = 1.0)
         .def(
             "set_self_gravity_none",
             [](TConfig &self) {
@@ -276,7 +316,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal cfl_density_threshold,
                bool ensure_s_j_positivity,
                bool smooth_s_positivity_limiter,
-               bool dust_corrected_av) {
+               bool dust_corrected_av,
+               std::optional<Tscal> clamp_dust_frac) {
                 self.dust_config.set_monofluid_tva(
                     nvar,
                     pure_diffusion_mode,
@@ -285,7 +326,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     cfl_density_threshold,
                     ensure_s_j_positivity,
                     smooth_s_positivity_limiter,
-                    dust_corrected_av);
+                    dust_corrected_av,
+                    clamp_dust_frac);
             },
             py::kw_only(),
             py::arg("nvar"),
@@ -295,7 +337,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("cfl_density_threshold")       = shambase::get_epsilon<Tscal>(),
             py::arg("ensure_s_j_positivity")       = true,
             py::arg("smooth_s_positivity_limiter") = false,
-            py::arg("dust_corrected_av")           = false)
+            py::arg("dust_corrected_av")           = false,
+            py::arg("clamp_dust_frac")             = std::nullopt)
         .def(
             "set_dust_mode_monofluid_complete",
             [](TConfig &self, u32 ndust) {
@@ -323,23 +366,119 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("grain_sizes"),
             py::arg("grain_densities"))
         .def(
+            "set_dust_evol_coala_coag",
+            [](TConfig &self,
+               Tscal rhodust_eps,
+               Tscal vfrag_threshold,
+               std::vector<Tscal> massgrid,
+               py::array_t<Tscal> tabflux_coag,
+               Tscal tau_frac) {
+                if (massgrid.size() == 0) {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "massgrid must not be empty");
+                }
+
+                u32 nbins = massgrid.size() - 1;
+
+                // tabflux_coag is a 3D array of shape (nbins ** 3)
+
+                // assert rank is 3
+                if (tabflux_coag.ndim() != 3) {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "tabflux_coag must be a 3D array, got ndim="
+                        + std::to_string(tabflux_coag.ndim()));
+                }
+
+                // assert shape is (nbins, nbins, nbins)
+                if (tabflux_coag.shape(0) != nbins || tabflux_coag.shape(1) != nbins
+                    || tabflux_coag.shape(2) != nbins) {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "tabflux_coag must be a 3D array of shape (nbins, nbins, nbins) with "
+                        "nbins="
+                        + std::to_string(nbins) + " (massgrid.size() - 1), got shape ("
+                        + std::to_string(tabflux_coag.shape(0)) + ", "
+                        + std::to_string(tabflux_coag.shape(1)) + ", "
+                        + std::to_string(tabflux_coag.shape(2)) + ")");
+                }
+
+                std::vector<Tscal> tabflux_coag_vec(nbins * nbins * nbins);
+
+                using mdspan_rank_3 = std::mdspan<Tscal, std::dextents<u32, 3>>;
+                mdspan_rank_3 tabflux_coag_mdspan(tabflux_coag_vec.data(), nbins, nbins, nbins);
+
+                for (u32 i = 0; i < nbins; i++) {
+                    for (u32 j = 0; j < nbins; j++) {
+                        for (u32 k = 0; k < nbins; k++) {
+                            tabflux_coag_mdspan(i, j, k) = tabflux_coag.mutable_at(i, j, k);
+                        }
+                    }
+                }
+
+                self.dust_config.set_dust_evol_coala(
+                    {.rhodust_eps     = rhodust_eps,
+                     .tau_frac        = tau_frac,
+                     .vfrag_threshold = vfrag_threshold,
+                     .massgrid        = massgrid,
+                     .tabflux_coag    = tabflux_coag_vec});
+            },
+            py::arg("rhodust_eps"),
+            py::arg("vfrag_threshold"),
+            py::arg("massgrid"),
+            py::arg("tabflux_coag"),
+            py::arg("tau_frac") = Tscal(10),
+            R"pbdoc(
+        Enable the COALA dust coagulation source term.
+
+        Args:
+            rhodust_eps: Dust density floor.
+            vfrag_threshold: Fragmentation velocity threshold, must be positive.
+                In this coagulation-only mode, a pair of dust bins whose
+                differential velocity ``|dv_ij|`` exceeds this value gets
+                ``dv_ij = 0``. This is a crude stand-in for fragmentation
+                ("poor man" fragmentation), not a fragmentation model. Pass
+                ``math.inf`` to disable it.
+            massgrid: Dust mass grid bin edges, of size ``nbins + 1``.
+            tabflux_coag: Tabulated coagulation flux, of shape
+                ``(nbins, nbins, nbins)``.
+            tau_frac: The source term on ``s_j`` is integrated implicitly over
+                ``dt_eff = max(dt, tau_frac * rhodust_eps / |S|)``, that is over at
+                least the time needed to move ``tau_frac * rhodust_eps``. This bounds
+                the rate of an empty bin when ``dt`` is null or tiny (e.g. right after
+                a dust injection). Must be positive.
+        )pbdoc")
+        .def(
             "set_dust_ballabio_ts_limiter",
             [](TConfig &self, bool enabled) {
                 self.dust_config.ballabio_ts_limiter = enabled;
             },
             py::arg("enabled"))
-        .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
+        .def(
+            "add_ext_force_point_mass",
+            [](TConfig &self, Tscal central_mass, Tscal Racc, Tvec central_pos) {
+                self.add_ext_force_point_mass(central_mass, Racc, central_pos);
+            },
+            py::arg("central_mass"),
+            py::arg("Racc"),
+            py::kw_only(),
+            py::arg("central_pos") = Tvec{0, 0, 0})
         .def("add_ext_force_paczynski_wiita", &TConfig::add_ext_force_paczynski_wiita)
         .def(
             "add_ext_force_lense_thirring",
-            [](TConfig &self, Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
-                self.add_ext_force_lense_thirring(central_mass, Racc, a_spin, dir_spin);
+            [](TConfig &self,
+               Tscal central_mass,
+               Tscal Racc,
+               Tscal a_spin,
+               Tvec dir_spin,
+               Tvec central_pos) {
+                self.add_ext_force_lense_thirring(
+                    central_mass, Racc, a_spin, dir_spin, central_pos);
             },
             py::kw_only(),
             py::arg("central_mass"),
             py::arg("Racc"),
             py::arg("a_spin"),
-            py::arg("dir_spin"))
+            py::arg("dir_spin"),
+            py::arg("central_pos") = Tvec{0, 0, 0})
         .def(
             "add_ext_force_shearing_box",
             [](TConfig &self, Tscal Omega_0, Tscal eta, Tscal q) {
@@ -450,13 +589,53 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     py::class_<TSPHSetup>(m, setup_name.c_str())
         .def(
             "make_generator_lattice_hcp",
-            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max, bool discontinuous) {
-                return self.make_generator_lattice_hcp(dr, {box_min, box_max}, discontinuous);
+            [](TSPHSetup &self,
+               Tscal dr,
+               Tvec box_min,
+               Tvec box_max,
+               bool discontinuous,
+               Tscal init_h_factor) {
+                return self.make_generator_lattice_hcp(
+                    dr, {box_min, box_max}, discontinuous, init_h_factor);
             },
             py::arg("dr"),
             py::arg("box_min"),
             py::arg("box_max"),
-            py::arg("discontinuous") = true)
+            py::arg("discontinuous") = true,
+            py::arg("init_h_factor") = modules::GeneratorLatticeHCP<Tvec>::default_init_h_factor,
+            R"==(
+    Generate particles on a HCP lattice of parameter dr (neighbours are 2 dr apart)
+
+    The initial smoothing length is set to init_h_factor * dr. The default 2^(5/6)
+    is the equilibrium smoothing length for hfact = 1 (the smallest hfact of all
+    the SPH kernels), so the initial guess never exceeds the equilibrium value.
+)==")
+        .def(
+            "make_generator_lattice_fcc",
+            [](TSPHSetup &self,
+               Tscal dr,
+               Tvec box_min,
+               Tvec box_max,
+               bool discontinuous,
+               Tscal init_h_factor) {
+                return self.make_generator_lattice_fcc(
+                    dr, {box_min, box_max}, discontinuous, init_h_factor);
+            },
+            py::arg("dr"),
+            py::arg("box_min"),
+            py::arg("box_max"),
+            py::arg("discontinuous") = true,
+            py::arg("init_h_factor") = modules::GeneratorLatticeFCC<Tvec>::default_init_h_factor,
+            R"==(
+    Generate particles on a true FCC lattice (ABC stacking of close-packed layers along z)
+    of parameter dr (neighbours are 2 dr apart)
+
+    The number of layers along z must be a multiple of 3, the number of rows along y even
+
+    The initial smoothing length is set to init_h_factor * dr. The default 2^(5/6)
+    is the equilibrium smoothing length for hfact = 1 (the smallest hfact of all
+    the SPH kernels), so the initial guess never exceeds the equilibrium value.
+)==")
         .def(
             "make_generator_lattice_cubic",
             [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
@@ -804,6 +983,21 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.get_box_dim_fcc_3d(dr, xcnt, ycnt, zcnt);
             })
         .def(
+            "get_box_dim_true_fcc_3d",
+            [](T &self, f64 dr, u32 xcnt, u32 ycnt, u32 zcnt) {
+                return self.get_box_dim_true_fcc_3d(dr, xcnt, ycnt, zcnt);
+            },
+            py::arg("dr"),
+            py::arg("xcnt"),
+            py::arg("ycnt"),
+            py::arg("zcnt"),
+            R"==(
+    Get the dimensions of a periodic box holding a true FCC lattice of xcnt * ycnt * zcnt
+    (see setup.make_generator_lattice_fcc). Unlike get_box_dim_fcc_3d (which actually
+    describes a HCP lattice and is kept for backward compatibility), this throws if the box
+    cannot be periodic: xcnt must be >= 2, ycnt even and zcnt a multiple of 3.
+)==")
+        .def(
             "get_ideal_fcc_box",
             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
                 ON_RANK_0(
@@ -1104,6 +1298,28 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("positions"),
             py::arg("custom_getter") = std::nullopt)
         .def(
+            "render_slice",
+            [](T &self,
+               shamrock::solvergraph::Field<f64> &field,
+               const std::vector<Tvec> &positions) -> std::vector<f64> {
+                modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_slice(field, positions).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("positions"))
+        .def(
+            "render_slice",
+            [](T &self,
+               shamrock::solvergraph::Field<f64_3> &field,
+               const std::vector<Tvec> &positions) -> std::vector<f64_3> {
+                modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_slice(field, positions).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("positions"))
+        .def(
             "render_column_integ",
             [](T &self,
                const std::string &name,
@@ -1136,6 +1352,28 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("field_type"),
             py::arg("rays"),
             py::arg("custom_getter") = std::nullopt)
+        .def(
+            "render_column_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64> &field,
+               const std::vector<shammath::Ray<Tvec>> &rays) -> std::vector<f64> {
+                modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_column_integ(field, rays).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("rays"))
+        .def(
+            "render_column_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64_3> &field,
+               const std::vector<shammath::Ray<Tvec>> &rays) -> std::vector<f64_3> {
+                modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_column_integ(field, rays).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("rays"))
         .def(
             "compute_field",
             [](T &self,
@@ -1204,6 +1442,28 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("field_type"),
             py::arg("ring_rays"),
             py::arg("custom_getter") = std::nullopt)
+        .def(
+            "render_azymuthal_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64> &field,
+               const std::vector<shammath::RingRay<Tvec>> &ring_rays) -> std::vector<f64> {
+                modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_azymuthal_integ(field, ring_rays).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("ring_rays"))
+        .def(
+            "render_azymuthal_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64_3> &field,
+               const std::vector<shammath::RingRay<Tvec>> &ring_rays) -> std::vector<f64_3> {
+                modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+                return render.compute_azymuthal_integ(field, ring_rays).copy_to_stdvec();
+            },
+            py::arg("field"),
+            py::arg("ring_rays"))
         .def(
             "render_cartesian_slice",
             [](T &self,
@@ -1275,6 +1535,72 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("nx"),
             py::arg("ny"),
             py::arg("custom_getter") = std::nullopt)
+        .def(
+            "render_cartesian_slice",
+            [](T &self,
+               shamrock::solvergraph::Field<f64> &field,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny) -> py::array_t<Tscal> {
+                py::array_t<Tscal> ret({ny, nx});
+
+                modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+
+                std::vector<f64> slice
+                    = render.compute_slice(field, center, delta_x, delta_y, nx, ny)
+                          .copy_to_stdvec();
+
+                for (u32 iy = 0; iy < ny; iy++) {
+                    for (u32 ix = 0; ix < nx; ix++) {
+                        ret.mutable_at(iy, ix) = slice[ix + nx * iy];
+                    }
+                }
+
+                return ret;
+            },
+            py::arg("field"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"))
+        .def(
+            "render_cartesian_slice",
+            [](T &self,
+               shamrock::solvergraph::Field<f64_3> &field,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny) -> py::array_t<Tscal> {
+                py::array_t<Tscal> ret({ny, nx, 3_u32});
+
+                modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+
+                std::vector<f64_3> slice
+                    = render.compute_slice(field, center, delta_x, delta_y, nx, ny)
+                          .copy_to_stdvec();
+
+                for (u32 iy = 0; iy < ny; iy++) {
+                    for (u32 ix = 0; ix < nx; ix++) {
+                        ret.mutable_at(iy, ix, 0) = slice[ix + nx * iy][0];
+                        ret.mutable_at(iy, ix, 1) = slice[ix + nx * iy][1];
+                        ret.mutable_at(iy, ix, 2) = slice[ix + nx * iy][2];
+                    }
+                }
+
+                return ret;
+            },
+            py::arg("field"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"))
         .def(
             "render_cartesian_column_integ",
             [](T &self,
@@ -1349,6 +1675,72 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("nx"),
             py::arg("ny"),
             py::arg("custom_getter") = std::nullopt)
+        .def(
+            "render_cartesian_column_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64> &field,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny) -> py::array_t<Tscal> {
+                py::array_t<Tscal> ret({ny, nx});
+
+                modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+
+                std::vector<f64> slice
+                    = render.compute_column_integ(field, center, delta_x, delta_y, nx, ny)
+                          .copy_to_stdvec();
+
+                for (u32 iy = 0; iy < ny; iy++) {
+                    for (u32 ix = 0; ix < nx; ix++) {
+                        ret.mutable_at(iy, ix) = slice[ix + nx * iy];
+                    }
+                }
+
+                return ret;
+            },
+            py::arg("field"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"))
+        .def(
+            "render_cartesian_column_integ",
+            [](T &self,
+               shamrock::solvergraph::Field<f64_3> &field,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny) -> py::array_t<Tscal> {
+                py::array_t<Tscal> ret({ny, nx, 3_u32});
+
+                modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+
+                std::vector<f64_3> slice
+                    = render.compute_column_integ(field, center, delta_x, delta_y, nx, ny)
+                          .copy_to_stdvec();
+
+                for (u32 iy = 0; iy < ny; iy++) {
+                    for (u32 ix = 0; ix < nx; ix++) {
+                        ret.mutable_at(iy, ix, 0) = slice[ix + nx * iy][0];
+                        ret.mutable_at(iy, ix, 1) = slice[ix + nx * iy][1];
+                        ret.mutable_at(iy, ix, 2) = slice[ix + nx * iy][2];
+                    }
+                }
+
+                return ret;
+            },
+            py::arg("field"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"))
         .def(
             "gen_config_from_phantom_dump",
             [](T &self, PhantomDump &dump, bool bypass_error) {
@@ -1688,6 +2080,9 @@ ON_PYTHON_INIT {
     auto &m = root_module;
 
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
+
+    py::class_<shamrock::PatchDataLazyGetter>(m, "PatchDataLazyGetter")
+        .def("__getitem__", &shamrock::PatchDataLazyGetter::get_item);
 
     py::class_<EvolveUntilResults>(m, "EvolveUntilResults")
         .def_readwrite("reach_target_time", &EvolveUntilResults::reach_target_time)

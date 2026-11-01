@@ -1,5 +1,54 @@
 @AGENTS.md
 
+## Claude Code: commit and PR attribution
+
+Claude Code sessions (including on the web) may default to appending a
+`Claude-Session:` trailer or a `claude.ai/code/session_...` URL to commit
+messages and PR descriptions. **Never include that link** in either —
+strip it during the `--no-verify` amend described in AGENTS.md's "Commit
+authorship" section, alongside any injected `Co-authored-by`/model-name
+lines. Session links belong in the Claude Code UI, not in permanent git
+history or PR bodies.
+
+## Claude Code: marking generated messages
+
+Only for text posted to GitHub issues and PRs (bodies, comments, reviews),
+not chat replies or commits: prefix Claude's text with a rule and marker,
+below any human-written text (keep the blank line before `---`, or it
+renders as a heading):
+
+```markdown
+<human text>
+
+---
+
+🤖 **Generated with Claude Code**
+
+<Claude text>
+```
+
+## Claude Code on the web: branch naming
+
+Claude Code on the web assigns each session a random branch name (e.g.
+`claude/awesome-wozniak-dl56xx`). Don't push work under that name. This
+section is the explicit permission to push to a different branch: before
+the first push, rename the local branch to
+`claude/<type>/<short-kebab-description>`, where `<type>` is one of
+`feat`, `fix`, `refactor`, `docs`, `ci`, `test`, `perf` (e.g.
+`claude/fix/sph-ghost-zone-overflow`), and push that name instead:
+
+```bash
+git branch -m claude/<type>/<short-kebab-description>
+git push -u origin claude/<type>/<short-kebab-description>
+```
+
+Keep the `claude/` prefix, since the session's git proxy may only accept
+pushes under it. If the push is still rejected because only the assigned
+branch is allowed, push the assigned branch instead and tell the user;
+don't retry other names. Once a branch has been pushed (or has an open
+PR), keep using it for follow-up work in that session rather than
+renaming again.
+
 ## Claude Code on the web: container setup
 
 This container has no GPU, so AdaptiveCpp is built from source targeting
@@ -9,10 +58,10 @@ condensed steps it runs:
 ```bash
 # System packages (Boost.context/fiber + LLVM 20 for AdaptiveCpp, OpenMPI,
 # pre-commit, clangd/clang-tidy for dev tooling — one shared LLVM 20
-# toolchain, see below)
+# toolchain, see below — and ccache)
 apt-get install -y libboost-context-dev libboost-fiber-dev llvm-20-dev \
   libclang-20-dev libomp-20-dev libopenmpi-dev openmpi-bin pre-commit \
-  clang-20 clangd-20 clang-tidy-20
+  clang-20 clangd-20 clang-tidy-20 ccache
 
 # Submodules
 git submodule update --init --recursive
@@ -21,16 +70,24 @@ git submodule update --init --recursive
 ./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp
 ```
 
-pre-commit hook venvs also need `SETUPTOOLS_USE_DISTUTILS=stdlib` exported —
-Debian's patched sysconfig scheme otherwise breaks setuptools' vendored
-distutils with `AttributeError: install_layout`.
+ccache needs no extra wiring: the `debian-generic.acpp` env script passes
+`-DCMAKE_CXX_COMPILER_LAUNCHER=ccache` to both the AdaptiveCpp build and
+`shamconfigure` whenever `ccache` is on `PATH`. Check hit rates with
+`ccache -s`. A `build/` configured before ccache was installed picks it up
+on the next `./shamenv_do shamconfigure`.
+
+pre-commit hook venvs need `SETUPTOOLS_USE_DISTUTILS=local` (setuptools'
+vendored distutils). The container's `python3` is 3.13, which has no
+stdlib `distutils`, so a leftover `SETUPTOOLS_USE_DISTUTILS=stdlib` makes
+building hook environments fail with `No module named 'distutils'`; the
+hook exports `local` to override any such value.
 
 A single LLVM 20 toolchain backs both the AdaptiveCpp build and dev tooling
 (clangd/clang-tidy) — AdaptiveCpp's `CMakeLists.txt` supports up to LLVM 20
 (`LLVM_VERSION_MAJOR GREATER 20` is a hard `SEND_ERROR`). 20 is the newest
 available directly from Ubuntu noble's own repos; apt.llvm.org (which would
-offer newer releases closer to the clang-format v22.1.8 the `pre-commit`
-config pins to, matching the `.clangd` file's `>= clangd-21`/`>= clangd-22`
+offer newer releases closer to the clang-format version the `pre-commit`
+config pins, matching the `.clangd` file's `>= clangd-21`/`>= clangd-22`
 comments) is blocked by this environment's network policy.
 
 `clangd-20` only installs a versioned `/usr/bin/clangd-20` binary, so the
@@ -49,7 +106,15 @@ parse — the same database CI's clang-tidy job uses), then runs the newest
 `clang-tidy` found on `PATH` against it (not hardcoded to 20, so this also
 works on a host with a different LLVM install).
 
-The hook deliberately stops there: `./shamenv_do shamconfigure` builds
-AdaptiveCpp from source on its first invocation (a few minutes), so that
-cost is paid inline the first time a build/test is actually needed rather
-than blocking every session start.
+On a cold start (repo cloned during this boot: the cache-building run, or
+a session that starts while the cache rebuilds) the hook then pre-builds,
+all within a hard deadline of 4m30 from hook start (`HOOK_DEADLINE`):
+AdaptiveCpp (~2 min cold on 4 vCPUs), `shamconfigure` (~1 min), then as
+much of `shammake` as fits. The environment cache snapshots the disk right
+after the SessionStart hook (observed, not documented) but only when setup
+stays under roughly five minutes, so that partial build carries over to
+every session started from the snapshot; finish it with
+`./shamenv_do shamconfigure && ./shamenv_do shammake`. Sessions restored
+from the snapshot skip the pre-build even when it is incomplete (only the
+cache-building run is snapshotted, so redoing it there would only block
+session start); whatever is missing is built when first needed.

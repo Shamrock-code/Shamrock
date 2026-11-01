@@ -14,9 +14,8 @@
  *
  */
 
-#include "shambase/constants.hpp"
-#include "shammodels/sph/config/BCConfig.hpp"
 #include "shammodels/sph/io/Phantom2Shamrock.hpp"
+#include "shammodels/sph/config/BCConfig.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/io/PhantomDumpEOSUtils.hpp"
 
@@ -42,6 +41,18 @@ namespace shammodels::sph {
         } else if (ieos == 3) {
             f64 cs0, q, r0;
             phdump::eos3_load(phdump, cs0, q, r0);
+            cfg.set_locally_isothermalLP07(cs0, q, r0);
+        } else if (ieos == 6) {
+            f64 cs0, q, r0;
+            i32 isink;
+            phdump::eos6_load(phdump, cs0, q, r0, isink);
+            // TODO: implement a locally isothermal eos centred on a sink in shamrock
+            logger::warn_ln(
+                "SPH",
+                "phantom ieos=6 (locally isothermal centred on sink",
+                isink,
+                ") is not implemented in shamrock, falling back to ieos=3 (locally isothermal "
+                "centred on the origin). This is only correct if the sink stays at the origin.");
             cfg.set_locally_isothermalLP07(cs0, q, r0);
         } else if (ieos == 13) {
             f64 cs0, q, r0;
@@ -143,6 +154,23 @@ namespace shammodels::sph {
     /// explicit instanciation for f64_3
     template AVConfig<f64_3> get_shamrock_avconfig<f64_3>(PhantomDump &phdump);
 
+    namespace {
+        // Phantom stores its unit headers (udist, umass, utime, umagfd) in cgs,
+        // while shamunits::UnitSystem is built from SI base units.
+        constexpr f64 m_to_cm = 1e2;
+        constexpr f64 kg_to_g = 1e3;
+
+        // truncated value of pi used by phantom (physcon.f90), using it makes umagfd bit-identical
+        // to the one phantom writes
+        constexpr f64 phantom_pi = 3.1415926536;
+
+        /// Phantom's cgs magnetic field unit (in G) from cgs udist (cm), umass (g), utime (s)
+        f64 get_phantom_umagfd(f64 udist, f64 umass, f64 utime) {
+            f64 ucharge = sycl::sqrt(umass * udist / (4. * phantom_pi));
+            return umass / (utime * ucharge);
+        }
+    } // namespace
+
     template<class Tscal>
     shamunits::UnitSystem<Tscal> get_shamrock_units(PhantomDump &phdump) {
 
@@ -152,7 +180,7 @@ namespace shammodels::sph {
         f64 umagfd = phdump.read_header_float<f64>("umagfd");
 
         return shamunits::UnitSystem<Tscal>(
-            utime, udist, umass
+            utime, udist / m_to_cm, umass / kg_to_g
             // unit_current = 1 ,
             // unit_temperature = 1 ,
             // unit_qte = 1 ,
@@ -164,30 +192,27 @@ namespace shammodels::sph {
     void write_shamrock_units_in_phantom_dump(
         std::optional<shamunits::UnitSystem<Tscal>> &units, PhantomDump &dump, bool bypass_error) {
 
+        // code units expressed in SI (s, m, kg), SI being the code units if none are set
+        f64 utime_si = 1;
+        f64 udist_si = 1;
+        f64 umass_si = 1;
+
         if (units) {
-            dump.table_header_f64.add("udist", units->m_inv);
-            dump.table_header_f64.add("umass", units->kg_inv);
-            dump.table_header_f64.add("utime", units->s_inv);
-
-            f64 umass = units->template to<shamunits::units::kg>();
-            f64 utime = units->template to<shamunits::units::s>();
-            f64 udist = units->template to<shamunits::units::m>();
-
-            shamunits::Constants<Tscal> ctes{*units};
-            f64 ccst    = ctes.c();
-            f64 ucharge = sqrt(umass * udist / (4. * shambase::constants::pi<f64> /*mu_0 in cgs*/));
-
-            f64 umagfd = umass / (utime * ucharge);
-
-            dump.table_header_f64.add("umagfd", umagfd);
+            utime_si = units->s_inv;
+            udist_si = units->m_inv;
+            umass_si = units->kg_inv;
         } else {
             logger::warn_ln("SPH", "no units are set, defaulting to SI");
-
-            dump.table_header_f64.add("udist", 1);
-            dump.table_header_f64.add("umass", 1);
-            dump.table_header_f64.add("utime", 1);
-            dump.table_header_f64.add("umagfd", 3.54491);
         }
+
+        f64 udist = udist_si * m_to_cm;
+        f64 umass = umass_si * kg_to_g;
+        f64 utime = utime_si;
+
+        dump.table_header_f64.add("udist", udist);
+        dump.table_header_f64.add("umass", umass);
+        dump.table_header_f64.add("utime", utime);
+        dump.table_header_f64.add("umagfd", get_phantom_umagfd(udist, umass, utime));
     }
 
     /// explicit instanciation for f32_3
@@ -234,9 +259,9 @@ namespace shammodels::sph {
             dump.table_header_fort_real.add("xmin", bmin.x());
             dump.table_header_fort_real.add("xmax", bmax.x());
             dump.table_header_fort_real.add("ymin", bmin.y());
-            dump.table_header_fort_real.add("ymax", bmax.x());
+            dump.table_header_fort_real.add("ymax", bmax.y());
             dump.table_header_fort_real.add("zmin", bmin.z());
-            dump.table_header_fort_real.add("zmax", bmax.x());
+            dump.table_header_fort_real.add("zmax", bmax.z());
         } else if (
             SolverBCShearingPeriodic *c = std::get_if<SolverBCShearingPeriodic>(&cfg.config)) {
             std::string err_msg

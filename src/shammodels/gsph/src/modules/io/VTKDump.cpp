@@ -54,7 +54,7 @@ namespace {
             sycl::buffer<u64> idp(num_obj);
 
             u64 ptr = 0;
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            sched.for_each_patchdata_nonempty_ordered([&](Patch cur_p, PatchDataLayer &pdat) {
                 using namespace shamalgs::memory;
                 using namespace shambase;
 
@@ -84,7 +84,7 @@ namespace {
             sycl::buffer<u32> idp(num_obj);
 
             u64 ptr = 0;
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            sched.for_each_patchdata_nonempty_ordered([&](Patch cur_p, PatchDataLayer &pdat) {
                 using namespace shamalgs::memory;
                 using namespace shambase;
 

@@ -82,9 +82,9 @@ namespace shamrock::scheduler {
 
         std::array<PatchTreeNode, split_count> get_split_nodes(u32 cur_id);
 
-        bool is_leaf() { return tree_node.is_leaf; }
+        inline bool is_leaf() const { return tree_node.is_leaf; }
 
-        u64 get_child_nid(u32 id) { return tree_node.childs_nid[id]; }
+        inline u64 get_child_nid(u32 id) const { return tree_node.childs_nid[id]; }
 
         /**
          * @brief Convert PatchTreeNode to SerialPatchNode using given coordinate transform
@@ -95,7 +95,7 @@ namespace shamrock::scheduler {
          */
         template<class vec>
         inline SerialPatchNode<vec> convert(
-            const shamrock::patch::PatchCoordTransform<vec> box_transform) {
+            const shamrock::patch::PatchCoordTransform<vec> &box_transform) const {
             SerialPatchNode<vec> n;
 
             // Convert patch range to object coordinates using given coordinate transform

@@ -40,6 +40,34 @@ class MyNode : public shamrock::solvergraph::INode {
 - `struct Edges` — `const T&` for read-only edges, `T&` for read-write edges
 - `set_edges(shared_ptr...)` — wire before `evaluate()`
 - `get_edges()` — typed access in `_impl_evaluate_internal()`
+- `get_edges_tex_symbols()` — returns `struct EdgesTexSymbols`, one `std::string`
+  TeX symbol per edge, named after it
+- `replace_edges_tex_symbols(tex)` — replaces every `{<edge name>}` placeholder in
+  `tex` by the TeX symbol of that edge
+
+### TeX output
+
+In `_impl_get_tex()`, refer to edges by name rather than by slot index
+(`get_ro_edge_base(i)` / `get_rw_edge_base(i)`): slot indices silently shift
+when an edge is added, removed or reordered in `NODE_EDGES`, while names stay
+in sync with it.
+
+Name each edge placeholder after its edge in `NODE_EDGES`, and use
+`replace_all` only for values that are not edges (node members, constants):
+
+```cpp
+std::string _impl_get_tex() const override {
+    std::string tex = R"tex(
+        {out}_i = f({in}_i), \quad N = {nvar}
+    )tex";
+
+    replace_edges_tex_symbols(tex); // {in}, {out} -> TeX symbols of those edges
+
+    shambase::replace_all(tex, "{nvar}", std::to_string(nvar)); // node member
+
+    return tex;
+}
+```
 
 ### Edge macros
 

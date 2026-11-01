@@ -112,6 +112,9 @@ namespace sham {
         /// The number of compute units on the device
         uint32_t max_compute_units;
 
+        /// The maximum work-group size supported by the device
+        size_t max_work_group_size;
+
         /// The maximum size of memory that can be allocated on the device in bytes
         uint64_t max_mem_alloc_size_dev;
 

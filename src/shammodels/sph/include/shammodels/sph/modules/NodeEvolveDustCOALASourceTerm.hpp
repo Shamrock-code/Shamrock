@@ -27,7 +27,7 @@
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* scalars */                                                                                  \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, rhodust_eps)                                     \
-    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, dv_max)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, vfrag_threshold)                                 \
     X_RO(shamrock::solvergraph::IDataEdge<std::vector<Tscal>>, massgrid)                           \
     X_RO(shamrock::solvergraph::IDataEdge<std::vector<Tscal>>, tensor_tabflux_coag)                \
                                                                                                    \

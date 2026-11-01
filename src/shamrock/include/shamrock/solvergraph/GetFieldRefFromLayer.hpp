@@ -23,6 +23,13 @@
 #include "shamsolvergraph/node/INode.hpp"
 #include <memory>
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IPatchDataLayerRefs, source)                                       \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::FieldRefs<T>, out_ref)
+
 namespace shamrock::solvergraph {
 
     template<class T>
@@ -42,23 +49,7 @@ namespace shamrock::solvergraph {
             const std::string &field_name)
             : GetFieldRefFromLayer(shambase::get_check_ref(layout), field_name) {}
 
-        struct Edges {
-            const IPatchDataLayerRefs &source;
-            shamrock::solvergraph::FieldRefs<T> &out_ref;
-        };
-
-        void set_edges(
-            std::shared_ptr<IPatchDataLayerRefs> source,
-            std::shared_ptr<shamrock::solvergraph::FieldRefs<T>> out_ref) {
-            __internal_set_ro_edges({source});
-            __internal_set_rw_edges({out_ref});
-        }
-
-        Edges get_edges() {
-            return Edges{
-                get_ro_edge<IPatchDataLayerRefs>(0),
-                get_rw_edge<shamrock::solvergraph::FieldRefs<T>>(0)};
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal() {
             auto edges = get_edges();
@@ -76,3 +67,5 @@ namespace shamrock::solvergraph {
         std::string _impl_get_tex() const { return "TODO"; }
     };
 } // namespace shamrock::solvergraph
+
+#undef NODE_EDGES

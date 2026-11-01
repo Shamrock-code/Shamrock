@@ -270,6 +270,21 @@ class PatchScheduler {
         });
     }
 
+    /// Same as for_each_patch_data but iterates in increasing patch id order
+    template<class Function>
+    inline void for_each_patch_data_ordered(Function &&fct) {
+
+        patch_data.for_each_patchdata_ordered(
+            [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+                shamrock::patch::Patch &cur_p
+                    = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
+
+                if (!cur_p.is_err_mode()) {
+                    fct(patch_id, cur_p, pdat);
+                }
+            });
+    }
+
     template<class Function>
     inline void for_each_patch(Function &&fct) {
 
@@ -340,6 +355,20 @@ class PatchScheduler {
                 fct(cur_p, pdat);
             }
         });
+    }
+
+    /// Same as for_each_patchdata_nonempty but iterates in increasing patch id order
+    inline void for_each_patchdata_nonempty_ordered(
+        std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &)> fct) {
+        patch_data.for_each_patchdata_ordered(
+            [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+                shamrock::patch::Patch &cur_p
+                    = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
+
+                if ((!cur_p.is_err_mode()) && (!pdat.is_empty())) {
+                    fct(cur_p, pdat);
+                }
+            });
     }
 
     template<class T>
@@ -450,7 +479,7 @@ class PatchScheduler {
             using namespace shamrock::patch;
 
             u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-            for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
+            for_each_patch_data_ordered([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 using namespace shamalgs::memory;
                 using namespace shambase;
 

@@ -9,6 +9,7 @@
 
 #include "shambase/time.hpp"
 #include "shambase/type_name_info.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/compute_histogram.hpp"
 #include "shamalgs/primitives/mock_value.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -78,8 +79,7 @@ inline void basic_histogram(const std::vector<std::string> &impl_list) {
     std::vector<Tscal> ref_result{};
 
     for (auto &cfg : impl_list) {
-        using namespace shamalgs::primitives::impl;
-        set_impl_compute_histogram(cfg);
+        shamalgs::impl_registry::set_impl("compute_histogram", cfg);
 
         shambase::Timer timer;
         timer.start();
@@ -149,8 +149,7 @@ inline void basic_histogram_size(const std::vector<std::string> &impl_list) {
     std::vector<Tscal> ref_result{};
 
     for (auto &cfg : impl_list) {
-        using namespace shamalgs::primitives::impl;
-        set_impl_compute_histogram(cfg);
+        shamalgs::impl_registry::set_impl("compute_histogram", cfg);
 
         shambase::Timer timer;
         timer.start();
@@ -223,8 +222,7 @@ inline void basic_histogram_size_non_unif(const std::vector<std::string> &impl_l
     std::vector<Tscal> ref_result{};
 
     for (auto &cfg : impl_list) {
-        using namespace shamalgs::primitives::impl;
-        set_impl_compute_histogram(cfg);
+        shamalgs::impl_registry::set_impl("compute_histogram", cfg);
 
         shambase::Timer timer;
         timer.start();
@@ -256,13 +254,11 @@ NEW_TEST(Unittest, "shamalgs::primitives::compute_histogram", 1) {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-    using namespace shamalgs::primitives::impl;
-
-    if (!is_impl_set_compute_histogram()) {
-        autoselect_impl_compute_histogram(dev_sched);
+    if (!shamalgs::impl_registry::is_impl_set("compute_histogram")) {
+        shamalgs::impl_registry::autoselect_impl("compute_histogram", dev_sched);
     }
-    auto current_impl = get_current_impl_compute_histogram();
-    auto impl_list    = get_default_impl_list_compute_histogram();
+    auto current_impl = shamalgs::impl_registry::get_current_impl("compute_histogram");
+    auto impl_list    = shamalgs::impl_registry::get_default_impl_list("compute_histogram");
 
     basic_histogram<f32>(impl_list);
     basic_histogram<f64>(impl_list);
@@ -272,5 +268,5 @@ NEW_TEST(Unittest, "shamalgs::primitives::compute_histogram", 1) {
     basic_histogram_size_non_unif<f64>(impl_list);
 
     // reset to default
-    set_impl_compute_histogram(current_impl);
+    shamalgs::impl_registry::set_impl("compute_histogram", current_impl);
 }

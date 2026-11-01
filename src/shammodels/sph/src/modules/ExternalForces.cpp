@@ -34,7 +34,6 @@
 #include "shamsolvergraph/node/INode.hpp"
 #include "shamsolvergraph/node/NodeSetEdge.hpp"
 #include "shamsolvergraph/node/OperationSequence.hpp"
-#include "shamunits/Constants.hpp"
 
 namespace shambase {
 
@@ -129,6 +128,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
     set_constant_c.set_edges(constant_c);
 
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> add_ext_forces_seq{};
+    add_ext_forces_seq.push_back(shambase::to_shared(std::move(set_constant_G)));
+    add_ext_forces_seq.push_back(shambase::to_shared(std::move(set_constant_c)));
 
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
@@ -144,8 +145,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             set_central_mass.set_edges(central_mass);
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
-                set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
-                    central_pos.data = {}; // no support for offset yet
+                set_central_pos([cpos = ext_force->central_pos](
+                                    shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                    central_pos.data = cpos;
                 });
             set_central_pos.set_edges(central_pos);
 
@@ -202,6 +204,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
 
             auto central_mass = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
             auto central_pos  = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
+            auto central_vel  = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>>
                 set_central_mass([cmass = ext_force->central_mass](
@@ -211,10 +214,18 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             set_central_mass.set_edges(central_mass);
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
-                set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
-                    central_pos.data = {}; // no support for offset yet
+                set_central_pos([cpos = ext_force->central_pos](
+                                    shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                    central_pos.data = cpos;
                 });
             set_central_pos.set_edges(central_pos);
+
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
+                set_central_vel([cvel = ext_force->central_vel](
+                                    shamrock::solvergraph::IDataEdge<Tvec> &central_vel) {
+                    central_vel.data = cvel;
+                });
+            set_central_vel.set_edges(central_vel);
 
             common::modules::AddForceCentralGravPotential<Tvec> add_force_central_grav_potential;
             add_force_central_grav_potential.set_edges(
@@ -290,9 +301,6 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
         }
     }
 
-    set_constant_G.evaluate();
-    set_constant_c.evaluate();
-
     if (add_ext_forces_seq.size() > 0) {
         shamrock::solvergraph::OperationSequence seq(
             "Add external forces", std::move(add_ext_forces_seq));
@@ -342,19 +350,14 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
         sham::DeviceBuffer<Tvec> &buf_axyz     = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-        sham::EventList depends_list;
-        auto axyz     = buf_axyz.get_write_access(depends_list);
-        auto axyz_ext = buf_axyz_ext.get_read_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(
-                cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
-                    axyz[gid] += axyz_ext[gid];
-                });
-        });
-
-        buf_axyz.complete_event_state(e);
-        buf_axyz_ext.complete_event_state(e);
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_axyz_ext},
+            sham::MultiRef{buf_axyz},
+            pdat.get_obj_cnt(),
+            [](u32 gid, const Tvec *__restrict axyz_ext, Tvec *__restrict axyz) {
+                axyz[gid] += axyz_ext[gid];
+            });
     });
 
     if (solver_config.ext_force_config.ext_forces.empty()) {
@@ -476,6 +479,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
             std::string prefix_cmass       = prefix + "cmass_";
             std::string prefix_central_pos = prefix + "central_pos_";
+            std::string prefix_central_vel = prefix + "central_vel_";
             std::string prefix_a_spin      = prefix + "a_spin_";
             std::string prefix_dir_spin    = prefix + "dir_spin_";
             std::string prefix_lt          = prefix + "lt_";
@@ -486,7 +490,12 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
             auto set_central_pos
                 = register_constant_set<Tvec>(solver_graph, prefix_central_pos, [&]() {
-                      return Tvec{0, 0, 0}; // no support for offset yet
+                      return ext_force->central_pos;
+                  });
+
+            auto set_central_vel
+                = register_constant_set<Tvec>(solver_graph, prefix_central_vel, [&]() {
+                      return ext_force->central_vel;
                   });
 
             auto set_a_spin = register_constant_set<Tscal>(solver_graph, prefix_a_spin, [&]() {
@@ -505,6 +514,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                     solver_graph.get_edge_ptr<IDataEdge<Tscal>>("constant_c"),
                     solver_graph.get_edge_ptr<IDataEdge<Tscal>>(prefix_cmass),
                     solver_graph.get_edge_ptr<IDataEdge<Tvec>>(prefix_central_pos),
+                    solver_graph.get_edge_ptr<IDataEdge<Tvec>>(prefix_central_vel),
                     solver_graph.get_edge_ptr<IDataEdge<Tscal>>(prefix_a_spin),
                     solver_graph.get_edge_ptr<IDataEdge<Tvec>>(prefix_dir_spin),
                     solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_xyz"),
@@ -516,6 +526,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
             add_ext_forces_seq.push_back(set_central_pos);
             add_ext_forces_seq.push_back(set_a_spin);
             add_ext_forces_seq.push_back(set_dir_spin);
+            // set_central_vel is intentionally not run: the external force's central object is
+            // stationary, so central_vel stays null.
             add_ext_forces_seq.push_back(solver_graph.get_node_ptr_base(prefix_lt));
 
         } else if (

@@ -48,6 +48,7 @@ import os  # for makedirs
 import numpy as np
 
 import shamrock
+from shamrock import NeighCacheStrategy
 
 # If we use the shamrock executable to run this script instead of the python interpreter,
 # we should not initialize the system as the shamrock executable needs to handle specific MPI logic
@@ -244,7 +245,7 @@ def setup_model():
 
     # On a chaotic disc, we disable to two stage search to avoid giant leaves
     cfg.set_tree_reduction_level(6)
-    cfg.set_two_stage_search(False)
+    cfg.set_neigh_cache_strategy(NeighCacheStrategy.SingleStage)
 
     # Enable this to debug the neighbor counts
     # cfg.set_show_neigh_stats(True)

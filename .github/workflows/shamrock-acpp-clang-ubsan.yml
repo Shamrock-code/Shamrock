@@ -32,14 +32,14 @@ jobs:
         run:  |
           git config --global --add safe.directory '*'
           git config --global --list
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name == 'pull_request_target'
         with:
           fetch-depth: 0
           submodules: recursive
           ref: "refs/pull/${{ github.event.number }}/merge"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: github.event_name != 'pull_request_target'
         with:
           fetch-depth: 0

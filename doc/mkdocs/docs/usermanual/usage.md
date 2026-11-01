@@ -135,15 +135,17 @@ import shamrock
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_Model_SPH(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
+model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M6")
 
 cfg = model.gen_default_config()
-cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+cfg.set_artif_viscosity_VaryingCD10(
+    alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
+)
 cfg.set_eos_locally_isothermal()
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e7),1)
+model.init_scheduler(int(1e7), 1)
 ```
 
 ## Running on multiple nodes

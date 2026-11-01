@@ -494,26 +494,19 @@ template<class T>
 bool PatchDataField<T>::has_nan() {
     StackEntry stack_loc{};
 
-    auto tmp = buf.copy_to_sycl_buffer();
-
-    return shamalgs::reduction::has_nan(shamsys::instance::get_compute_queue(), tmp, get_val_cnt());
+    return shamalgs::reduction::has_nan(buf, get_val_cnt());
 }
 template<class T>
 bool PatchDataField<T>::has_inf() {
     StackEntry stack_loc{};
 
-    auto tmp = buf.copy_to_sycl_buffer();
-
-    return shamalgs::reduction::has_inf(shamsys::instance::get_compute_queue(), tmp, get_val_cnt());
+    return shamalgs::reduction::has_inf(buf, get_val_cnt());
 }
 template<class T>
 bool PatchDataField<T>::has_nan_or_inf() {
     StackEntry stack_loc{};
 
-    auto tmp = buf.copy_to_sycl_buffer();
-
-    return shamalgs::reduction::has_nan_or_inf(
-        shamsys::instance::get_compute_queue(), tmp, get_val_cnt());
+    return shamalgs::reduction::has_nan_or_inf(buf, get_val_cnt());
 }
 
 //////////////////////////////////////////////////////////////////////////

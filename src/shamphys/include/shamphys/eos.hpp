@@ -18,8 +18,6 @@
  */
 
 #include "shambackends/sycl.hpp"
-#include "shamunits/Constants.hpp"
-#include "shamunits/UnitSystem.hpp"
 
 namespace shamphys {
 

@@ -303,7 +303,7 @@ while t_sum < t_target:
 # %%
 # Check regression
 
-reference_folder = "reference-files/regression_sph_disc_23_01_26"
+reference_folder = "reference-files/regression_sph_disc_01_10_26"
 
 tolerances = [
     {

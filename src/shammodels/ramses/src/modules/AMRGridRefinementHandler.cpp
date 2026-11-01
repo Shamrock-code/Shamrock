@@ -88,9 +88,16 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
         sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 
+        // The kernel below reads the flags of the 8 blocks following each block while writing the
+        // flag of the current one, so the input flags are read from a copy (otherwise the result
+        // depends on the execution order of the work-items)
+        sham::DeviceBuffer<u32> derefine_flags_in(obj_cnt, dev_sched);
+        derefine_flags.copy_range(0, obj_cnt, derefine_flags_in);
+
         sham::EventList depends_list;
         auto acc_min        = buf_cell_min.get_read_access(depends_list);
         auto acc_max        = buf_cell_max.get_read_access(depends_list);
+        auto acc_want_merge = derefine_flags_in.get_read_access(depends_list);
         auto acc_merge_flag = derefine_flags.get_write_access(depends_list);
 
         // keep only derefine flags on only if the eight cells want to merge and if they can
@@ -108,7 +115,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
                     for (u32 lid = 0; lid < split_count; lid++) {
                         blocks[lid]       = BlockCoord{acc_min[gid + lid], acc_max[gid + lid]};
-                        all_want_to_merge = all_want_to_merge && acc_merge_flag[gid + lid];
+                        all_want_to_merge = all_want_to_merge && acc_want_merge[gid + lid];
                     }
 
                     do_merge = all_want_to_merge && BlockCoord::are_mergeable(blocks);
@@ -123,6 +130,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         buf_cell_min.complete_event_state(e);
         buf_cell_max.complete_event_state(e);
+        derefine_flags_in.complete_event_state(e);
         derefine_flags.complete_event_state(e);
 
         ////////////////////////////////////////////////////////////////////////////////
@@ -919,10 +927,17 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
         sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 
+        // The kernel below reads the flags of the 8 blocks following each block while writing the
+        // flag of the current one, so the input flags are read from a copy (otherwise the result
+        // depends on the execution order of the work-items)
+        sham::DeviceBuffer<u32> patch_derefine_flag_in(obj_cnt, dev_sched);
+        patch_derefine_flag.copy_range(0, obj_cnt, patch_derefine_flag_in);
+
         sham::EventList depends_list;
         auto acc_min = buf_cell_min.get_read_access(depends_list);
         auto acc_max = buf_cell_max.get_read_access(depends_list);
 
+        auto acc_want_merge  = patch_derefine_flag_in.get_read_access(depends_list);
         auto acc_merge_flag  = patch_derefine_flag.get_write_access(depends_list);
         auto acc_refine_flag = patch_refine_flag.get_read_access(depends_list);
 
@@ -970,7 +985,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
                     for (u32 b_lid = 0; b_lid < split_count; b_lid++) {
                         blocks[b_lid]     = BlockCoord{acc_min[id + b_lid], acc_max[id + b_lid]};
-                        all_want_to_merge = all_want_to_merge && acc_merge_flag[id + b_lid];
+                        all_want_to_merge = all_want_to_merge && acc_want_merge[id + b_lid];
                     }
 
                     BlockCoord merged                            = BlockCoord::get_merge(blocks);
@@ -993,6 +1008,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         });
         buf_cell_min.complete_event_state(e);
         buf_cell_max.complete_event_state(e);
+        patch_derefine_flag_in.complete_event_state(e);
         patch_derefine_flag.complete_event_state(e);
         patch_refine_flag.complete_event_state(e);
 

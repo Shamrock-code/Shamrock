@@ -19,6 +19,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
@@ -66,13 +67,9 @@ namespace shammodels::gsph {
         static constexpr u32 dim = shambase::VectorProperties<vec>::dimension;
         using per_index          = sycl::vec<i32, dim>;
 
-        struct InterfaceBuildInfos {
-            vec offset;
-            vec offset_speed;
-            per_index periodicity_index;
-            shammath::CoordRange<vec> cut_volume;
-            flt volume_ratio;
-        };
+        /// Interface metadata, shared with SPH so that the SPH ghost interface finders
+        /// (shammodels::sph::modules::FindGhostInterfaces*) can be reused
+        using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<vec>::InterfaceBuildInfos;
 
         struct InterfaceIdTable {
             InterfaceBuildInfos build_infos;
@@ -94,10 +91,8 @@ namespace shammodels::gsph {
             : sched(sched), ghost_config(ghost_config),
               patch_rank_owner(std::move(patch_rank_owner)), xyzh_ghost_layout(xyzh_ghost_layout) {}
 
-        GeneratorMap find_interfaces(
-            SerialPatchTree<vec> &sptree,
-            shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
-            shamrock::patch::PatchField<flt> &int_range_max);
+        /// Get the boundary condition config of this ghost handler
+        inline const Config &get_ghost_config() const { return ghost_config; }
 
         shambase::DistributedDataShared<InterfaceIdTable> gen_id_table_interfaces(
             GeneratorMap &&gen);
@@ -105,16 +100,6 @@ namespace shammodels::gsph {
         void gen_debug_patch_ghost(shambase::DistributedDataShared<InterfaceIdTable> &interf_info);
 
         using CacheMap = shambase::DistributedDataShared<InterfaceIdTable>;
-
-        CacheMap make_interface_cache(
-            SerialPatchTree<vec> &sptree,
-            shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
-            shamrock::patch::PatchField<flt> &int_range_max) {
-            StackEntry stack_loc{};
-
-            return gen_id_table_interfaces(
-                find_interfaces(sptree, int_range_max_tree, int_range_max));
-        }
 
         template<class T>
         shambase::DistributedDataShared<T> build_interface_native(

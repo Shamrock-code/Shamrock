@@ -39,7 +39,6 @@
 #include "shammodels/common/modules/ForwardEulerPositive.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
@@ -65,6 +64,7 @@
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
+#include "shammodels/sph/modules/FindGhostInterfaces.hpp"
 #include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensityBisectingNR.hpp"
@@ -102,6 +102,7 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/solvergraph/CopyPatchDataFieldFromLayer.hpp"
+#include "shamrock/solvergraph/DDSharedScalar.hpp"
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
@@ -110,8 +111,11 @@
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
+#include "shamrock/solvergraph/PatchtreeFieldEdge.hpp"
 #include "shamrock/solvergraph/RankGetter.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SerialPatchTreeEdge.hpp"
 #include "shamsolvergraph/SolverGraph.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
@@ -1516,13 +1520,109 @@ void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache() {
 
     StackEntry stack_loc{};
 
-    using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
-    SPHUtils sph_utils(scheduler());
+    using namespace shamrock::patch;
+    using namespace shamrock::solvergraph;
 
-    storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
-        storage.ghost_handler.get(),
-        storage.serial_patch_tree.get(),
-        solver_config.htol_up_coarse_cycle));
+    using InterfaceBuildInfos = typename GhostHandle::InterfaceBuildInfos;
+
+    PatchScheduler &sched         = scheduler();
+    GhostHandle &ghost_handle     = storage.ghost_handler.get();
+    SerialPatchTree<Tvec> &sptree = storage.serial_patch_tree.get();
+    const Tscal h_evol_max        = solver_config.htol_up_coarse_cycle;
+
+    const u32 ihpart = sched.pdl_old().template get_field_idx<Tscal>("hpart");
+
+    PatchField<Tscal> interactR_patch = sched.map_owned_to_patch_field_simple<Tscal>(
+        [&](const Patch p, PatchDataLayer &pdat) -> Tscal {
+            if (!pdat.is_empty()) {
+                return pdat.get_field<Tscal>(ihpart).compute_max() * h_evol_max * Rkern;
+            } else {
+                return shambase::VectorProperties<Tscal>::get_min();
+            }
+        });
+
+    PatchtreeField<Tscal> interactR_mpi_tree = sptree.make_patch_tree_field(
+        sched,
+        shamsys::instance::get_compute_queue(),
+        interactR_patch,
+        [](Tscal h0, Tscal h1, Tscal h2, Tscal h3, Tscal h4, Tscal h5, Tscal h6, Tscal h7) {
+            return sham::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
+        });
+
+    // ----------------------------------------------------------------------------------------
+    // temporary wrapper to slowly migrate to the new solvergraph
+    SimulationBoxInfo &sim_box                   = sched.get_sim_box();
+    PatchCoordTransform<Tvec> patch_coord_transf = sim_box.get_patch_transform<Tvec>();
+    auto [bmin, bmax]                            = sim_box.get_bounding_box<Tvec>();
+
+    auto sim_box_edge   = std::make_shared<ScalarEdge<shammath::AABB<Tvec>>>("", "");
+    sim_box_edge->value = shammath::AABB<Tvec>(bmin, bmax);
+
+    auto patch_tree_edge        = std::make_shared<SerialPatchTreeRefEdge<Tvec>>("", "");
+    patch_tree_edge->patch_tree = std::ref(sptree);
+
+    auto interact_radius_tree             = std::make_shared<PatchtreeFieldEdge<Tscal>>("", "");
+    interact_radius_tree->patchtree_field = std::move(interactR_mpi_tree);
+
+    // interactR_patch is not used afterwards, so move it (O(1)) instead of copying over all
+    // global patches
+    auto interact_radius    = std::make_shared<ScalarsEdge<Tscal>>("", "");
+    interact_radius->values = std::move(interactR_patch.field_all);
+
+    auto local_patch_boxes = std::make_shared<ScalarsEdge<shammath::CoordRange<Tvec>>>("", "");
+    sched.for_each_local_patch([&](const Patch &p) {
+        local_patch_boxes->values.add_obj(p.id_patch, patch_coord_transf.to_obj_coord(p));
+    });
+
+    auto interface_infos = std::make_shared<DDSharedScalar<InterfaceBuildInfos>>("", "");
+
+    using CfgClass           = sph::BasicSPHGhostHandlerConfig<Tvec>;
+    using BCPeriodic         = typename CfgClass::Periodic;
+    using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
+
+    const auto &ghost_config = ghost_handle.get_ghost_config();
+
+    if (const BCPeriodic *cfg = std::get_if<BCPeriodic>(&ghost_config)) {
+        modules::FindGhostInterfacesPeriodic<Tvec> node;
+        node.set_edges(
+            sim_box_edge,
+            patch_tree_edge,
+            interact_radius_tree,
+            interact_radius,
+            local_patch_boxes,
+            interface_infos);
+        node.evaluate();
+    } else if (const BCShearingPeriodic *cfg = std::get_if<BCShearingPeriodic>(&ghost_config)) {
+        auto shear_value  = IDataEdge<Tscal>::make_shared("", "");
+        shear_value->data = cfg->shear_value;
+
+        modules::FindGhostInterfacesShearingPeriodic<Tvec> node(
+            cfg->shear_base, cfg->shear_dir, cfg->shear_speed);
+        node.set_edges(
+            sim_box_edge,
+            patch_tree_edge,
+            interact_radius_tree,
+            interact_radius,
+            local_patch_boxes,
+            shear_value,
+            interface_infos);
+        node.evaluate();
+    } else {
+        modules::FindGhostInterfacesFree<Tvec> node;
+        node.set_edges(
+            sim_box_edge,
+            patch_tree_edge,
+            interact_radius_tree,
+            interact_radius,
+            local_patch_boxes,
+            interface_infos);
+        node.evaluate();
+    }
+
+    // ----------------------------------------------------------------------------------------
+
+    storage.ghost_patch_cache.set(
+        ghost_handle.gen_id_table_interfaces(std::move(interface_infos->values)));
 
     // storage.ghost_handler.get().gen_debug_patch_ghost(storage.ghost_patch_cache.get());
 }
@@ -1594,10 +1694,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    using RTree    = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
-    using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
-
-    SPHUtils sph_utils(scheduler());
+    using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
     shamrock::SchedulerUtility utility(scheduler());
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();

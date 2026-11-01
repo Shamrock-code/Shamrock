@@ -17,11 +17,125 @@
 
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/sph/modules/FindGhostInterfaces.hpp"
+#include "shamrock/solvergraph/DDSharedScalar.hpp"
+#include "shamrock/solvergraph/PatchtreeFieldEdge.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SerialPatchTreeEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamtree/TreeTraversal.hpp"
+#include <functional>
 
 using namespace shamrock::sph;
 
 namespace shammodels::sph {
+
+    template<class vec, class SPHKernel>
+    auto SPHUtilities<vec, SPHKernel>::build_interf_cache(
+        GhostHndl &interf_handle, SerialPatchTree<vec> &sptree, flt h_evol_max)
+        -> InterfBuildCache {
+
+        StackEntry stack_loc{};
+
+        using namespace shamrock::patch;
+        using namespace shamrock::solvergraph;
+
+        using InterfaceBuildInfos = typename GhostHndl::InterfaceBuildInfos;
+
+        const u32 ihpart = sched.pdl_old().template get_field_idx<flt>("hpart");
+
+        PatchField<flt> interactR_patch = sched.map_owned_to_patch_field_simple<flt>(
+            [&](const Patch p, PatchDataLayer &pdat) -> flt {
+                if (!pdat.is_empty()) {
+                    return pdat.get_field<flt>(ihpart).compute_max() * h_evol_max * Rkern;
+                } else {
+                    return shambase::VectorProperties<flt>::get_min();
+                }
+            });
+
+        PatchtreeField<flt> interactR_mpi_tree = sptree.make_patch_tree_field(
+            sched,
+            shamsys::instance::get_compute_queue(),
+            interactR_patch,
+            [](flt h0, flt h1, flt h2, flt h3, flt h4, flt h5, flt h6, flt h7) {
+                return sham::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
+            });
+
+        // ----------------------------------------------------------------------------------------
+        // temporary wrapper to slowly migrate to the new solvergraph
+        SimulationBoxInfo &sim_box                  = sched.get_sim_box();
+        PatchCoordTransform<vec> patch_coord_transf = sim_box.get_patch_transform<vec>();
+        auto [bmin, bmax]                           = sim_box.get_bounding_box<vec>();
+
+        auto sim_box_edge   = std::make_shared<ScalarEdge<shammath::AABB<vec>>>("", "");
+        sim_box_edge->value = shammath::AABB<vec>(bmin, bmax);
+
+        auto patch_tree_edge        = std::make_shared<SerialPatchTreeRefEdge<vec>>("", "");
+        patch_tree_edge->patch_tree = std::ref(sptree);
+
+        auto interact_radius_tree             = std::make_shared<PatchtreeFieldEdge<flt>>("", "");
+        interact_radius_tree->patchtree_field = std::move(interactR_mpi_tree);
+
+        // interactR_patch is not used afterwards, so move it (O(1)) instead of copying over all
+        // global patches
+        auto interact_radius    = std::make_shared<ScalarsEdge<flt>>("", "");
+        interact_radius->values = std::move(interactR_patch.field_all);
+
+        auto local_patch_boxes = std::make_shared<ScalarsEdge<shammath::CoordRange<vec>>>("", "");
+        sched.for_each_local_patch([&](const Patch &p) {
+            local_patch_boxes->values.add_obj(p.id_patch, patch_coord_transf.to_obj_coord(p));
+        });
+
+        auto interface_infos = std::make_shared<DDSharedScalar<InterfaceBuildInfos>>("", "");
+
+        using CfgClass           = BasicSPHGhostHandlerConfig<vec>;
+        using BCPeriodic         = typename CfgClass::Periodic;
+        using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
+
+        const auto &ghost_config = interf_handle.get_ghost_config();
+
+        if (const BCPeriodic *cfg = std::get_if<BCPeriodic>(&ghost_config)) {
+            modules::FindGhostInterfacesPeriodic<vec> node;
+            node.set_edges(
+                sim_box_edge,
+                patch_tree_edge,
+                interact_radius_tree,
+                interact_radius,
+                local_patch_boxes,
+                interface_infos);
+            node.evaluate();
+        } else if (const BCShearingPeriodic *cfg = std::get_if<BCShearingPeriodic>(&ghost_config)) {
+            auto shear_value  = IDataEdge<flt>::make_shared("", "");
+            shear_value->data = cfg->shear_value;
+
+            modules::FindGhostInterfacesShearingPeriodic<vec> node(
+                cfg->shear_base, cfg->shear_dir, cfg->shear_speed);
+            node.set_edges(
+                sim_box_edge,
+                patch_tree_edge,
+                interact_radius_tree,
+                interact_radius,
+                local_patch_boxes,
+                shear_value,
+                interface_infos);
+            node.evaluate();
+        } else {
+            modules::FindGhostInterfacesFree<vec> node;
+            node.set_edges(
+                sim_box_edge,
+                patch_tree_edge,
+                interact_radius_tree,
+                interact_radius,
+                local_patch_boxes,
+                interface_infos);
+            node.evaluate();
+        }
+
+        // ----------------------------------------------------------------------------------------
+
+        return interf_handle.gen_id_table_interfaces(std::move(interface_infos->values));
+    }
 
     template<class vec, class SPHKernel>
     void SPHUtilities<vec, SPHKernel>::iterate_smoothing_length_cache(

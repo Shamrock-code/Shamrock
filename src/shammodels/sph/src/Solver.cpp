@@ -46,6 +46,7 @@
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
 #include "shammodels/sph/modules/BallabioTsLimiter.hpp"
+#include "shammodels/sph/modules/BuildGhostInterfaceIdTable.hpp"
 #include "shammodels/sph/modules/BuildTrees.hpp"
 #include "shammodels/sph/modules/ComputeCFLCourant.hpp"
 #include "shammodels/sph/modules/ComputeCFLDivBCleaning.hpp"
@@ -1524,6 +1525,7 @@ void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache() {
     using namespace shamrock::solvergraph;
 
     using InterfaceBuildInfos = typename GhostHandle::InterfaceBuildInfos;
+    using InterfaceIdTable    = typename GhostHandle::InterfaceIdTable;
 
     PatchScheduler &sched         = scheduler();
     GhostHandle &ghost_handle     = storage.ghost_handler.get();
@@ -1619,10 +1621,21 @@ void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache() {
         node.evaluate();
     }
 
+    auto positions                           = std::make_shared<FieldRefs<Tvec>>("", "");
+    DDPatchDataFieldRef<Tvec> positions_refs = {};
+    sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        positions_refs.add_obj(p.id_patch, std::ref(pdat.get_field<Tvec>(0)));
+    });
+    positions->set_refs(positions_refs);
+
+    auto interface_id_table = std::make_shared<DDSharedScalar<InterfaceIdTable>>("", "");
+
+    modules::BuildGhostInterfaceIdTable<Tvec> build_id_table;
+    build_id_table.set_edges(positions, interface_infos, interface_id_table);
+    build_id_table.evaluate();
     // ----------------------------------------------------------------------------------------
 
-    storage.ghost_patch_cache.set(
-        ghost_handle.gen_id_table_interfaces(std::move(interface_infos->values)));
+    storage.ghost_patch_cache.set(std::move(interface_id_table->values));
 
     // storage.ghost_handler.get().gen_debug_patch_ghost(storage.ghost_patch_cache.get());
 }

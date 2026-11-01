@@ -81,8 +81,6 @@ namespace shammodels::sph {
             f64 part_cnt_ratio;
         };
 
-        using GeneratorMap = shambase::DistributedDataShared<InterfaceBuildInfos>;
-
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &xyzh_ghost_layout;
 
         std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner;
@@ -97,15 +95,6 @@ namespace shammodels::sph {
 
         /// Get the boundary condition config of this ghost handler
         inline const Config &get_ghost_config() const { return ghost_config; }
-
-        /**
-         * @brief precompute interfaces members and cache result in the return
-         *
-         * @param gen
-         * @return shambase::DistributedDataShared<InterfaceIdTable>
-         */
-        shambase::DistributedDataShared<InterfaceIdTable> gen_id_table_interfaces(
-            GeneratorMap &&gen);
 
         void gen_debug_patch_ghost(shambase::DistributedDataShared<InterfaceIdTable> &interf_info);
 

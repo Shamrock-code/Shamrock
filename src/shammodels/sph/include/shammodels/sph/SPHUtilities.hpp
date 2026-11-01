@@ -21,7 +21,6 @@
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversal.hpp"
-#include <utility>
 
 namespace shammodels::sph {
 
@@ -38,40 +37,10 @@ namespace shammodels::sph {
         static constexpr flt Rkern = SPHKernel::Rkern;
 
         using GhostHndl = BasicSPHGhostHandler<vec>;
-        using InterfBuildCache
-            = shambase::DistributedDataShared<typename GhostHndl::InterfaceIdTable>;
 
         PatchScheduler &sched;
 
         SPHUtilities(PatchScheduler &sched) : sched(sched) {}
-
-        inline InterfBuildCache build_interf_cache(
-            GhostHndl &interf_handle, SerialPatchTree<vec> &sptree, flt h_evol_max) {
-
-            using namespace shamrock::patch;
-
-            const u32 ihpart = sched.pdl_old().template get_field_idx<flt>("hpart");
-
-            PatchField<flt> interactR_patch = sched.map_owned_to_patch_field_simple<flt>(
-                [&](const Patch p, PatchDataLayer &pdat) -> flt {
-                    if (!pdat.is_empty()) {
-                        return pdat.get_field<flt>(ihpart).compute_max() * h_evol_max * Rkern;
-                    } else {
-                        return shambase::VectorProperties<flt>::get_min();
-                    }
-                });
-
-            PatchtreeField<flt> interactR_mpi_tree = sptree.make_patch_tree_field(
-                sched,
-                shamsys::instance::get_compute_queue(),
-                interactR_patch,
-                [](flt h0, flt h1, flt h2, flt h3, flt h4, flt h5, flt h6, flt h7) {
-                    return sham::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
-                });
-
-            return interf_handle.make_interface_cache(
-                sptree, std::move(interactR_mpi_tree), interactR_patch);
-        }
 
         static void iterate_smoothing_length_cache(
 

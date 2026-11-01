@@ -250,105 +250,124 @@ namespace {
         }
     }
 
+    /**
+     * @brief Gather the edges shared by every interface finder in a single struct
+     */
+    template<class Tvec>
+    struct InterfaceSearch {
+        using Tscal = shambase::VecComponent<Tvec>;
+        using InterfaceBuildInfos =
+            typename shammodels::sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
+        using PtNode = typename SerialPatchTree<Tvec>::PtNode;
+
+        SerialPatchTree<Tvec> &sptree;
+        sycl::host_accessor<Tscal, 1, sycl::access_mode::read> acc_tf;
+        sycl::host_accessor<PtNode, 1, sycl::access_mode::read> acc_tree;
+        sycl::host_accessor<u64, 1, sycl::access_mode::read> acc_lpid;
+        const shambase::DistributedData<Tscal> &interact_radius;
+        std::vector<std::pair<u64, shammath::CoordRange<Tvec>>> senders;
+        shambase::DistributedDataShared<InterfaceBuildInfos> &interf_map;
+
+        template<class Edges>
+        InterfaceSearch(Edges &edges)
+            : sptree(edges.patch_tree.get_patch_tree()),
+              acc_tf{edges.interact_radius_tree.get_buf(), sycl::read_only},
+              acc_tree{shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only},
+              acc_lpid{shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only},
+              interact_radius(edges.interact_radius.values),
+              interf_map(edges.interface_infos.values) {
+
+            edges.local_patch_boxes.values.for_each(
+                [&](u64 id, const shammath::CoordRange<Tvec> &box) {
+                    senders.push_back({id, box});
+                });
+        }
+
+        /**
+         * @brief Find the interfaces from every sender patch shifted by `offset` to the
+         * receiver patches. The interface of a patch with itself is skipped for the unshifted
+         * image (`ioff == 0`).
+         */
+        void append_interfaces_for_offset(Tvec offset, Tvec offset_speed, i32_3 ioff) {
+
+            using namespace shammath;
+
+            bool is_null_offset = (ioff.x() == 0) && (ioff.y() == 0) && (ioff.z() == 0);
+
+#pragma omp parallel for
+            for (u32 i = 0; i < senders.size(); i++) {
+                u64 sender_id                 = senders[i].first;
+                CoordRange<Tvec> sender_bsize = senders[i].second;
+
+                CoordRange<Tvec> sender_bsize_off = sender_bsize.add_offset(offset);
+
+                Tscal sender_volume = sender_bsize.get_volume();
+
+                sptree.host_for_each_leafs_internal(
+                    [&](u64 tree_id, PtNode n) {
+                        Tscal receiv_h_max = acc_tf[tree_id];
+                        CoordRange<Tvec> receiv_exp{
+                            n.box_min - receiv_h_max, n.box_max + receiv_h_max};
+
+                        return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
+                    },
+                    [&](u64 id_found, PtNode n) {
+                        if ((id_found == sender_id) && is_null_offset) {
+                            return;
+                        }
+
+                        CoordRange<Tvec> receiv_exp
+                            = CoordRange<Tvec>{n.box_min, n.box_max}.expand_all(
+                                interact_radius.get(id_found));
+
+                        CoordRange<Tvec> interf_volume
+                            = sender_bsize.get_intersect(receiv_exp.add_offset(-offset));
+
+#pragma omp critical
+                        interf_map.add_obj(
+                            sender_id,
+                            id_found,
+                            {offset,
+                             offset_speed,
+                             ioff,
+                             interf_volume,
+                             interf_volume.get_volume() / sender_volume});
+                    },
+                    acc_tree,
+                    acc_lpid);
+            }
+        }
+    };
+
 } // namespace
 
 template<class Tvec>
 void shammodels::sph::modules::FindGhostInterfacesFree<Tvec>::_impl_evaluate_internal() {
     __shamrock_stack_entry();
 
-    using namespace shammath;
-
     auto edges = get_edges();
 
-    SerialPatchTree<Tvec> &sptree                         = edges.patch_tree.get_patch_tree();
-    const shambase::DistributedData<Tscal> &int_range_max = edges.interact_radius.values;
+    edges.interface_infos.values = {};
+    InterfaceSearch<Tvec> search(edges);
 
-    std::vector<std::pair<u64, CoordRange<Tvec>>> senders;
-    edges.local_patch_boxes.values.for_each([&](u64 id, const CoordRange<Tvec> &box) {
-        senders.push_back({id, box});
-    });
-
-    shambase::DistributedDataShared<InterfaceBuildInfos> &interf_map = edges.interface_infos.values;
-    interf_map                                                       = {};
-
-    sycl::host_accessor acc_tf{edges.interact_radius_tree.get_buf(), sycl::read_only};
-    // sender translation
-    Tvec periodic_offset = Tvec{0, 0, 0};
-
-    sycl::host_accessor tree{shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
-    sycl::host_accessor lpid{shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
-
-#pragma omp parallel for
-    for (u32 i = 0; i < senders.size(); i++) {
-        u64 sender_id                 = senders[i].first;
-        CoordRange<Tvec> sender_bsize = senders[i].second;
-
-        CoordRange<Tvec> sender_bsize_off = sender_bsize.add_offset(periodic_offset);
-
-        Tscal sender_volume = sender_bsize.get_volume();
-
-        using PtNode = typename SerialPatchTree<Tvec>::PtNode;
-
-        sptree.host_for_each_leafs_internal(
-            [&](u64 tree_id, PtNode n) {
-                Tscal receiv_h_max = acc_tf[tree_id];
-                CoordRange<Tvec> receiv_exp{n.box_min - receiv_h_max, n.box_max + receiv_h_max};
-
-                return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
-            },
-            [&](u64 id_found, PtNode n) {
-                if (id_found == sender_id) {
-                    return;
-                }
-
-                CoordRange<Tvec> receiv_exp = CoordRange<Tvec>{n.box_min, n.box_max}.expand_all(
-                    int_range_max.get(id_found));
-
-                CoordRange<Tvec> interf_volume
-                    = sender_bsize.get_intersect(receiv_exp.add_offset(-periodic_offset));
-
-#pragma omp critical
-                interf_map.add_obj(
-                    sender_id,
-                    id_found,
-                    {periodic_offset,
-                     {0, 0, 0},
-                     {0, 0, 0},
-                     interf_volume,
-                     interf_volume.get_volume() / sender_volume});
-            },
-            tree,
-            lpid);
-    }
+    search.append_interfaces_for_offset({0, 0, 0}, {0, 0, 0}, {0, 0, 0});
 }
 
 template<class Tvec>
 void shammodels::sph::modules::FindGhostInterfacesPeriodic<Tvec>::_impl_evaluate_internal() {
     __shamrock_stack_entry();
 
-    using namespace shammath;
-
     auto edges = get_edges();
 
     const shammath::AABB<Tvec> &sim_box = edges.sim_box.value;
     Tvec bsize                          = sim_box.upper - sim_box.lower;
 
-    SerialPatchTree<Tvec> &sptree                         = edges.patch_tree.get_patch_tree();
-    const shambase::DistributedData<Tscal> &int_range_max = edges.interact_radius.values;
-
-    std::vector<std::pair<u64, CoordRange<Tvec>>> senders;
-    edges.local_patch_boxes.values.for_each([&](u64 id, const CoordRange<Tvec> &box) {
-        senders.push_back({id, box});
-    });
-
-    shambase::DistributedDataShared<InterfaceBuildInfos> &interf_map = edges.interface_infos.values;
-    interf_map                                                       = {};
+    edges.interface_infos.values = {};
+    InterfaceSearch<Tvec> search(edges);
 
     i32 repetition_x = 1;
     i32 repetition_y = 1;
     i32 repetition_z = 1;
-
-    sycl::host_accessor acc_tf{edges.interact_radius_tree.get_buf(), sycl::read_only};
 
     for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
         for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
@@ -357,56 +376,7 @@ void shammodels::sph::modules::FindGhostInterfacesPeriodic<Tvec>::_impl_evaluate
                 // sender translation
                 Tvec periodic_offset = Tvec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
 
-                sycl::host_accessor tree{
-                    shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
-                sycl::host_accessor lpid{
-                    shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
-
-#pragma omp parallel for
-                for (u32 i = 0; i < senders.size(); i++) {
-                    u64 sender_id                 = senders[i].first;
-                    CoordRange<Tvec> sender_bsize = senders[i].second;
-
-                    CoordRange<Tvec> sender_bsize_off = sender_bsize.add_offset(periodic_offset);
-
-                    Tscal sender_volume = sender_bsize.get_volume();
-
-                    using PtNode = typename SerialPatchTree<Tvec>::PtNode;
-
-                    sptree.host_for_each_leafs_internal(
-                        [&](u64 tree_id, PtNode n) {
-                            Tscal receiv_h_max = acc_tf[tree_id];
-                            CoordRange<Tvec> receiv_exp{
-                                n.box_min - receiv_h_max, n.box_max + receiv_h_max};
-
-                            return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
-                        },
-                        [&](u64 id_found, PtNode n) {
-                            if ((id_found == sender_id) && (xoff == 0) && (yoff == 0)
-                                && (zoff == 0)) {
-                                return;
-                            }
-
-                            CoordRange<Tvec> receiv_exp
-                                = CoordRange<Tvec>{n.box_min, n.box_max}.expand_all(
-                                    int_range_max.get(id_found));
-
-                            CoordRange<Tvec> interf_volume = sender_bsize.get_intersect(
-                                receiv_exp.add_offset(-periodic_offset));
-
-#pragma omp critical
-                            interf_map.add_obj(
-                                sender_id,
-                                id_found,
-                                {periodic_offset,
-                                 {0, 0, 0},
-                                 {xoff, yoff, zoff},
-                                 interf_volume,
-                                 interf_volume.get_volume() / sender_volume});
-                        },
-                        tree,
-                        lpid);
-                }
+                search.append_interfaces_for_offset(periodic_offset, {0, 0, 0}, {xoff, yoff, zoff});
             }
         }
     }
@@ -417,8 +387,6 @@ void shammodels::sph::modules::FindGhostInterfacesShearingPeriodic<
     Tvec>::_impl_evaluate_internal() {
     __shamrock_stack_entry();
 
-    using namespace shammath;
-
     auto edges = get_edges();
 
     const shammath::AABB<Tvec> &sim_box = edges.sim_box.value;
@@ -426,72 +394,11 @@ void shammodels::sph::modules::FindGhostInterfacesShearingPeriodic<
 
     ShearPeriodicInfo<Tscal> shear_info{shear_base, shear_dir, edges.shear_value.data, shear_speed};
 
-    SerialPatchTree<Tvec> &sptree                         = edges.patch_tree.get_patch_tree();
-    const shambase::DistributedData<Tscal> &int_range_max = edges.interact_radius.values;
-
-    std::vector<std::pair<u64, CoordRange<Tvec>>> senders;
-    edges.local_patch_boxes.values.for_each([&](u64 id, const CoordRange<Tvec> &box) {
-        senders.push_back({id, box});
-    });
-
-    shambase::DistributedDataShared<InterfaceBuildInfos> &interf_map = edges.interface_infos.values;
-    interf_map                                                       = {};
-
-    sycl::host_accessor acc_tf{edges.interact_radius_tree.get_buf(), sycl::read_only};
+    edges.interface_infos.values = {};
+    InterfaceSearch<Tvec> search(edges);
 
     for_each_patch_shift<Tscal>(shear_info, bsize, [&](i32_3 ioff, ShiftInfo<Tscal> shift) {
-        i32 xoff = ioff.x();
-        i32 yoff = ioff.y();
-        i32 zoff = ioff.z();
-
-        Tvec offset = shift.shift;
-
-        sycl::host_accessor tree{shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
-        sycl::host_accessor lpid{
-            shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
-
-#pragma omp parallel for
-        for (u32 i = 0; i < senders.size(); i++) {
-            u64 sender_id                 = senders[i].first;
-            CoordRange<Tvec> sender_bsize = senders[i].second;
-
-            CoordRange<Tvec> sender_bsize_off = sender_bsize.add_offset(offset);
-
-            Tscal sender_volume = sender_bsize.get_volume();
-
-            using PtNode = typename SerialPatchTree<Tvec>::PtNode;
-
-            sptree.host_for_each_leafs_internal(
-                [&](u64 tree_id, PtNode n) {
-                    Tscal receiv_h_max = acc_tf[tree_id];
-                    CoordRange<Tvec> receiv_exp{n.box_min - receiv_h_max, n.box_max + receiv_h_max};
-
-                    return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
-                },
-                [&](u64 id_found, PtNode n) {
-                    if ((id_found == sender_id) && (xoff == 0) && (yoff == 0) && (zoff == 0)) {
-                        return;
-                    }
-
-                    CoordRange<Tvec> receiv_exp = CoordRange<Tvec>{n.box_min, n.box_max}.expand_all(
-                        int_range_max.get(id_found));
-
-                    CoordRange<Tvec> interf_volume
-                        = sender_bsize.get_intersect(receiv_exp.add_offset(-offset));
-
-#pragma omp critical
-                    interf_map.add_obj(
-                        sender_id,
-                        id_found,
-                        {offset,
-                         shift.shift_speed,
-                         {xoff, yoff, zoff},
-                         interf_volume,
-                         interf_volume.get_volume() / sender_volume});
-                },
-                tree,
-                lpid);
-        }
+        search.append_interfaces_for_offset(shift.shift, shift.shift_speed, ioff);
     });
 }
 

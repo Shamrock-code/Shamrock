@@ -128,8 +128,7 @@ namespace shammodels::basegodunov {
 
         mode config = None{};
 
-        bool old_amr         = true;
-        bool do_enabled_2to1 = true;
+        bool old_amr = true;
 
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }

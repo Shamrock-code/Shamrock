@@ -140,6 +140,9 @@ def plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, dpi=200):
 
 
 def run_simulation(t_final, with_2to_1=True):
+    if not with_2to_1:
+        raise NotImplementedError("disabling the AMR 2:1 balance is not supported yet")
+
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
     model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
@@ -154,8 +157,6 @@ def run_simulation(t_final, with_2to_1=True):
     cfg.set_boundary_condition("z", "periodic")
     cfg.set_riemann_solver_hllc()
     cfg.set_slope_lim_minmod()
-
-    cfg.set_enable_2to1(with_2to_1)
 
     cfg.set_amr_mode_old(False)
     cfg.set_second_order_interpolation_mode()

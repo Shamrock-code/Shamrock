@@ -5,10 +5,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
 from numba import njit
+from shamrock.model_ramses import ExtForceCoupling
 
 import shamrock
 
-### Parameters
+# %%
+# Parameters
+# ^^^^^^^^^^^^^^^^^^
 
 ## Grid setup
 resolution = 128
@@ -23,13 +26,15 @@ gravity_softening = 0.05
 outer_radius = 0.25
 inner_radius_factor = 0.1
 inner_iso_z_flaring = 2
-gamma0 = 1.6
+gamma0 = 1.00001
 smallr = 1e-4
 center = 0.5
 h_over_r = 1
 
 
-## Initial conditions
+# %%
+# Initial conditions
+# ^^^^^^^^^^^^^^^^^^
 
 
 @njit
@@ -203,7 +208,10 @@ def plot_force(t, iplot):
     plot_rho_slice_cartesian(metadata, force, iplot, "force")
 
 
-### Initialisation
+# %%
+# Initialisation
+# ^^^^^^^^^^^^^^^^^^
+
 
 print("initialising model...")
 
@@ -220,7 +228,8 @@ cfg = model.gen_default_config()
 
 scale_fact = 1 / (cell_size * base)
 cfg.set_scale_factor(scale_fact)
-cfg.set_eos_gamma(1.00001)
+cfg.set_eos_gamma(gamma0)
+cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)
 
 cfg.set_riemann_solver_hll()
 cfg.set_slope_lim_minmod()
@@ -240,6 +249,11 @@ model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 print("initial total energy...", flush=True)
 model.set_field_value_lambda_f64("rhoetot", rhoe_map)
 print("initialisation done, plotting initial conditions...", flush=True)
+
+
+# %%
+# Run the simulation
+# ^^^^^^^^^^^^^^^^^^
 
 dt = 0.01
 for i in range(30):

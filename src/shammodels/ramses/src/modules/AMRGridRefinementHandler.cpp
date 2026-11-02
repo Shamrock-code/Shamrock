@@ -1845,9 +1845,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             // for each siblings block, perform restriction from its 8 children cells
             for (u32 pid = 0; pid < 8; pid++) {
-                f64 rho_pid       = {};
-                f64_3 rho_vel_pid = {};
-                f64 rhoe_pid      = {};
+                Tscal rho_pid    = {};
+                Tvec rho_vel_pid = {};
+                Tscal rhoe_pid   = {};
 
                 for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
                     rho_pid += acc.rho[old_blocks[pid] * AMRBlock::block_size + cell_id];
@@ -2571,11 +2571,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             // for each siblings block, perform restriction from its 8 children cells
             for (u32 pid = 0; pid < 8; pid++) {
-                f64 rho_pid       = {};
-                f64_3 rho_vel_pid = {};
-                f64 rhoe_pid      = {};
-                f64 phi_old_pid   = {};
-                f64 phi_new_pid   = {};
+                Tscal rho_pid     = {};
+                Tvec rho_vel_pid  = {};
+                Tscal rhoe_pid    = {};
+                Tscal phi_old_pid = {};
+                Tscal phi_new_pid = {};
 
                 for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
                     rho_pid += acc.rho[old_blocks[pid] * AMRBlock::block_size + cell_id];

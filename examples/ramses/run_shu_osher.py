@@ -42,7 +42,8 @@ shamrock.matplotlib.set_shamrock_mpl_style()
 #
 # The resolution is kept low so that the example runs in a reasonable time in the documentation
 # build. Increase ``blocks_x`` (e.g. to 512 for 1024 cells along x) for a sharper post-shock
-# wave train.
+# wave train, keeping it a multiple of ``blocks_yz`` to avoid splitting the domain into many
+# patches.
 
 gamma = 1.4
 
@@ -53,9 +54,13 @@ fp = 5.0  # frequency of the density perturbation
 timestep_list = [0.18, 0.20, 0.25, 0.30, 0.35, 0.40, 0.42, 0.44, 0.45, 0.47, 0.50]
 
 # A RAMSES block has 2 cells per side, so each block is ``sz`` grid units wide.
+# The base grid is split into cubic patches of ``g`` blocks per side, where ``g`` is the largest
+# power of 2 dividing both ``blocks_x`` and ``blocks_yz``, giving
+# ``(blocks_x / g) * (blocks_yz / g)**2`` patches. Each patch adds a fixed cost per timestep, so
+# the transverse extent is chosen to keep the patch count low (here 9 patches).
 sz = 1 << 1
-blocks_x = 160  # number of blocks along x
-blocks_yz = 8  # number of blocks along y and z (periodic, the problem is 1D)
+blocks_x = 144  # number of blocks along x
+blocks_yz = 16  # number of blocks along y and z (periodic, the problem is 1D)
 
 nx = 2 * blocks_x  # number of cells along x
 scale_fact = 2 / (sz * blocks_x)  # box length along x is 2

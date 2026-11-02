@@ -17,7 +17,7 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
-#include "shammodels/sph/SPHUtilities.hpp"
+#include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/ComputeOmega.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"

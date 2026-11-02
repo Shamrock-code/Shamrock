@@ -11,6 +11,7 @@
 
 /**
  * @file AddExtForceField.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Node adding a per cell acceleration field to the external forces acceleration
  */

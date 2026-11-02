@@ -1972,7 +1972,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                     [&](const PointMassGravity &cfg) {
                         for (auto &[a_ext_level, dt_level] : a_ext_levels) {
                             modules::AddExtForcePointMassGravity<Tvec> node{
-                                AMRBlock::block_size, cfg.mass, cfg.pos, cfg.epsilon_softening};
+                                AMRBlock::block_size, cfg.mass, cfg.pos, cfg.epsilon_soft};
                             node.set_edges(storage.block_counts, storage.coordinates, a_ext_level);
                             ext_force_sequence.push_back(
                                 std::make_shared<decltype(node)>(std::move(node)));

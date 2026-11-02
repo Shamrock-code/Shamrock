@@ -46,9 +46,9 @@ namespace shammodels::basegodunov {
 
         // Point mass gravity
         struct PointMassGravity {
-            Tscal mass              = 1;
-            Tvec pos                = Tvec(0.5, 0.5, 0.5);
-            Tscal epsilon_softening = 0.05;
+            Tscal mass         = 1;
+            Tvec pos           = Tvec(0.5, 0.5, 0.5);
+            Tscal epsilon_soft = 0.05;
         };
 
         using Variant = std::variant<ConstantGravity, PointMassGravity>;
@@ -62,8 +62,8 @@ namespace shammodels::basegodunov {
         inline void set_coupling(ExtForceCoupling mode) { coupling = mode; }
 
         inline void add_constant_gravity(Tvec g) { ext_forces.push_back(ConstantGravity{g}); }
-        inline void add_point_mass_gravity(Tscal mass, Tvec pos, Tscal epsilon_softening) {
-            ext_forces.push_back(PointMassGravity{mass, pos, epsilon_softening});
+        inline void add_point_mass_gravity(Tscal mass, Tvec pos, Tscal epsilon_soft) {
+            ext_forces.push_back(PointMassGravity{mass, pos, epsilon_soft});
             is_coordinates_needed = true;
         }
 
@@ -88,7 +88,7 @@ namespace shammodels::basegodunov {
                                 {"force_type", "point_mass_gravity"},
                                 {"mass", cfg.mass},
                                 {"pos", cfg.pos},
-                                {"epsilon_softening", cfg.epsilon_softening}});
+                                {"epsilon_soft", cfg.epsilon_soft}});
                     },
                 },
                 var_force);
@@ -117,7 +117,7 @@ namespace shammodels::basegodunov {
                 p.add_point_mass_gravity(
                     jforce.at("mass").get<Tscal>(),
                     jforce.at("pos").get<Tvec>(),
-                    jforce.at("epsilon_softening").get<Tscal>());
+                    jforce.at("epsilon_soft").get<Tscal>());
             } else {
                 shambase::throw_with_loc<std::runtime_error>(
                     "Invalid external force type: " + force_type);

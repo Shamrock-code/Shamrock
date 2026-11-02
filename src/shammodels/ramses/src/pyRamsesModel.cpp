@@ -344,6 +344,14 @@ namespace shammodels::basegodunov {
                 },
                 py::arg("g"))
             .def(
+                "add_ext_force_point_mass_gravity",
+                [](TConfig &self, Tscal mass, Tvec pos, Tscal epsilon_soft) {
+                    self.ext_force_config.add_point_mass_gravity(mass, pos, epsilon_soft);
+                },
+                py::arg("mass"),
+                py::arg("pos"),
+                py::arg("epsilon_soft"))
+            .def(
                 "set_ext_force_coupling",
                 [](TConfig &self, ExtForceCoupling mode) {
                     self.ext_force_config.set_coupling(mode);

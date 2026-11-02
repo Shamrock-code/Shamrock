@@ -27,6 +27,7 @@
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/AddExtForceConstantGravity.hpp"
 #include "shammodels/ramses/modules/AddExtForceField.hpp"
+#include "shammodels/ramses/modules/AddExtForcePointMassGravity.hpp"
 #include "shammodels/ramses/modules/ApplyExtForceDust.hpp"
 #include "shammodels/ramses/modules/ApplyExtForceDustTrapezoidal.hpp"
 #include "shammodels/ramses/modules/ApplyExtForceGas.hpp"
@@ -1649,8 +1650,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         // the time integration, so that they are taken into account by every integrator (with or
         // without drag). Self-gravity is one of them.
 
-        using ExtForceConfig  = typename Config::ExtForceConfig;
-        using ConstantGravity = typename ExtForceConfig::ConstantGravity;
+        using ExtForceConfig   = typename Config::ExtForceConfig;
+        using ConstantGravity  = typename ExtForceConfig::ConstantGravity;
+        using PointMassGravity = typename ExtForceConfig::PointMassGravity;
 
         const bool trapezoidal
             = solver_config.ext_force_config.coupling == ExtForceCoupling::Trapezoidal;
@@ -1963,6 +1965,15 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                             modules::AddExtForceConstantGravity<Tvec> node{
                                 AMRBlock::block_size, cfg.g};
                             node.set_edges(storage.block_counts, a_ext_level);
+                            ext_force_sequence.push_back(
+                                std::make_shared<decltype(node)>(std::move(node)));
+                        }
+                    },
+                    [&](const PointMassGravity &cfg) {
+                        for (auto &[a_ext_level, dt_level] : a_ext_levels) {
+                            modules::AddExtForcePointMassGravity<Tvec> node{
+                                AMRBlock::block_size, cfg.mass, cfg.pos, cfg.epsilon_softening};
+                            node.set_edges(storage.block_counts, storage.coordinates, a_ext_level);
                             ext_force_sequence.push_back(
                                 std::make_shared<decltype(node)>(std::move(node)));
                         }

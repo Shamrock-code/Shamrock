@@ -44,9 +44,17 @@ namespace shammodels::basegodunov {
             Tvec g;
         };
 
-        using Variant = std::variant<ConstantGravity>;
+        // Point mass gravity
+        struct PointMassGravity {
+            Tscal mass              = 1;
+            Tvec pos                = Tvec(0.5, 0.5, 0.5);
+            Tscal epsilon_softening = 0.05;
+        };
+
+        using Variant = std::variant<ConstantGravity, PointMassGravity>;
 
         std::vector<Variant> ext_forces;
+        bool is_coordinates_needed = false;
 
         /// Time quadrature of the external forces source term
         ExtForceCoupling coupling = ExtForceCoupling::Midpoint;
@@ -54,6 +62,10 @@ namespace shammodels::basegodunov {
         inline void set_coupling(ExtForceCoupling mode) { coupling = mode; }
 
         inline void add_constant_gravity(Tvec g) { ext_forces.push_back(ConstantGravity{g}); }
+        inline void add_point_mass_gravity(Tscal mass, Tvec pos, Tscal epsilon_softening) {
+            ext_forces.push_back(PointMassGravity{mass, pos, epsilon_softening});
+            is_coordinates_needed = true;
+        }
 
         inline bool has_ext_forces() const { return !ext_forces.empty(); }
     };
@@ -70,6 +82,14 @@ namespace shammodels::basegodunov {
                         force_list.push_back(
                             nlohmann::json{{"force_type", "constant_gravity"}, {"g", cfg.g}});
                     },
+                    [&](const typename EF::PointMassGravity &cfg) {
+                        force_list.push_back(
+                            nlohmann::json{
+                                {"force_type", "point_mass_gravity"},
+                                {"mass", cfg.mass},
+                                {"pos", cfg.pos},
+                                {"epsilon_softening", cfg.epsilon_softening}});
+                    },
                 },
                 var_force);
         }
@@ -79,6 +99,7 @@ namespace shammodels::basegodunov {
 
     template<class Tvec>
     inline void from_json(const nlohmann::json &j, ExtForceConfig<Tvec> &p) {
+
         p.ext_forces.clear();
 
         // configs dumped before the coupling was configurable used the midpoint rule
@@ -89,8 +110,14 @@ namespace shammodels::basegodunov {
 
         for (const auto &jforce : j.at("force_list")) {
             const std::string force_type = jforce.at("force_type").get<std::string>();
+            using Tscal                  = shambase::VecComponent<Tvec>;
             if (force_type == "constant_gravity") {
                 p.add_constant_gravity(jforce.at("g").get<Tvec>());
+            } else if (force_type == "point_mass_gravity") {
+                p.add_point_mass_gravity(
+                    jforce.at("mass").get<Tscal>(),
+                    jforce.at("pos").get<Tvec>(),
+                    jforce.at("epsilon_softening").get<Tscal>());
             } else {
                 shambase::throw_with_loc<std::runtime_error>(
                     "Invalid external force type: " + force_type);

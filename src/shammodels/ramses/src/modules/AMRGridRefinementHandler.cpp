@@ -975,7 +975,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 // avoid the out-of-bound read
                 if (id + split_count <= obj_cnt) {
                     bool all_want_to_merge = true;
-                    bool any_to_refine     = false;
 
                     auto get_coord = [](u32 i) -> std::array<u32, dim> {
                         constexpr u32 NsideBlockPow = 1;
@@ -1010,7 +1009,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     for (u32 b_lid = 0; b_lid < split_count; b_lid++) {
                         blocks[b_lid]     = BlockCoord{acc_min[id + b_lid], acc_max[id + b_lid]};
                         all_want_to_merge = all_want_to_merge && acc_want_merge[id + b_lid];
-                        any_to_refine     = any_to_refine || acc_refine_flag[id + b_lid];
                     }
 
                     BlockCoord merged                            = BlockCoord::get_merge(blocks);
@@ -1020,8 +1018,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                                    && sham::equals(blocks[lid].bmax, splitted[lid].bmax);
                     }
 
-                    // none of the siblings can be refined in the same pass
-                    do_merge = do_merge && all_want_to_merge && !any_to_refine;
+                    do_merge = do_merge && all_want_to_merge;
+                    if (acc_refine_flag[id] && do_merge) {
+                        do_merge = false;
+                    }
 
                 } else {
                     do_merge = false;

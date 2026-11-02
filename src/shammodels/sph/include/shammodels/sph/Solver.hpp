@@ -360,6 +360,10 @@ namespace shammodels::sph {
         /// @brief Updates load balancing values and synchronizes patch ownership
         void update_sync_load_values();
 
+        /// @brief Inject the particles born during (t_old, t_new] and re-create the boundary
+        /// particles of the injectors at t_new
+        void inject_particles(Tscal t_old, Tscal t_new);
+
         Solver(ShamrockCtx &context) : context(context) {}
 
         /// @brief Initializes the solver graph for computation pipeline

@@ -2728,6 +2728,23 @@ void shammodels::sph::Solver<Tvec, Kern>::update_sync_load_values() {
 }
 
 template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::inject_particles(Tscal t_old, Tscal t_new) {
+
+    StackEntry stack_loc{};
+
+    if (!storage.particle_injector) {
+        storage.particle_injector
+            = std::make_unique<shammodels::common::injection::ParticleInjector<Tvec>>(
+                solver_config.particle_injection, solver_config.gpart_mass, Kernel::hfactd);
+    }
+
+    storage.particle_injector->inject(scheduler(), t_old, t_new);
+
+    // update part counts and spans since particles have been added and removed
+    storage.solver_graph.get_node_ref_base("attach fields to scheduler").evaluate();
+}
+
+template<class Tvec, template<class> class Kern>
 shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
     // has to be first since there is a barrier that may mess the other timers
@@ -2811,6 +2828,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         ////////////////////////////////////////////////////////////////////////////////////////
 
         shambase::get_check_ref(storage.solver_sequence).evaluate();
+    }
+
+    // after the drift, before anything is computed on the positions at t + dt
+    if (solver_config.particle_injection.has_injectors()) {
+        inject_particles(t_current, t_current + dt);
     }
 
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
@@ -4117,6 +4139,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     reset_neighbors_cache();
 
     shambase::get_check_ref(storage.neigh_cache).free_alloc();
+
+    if (storage.particle_injector) {
+        next_cfl = sham::min(next_cfl, storage.particle_injector->get_max_dt(t_current + dt));
+    }
 
     set_next_dt(next_cfl);
     set_time(t_current + dt);

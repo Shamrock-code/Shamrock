@@ -27,6 +27,7 @@
 #include "shambase/StorageComponent.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/common/injection/ParticleInjector.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include "shammodels/gsph/solvergraph/GhostHandlerEdge.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
@@ -145,6 +146,9 @@ namespace shammodels::gsph {
 
             void reset() { *this = {}; }
         } timings_details;
+
+        /// Runtime state of the particle injectors, created on the first injection step
+        std::unique_ptr<shammodels::common::injection::ParticleInjector<Tvec>> particle_injector;
     };
 
 } // namespace shammodels::gsph

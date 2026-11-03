@@ -990,8 +990,12 @@ namespace shammodels::basegodunov::modules {
             using AMRBlock                     = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>;
 
             const std::array<Direction, 6> dirs
-                = {Direction::xp, Direction::xm, Direction::yp,
-                   Direction::ym, Direction::zp, Direction::zm};
+                = {Direction::xp,
+                   Direction::xm,
+                   Direction::yp,
+                   Direction::ym,
+                   Direction::zp,
+                   Direction::zm};
 
             for (u32 d = 0; d < 6; d++) {
                 faces[d]->resize_according_to(cell_neigh_graph.get_refs_dir(dirs[d]));

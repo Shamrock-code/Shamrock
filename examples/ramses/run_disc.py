@@ -31,6 +31,12 @@ smallr = 1e-4
 center = 0.5
 h_over_r = 1
 
+## Units
+
+# G = 1 in the code units (unit_mass = 1 / G_SI kg), self-gravity takes G from the unit system
+G_SI = shamrock.Constants(shamrock.UnitSystem()).G()
+units = shamrock.UnitSystem(unit_time=1.0, unit_length=1.0, unit_mass=1.0 / G_SI)
+
 
 # %%
 # Initial conditions
@@ -222,19 +228,25 @@ model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i
 
 
 cell_size = 2
-base = resolution
+base = resolution // cell_size
 
 cfg = model.gen_default_config()
 
 scale_fact = 1 / (cell_size * base)
 cfg.set_scale_factor(scale_fact)
 cfg.set_eos_gamma(gamma0)
-cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)
+cfg.set_Csafe(0.5)
 
 cfg.set_riemann_solver_hll()
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
+cfg.set_units(units)
+cfg.set_gravity_mode_cg()
+cfg.set_self_gravity_Niter_max(500)
+cfg.set_self_gravity_tol(1e-6)
 cfg.add_ext_force_point_mass_gravity(mass=1, pos=(0.5, 0.5, 0.5), epsilon_soft=0.05)
+cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)
+
 
 model.set_solver_config(cfg)
 

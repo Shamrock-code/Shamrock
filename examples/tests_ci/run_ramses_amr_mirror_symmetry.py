@@ -7,20 +7,14 @@ the RAMSES solver.
 
 An overdense and overpressured sphere, centered in a periodic box, expands. The density based
 AMR (``cfg.set_amr_mode_density_based``) refines the blocks of the sphere, and merges them back
-once the density has dropped. The test checks that both the refinement and the derefinement
-happen.
-
-The setup is symmetric under the mirrors :math:`x \\to -x`, :math:`y \\to -y`, :math:`z \\to -z`
-about the box center and under the swaps of two axes, so the solution is expected to stay
-symmetric to round-off through the refinement and derefinement passes. The asymmetries are
-measured and shown as a diagnostic, they are not enforced by this test.
+once the density has dropped. The setup is symmetric under the mirrors :math:`x \\to -x`,
+:math:`y \\to -y`, :math:`z \\to -z` about the box center and under the swaps of two axes, so the
+solution must stay symmetric to round-off through the refinement and derefinement passes.
 
 The siblings of a merged block are stored in Morton order (z fastest), while the cells of a block
 are indexed x fastest. Filling the merged block in memory order would transpose x and z inside
 it, breaking the x and z mirrors and the x/y and y/z swaps at the first derefinement pass, while
-leaving the y mirror and the x/z swap intact. This signature, asymmetries of order
-:math:`10^{-1}` for the x and z mirrors and the x/y and y/z swaps while the y mirror and the x/z
-swap stay at round-off, is the one to look for in the plots below.
+leaving the y mirror and the x/z swap intact.
 """
 
 # sphinx_gallery_multi_image = "single"
@@ -75,7 +69,7 @@ crit_mass = 1e-4
 t_end = 0.3
 n_frames = 31
 
-# reference level for the asymmetries, only drawn on the plots (round-off is ~1e-15)
+# maximum relative asymmetry allowed (round-off is ~1e-15)
 tol = 1e-10
 
 sim_folder = "_to_trash/ramses_amr_mirror_symmetry/"
@@ -236,7 +230,7 @@ def plot_frame(iframe, t, hist_t, hist_asym, block_min, block_max, count):
 
     for name in symmetries:
         axs[2].semilogy(hist_t, np.maximum(hist_asym["rho", name], 1e-17), "-o", ms=3, label=name)
-    axs[2].axhline(tol, color="k", ls="--", lw=1, label="round-off level")
+    axs[2].axhline(tol, color="k", ls="--", lw=1, label="tolerance")
     axs[2].set_xlim(0, t_end)
     axs[2].set_ylim(1e-17, 1)
     axs[2].set_xlabel("t")
@@ -301,7 +295,7 @@ for field, ls in zip(fields, ["-", "--"]):
             color=f"C{icol}",
             label=f"{field} {name}",
         )
-axs[0].axhline(tol, color="k", ls=":", lw=1, label="round-off level")
+axs[0].axhline(tol, color="k", ls=":", lw=1, label="tolerance")
 axs[0].set_ylim(1e-17, 1)
 axs[0].set_ylabel("asymmetry")
 axs[0].legend(ncol=2, fontsize=7)
@@ -314,8 +308,8 @@ plt.show()
 # %%
 # Checks
 # ^^^^^^
-# Both refinement and derefinement must have happened. The maximum asymmetry of each symmetry is
-# printed as a diagnostic: it is expected to stay at round-off, but it is not enforced here.
+# Both refinement and derefinement must have happened, and every asymmetry must stay below the
+# tolerance.
 
 refined = max(n_fine) > 0
 derefined = any(b < a for a, b in itertools.pairwise(n_fine))
@@ -329,8 +323,11 @@ if not derefined:
 
 for (field, name), hist in hist_asym.items():
     print(f"max {field} {name} asymmetry: {max(hist):.2e}")
+    for t, v in zip(hist_t, hist):
+        if not v < tol:
+            errors.append(f"t = {t:.3f}: {field} {name} asymmetry {v:.2e} >= {tol:.0e}")
 
 if errors:
-    raise RuntimeError("AMR refine/derefine test failed:\n" + "\n".join(errors))
+    raise RuntimeError("AMR mirror symmetry test failed:\n" + "\n".join(errors))
 
-print("AMR refine/derefine test passed")
+print("AMR mirror symmetry test passed")

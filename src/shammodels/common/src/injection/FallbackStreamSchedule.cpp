@@ -16,8 +16,8 @@
 
 #include "shambase/constants.hpp"
 #include "shambase/exception.hpp"
-#include "shammodels/common/injection/FallbackStreamSchedule.hpp"
 #include "sham/format/format.hpp"
+#include "shammodels/common/injection/FallbackStreamSchedule.hpp"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>

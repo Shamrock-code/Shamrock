@@ -9,6 +9,8 @@ from shamrock.model_ramses import ExtForceCoupling
 
 import shamrock
 
+shamrock.enable_experimental_features()
+
 # %%
 # Parameters
 # ^^^^^^^^^^^^^^^^^^

@@ -46,7 +46,7 @@ namespace shammodels::basegodunov::modules {
             sham::DDMultiRef{coordinates_spans},
             sham::DDMultiRef{a_ext_spans},
             cell_counts,
-            [mass = mass, pos = pos, epsilon_soft = epsilon_soft](
+            [gmass = mass * const_G, pos = pos, epsilon_soft = epsilon_soft](
                 u32 i, const Tvec *__restrict cell_coor, Tvec *__restrict a_ext) {
                 Tvec cell_pos = cell_coor[i];
 
@@ -63,7 +63,7 @@ namespace shammodels::basegodunov::modules {
                 Tscal one_over_r_cube_soft = inv_r_soft * inv_r_soft * inv_r_soft;
 
                 // compute gravitational acceleration using softened point mass potential
-                a_ext[i] -= mass * r_vec * one_over_r_cube_soft;
+                a_ext[i] -= gmass * r_vec * one_over_r_cube_soft;
             });
     }
 

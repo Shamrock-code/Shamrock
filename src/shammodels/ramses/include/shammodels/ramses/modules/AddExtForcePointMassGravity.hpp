@@ -42,10 +42,13 @@ namespace shammodels::basegodunov::modules {
         Tscal mass;
         Tvec pos;
         Tscal epsilon_soft;
+        Tscal const_G;
 
         public:
-        AddExtForcePointMassGravity(u32 block_size, Tscal mass, Tvec pos, Tscal epsilon_soft)
-            : block_size(block_size), mass(mass), pos(pos), epsilon_soft(epsilon_soft) {}
+        AddExtForcePointMassGravity(
+            u32 block_size, Tscal mass, Tvec pos, Tscal epsilon_soft, Tscal const_G)
+            : block_size(block_size), mass(mass), pos(pos), epsilon_soft(epsilon_soft),
+              const_G(const_G) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 

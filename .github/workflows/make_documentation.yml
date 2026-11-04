@@ -80,7 +80,7 @@ jobs:
           sh make_doc.sh
 
       - name: 'Tar doc'
-        run: tar -cvf documentation.tar.gz doc/_build
+        run: tar -czvf documentation.tar.gz doc/_build
 
       - name: Archive generated doc
         uses: actions/upload-artifact@v7

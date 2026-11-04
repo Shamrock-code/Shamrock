@@ -24,3 +24,4 @@ from .BfieldPlots import (
 
 # Performance analysis
 from .PerfHistory import PerfHistory
+from .MassAnalysis import MassAnalysis

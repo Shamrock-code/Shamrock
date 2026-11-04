@@ -33,7 +33,9 @@ namespace shammodels::common::injection {
     /**
      * @brief Runtime state of the particle injectors of a solver
      *
-     * every rank generates the same particles and only inserts the ones falling in its own patches, so injecting requires no MPI communication. The injected particles are tagged in the part_id field (see ParticleInjectionConfig.hpp).
+     * every rank generates the same particles and only inserts the ones falling in its own patches,
+     * so injecting requires no MPI communication. The injected particles are tagged in the part_id
+     * field (see ParticleInjectionConfig.hpp).
      */
     template<class Tvec>
     class ParticleInjector {
@@ -48,7 +50,9 @@ namespace shammodels::common::injection {
 
         /**
          * @brief Inject the particles born during the step (t_old, t_new]
-         * Removes the boundary particles of the previous step, then adds the walls born during the step at their position at t_new, and the boundary walls at t_new. The walls born at or before t_old on the first call are assumed to be already in the simulation (restart).
+         * Removes the boundary particles of the previous step, then adds the walls born during the
+         * step at their position at t_new, and the boundary walls at t_new. The walls born at or
+         * before t_old on the first call are assumed to be already in the simulation (restart).
          */
         InjectionReport inject(PatchScheduler &sched, Tscal t_old, Tscal t_new);
 

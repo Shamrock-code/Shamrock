@@ -224,6 +224,8 @@ jobs:
             artifact_name: gallery_ramses_run_rayleigh_taylor
           - testfile: "examples/ramses/run_jeans_instability_timescales.py"
             artifact_name: gallery_ramses_run_jeans_instability_timescales
+          - testfile: "examples/ramses/run_shu_osher.py"
+            artifact_name: gallery_ramses_run_shu_osher
 
           # GSPH examples
           - testfile: "examples/gsph/run_sod.py"

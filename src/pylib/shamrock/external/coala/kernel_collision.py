@@ -1,9 +1,8 @@
 import numpy as np
+from numba import njit
 
-# from numba import njit
 
-
-# @njit
+@njit
 def kconst(K0, u, v):
     """
     Function to compute constant kernel
@@ -30,7 +29,7 @@ def kconst(K0, u, v):
     return res
 
 
-# @njit
+@njit
 def kadd(K0, u, v):
     """
     Function to compute additive kernel
@@ -56,7 +55,7 @@ def kadd(K0, u, v):
     return res
 
 
-# @njit
+@njit
 def kdv(K0, u, v):
     """
     Function to compute the cross-section term in the ballistic kernel K = sigma * dv
@@ -84,7 +83,7 @@ def kdv(K0, u, v):
     return res
 
 
-# @njit
+@njit
 def k_Br(K0, u, v):
     """
     Function to compute collision kernel from Brownian motion, K = sigma * dv
@@ -153,7 +152,7 @@ def func_kernel(kernel, K0, u, v):
     return res
 
 
-# @njit
+@njit
 def func_kernel_numba(kernel, K0, u, v):
     """
     Function to compute kernels at u and v

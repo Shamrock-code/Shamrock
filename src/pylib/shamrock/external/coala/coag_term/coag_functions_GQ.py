@@ -1,8 +1,7 @@
 import sys
 
 import numpy as np
-
-# from numba import njit
+from numba import jit, njit, prange
 from scipy.special import legendre
 
 from ..kernel_collision import *
@@ -117,14 +116,15 @@ def coagfluxfunction(
         ulp_alpha = xlp + 0.5 * hlp * vecnodes[alpha_u]
         xilp = vecnodes[alpha_u]
 
-        # gauss-legendre quadrature on integral on v
-        for alpha_v in range(Q):
-            a_vl = np.max([xjgridr - ulp_alpha + xmin, xlgridl])
-            b_vl = np.min([xmax - ulp_alpha + xmin, xlgridr])
-            vl_alpha = 0.5 * (b_vl + a_vl) + 0.5 * (b_vl - a_vl) * vecnodes[alpha_v]
-            xil = 2.0 * (vl_alpha - xl) / hl
+        a_vl = np.max([xjgridr - ulp_alpha + xmin, xlgridl])
+        b_vl = np.min([xmax - ulp_alpha + xmin, xlgridr])
 
-            if xmax - ulp_alpha + xmin > xlgridl and xlgridr > xjgridr - ulp_alpha + xmin:
+        if xmax - ulp_alpha + xmin > xlgridl and xlgridr > xjgridr - ulp_alpha + xmin:
+            # gauss-legendre quadrature on integral on v
+            for alpha_v in range(Q):
+                vl_alpha = 0.5 * (b_vl + a_vl) + 0.5 * (b_vl - a_vl) * vecnodes[alpha_v]
+                xil = 2.0 * (vl_alpha - xl) / hl
+
                 res += (
                     0.25
                     * hlp
@@ -137,7 +137,7 @@ def coagfluxfunction(
     return res
 
 
-# @njit
+@njit
 def func_coag_flux_numba(kernel, K0, ai, aip, u, v, xilp, xil):
     """
     Function to evaluate the integrand of the coagulation flux, i.e. integrand of the double integral
@@ -172,7 +172,7 @@ def func_coag_flux_numba(kernel, K0, ai, aip, u, v, xilp, xil):
     return func_kernel_numba(kernel, K0, u, v) * phi_pol(aip, xilp) * phi_pol(ai, xil) / v
 
 
-# @njit
+@njit
 def coagfluxfunction_numba(
     kernel, K0, Q, vecnodes, vecweights, nbins, massgrid, mat_coeffs_leg, j, lp, l, ip, i
 ):
@@ -249,14 +249,15 @@ def coagfluxfunction_numba(
         ulp_alpha = xlp + 0.5 * hlp * vecnodes[alpha_u]
         xilp = vecnodes[alpha_u]
 
-        # gauss-legendre quadrature on integral on v
-        for alpha_v in range(Q):
-            a_vl = max(xjgridr - ulp_alpha + xmin, xlgridl)
-            b_vl = min(xmax - ulp_alpha + xmin, xlgridr)
-            vl_alpha = 0.5 * (b_vl + a_vl) + 0.5 * (b_vl - a_vl) * vecnodes[alpha_v]
-            xil = 2.0 * (vl_alpha - xl) / hl
+        a_vl = max(xjgridr - ulp_alpha + xmin, xlgridl)
+        b_vl = min(xmax - ulp_alpha + xmin, xlgridr)
 
-            if xmax - ulp_alpha + xmin > xlgridl and xlgridr > xjgridr - ulp_alpha + xmin:
+        if xmax - ulp_alpha + xmin > xlgridl and xlgridr > xjgridr - ulp_alpha + xmin:
+            # gauss-legendre quadrature on integral on v
+            for alpha_v in range(Q):
+                vl_alpha = 0.5 * (b_vl + a_vl) + 0.5 * (b_vl - a_vl) * vecnodes[alpha_v]
+                xil = 2.0 * (vl_alpha - xl) / hl
+
                 res += (
                     0.25
                     * hlp
@@ -265,6 +266,118 @@ def coagfluxfunction_numba(
                     * vecweights[alpha_v]
                     * func_coag_flux_numba(kernel, K0, ai, aip, ulp_alpha, vl_alpha, xilp, xil)
                 )
+
+    return res
+
+
+@njit
+def coagfluxfunction_fixed_numba(
+    kernel, K0, Q, vecnodes, vecweights, nbins, massgrid, mat_coeffs_leg, j, lp, l, ip, i
+):
+    """
+    Function to evaluate the double integral depending only masses with Gauss-Legendre quadrature method.
+    This function is used to calculate the array for the coagulation flux as precomputation.
+    Numba formalism
+    Fixed version for GQ with breaking points trapezoidale area of integral
+
+    Parameters
+    ----------
+    kernel : scalar, type -> integer
+       select the collisional kernel function
+    K0 : scalar, type -> float
+       constant value of the kernel function (used to adapt to code unit)
+    Q : scalar, type -> integer
+       number of points for Gauss-Legendre quadrature
+    vecnodes : 1D array (dim = Q), type -> float
+       nodes of the Legendre polynomials
+    vecweights : 1D array (dim = Q), type -> float
+       weights coefficients for the Gauss-Legendre polynomials
+    nbins : scalar, type -> integer
+       number of dust bins
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+    mat_coeffs_leg : 2D array (dmin = (kpol+1,kpol+1)), type -> float
+       array containing on each line Legendre polynomial coefficients from degree 0 to kpol inclusive
+       on each line coefficients are ordered from low to high orders
+    j : scalar, type -> integer
+       index corresponding to the mass of the new formed grain
+    lp : scarlar, type -> integer
+       index corresponding to the mass of one colliding grain
+    l : scarlar, type -> integer
+       index corresponding to the mass of the second colliding grain
+    ip : scalar, type -> integer
+       degree of polynomials for approximation in bin lp
+    i : scalar, type -> integer
+       degree of polynomials for approximation in bin l
+
+
+    Returns
+    -------
+    coagfluxfunction : scalar, type -> float
+       double integral for the coagulation flux evaluated at j,lp,l,ip,i
+
+    """
+
+    # borders, size and mean values of mass bins of indices j,lp,l
+    xlgridr = massgrid[l + 1]
+    xlgridl = massgrid[l]
+    xlpgridl = massgrid[lp]
+    xlpgridr = massgrid[lp + 1]
+
+    hlp = xlpgridr - xlpgridl
+    xlp = 0.5 * (xlpgridr + xlpgridl)
+
+    hl = xlgridr - xlgridl
+    xl = 0.5 * (xlgridr + xlgridl)
+
+    xjgridr = massgrid[j + 1]
+
+    # minimum and maximum value of mass range
+    xmin = massgrid[0]
+    xmax = massgrid[-1]
+
+    # polynomials coefficients (low to high order)
+    aip = mat_coeffs_leg[ip, : ip + 1]
+    ai = mat_coeffs_leg[i, : i + 1]
+
+    # initialisation double integral
+    res = 0.0
+
+    # gauss-legendre quadrature on integral on u
+    # liste les points de rupture avant d'appliquer GQ
+    vec_u = np.empty(6)
+    vec_u[0] = xlpgridl
+    vec_u[1] = min(max(xjgridr - xlgridr, xlpgridl), xlpgridr)  # u~1
+    vec_u[2] = min(max(xjgridr - xlgridl, xlpgridl), xlpgridr)  # min(u~2,u~3)
+    vec_u[3] = min(max(xmax - xlgridr, xlpgridl), xlpgridr)  # max(u~2,u~3)
+    vec_u[4] = min(max(xmax - xlgridl, xlpgridl), xlpgridr)  # u~4
+    vec_u[5] = xlpgridr
+    for s in range(5):
+        a_ulp, b_ulp = vec_u[s], vec_u[s + 1]
+        if b_ulp > a_ulp:
+            for alpha_u in range(Q):
+                ulp_alpha = 0.5 * (b_ulp + a_ulp) + 0.5 * (b_ulp - a_ulp) * vecnodes[alpha_u]
+                xilp = 2.0 * (ulp_alpha - xlp) / hlp
+
+                a_vl = max(xjgridr - ulp_alpha, xlgridl)
+                b_vl = min(xmax - ulp_alpha, xlgridr)
+
+                if xmax - ulp_alpha > xlgridl and xlgridr > xjgridr - ulp_alpha:
+                    # gauss-legendre quadrature on integral on v
+                    for alpha_v in range(Q):
+                        vl_alpha = 0.5 * (b_vl + a_vl) + 0.5 * (b_vl - a_vl) * vecnodes[alpha_v]
+                        xil = 2.0 * (vl_alpha - xl) / hl
+
+                        res += (
+                            0.25
+                            * hlp
+                            * (b_vl - a_vl)
+                            * vecweights[alpha_u]
+                            * vecweights[alpha_v]
+                            * func_coag_flux_numba(
+                                kernel, K0, ai, aip, ulp_alpha, vl_alpha, xilp, xil
+                            )
+                        )
 
     return res
 
@@ -427,7 +540,7 @@ def coagintfluxfunction(
     return res
 
 
-# @njit
+@njit
 def func_coag_intflux_numba(kernel, K0, ak, ai, aip, hj, u, v, xij, xilp, xil):
     dphik_val = dphik(ak, hj, xij)
     kernel_val = func_kernel_numba(kernel, K0, u, v)
@@ -437,7 +550,7 @@ def func_coag_intflux_numba(kernel, K0, ak, ai, aip, hj, u, v, xij, xilp, xil):
     return dphik_val * kernel_val * phi_aip_val * phi_ai_val / v
 
 
-# @njit
+@njit
 def coagintfluxfunction_numba(
     kernel, K0, Q, vecnodes, vecweights, nbins, massgrid, mat_coeffs_leg, j, k, lp, l, ip, i
 ):

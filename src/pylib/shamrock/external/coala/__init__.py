@@ -15,6 +15,7 @@ from .interface_coala_shamrock import *
 
 # Iterate coagulation solver
 from .iterate_coag import *  # Only for coala tests (maybe to port for tests)
+from .iterate_coag_frag import *  # Only for coala tests (maybe to port for tests)
 from .L2_proj import *  # to port to C++ (interpolate for tests & interp rho dust from hydro)
 from .limiter import *  # to port to C++ (positivity limiter)
 from .reconstruction_g import *  # to port to C++ (distrib reconstruction)

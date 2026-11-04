@@ -918,6 +918,9 @@ namespace shammodels::sph {
             // std::cout << j << std::endl;
             j.at("solver_config").get_to(solver.solver_config);
 
+            // recreated from the loaded config by the next injection step
+            solver.storage.particle_injector.reset();
+
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
             ensure_sink_edges<Tvec>(sched.synchronized_data);

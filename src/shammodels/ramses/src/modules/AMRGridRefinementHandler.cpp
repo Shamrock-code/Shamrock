@@ -479,10 +479,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             TgridVec low_bound  = acc.block_low_bound[block_id];
             TgridVec high_bound = acc.block_high_bound[block_id];
 
-            Tvec lower_flt = low_bound.template convert<Tscal>() * dxfact;
-            Tvec upper_flt = high_bound.template convert<Tscal>() * dxfact;
-
-            Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
+            Tvec block_cell_size
+                = (high_bound - low_bound).template convert<Tscal>() * (dxfact * one_over_Nside);
 
             Tscal sum_mass = 0;
             for (u32 i = 0; i < AMRBlock::block_size; i++) {
@@ -1519,10 +1517,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             TgridVec low_bound  = acc.block_low_bound[block_id];
             TgridVec high_bound = acc.block_high_bound[block_id];
 
-            Tvec lower_flt = low_bound.template convert<Tscal>() * dxfact;
-            Tvec upper_flt = high_bound.template convert<Tscal>() * dxfact;
-
-            Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
+            Tvec block_cell_size
+                = (high_bound - low_bound).template convert<Tscal>() * (dxfact * one_over_Nside);
 
             Tscal sum_mass = 0;
             for (u32 i = 0; i < AMRBlock::block_size; i++) {
@@ -2315,10 +2311,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             TgridVec low_bound  = acc.block_low_bound[block_id];
             TgridVec high_bound = acc.block_high_bound[block_id];
 
-            Tvec lower_flt = low_bound.template convert<Tscal>() * dxfact;
-            Tvec upper_flt = high_bound.template convert<Tscal>() * dxfact;
-
-            Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
+            Tvec block_cell_size
+                = (high_bound - low_bound).template convert<Tscal>() * (dxfact * one_over_Nside);
 
             Tscal block_normalized_shear = shambase::VectorProperties<Tscal>::get_zero();
             for (u32 i = 0; i < AMRBlock::block_size; i++) {
@@ -2441,10 +2435,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             TgridVec low_bound  = acc.block_low_bound[block_id];
             TgridVec high_bound = acc.block_high_bound[block_id];
 
-            Tvec lower_flt = low_bound.template convert<Tscal>() * dxfact;
-            Tvec upper_flt = high_bound.template convert<Tscal>() * dxfact;
-
-            Tscal dx = (upper_flt.x() - lower_flt.x()) * one_over_Nside;
+            // size from the int coords difference, so that it does not depend on the block position
+            Tscal dx = Tscal(high_bound.x() - low_bound.x()) * (dxfact * one_over_Nside);
 
             // max over the block of q = (N_J dx / lambda_J)^2 = (N_J dx)^2 G rho / (pi cs^2)
             Tscal q_max = 0;

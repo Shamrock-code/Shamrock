@@ -84,12 +84,13 @@ void shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl_g
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
                 const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
-                TgridVec lower       = acc_block_min[block_id];
-                TgridVec upper       = acc_block_max[block_id];
-                Tvec lower_flt       = lower.template convert<Tscal>() * dxfact;
-                Tvec upper_flt       = upper.template convert<Tscal>() * dxfact;
-                Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
-                Tscal dx             = block_cell_size.x();
+                TgridVec lower = acc_block_min[block_id];
+                TgridVec upper = acc_block_max[block_id];
+                // size from the int coords difference, so that it does not depend on the block
+                // position
+                Tvec block_cell_size
+                    = (upper - lower).template convert<Tscal>() * (dxfact * one_over_Nside);
+                Tscal dx = block_cell_size.x();
 
                 // rhoe is ignored by the barotropic cons_to_prim
                 auto conststate = shammath::ConsState<Tvec>{rho[gid], rhoe[gid], rhov[gid]};

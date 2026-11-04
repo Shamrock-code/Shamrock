@@ -12,7 +12,8 @@
 /**
  * @file FallbackStreamSchedule.hpp
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief Deterministic sequence of particle walls of a fallback stream. Loosly inspired from Phantom's firehose setup.
+ * @brief Deterministic sequence of particle walls of a fallback stream. Loosly inspired from
+ * Phantom's firehose setup.
  *
  */
 
@@ -28,7 +29,8 @@ namespace shammodels::common::injection {
     template<class Tscal>
     struct StreamWall {
         Tscal t_birth;  // Time at which the wall crosses the injection point
-        Tscal hpart;    // Initial smoothing length of the particles of the wall (constant because lattice)
+        Tscal hpart;    // Initial smoothing length of the particles of the wall (constant because
+                        // lattice)
         u32 lattice_n;  // Number of lattice sites along a diameter of the cross-section
         u32 part_count; // Number of particles in the wall
         u64 first_part; // Index of the first particle of the wall among those of the stream

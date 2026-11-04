@@ -233,12 +233,22 @@ namespace shammodels::basegodunov {
                 py::arg("error_max"))
             .def(
                 "set_amr_mode_jeans_length_based",
-                [](TConfig &self, u32 N_jeans, Tscal T_init) {
-                    self.amr_mode.set_refine_jeans_length_based(N_jeans, T_init);
+                [](TConfig &self, u32 N_jeans) {
+                    self.amr_mode.set_refine_jeans_length_based(N_jeans);
                 },
                 py::kw_only(),
                 py::arg("N_jeans"),
-                py::arg("T_init"))
+                R"==(
+    Refine the blocks where the Jeans length is resolved by less than ``N_jeans`` cells.
+
+    A block is refined if one of its cells has :math:`N_J \Delta x > \lambda_J =
+    \sqrt{\pi c_s^2 / (G \rho)}`, with the sound speed of the equation of state (of the
+    barotrope for ``cfg.set_eos_reset_barotropic``) and the gravitational constant of the unit
+    system (``cfg.set_units``). It is derefined if the cells twice larger would still resolve the
+    Jeans length by more than :math:`\sqrt{2} N_J` cells.
+
+    Only implemented in the new AMR (``cfg.set_amr_mode_old(False)``).
+)==")
             .def(
                 "set_amr_mode_shear_based",
                 [](TConfig &self, Tscal threshold) {

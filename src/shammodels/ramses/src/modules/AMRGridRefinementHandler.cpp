@@ -15,6 +15,7 @@
  *
  */
 
+#include "shambase/constants.hpp"
 #include "shambase/memory.hpp"
 #include "shamalgs/details/algorithm/algorithm.hpp"
 #include "shamcomm/logs.hpp"
@@ -25,6 +26,29 @@
 #include "shammodels/ramses/modules/SlopeLimitedGradientUtilities.hpp"
 #include <stdexcept>
 #include <variant>
+
+namespace {
+
+    /**
+     * @brief Local index, in the merged block, of the cell covering the sibling block
+     * `sibling_min`
+     *
+     * The position of a sibling in the merged block is deduced from its geometry, not from its
+     * position in memory: the siblings are stored in Morton order (z fastest), while the cells of
+     * a block are indexed x fastest (`AMRBlock::get_index`).
+     *
+     * @param sibling_min lower bound of the sibling block
+     * @param merged_min lower bound of the merged block
+     */
+    template<class AMRBlock, class TgridVec>
+    inline u32 get_merged_cell_index(TgridVec sibling_min, TgridVec merged_min) {
+        return AMRBlock::get_index(
+            {static_cast<u32>(sibling_min.x() != merged_min.x()),
+             static_cast<u32>(sibling_min.y() != merged_min.y()),
+             static_cast<u32>(sibling_min.z() != merged_min.z())});
+    }
+
+} // namespace
 
 template<class Tvec, class TgridVec>
 template<class UserAcc, class... T>
@@ -1534,6 +1558,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         const f64 *rho_old_snap;
         const f64_3 *rho_vel_old_snap;
         const f64 *rhoE_old_snap;
+
+        // self-gravity potentials (warm starts of the Poisson solvers), nullptr without gravity
+        f64 *phi     = nullptr;
+        f64 *phi_old = nullptr;
+
         AMRInterpMode amr_ref_interp_mode;
 
         // this will be needed for interpolation during refinement
@@ -1612,6 +1641,15 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             cell_sizes = shambase::get_check_ref(storage.block_cell_sizes)
                              .get_buf(id_patch)
                              .get_write_access(depends_list);
+
+            if (pdat.pdl().has_field_name("phi")) {
+                phi     = pdat.get_field<f64>(pdat.pdl().get_field_idx<f64>("phi"))
+                              .get_buf()
+                              .get_write_access(depends_list);
+                phi_old = pdat.get_field<f64>(pdat.pdl().get_field_idx<f64>("phi_old"))
+                              .get_buf()
+                              .get_write_access(depends_list);
+            }
         }
 
         void finalize_new(
@@ -1624,6 +1662,15 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             pdat.get_field<f64>(2).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64_3>(3).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64>(4).get_buf().complete_event_state(resulting_events);
+
+            if (pdat.pdl().has_field_name("phi")) {
+                pdat.get_field<f64>(pdat.pdl().get_field_idx<f64>("phi"))
+                    .get_buf()
+                    .complete_event_state(resulting_events);
+                pdat.get_field<f64>(pdat.pdl().get_field_idx<f64>("phi_old"))
+                    .get_buf()
+                    .complete_event_state(resulting_events);
+            }
 
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::xp)
@@ -1721,6 +1768,18 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                             glid[2] % AMRBlock::Nside});
             };
 
+            // The potentials are only warm starts of the Poisson solvers (recomputed at each
+            // step), the children get the value of their parent cell. They are read before any
+            // write since the refined block is reused as one of the new blocks.
+            std::array<f64, AMRBlock::block_size> parent_phi{};
+            std::array<f64, AMRBlock::block_size> parent_phi_old{};
+            if (acc.phi != nullptr) {
+                for (u32 loc_id = 0; loc_id < AMRBlock::block_size; loc_id++) {
+                    parent_phi[loc_id]     = acc.phi[cur_idx * AMRBlock::block_size + loc_id];
+                    parent_phi_old[loc_id] = acc.phi_old[cur_idx * AMRBlock::block_size + loc_id];
+                }
+            }
+
             for (u32 loc_id = 0; loc_id < AMRBlock::block_size; loc_id++) {
 
                 auto [lx, ly, lz] = get_coord_ref(loc_id);
@@ -1804,6 +1863,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                                                     : acc.rho_vel_old_snap[old_cell_idx];
                     acc.rhoE[new_cell_idx]    = (do_second_order) ? _rhoE_block[subdiv_lid]
                                                                   : acc.rhoE_old_snap[old_cell_idx];
+
+                    if (acc.phi != nullptr) {
+                        acc.phi[new_cell_idx]     = parent_phi[loc_id];
+                        acc.phi_old[new_cell_idx] = parent_phi_old[loc_id];
+                    }
                 }
             }
         }
@@ -1820,26 +1884,39 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             std::array<f64_3, AMRBlock::block_size> rho_vel_block;
             std::array<f64, AMRBlock::block_size> rhoE_block;
 
-            for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
-                rho_block[cell_id]     = {};
-                rho_vel_block[cell_id] = {};
-                rhoE_block[cell_id]    = {};
-            }
+            // average of the children potentials (warm starts of the Poisson solvers)
+            std::array<f64, AMRBlock::block_size> phi_block{};
+            std::array<f64, AMRBlock::block_size> phi_old_block{};
 
             // for each siblings block, perform restriction from its 8 children cells
             for (u32 pid = 0; pid < 8; pid++) {
-                auto rho_pid     = rho_block[pid];
-                auto rho_vel_pid = rho_vel_block[pid];
-                auto rhoe_pid    = rhoE_block[pid];
+                Tscal rho_pid    = {};
+                Tvec rho_vel_pid = {};
+                Tscal rhoe_pid   = {};
 
                 for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
                     rho_pid += acc.rho[old_blocks[pid] * AMRBlock::block_size + cell_id];
                     rho_vel_pid += acc.rho_vel[old_blocks[pid] * AMRBlock::block_size + cell_id];
                     rhoe_pid += acc.rhoE[old_blocks[pid] * AMRBlock::block_size + cell_id];
                 }
-                rho_block[pid]     = rho_pid * (1. / 8.);
-                rho_vel_block[pid] = rho_vel_pid * (1. / 8.);
-                rhoE_block[pid]    = rhoe_pid * (1. / 8.);
+                // the siblings are in memory order, the cells of the merged block are x fastest
+                u32 cell_id = get_merged_cell_index<AMRBlock>(old_coords[pid].bmin, new_coord.bmin);
+
+                rho_block[cell_id]     = rho_pid * (1. / 8.);
+                rho_vel_block[cell_id] = rho_vel_pid * (1. / 8.);
+                rhoE_block[cell_id]    = rhoe_pid * (1. / 8.);
+
+                if (acc.phi != nullptr) {
+                    Tscal phi_pid     = {};
+                    Tscal phi_old_pid = {};
+                    for (u32 child_id = 0; child_id < AMRBlock::block_size; child_id++) {
+                        phi_pid += acc.phi[old_blocks[pid] * AMRBlock::block_size + child_id];
+                        phi_old_pid
+                            += acc.phi_old[old_blocks[pid] * AMRBlock::block_size + child_id];
+                    }
+                    phi_block[cell_id]     = phi_pid * (1. / 8.);
+                    phi_old_block[cell_id] = phi_old_pid * (1. / 8.);
+                }
             }
 
             for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
@@ -1847,6 +1924,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 acc.rho[newcell_idx]     = rho_block[cell_id];
                 acc.rho_vel[newcell_idx] = rho_vel_block[cell_id];
                 acc.rhoE[newcell_idx]    = rhoE_block[cell_id];
+
+                if (acc.phi != nullptr) {
+                    acc.phi[newcell_idx]     = phi_block[cell_id];
+                    acc.phi_old[newcell_idx] = phi_old_block[cell_id];
+                }
             }
         }
     };
@@ -2274,6 +2356,125 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     };
 
     /**
+     * @brief Jeans length refinement criterion accessor
+     *
+     * Refine a block if one of its cells has \f$ q = (N_J \Delta x / \lambda_J)^2 > 1 \f$, with
+     * \f$ \lambda_J^2 = \pi c_s^2 / (G \rho) \f$, derefine it if the cells twice larger would
+     * have \f$ 4 q < 1/2 \f$ for all its cells (hysteresis margin of \f$ \sqrt{2} \f$ on the
+     * number of cells per Jeans length).
+     */
+    class RefineCritJeansLengthAccessor {
+        public:
+        Tscal one_over_Nside = 1. / AMRBlock::Nside;
+        const TgridVec *block_low_bound;
+        const TgridVec *block_high_bound;
+        const Tscal *rho;
+        const Tvec *rhovel;
+        const Tscal *rhoetot;
+
+        Tscal dxfact;
+        Tscal N_J;
+        Tscal G;
+
+        // sound speed: of the barotrope if use_barotrope, adiabatic otherwise
+        bool use_barotrope;
+        shammath::FluidStateBarotropic<Tvec> barotrope;
+        shammath::FluidStateAdiabatic<Tvec> adiabatic;
+
+        RefineCritJeansLengthAccessor(
+            sham::EventList &depends_list,
+            Storage &storage,
+            u64 id_patch,
+            shamrock::patch::Patch p,
+            shamrock::patch::PatchDataLayer &pdat,
+            Tscal dxfact,
+            Tscal N_J,
+            Tscal G,
+            bool use_barotrope,
+            shammath::FluidStateBarotropic<Tvec> barotrope,
+            shammath::FluidStateAdiabatic<Tvec> adiabatic)
+            : dxfact(dxfact), N_J(N_J), G(G), use_barotrope(use_barotrope), barotrope(barotrope),
+              adiabatic(adiabatic) {
+            block_low_bound  = pdat.get_field<TgridVec>(0).get_buf().get_read_access(depends_list);
+            block_high_bound = pdat.get_field<TgridVec>(1).get_buf().get_read_access(depends_list);
+            rho              = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rho"))
+                                   .get_buf()
+                                   .get_read_access(depends_list);
+            rhovel           = pdat.get_field<Tvec>(pdat.pdl().get_field_idx<Tvec>("rhovel"))
+                                   .get_buf()
+                                   .get_read_access(depends_list);
+            rhoetot          = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rhoetot"))
+                                   .get_buf()
+                                   .get_read_access(depends_list);
+        }
+
+        void finalize_new(
+            sham::EventList &resulting_events,
+            Storage &storage,
+            u64 id_patch,
+            shamrock::patch::Patch p,
+            shamrock::patch::PatchDataLayer &pdat,
+            Tscal dxfact,
+            Tscal N_J,
+            Tscal G,
+            bool use_barotrope,
+            shammath::FluidStateBarotropic<Tvec> barotrope,
+            shammath::FluidStateAdiabatic<Tvec> adiabatic) {
+            pdat.get_field<TgridVec>(0).get_buf().complete_event_state(resulting_events);
+            pdat.get_field<TgridVec>(1).get_buf().complete_event_state(resulting_events);
+            pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rho"))
+                .get_buf()
+                .complete_event_state(resulting_events);
+            pdat.get_field<Tvec>(pdat.pdl().get_field_idx<Tvec>("rhovel"))
+                .get_buf()
+                .complete_event_state(resulting_events);
+            pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rhoetot"))
+                .get_buf()
+                .complete_event_state(resulting_events);
+        }
+
+        void refine_criterion_new(
+            u32 block_id,
+            RefineCritJeansLengthAccessor acc,
+            bool &should_refine,
+            bool &should_derefine) const {
+            TgridVec low_bound  = acc.block_low_bound[block_id];
+            TgridVec high_bound = acc.block_high_bound[block_id];
+
+            Tvec lower_flt = low_bound.template convert<Tscal>() * dxfact;
+            Tvec upper_flt = high_bound.template convert<Tscal>() * dxfact;
+
+            Tscal dx = (upper_flt.x() - lower_flt.x()) * one_over_Nside;
+
+            // max over the block of q = (N_J dx / lambda_J)^2 = (N_J dx)^2 G rho / (pi cs^2)
+            Tscal q_max = 0;
+            for (u32 i = 0; i < AMRBlock::block_size; i++) {
+                const u32 cell_id = i + block_id * AMRBlock::block_size;
+
+                shammath::ConsState<Tvec> cons{};
+                cons.rho    = acc.rho[cell_id];
+                cons.rhovel = acc.rhovel[cell_id];
+                cons.rhoe   = acc.rhoetot[cell_id];
+
+                const Tscal cs = (use_barotrope)
+                                     ? barotrope.sound_speed(barotrope.cons_to_prim(cons))
+                                     : adiabatic.sound_speed(adiabatic.cons_to_prim(cons));
+
+                const Tscal q = (N_J * dx) * (N_J * dx) * G * cons.rho
+                                / (shambase::constants::pi<Tscal> * cs * cs);
+                q_max         = sham::max(q_max, q);
+            }
+
+            should_refine   = q_max > 1;
+            should_derefine = 4 * q_max < 0.5;
+
+            should_refine = should_refine && (high_bound.x() - low_bound.x() > AMRBlock::Nside);
+            should_refine = should_refine && (high_bound.y() - low_bound.y() > AMRBlock::Nside);
+            should_refine = should_refine && (high_bound.z() - low_bound.z() > AMRBlock::Nside);
+        }
+    };
+
+    /**
      *@brief Autogravity accessor
      */
     class RefineCellAccessorAutogravity {
@@ -2545,20 +2746,17 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             std::array<f64, AMRBlock::block_size> phi_new_block;
 
             for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
-                rho_block[cell_id]     = {};
-                rho_vel_block[cell_id] = {};
-                rhoE_block[cell_id]    = {};
                 phi_old_block[cell_id] = {};
                 phi_new_block[cell_id] = {};
             }
 
             // for each siblings block, perform restriction from its 8 children cells
             for (u32 pid = 0; pid < 8; pid++) {
-                auto rho_pid     = rho_block[pid];
-                auto rho_vel_pid = rho_vel_block[pid];
-                auto rhoe_pid    = rhoE_block[pid];
-                auto phi_old_pid = phi_old_block[pid];
-                auto phi_new_pid = phi_new_block[pid];
+                Tscal rho_pid     = {};
+                Tvec rho_vel_pid  = {};
+                Tscal rhoe_pid    = {};
+                Tscal phi_old_pid = {};
+                Tscal phi_new_pid = {};
 
                 for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
                     rho_pid += acc.rho[old_blocks[pid] * AMRBlock::block_size + cell_id];
@@ -2567,11 +2765,14 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     phi_old_pid += acc.phi_old[old_blocks[pid] * AMRBlock::block_size + cell_id];
                     phi_new_pid += acc.phi_new[old_blocks[pid] * AMRBlock::block_size + cell_id];
                 }
-                rho_block[pid]     = rho_pid * (1. / 8.);
-                rho_vel_block[pid] = rho_vel_pid * (1. / 8.);
-                rhoE_block[pid]    = rhoe_pid * (1. / 8.);
-                // phi_old_block[pid]    = phi_old_pid * (1. / 8.);
-                // phi_new_block[pid]    = phi_new_pid * (1. / 8.);
+                // the siblings are in memory order, the cells of the merged block are x fastest
+                u32 cell_id = get_merged_cell_index<AMRBlock>(old_coords[pid].bmin, new_coord.bmin);
+
+                rho_block[cell_id]     = rho_pid * (1. / 8.);
+                rho_vel_block[cell_id] = rho_vel_pid * (1. / 8.);
+                rhoE_block[cell_id]    = rhoe_pid * (1. / 8.);
+                // phi_old_block[cell_id]    = phi_old_pid * (1. / 8.);
+                // phi_new_block[cell_id]    = phi_new_pid * (1. / 8.);
             }
 
             for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
@@ -2625,6 +2826,38 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             gen_refine_block_changes_new<RefineCritShearAccessor>(
                 refine_list, derefine_list, cfg->threshold, gamma, dxfact);
+        }
+
+        else if (
+            AMRmode_JeansLengthBased *cfg
+            = std::get_if<AMRmode_JeansLengthBased>(&solver_config.amr_mode.config)) {
+            Tscal dxfact(solver_config.grid_coord_to_pos_fact);
+            Tscal G = solver_config.get_constant_G();
+
+            using EOSResetBarotropic = typename EOSConfig<Tvec>::ResetBarotropic;
+            const auto *baro_cfg
+                = std::get_if<EOSResetBarotropic>(&solver_config.eos_config.config);
+
+            // the barotrope is unused (only to fill the accessor) if the EOS is adiabatic
+            bool use_barotrope = baro_cfg != nullptr;
+            shammath::FluidStateBarotropic<Tvec> barotrope
+                = (use_barotrope) ? baro_cfg->get_barotrope()
+                                  : shammath::FluidStateBarotropic<Tvec>(1, 1, 5. / 3.);
+            shammath::FluidStateAdiabatic<Tvec> adiabatic{.m_gamma = solver_config.get_eos_gamma()};
+
+            gen_refine_block_changes_new<RefineCritJeansLengthAccessor>(
+                refine_list,
+                derefine_list,
+                dxfact,
+                Tscal(cfg->N_J),
+                G,
+                use_barotrope,
+                barotrope,
+                adiabatic);
+        }
+
+        else {
+            shambase::throw_unimplemented("this AMR mode is not implemented in the new AMR");
         }
 
         ///// enforce 2:1 for refinement ///////

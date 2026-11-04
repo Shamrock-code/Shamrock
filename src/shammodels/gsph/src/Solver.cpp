@@ -1029,16 +1029,21 @@ void shammodels::gsph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_va
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::gsph::Solver<Tvec, Kern>::inject_particles(Tscal t_old, Tscal t_new) {
-    StackEntry stack_loc{};
-
+auto shammodels::gsph::Solver<Tvec, Kern>::get_particle_injector()
+    -> shammodels::common::injection::ParticleInjector<Tvec> & {
     if (!storage.particle_injector) {
         storage.particle_injector
             = std::make_unique<shammodels::common::injection::ParticleInjector<Tvec>>(
                 solver_config.particle_injection, solver_config.gpart_mass, Kernel::hfactd);
     }
+    return *storage.particle_injector;
+}
 
-    storage.particle_injector->inject(scheduler(), t_old, t_new);
+template<class Tvec, template<class> class Kern>
+void shammodels::gsph::Solver<Tvec, Kern>::inject_particles(Tscal t_old, Tscal t_new) {
+    StackEntry stack_loc{};
+
+    get_particle_injector().inject(scheduler(), t_old, t_new);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1917,6 +1922,12 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
 
     Tscal t_current = get_time();
     Tscal dt        = get_dt();
+
+    // no step over an injection start, including the first step and an imposed dt
+    if (solver_config.particle_injection.has_injectors()) {
+        dt = sham::min(dt, get_particle_injector().get_max_dt(t_current));
+        set_next_dt(dt);
+    }
 
     StackEntry stack_loc{};
 

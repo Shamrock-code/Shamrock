@@ -364,6 +364,9 @@ namespace shammodels::sph {
         /// particles of the injectors at t_new
         void inject_particles(Tscal t_old, Tscal t_new);
 
+        /// Runtime state of the particle injectors, created from the solver config on first use
+        shammodels::common::injection::ParticleInjector<Tvec> &get_particle_injector();
+
         Solver(ShamrockCtx &context) : context(context) {}
 
         /// @brief Initializes the solver graph for computation pipeline

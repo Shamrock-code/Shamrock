@@ -229,7 +229,7 @@ namespace shammodels::common::injection {
                                 sycl::memory_scope_device,
                                 sycl::access::address_space::global_space>
                                 atomic_has_boundary(has_boundary[0]);
-                            atomic_has_boundary.fetch_or(1);
+                            atomic_has_boundary.fetch_or(1_u32);
                         }
                     });
 

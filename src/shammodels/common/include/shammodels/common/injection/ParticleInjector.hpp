@@ -24,20 +24,16 @@
 
 namespace shammodels::common::injection {
 
-    /// What one call to ParticleInjector::inject did (identical on every MPI rank)
     struct InjectionReport {
-        u64 born_walls     = 0; ///< Walls that crossed their injection point during the step
-        u64 born_parts     = 0; ///< Particles in those walls
-        u64 boundary_parts = 0; ///< Boundary particles re-created at the end of the step
+        u64 born_walls     = 0; // Walls that crossed their injection point during the step
+        u64 born_parts     = 0; // Particles in those walls
+        u64 boundary_parts = 0; // Boundary particles re-created at the end of the step
     };
 
     /**
      * @brief Runtime state of the particle injectors of a solver
      *
-     * The injectors are deterministic functions of time: every rank generates the same particles
-     * and only inserts the ones falling in its own patches, so injecting requires no MPI
-     * communication. The injected particles are tagged in the part_id field (see
-     * ParticleInjectionConfig.hpp), which must therefore be in the patch data layout.
+     * every rank generates the same particles and only inserts the ones falling in its own patches, so injecting requires no MPI communication. The injected particles are tagged in the part_id field (see ParticleInjectionConfig.hpp).
      */
     template<class Tvec>
     class ParticleInjector {
@@ -52,10 +48,7 @@ namespace shammodels::common::injection {
 
         /**
          * @brief Inject the particles born during the step (t_old, t_new]
-         *
-         * Removes the boundary particles of the previous step, then adds the walls born during
-         * the step at their position at t_new, and the boundary walls at t_new. The walls born at
-         * or before t_old on the first call are assumed to be already in the simulation (restart).
+         * Removes the boundary particles of the previous step, then adds the walls born during the step at their position at t_new, and the boundary walls at t_new. The walls born at or before t_old on the first call are assumed to be already in the simulation (restart).
          */
         InjectionReport inject(PatchScheduler &sched, Tscal t_old, Tscal t_new);
 
@@ -72,7 +65,7 @@ namespace shammodels::common::injection {
             std::vector<u64> part_id;
         };
 
-        /// Append the particles of a wall at time t, with ids id_base | (first_index + i)
+        // Append the particles of a wall at time t, with ids id_base | (first_index + i)
         void append_wall(
             HostBatch &batch,
             u32 injector_idx,
@@ -81,10 +74,10 @@ namespace shammodels::common::injection {
             u64 id_base,
             u64 first_index);
 
-        /// Remove the boundary particles from the local patches
+        // Remove the boundary particles from the local patches
         void remove_boundary_parts(PatchScheduler &sched);
 
-        /// Insert in each local patch the particles of the batch that it contains
+        // Insert in each local patch the particles of the batch that it contains
         void insert_batch(PatchScheduler &sched, HostBatch &batch);
 
         std::vector<FallbackStream<Tvec>> streams;

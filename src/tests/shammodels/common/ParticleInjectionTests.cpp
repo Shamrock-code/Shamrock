@@ -253,6 +253,11 @@ namespace {
         REQUIRE_EXCEPTION_THROW(config.add_fallback_stream(bad_end), std::invalid_argument);
 
         REQUIRE(!config.has_injectors());
+
+        // a stream rejected by check_config is not kept in the list
+        config.injector_list.assign(max_injector_count, make_stream(0.));
+        REQUIRE_EXCEPTION_THROW(config.add_fallback_stream(make_stream(0.)), std::invalid_argument);
+        REQUIRE_EQUAL(config.injector_list.size(), max_injector_count);
     }
 
 } // namespace

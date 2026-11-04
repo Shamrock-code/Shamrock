@@ -2752,10 +2752,8 @@ void shammodels::sph::Solver<Tvec, Kern>::inject_particles(Tscal t_old, Tscal t_
                 solver_config.particle_injection, solver_config.gpart_mass, Kernel::hfactd);
     }
 
+    // the part counts and spans are updated by evolve_once after apply_position_boundary
     storage.particle_injector->inject(scheduler(), t_old, t_new);
-
-    // update part counts and spans since particles have been added and removed
-    storage.solver_graph.get_node_ref_base("attach fields to scheduler").evaluate();
 }
 
 template<class Tvec, template<class> class Kern>

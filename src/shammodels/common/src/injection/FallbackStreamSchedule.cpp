@@ -139,6 +139,18 @@ namespace shammodels::common::injection {
     }
 
     template<class Tvec>
+    auto FallbackStreamSchedule<Tvec>::peek_born_walls(Tscal t) -> std::vector<Wall> {
+        std::vector<Wall> born;
+        for (size_t i = 0; i < unborn_walls.size() || generate_next_wall(); i++) {
+            if (unborn_walls[i].t_birth > t) {
+                break;
+            }
+            born.push_back(unborn_walls[i]);
+        }
+        return born;
+    }
+
+    template<class Tvec>
     auto FallbackStreamSchedule<Tvec>::peek_unborn_walls(u32 n) -> std::vector<Wall> {
         while (unborn_walls.size() < n && generate_next_wall()) {
         }

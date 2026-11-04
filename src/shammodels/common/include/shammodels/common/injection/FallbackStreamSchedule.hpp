@@ -50,10 +50,9 @@ namespace shammodels::common::injection {
         public:
         using Tscal = shambase::VecComponent<Tvec>;
         using Wall  = StreamWall<Tscal>;
-        /// Offset of a lattice site in the stream cross-section, along the basis (e1, e2)
-        using Site = std::array<Tscal, 2>;
+        using Site  = std::array<Tscal, 2>;
 
-        /// Largest number of lattice sites along a diameter of the stream
+        // Largest number of lattice sites along a diameter of the stream
         static constexpr u32 max_lattice_n = 4096;
 
         /**
@@ -64,6 +63,9 @@ namespace shammodels::common::injection {
 
         /// Remove and return the walls born at or before t, in birth order
         std::vector<Wall> pop_born_walls(Tscal t);
+
+        /// The walls born at or before t, in birth order, without removing them
+        std::vector<Wall> peek_born_walls(Tscal t);
 
         /// The next n walls not born yet (fewer if the stream stops before)
         std::vector<Wall> peek_unborn_walls(u32 n);

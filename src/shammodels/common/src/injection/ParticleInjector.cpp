@@ -19,7 +19,7 @@
 #include "shambase/numeric_limits.hpp"
 #include "shambase/stacktrace.hpp"
 #include "sham/format/format.hpp"
-#include "shamalgs/details/numeric/numeric.hpp"
+#include "shamalgs/numeric.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/math.hpp"
@@ -74,9 +74,9 @@ namespace shammodels::common::injection {
         }
 
         if (is_first_inject) {
-            // the walls born before the first injection step are already in the simulation,
-            // either from the run that wrote the dump we restart from, or because the injection
-            // started before the simulation
+            // the walls born before the first injection step are already in the simulation, either
+            // from the run that wrote the dump we restart from, or because the injection started
+            // before the simulation
             u64 skipped_walls = 0;
             for (auto &schedule : schedules) {
                 skipped_walls += schedule.pop_born_walls(t_old).size();
@@ -104,7 +104,9 @@ namespace shammodels::common::injection {
 
             u64 injector_bits = u64(k) << part_id_injector_shift;
 
-            for (const StreamWall<Tscal> &wall : schedule.pop_born_walls(t_new)) {
+            // the born walls are only popped once inserted, so that a failed insertion loses none
+            std::vector<StreamWall<Tscal>> born = schedule.peek_born_walls(t_new);
+            for (const StreamWall<Tscal> &wall : born) {
                 append_wall(
                     batch, k, wall, t_new, part_id_injected_flag | injector_bits, wall.first_part);
                 report.born_walls++;
@@ -113,17 +115,23 @@ namespace shammodels::common::injection {
 
             // the next walls wait upstream of the injection point as boundary particles
             if (t_new >= stream.rate.t_start()) {
+                std::vector<StreamWall<Tscal>> upcoming = schedule.peek_unborn_walls(
+                    shambase::narrow_or_throw<u32>(born.size() + stream.n_boundary_walls));
                 u64 slot = 0;
-                for (const StreamWall<Tscal> &wall :
-                     schedule.peek_unborn_walls(stream.n_boundary_walls)) {
-                    append_wall(batch, k, wall, t_new, part_id_boundary_flag | injector_bits, slot);
-                    slot += wall.part_count;
+                for (size_t i = born.size(); i < upcoming.size(); i++) {
+                    append_wall(
+                        batch, k, upcoming[i], t_new, part_id_boundary_flag | injector_bits, slot);
+                    slot += upcoming[i].part_count;
                 }
                 report.boundary_parts += slot;
             }
         }
 
         insert_batch(sched, batch);
+
+        for (FallbackStreamSchedule<Tvec> &schedule : schedules) {
+            schedule.pop_born_walls(t_new);
+        }
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
@@ -214,6 +222,7 @@ namespace shammodels::common::injection {
                         keep_flag[id_a]  = is_boundary ? 0 : 1;
 
                         if (is_boundary) {
+                            // need the atomic to avaid data race between particles of a patch
                             sycl::atomic_ref<
                                 u32,
                                 sycl::memory_order_relaxed,
@@ -253,8 +262,8 @@ namespace shammodels::common::injection {
             bmax = sham::max(bmax, r);
         }
 
-        // owner patch of each particle, searched among all the patches (not only the local ones)
-        // so that every rank agrees on the particles that cannot be placed
+        // owner patch of each particle, searched among all the patches (not only the local ones) so
+        // that every rank agrees on the particles that cannot be placed
         constexpr u64 no_owner = std::numeric_limits<u64>::max();
         std::vector<u64> owner(part_count, no_owner);
 

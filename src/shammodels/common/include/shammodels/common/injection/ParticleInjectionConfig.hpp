@@ -57,16 +57,15 @@ namespace shammodels::common::injection {
      *   \dot M(t) = \dot M_{\rm peak} \left(\frac{t - t_{\rm d}}{t_{\rm mb}}\right)^{n}
      *   \quad \text{for } t_{\rm d} + t_{\rm mb} \le t < t_{\rm end}
      * \f]
-     * and zero otherwise. \f$ n = -5/3 \f$ corresponds to a flat distribution of specific energy
-     * of the debris, \f$ n = 0 \f$ to a constant rate.
+     * and zero otherwise.
      */
     template<class Tscal>
     struct FallbackRate {
-        Tscal mdot_peak; ///< Rate at the start of the fallback, t_start = t_disrupt + t_mb
-        Tscal t_mb;      ///< Return time of the most bound debris, counted from t_disrupt
-        Tscal t_disrupt; ///< Time of the disruption
-        Tscal index;     ///< Power law index of the rate
-        Tscal t_end;     ///< Time at which the injection stops (+inf for never)
+        Tscal mdot_peak; // Rate at the start of the fallback, t_start = t_disrupt + t_mb
+        Tscal t_mb;      // Return time of the most bound debris, counted from t_disrupt
+        Tscal t_disrupt; // Time of the disruption
+        Tscal index;     // Power law index of the rate
+        Tscal t_end;     // Time at which the injection stops (+inf for never)
 
         /// Time at which the fallback starts
         inline Tscal t_start() const { return t_disrupt + t_mb; }
@@ -81,7 +80,7 @@ namespace shammodels::common::injection {
 
         /// Mass injected between t_start and t
         inline Tscal injected_mass(Tscal t) const {
-            Tscal t_clamped = sham::min(t, t_end);
+            Tscal t_clamped = sham::min(t, t_end); // make sure the injection stops at tend
             if (t_clamped <= t_start()) {
                 return 0;
             }
@@ -127,7 +126,6 @@ namespace shammodels::common::injection {
                 tau = std::pow(x, 1 / (index + 1));
             }
 
-            // rounding could place it after the end of the injection while mass <= total_mass
             return sham::min(t_disrupt + t_mb * tau, t_end);
         }
 
@@ -159,22 +157,22 @@ namespace shammodels::common::injection {
      *
      * The stream is a conveyor belt of walls: the cross-section of the stream (a disc of radius
      * stream_radius centered on inject_pos and orthogonal to inject_vel) is sampled by a square
-     * lattice, and a new wall of particles crosses the injection point each time the fallback
-     * rate has supplied the mass of a wall. The lattice spacing follows the density of the stream
-     * \f$ \rho = \dot M / (\pi R^2 v) \f$ so that the particle distribution stays isotropic as the
-     * rate decreases. The walls that have not crossed the injection point yet are kept upstream
-     * as boundary particles, to give the youngest walls of the stream a correct pressure.
+     * lattice, and a new wall of particles crosses the injection point each time the fallback rate
+     * has supplied the mass of a wall. The lattice spacing follows the density of the stream \f$
+     * \rho = \dot M / (\pi R^2 v) \f$ so that the particle distribution stays isotropic as the rate
+     * decreases. The walls that have not crossed the injection point yet are kept upstream as
+     * boundary particles, to give the youngest walls of the stream a correct pressure.
      */
     template<class Tvec>
     struct FallbackStream {
         using Tscal = shambase::VecComponent<Tvec>;
 
-        Tvec inject_pos;     ///< Center of the injection disc
-        Tvec inject_vel;     ///< Velocity of the injected gas
-        Tscal stream_radius; ///< Radius of the stream cross-section
-        Tscal u_inject;      ///< Specific internal energy of the injected gas
+        Tvec inject_pos;     // Center of the injection disc
+        Tvec inject_vel;     // Velocity of the injected gas
+        Tscal stream_radius; // Radius of the stream cross-section
+        Tscal u_inject;      // Specific internal energy of the injected gas
         FallbackRate<Tscal> rate;
-        u32 n_boundary_walls; ///< Number of upcoming walls kept upstream as boundary particles
+        u32 n_boundary_walls; // Number of upcoming walls kept upstream as boundary particles
 
         inline void check() const {
             rate.check();
@@ -211,7 +209,13 @@ namespace shammodels::common::injection {
         inline void add_fallback_stream(const FallbackStream<Tvec> &stream) {
             stream.check();
             injector_list.push_back(stream);
-            check_config();
+            try {
+                check_config();
+            } catch (...) {
+                // leave the config as it was before the call
+                injector_list.pop_back();
+                throw;
+            }
         }
 
         inline void check_config() const {

@@ -158,6 +158,10 @@ jobs:
             testfile: run_field_collect_data_alignment.py
           - worldsize: 2
             testfile: run_field_collect_data_alignment.py
+          - worldsize: 1
+            testfile: run_fallback_stream_injection.py
+          - worldsize: 2
+            testfile: run_fallback_stream_injection.py
       fail-fast: ${{ inputs.fail_fast }}
 
     timeout-minutes: 60

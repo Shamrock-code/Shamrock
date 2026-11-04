@@ -10,7 +10,10 @@ a periodic box of background gas) and with GSPH (into vacuum), and checks that:
   upstream of the injection point, inside the stream cross-section;
 - the injection is deterministic (two identical runs give bitwise identical
   particles) and survives a dump/reload (the injection state is replayed from
-  the time of the dump).
+  the time of the dump);
+- with several MPI ranks, the SPH stream is inserted into patches of more than
+  one rank: the injection point sits at a corner of the patches, so the born
+  walls and the boundary walls fall on both sides of the rank boundary.
 """
 
 import numpy as np
@@ -35,11 +38,13 @@ pmass_vacuum = 1.7e-4
 # the SPH background is cleared around the injection point: injecting on top of existing gas
 # would bury its particles in the dense boundary walls, where the smoothing length iteration
 # diverges
-channel_end = -0.2
+channel_end = 0.15
 channel_radius = 0.1
 
 # fallback rate mdot_peak * ((t - t_disrupt) / t_mb)^mdot_index, starting at t_disrupt + t_mb = 0
-inject_pos = (-0.35, 0.0, 0.0)
+# the injection point is the corner shared by the 8 patches of the box, so that the stream is
+# split between patches (and ranks): born walls downstream (x > 0), boundary walls upstream
+inject_pos = (0.0, 0.0, 0.0)
 inject_vel = (2.0, 0.0, 0.0)
 stream_radius = 0.05
 u_inject = 1e-2
@@ -193,6 +198,29 @@ def check_injection(data, model, t):
     )
 
 
+def check_stream_ranks(ctx, model, data):
+    """Count the injected particles in the patches of each rank, and require several ranks"""
+    transform = model.get_patch_transform()
+    patches = [(p.node_owner_id, transform.to_obj_coord(p)) for p in ctx.get_patch_list_global()]
+
+    if shamrock.sys.world_rank() > 0:
+        return
+
+    part_id = np.asarray(data["part_id"], dtype=np.uint64)
+    xyz = np.asarray(data["xyz"])[(part_id & (INJECTED_BIT | BOUNDARY_BIT)) != 0]
+
+    count_per_rank = {}
+    for owner, box in patches:
+        inside = np.all((xyz >= np.array(box.lower)) & (xyz < np.array(box.upper)), axis=1)
+        count_per_rank[owner] = count_per_rank.get(owner, 0) + int(np.sum(inside))
+    print(f"injected particles per rank: {count_per_rank}")
+
+    ranks_with_stream = [rank for rank, count in count_per_rank.items() if count > 0]
+    assert len(ranks_with_stream) > 1, (
+        "the stream lies on a single rank, the multi-rank insertion is not tested"
+    )
+
+
 def run(solver, dump_at_mid):
     ctx, model = build_model(solver)
 
@@ -214,9 +242,13 @@ def run(solver, dump_at_mid):
 
 
 def test_solver(solver):
-    _, model_ref, data_ref = run(solver, dump_at_mid=False)
+    ctx_ref, model_ref, data_ref = run(solver, dump_at_mid=False)
     _, _, data_again = run(solver, dump_at_mid=False)
     _, _, data_restart = run(solver, dump_at_mid=True)
+
+    # the GSPH stream goes into vacuum and stays in a single patch
+    if solver == "SPH" and shamrock.sys.world_size() > 1:
+        check_stream_ranks(ctx_ref, model_ref, data_ref)
 
     if shamrock.sys.world_rank() > 0:
         return

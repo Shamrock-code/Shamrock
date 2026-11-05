@@ -103,7 +103,6 @@ namespace shammodels::basegodunov {
 
     template<class Tvec>
     inline void from_json(const nlohmann::json &j, ExtForceConfig<Tvec> &p) {
-
         p.ext_forces.clear();
 
         // configs dumped before the coupling was configurable used the midpoint rule

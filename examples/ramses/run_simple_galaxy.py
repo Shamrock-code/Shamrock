@@ -3,12 +3,9 @@ import os
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import animation
-from numba import njit
-from scipy.integrate import quad
-from scipy.optimize import fsolve
 from scipy.special import i0, i1, kn
 from shamrock.model_ramses import ExtForceCoupling
+from shamrock.utils.numba_helper import maybe_njit
 
 import shamrock
 
@@ -38,7 +35,7 @@ assert G_code == 1
 
 
 ## Grid setup
-resolution = 256
+resolution = 64
 boxlen = 40e3  # pc
 
 ## Initial conditions
@@ -62,10 +59,12 @@ smallr = 1e-4
 # ^^^^^^^^^^^^^^^^^^
 
 
+@maybe_njit
 def rho_halo(r, rho_0=rho_0, r_0=r_0):
     return rho_0 / ((1 + r / r_0) * (1 + (r / r_0) ** 2))
 
 
+@maybe_njit
 def rho_gas(r_c, z, cs=cs, h=h, rho_c=rho_c):
     if z == 0:
         return rho_c * np.exp(-2 * r_c / h)
@@ -74,6 +73,7 @@ def rho_gas(r_c, z, cs=cs, h=h, rho_c=rho_c):
         return rho_c * np.exp(-2 * r_c / h) * 1 / np.cosh(z / z_0) ** 2
 
 
+@maybe_njit
 def rho_map(rmin, rmax):
 
     rmin = np.array(rmin) - center
@@ -106,8 +106,8 @@ def rhovel_map(rmin, rmax):
     )
 
     ## circular velocity gas: exponential galaxy Freeman (1970)
-    z_0 = cs / np.sqrt(2 * np.pi * G_code * rho_gas(r_c, 0, cs=cs, h=h))
-    Sigma_0 = rho_c * 2 * z_0
+    z_0 = cs / np.sqrt(2 * np.pi * G_code * rho_c)  # z_0 at r = 0
+    Sigma_0 = 2 * rho_c * z_0
     vc_gas = np.sqrt(
         4
         * np.pi
@@ -120,9 +120,10 @@ def rhovel_map(rmin, rmax):
     )
 
     ## circular velocity pressure gradient
-    vc_grad_p = -np.sqrt(r_c * cs**2 * rho_c * 2 * np.exp(-2 * r_c / h) / h / rho)
+    z_0_r = cs / np.sqrt(2 * np.pi * G_code * rho_gas(r_c, 0))
+    vc_grad_p_squared = 2 * r_c * cs**2 / h * (1 - (z / z_0_r) * np.tanh(z / z_0_r))
 
-    vc = np.sqrt(max(vc_DM_squared**2 + vc_gas**2 - vc_grad_p**2, 0))
+    vc = np.sqrt(max(vc_DM_squared + vc_gas**2 - vc_grad_p_squared, 0))
 
     vx = -vc * y / r_c
     vy = vc * x / r_c

@@ -52,7 +52,7 @@ namespace shammodels::basegodunov::modules {
                 u32 i, const Tvec *__restrict cell_coor, Tvec *__restrict a_ext) {
                 Tvec cell_pos = cell_coor[i];
 
-                // compute vector from the point mass to the cell
+                // compute vector from the profile center to the cell
                 Tvec r_vec = cell_pos - profile_center;
 
                 Tscal r_squared = 0;

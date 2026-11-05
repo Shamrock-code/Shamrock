@@ -199,7 +199,7 @@ def plot_rho_slice_cartesian(
     )
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.title(f"t = {metadata['time']:0.5f} [seconds]")
+    plt.title(f"t = {metadata['time']:0.5f} [code units]")
     cbar = plt.colorbar(res, extend="both")
     plt.gca().set_aspect("equal")
     cbar.set_label(r"$\rho$ [code unit]")
@@ -208,7 +208,7 @@ def plot_rho_slice_cartesian(
 
 
 def plot(t, iplot):
-    metadata = {"extent": [0, 1, 0, 1], "time": t}
+    metadata = {"extent": [0, boxlen, 0, boxlen], "time": t}
     arr_rho_pos = model.render_slice("rho", "f64", positions)
     plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, "disk")
     pos_XZ = [(x, z, y) for (x, y, z) in positions]

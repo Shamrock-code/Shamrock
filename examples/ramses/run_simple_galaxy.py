@@ -38,7 +38,7 @@ assert G_code == 1
 
 
 ## Grid setup
-resolution = 128
+resolution = 256
 boxlen = 40e3  # pc
 
 ## Initial conditions
@@ -48,8 +48,8 @@ cs = (
 h = 5.26e3 * pc_code  # pc
 Rd = 16e3 * pc_code  # pc
 r_0 = 4e3 * pc_code  # pc
-rho_0 = 1.0 * Msun_code / pc_code  # solar mass/pc3
-rho_c = 3 * Msun_code / pc_code  # solar mass/pc3
+rho_0 = 1.0 * Msun_code / pc_code**3  # solar mass/pc3
+rho_c = 3 * Msun_code / pc_code**3  # solar mass/pc3
 M_halo = 1.03e11 * Msun_code  # solar mass
 
 center = boxlen / 2  # Central position
@@ -99,14 +99,15 @@ def rhovel_map(rmin, rmax):
 
     ## circular velocity DM
     r_norm = r_c / r_0
-    vc_DM = (
-        (np.pi * G_code * rho * r_0**2)
+    vc_DM_squared = (
+        (np.pi * G_code * rho_0 * r_0**2)
         / r_norm
-        * (np.log(1 + r_norm) ** 2 * (1 + r_norm**2) - 2 * np.arctan(r_norm))
+        * (np.log((1 + r_norm) ** 2 * (1 + r_norm**2)) - 2 * np.arctan(r_norm))
     )
 
     ## circular velocity gas: exponential galaxy Freeman (1970)
-    Sigma_0 = rho_c * 2 * (cs / np.sqrt(2 * np.pi * G_code * rho))
+    z_0 = cs / np.sqrt(2 * np.pi * G_code * rho_gas(r_c, 0, cs=cs, h=h))
+    Sigma_0 = rho_c * 2 * z_0
     vc_gas = np.sqrt(
         4
         * np.pi
@@ -121,7 +122,7 @@ def rhovel_map(rmin, rmax):
     ## circular velocity pressure gradient
     vc_grad_p = -np.sqrt(r_c * cs**2 * rho_c * 2 * np.exp(-2 * r_c / h) / h / rho)
 
-    vc = np.sqrt(vc_DM**2 + vc_gas**2 - vc_grad_p**2)
+    vc = np.sqrt(max(vc_DM_squared**2 + vc_gas**2 - vc_grad_p**2, 0))
 
     vx = -vc * y / r_c
     vy = vc * x / r_c
@@ -281,3 +282,6 @@ def launch_sim():
         plot(t, i)
 
     plot(dt * (i + 1), i)
+
+
+launch_sim()

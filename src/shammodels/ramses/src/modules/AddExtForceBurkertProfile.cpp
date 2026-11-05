@@ -48,30 +48,24 @@ namespace shammodels::basegodunov::modules {
             sham::DDMultiRef{coordinates_spans},
             sham::DDMultiRef{a_ext_spans},
             cell_counts,
-            [rho_0 = rho_0, r_0 = r_0, pos = pos, const_G = const_G](
+            [rho_0 = rho_0, r_0 = r_0, profile_center = pos, const_G = const_G](
                 u32 i, const Tvec *__restrict cell_coor, Tvec *__restrict a_ext) {
                 Tvec cell_pos = cell_coor[i];
 
                 // compute vector from the point mass to the cell
-                Tvec r_vec = cell_pos - pos;
+                Tvec r_vec = cell_pos - profile_center;
 
-                Tvec r_to_r_0 = r_vec / r_0;
-
-                // compute distance to the point mass
-                Tscal r_to_r_0_squared = 0;
-                Tscal r_squared        = 0;
+                Tscal r_squared = 0;
                 for (u32 d = 0; d < dim; d++) {
-                    r_to_r_0_squared += r_to_r_0[d] * r_to_r_0[d];
+                    r_squared += r_vec[d] * r_vec[d];
                 }
+                Tscal r            = sycl::sqrt(r_squared);
+                Tscal r_norm       = r / r_0;
+                Tscal logatan_term = sycl::log(1 + r_norm * r_norm) + 2 * sycl::log(1 + r_norm)
+                                     - 2 * sycl::atan(r_norm);
 
-                Tscal inv_r_to_r_0           = sycl::rsqrt(r_to_r_0_squared);
-                Tscal one_over_r_to_r_0_cube = inv_r_to_r_0 * inv_r_to_r_0 * inv_r_to_r_0;
-
-                // compute gravitational acceleration using softened point mass potential
                 a_ext[i] -= const_G * shambase::constants::pi<Tscal>
-                            * rho_0 * one_over_r_to_r_0_cube * r_vec
-                            * (sycl::log(1 + r_to_r_0_squared) + 2 * sycl::log(1 + r_to_r_0)
-                               - 2 * sycl::atan(r_to_r_0));
+                            * rho_0 / (r_norm * r_norm * r_norm) * logatan_term * r_vec;
             });
     }
 

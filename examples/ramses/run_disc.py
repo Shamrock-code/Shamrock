@@ -4,8 +4,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
-from numba import njit
 from shamrock.model_ramses import ExtForceCoupling
+from shamrock.utils.numba_helper import maybe_njit as njit
 
 import shamrock
 
@@ -14,6 +14,14 @@ shamrock.enable_experimental_features()
 # %%
 # Parameters
 # ^^^^^^^^^^^^^^^^^^
+
+
+## Units
+
+# G = 1 in the code units (unit_mass = 1 / G_SI kg), self-gravity takes G from the unit system
+G_SI = shamrock.Constants(shamrock.UnitSystem()).G()
+units = shamrock.UnitSystem(unit_time=1.0, unit_length=1.0, unit_mass=1.0 / G_SI)
+
 
 ## Grid setup
 resolution = 128
@@ -33,11 +41,8 @@ smallr = 1e-4
 center = 0.5
 h_over_r = 1
 
-## Units
-
-# G = 1 in the code units (unit_mass = 1 / G_SI kg), self-gravity takes G from the unit system
-G_SI = shamrock.Constants(shamrock.UnitSystem()).G()
-units = shamrock.UnitSystem(unit_time=1.0, unit_length=1.0, unit_mass=1.0 / G_SI)
+## Physics
+enable_sg = False
 
 
 # %%
@@ -117,11 +122,8 @@ def rhovel_map(rmin, rmax):
     cs, inner_radius = get_cs(rc_soft, z)
     omega = get_omega(rs_soft, rc_soft, cs, inner_radius)
 
-    x_soft = x * (rs_soft / rs)
-    y_soft = y * (rs_soft / rs)
-
-    vx = -omega * y_soft
-    vy = omega * x_soft
+    vx = -omega * y
+    vy = omega * x
     vz = 0.0
 
     return (rho * vx, rho * vy, rho * vz)
@@ -186,7 +188,7 @@ def plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name, dpi=200):
         aspect="auto",
         norm=matplotlib.colors.LogNorm(vmin=1e-3, vmax=6),
     )
-    plt.xlabel("x")
+    plt.xlabl("x")
     plt.ylabel("y")
     plt.title(f"t = {metadata['time']:0.5f} [seconds]")
     cbar = plt.colorbar(res, extend="both")
@@ -206,14 +208,6 @@ def plot(t, iplot):
     pos_YZ = [(z, y, x) for (x, y, z) in positions]
     arr_rho_pos = model.render_slice("rho", "f64", pos_YZ)
     plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, "disk_yz")
-
-
-def plot_force(t, iplot):
-    metadata = {"extent": [0, 1, 0, 1], "time": t}
-    force = model.render_slice("gravitational_force", "f64_3", positions)
-    force = np.array(force).reshape(nx, ny, 3)
-    force = np.linalg.norm(force, axis=2)
-    plot_rho_slice_cartesian(metadata, force, iplot, "force")
 
 
 # %%
@@ -237,15 +231,17 @@ cfg = model.gen_default_config()
 scale_fact = 1 / (cell_size * base)
 cfg.set_scale_factor(scale_fact)
 cfg.set_eos_gamma(gamma0)
-cfg.set_Csafe(0.5)
+cfg.set_Csafe(0.8)
 
-cfg.set_riemann_solver_hll()
+cfg.set_riemann_solver_hllc()
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
 cfg.set_units(units)
-cfg.set_gravity_mode_cg()
-cfg.set_self_gravity_Niter_max(500)
-cfg.set_self_gravity_tol(1e-6)
+
+if enable_sg:
+    cfg.set_gravity_mode_cg()
+    cfg.set_self_gravity_Niter_max(500)
+    cfg.set_self_gravity_tol(1e-4)
 cfg.add_ext_force_point_mass_gravity(mass=1, pos=(0.5, 0.5, 0.5), epsilon_soft=0.05)
 cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)
 
@@ -270,7 +266,7 @@ print("initialisation done, plotting initial conditions...", flush=True)
 # ^^^^^^^^^^^^^^^^^^
 
 dt = 0.01
-for i in range(30):
+for i in range(31):
     t = dt * i
     model.evolve_until(dt * i)
     d = ctx.collect_data()
@@ -284,6 +280,3 @@ for i in range(30):
         f"Step {i}, t = {t:0.5f} seconds, min rhov = {d['rhovel'].min():0.5e}, max rhov = {d['rhovel'].max():0.5e}"
     )
     plot(t, i)
-
-
-plot(dt * (i + 1), i)

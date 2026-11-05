@@ -52,7 +52,7 @@ cfg.set_Csafe(0.3)
 cfg.set_boundary_condition("x", "reflective")
 cfg.set_boundary_condition("y", "reflective")
 cfg.set_boundary_condition("z", "reflective")
-cfg.set_riemann_solver_hllc()
+cfg.set_riemann_solver_hllc_pvrs()
 cfg.set_amr_mode_old(False)
 cfg.set_second_order_interpolation_mode()
 

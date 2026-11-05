@@ -61,7 +61,7 @@ def run(cs, solver, dt, nsteps):
     cfg.set_scale_factor(1 / (sz * base))
     cfg.set_eos_gamma(gamma)
     cfg.set_slope_lim_vanleer_sym()
-    cfg.set_riemann_solver_hllc()
+    cfg.set_riemann_solver_hllc_pvrs()
     cfg.set_face_time_interpolation(True)
     cfg.set_units(units)
     if solver == "cg":

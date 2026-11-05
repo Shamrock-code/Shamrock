@@ -17,8 +17,11 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/ramses/Model.hpp"
 #include "shammodels/ramses/Solver.hpp"
@@ -92,10 +95,42 @@ namespace shammodels::basegodunov {
                     self.riemann_config = HLL;
                 })
             .def(
-                "set_riemann_solver_hllc",
+                "set_riemann_solver_hllc_pvrs",
                 [](TConfig &self) {
-                    self.riemann_config = HLLC;
-                })
+                    self.riemann_config = HLLC_PVRS;
+                },
+                R"==(
+    Set the HLLC Riemann solver, with wave speeds estimated from the primitive variable
+    Riemann solver (PVRS) star pressure, following Toro (Riemann Solvers and Numerical
+    Methods for Fluid Dynamics, chapter 10).
+)==")
+            .def(
+                "set_riemann_solver_hllc",
+                [](TConfig & /*self*/) {
+                    const std::string msg
+                        = ".set_riemann_solver_hllc() has been removed, as several HLLC variants "
+                          "are now available. Select one explicitly:\n"
+                          "    -> .set_riemann_solver_hllc_pvrs() : the previous behaviour of "
+                          ".set_riemann_solver_hllc()\n"
+                          "    -> .set_riemann_solver_hllc_davis()";
+                    ON_RANK_0(shamcomm::logs::err_ln("Ramses", msg));
+                    shambase::throw_with_loc<std::runtime_error>(msg);
+                },
+                R"==(
+    Removed, raises an error.
+
+    It was replaced by :py:meth:`set_riemann_solver_hllc_pvrs` (same solver as before) to lift
+    the ambiguity on the HLLC variant; see also :py:meth:`set_riemann_solver_hllc_davis`.
+)==")
+            .def(
+                "set_riemann_solver_hllc_davis",
+                [](TConfig &self) {
+                    self.riemann_config = HLLC_Davis;
+                },
+                R"==(
+    Set the HLLC Riemann solver, using the Davis (1988) wave speed estimate
+    s_l = min(v_l - c_l, v_r - c_r), s_r = max(v_l + c_l, v_r + c_r).
+)==")
             .def(
                 "set_riemann_solver_rusanov",
                 [](TConfig &self) {

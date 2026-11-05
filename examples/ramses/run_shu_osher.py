@@ -86,7 +86,7 @@ cfg.set_scale_factor(scale_fact)
 
 cfg.set_eos_gamma(gamma)
 cfg.set_Csafe(0.8)
-cfg.set_riemann_solver_hllc()
+cfg.set_riemann_solver_hllc_pvrs()
 cfg.set_slope_lim_vanleer_sym()
 cfg.set_face_time_interpolation(True)
 cfg.set_boundary_condition("x", "outflow")

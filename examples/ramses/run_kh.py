@@ -143,7 +143,7 @@ def run_case(set_bc_func, case_name):
 
     # cfg.set_riemann_solver_rusanov()
     # cfg.set_riemann_solver_hll()
-    cfg.set_riemann_solver_hllc()
+    cfg.set_riemann_solver_hllc_pvrs()
 
     # cfg.set_slope_lim_none()
     # cfg.set_slope_lim_vanleer_f()

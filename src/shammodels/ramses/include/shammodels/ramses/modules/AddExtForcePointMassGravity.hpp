@@ -41,10 +41,10 @@ namespace shammodels::basegodunov::modules {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
-        u32 block_size;
-        Tscal mass;
-        Tvec pos;
-        Tscal epsilon_soft;
+        u32 block_size;     ///< number of cells per block
+        Tscal mass;         ///< mass of the point mass
+        Tvec pos;           ///< position of the point mass
+        Tscal epsilon_soft; ///< softening length
 
         public:
         AddExtForcePointMassGravity(u32 block_size, Tscal mass, Tvec pos, Tscal epsilon_soft)

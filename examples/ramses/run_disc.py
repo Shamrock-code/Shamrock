@@ -27,7 +27,7 @@ import shamrock
 G_SI = shamrock.Constants(shamrock.UnitSystem()).G()
 units = shamrock.UnitSystem(unit_time=1.0, unit_length=1.0, unit_mass=1.0 / G_SI)
 G_code = shamrock.Constants(units).G()
-assert G_code == 1
+assert abs(G_code - 1) < 1e-12
 
 ## Grid setup
 resolution = 32

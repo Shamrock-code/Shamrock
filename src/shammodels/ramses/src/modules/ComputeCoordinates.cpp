@@ -64,9 +64,12 @@ namespace shammodels::basegodunov::modules {
                 u32 cell_loc_id = i % AMRBlock::block_size; // index of the cell within the block
 
                 Tvec pos_block_min = index_block_min[block_id].template convert<Tscal>() * dxfact;
-                Tvec pos_block_max = index_block_max[block_id].template convert<Tscal>() * dxfact;
 
-                Tscal block_cell_size = ((pos_block_max - pos_block_min) * one_over_Nside).x();
+                // size from the int coords difference, so that it does not depend on the block
+                // position
+                Tscal block_cell_size
+                    = Tscal(index_block_max[block_id].x() - index_block_min[block_id].x())
+                      * (dxfact * one_over_Nside);
 
                 std::array<u32, dim> coord_array = AMRBlock::get_coord(cell_loc_id);
 

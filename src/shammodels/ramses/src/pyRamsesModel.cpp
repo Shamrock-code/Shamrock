@@ -17,6 +17,7 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/logs.hpp"
@@ -105,21 +106,21 @@ namespace shammodels::basegodunov {
 )==")
             .def(
                 "set_riemann_solver_hllc",
-                [](TConfig &self) {
-                    ON_RANK_0(
-                        shamcomm::logs::warn_ln(
-                            "Ramses",
-                            ".set_riemann_solver_hllc() is deprecated,\n"
-                            "    -> use .set_riemann_solver_hllc_pvrs() (same solver) or\n"
-                            "       .set_riemann_solver_hllc_davis() instead"));
-                    self.riemann_config = HLLC_PVRS;
+                [](TConfig & /*self*/) {
+                    const std::string msg
+                        = ".set_riemann_solver_hllc() has been removed, as several HLLC variants "
+                          "are now available. Select one explicitly:\n"
+                          "    -> .set_riemann_solver_hllc_pvrs() : the previous behaviour of "
+                          ".set_riemann_solver_hllc()\n"
+                          "    -> .set_riemann_solver_hllc_davis()";
+                    ON_RANK_0(shamcomm::logs::err_ln("Ramses", msg));
+                    shambase::throw_with_loc<std::runtime_error>(msg);
                 },
                 R"==(
-    Set the HLLC Riemann solver with PVRS wave speeds.
+    Removed, raises an error.
 
-    .. deprecated::
-        Use :py:meth:`set_riemann_solver_hllc_pvrs` (same solver) or
-        :py:meth:`set_riemann_solver_hllc_davis` instead.
+    It was replaced by :py:meth:`set_riemann_solver_hllc_pvrs` (same solver as before) to lift
+    the ambiguity on the HLLC variant; see also :py:meth:`set_riemann_solver_hllc_davis`.
 )==")
             .def(
                 "set_riemann_solver_hllc_davis",

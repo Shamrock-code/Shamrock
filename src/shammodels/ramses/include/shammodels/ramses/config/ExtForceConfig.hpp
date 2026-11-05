@@ -54,7 +54,6 @@ namespace shammodels::basegodunov {
         using Variant = std::variant<ConstantGravity, PointMassGravity>;
 
         std::vector<Variant> ext_forces;
-        bool is_coordinates_needed = false;
 
         /// Time quadrature of the external forces source term
         ExtForceCoupling coupling = ExtForceCoupling::Midpoint;
@@ -64,7 +63,12 @@ namespace shammodels::basegodunov {
         inline void add_constant_gravity(Tvec g) { ext_forces.push_back(ConstantGravity{g}); }
         inline void add_point_mass_gravity(Tscal mass, Tvec pos, Tscal epsilon_soft) {
             ext_forces.push_back(PointMassGravity{mass, pos, epsilon_soft});
-            is_coordinates_needed = true;
+        }
+
+        inline bool is_coordinates_needed() const {
+            return std::any_of(ext_forces.begin(), ext_forces.end(), [](const Variant &f) {
+                return std::holds_alternative<PointMassGravity>(f);
+            });
         }
 
         inline bool has_ext_forces() const { return !ext_forces.empty(); }

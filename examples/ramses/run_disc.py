@@ -188,7 +188,7 @@ def plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name, dpi=200):
         aspect="auto",
         norm=matplotlib.colors.LogNorm(vmin=1e-3, vmax=6),
     )
-    plt.xlabl("x")
+    plt.xlabel("x")
     plt.ylabel("y")
     plt.title(f"t = {metadata['time']:0.5f} [seconds]")
     cbar = plt.colorbar(res, extend="both")

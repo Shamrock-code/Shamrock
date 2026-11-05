@@ -19,6 +19,8 @@
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/ramses/Model.hpp"
 #include "shammodels/ramses/Solver.hpp"
@@ -92,13 +94,32 @@ namespace shammodels::basegodunov {
                     self.riemann_config = HLL;
                 })
             .def(
-                "set_riemann_solver_hllc",
+                "set_riemann_solver_hllc_pvrs",
                 [](TConfig &self) {
-                    self.riemann_config = HLLC;
+                    self.riemann_config = HLLCPVRS;
                 },
                 R"==(
-    Set the HLLC Riemann solver, using the pressure based (PVRS) wave speed estimate
-    from Toro (Riemann Solvers and Numerical Methods for Fluid Dynamics, chapter 10).
+    Set the HLLC Riemann solver, with wave speeds estimated from the primitive variable
+    Riemann solver (PVRS) star pressure, following Toro (Riemann Solvers and Numerical
+    Methods for Fluid Dynamics, chapter 10).
+)==")
+            .def(
+                "set_riemann_solver_hllc",
+                [](TConfig &self) {
+                    ON_RANK_0(
+                        shamcomm::logs::warn_ln(
+                            "Ramses",
+                            ".set_riemann_solver_hllc() is deprecated,\n"
+                            "    -> use .set_riemann_solver_hllc_pvrs() (same solver) or\n"
+                            "       .set_riemann_solver_hllc_davis() instead"));
+                    self.riemann_config = HLLCPVRS;
+                },
+                R"==(
+    Set the HLLC Riemann solver with PVRS wave speeds.
+
+    .. deprecated::
+        Use :py:meth:`set_riemann_solver_hllc_pvrs` (same solver) or
+        :py:meth:`set_riemann_solver_hllc_davis` instead.
 )==")
             .def(
                 "set_riemann_solver_hllc_davis",

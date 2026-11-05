@@ -16,6 +16,7 @@
  */
 
 #include "shambase/constants.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shamalgs/details/algorithm/algorithm.hpp"
 #include "shamcomm/logs.hpp"
@@ -689,6 +690,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             = internal_derefine_grid_old<RefineCellAccessor>(std::move(derefine_list));
 
         has_cell_order_changed = has_cell_order_changed || (change_refine || change_derefine);
+    } else {
+        // SolverConfig::check_config rejects the other criteria when old AMR is enabled,
+        // this is a safety net for criteria added later without old AMR support
+        shambase::throw_unimplemented(
+            "this AMR criterion is not implemented in the old AMR (cfg.set_amr_mode_old(False))");
     }
 
     if (has_cell_order_changed) {

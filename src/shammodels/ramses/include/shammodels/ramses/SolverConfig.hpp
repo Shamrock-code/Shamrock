@@ -472,13 +472,19 @@ struct shammodels::basegodunov::SolverConfig {
             shamrock::experimental_feature_check("new AMR is experimental");
         }
 
+        using AMRNone         = typename AMRMode<Tvec, TgridVec>::None;
+        using AMRDensityBased = typename AMRMode<Tvec, TgridVec>::DensityBased;
+        if (amr_mode.old_amr
+            && !(
+                std::holds_alternative<AMRNone>(amr_mode.config)
+                || std::holds_alternative<AMRDensityBased>(amr_mode.config))) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "the old AMR only implements the None and DensityBased refinement criteria, the "
+                "selected one is only implemented in the new AMR (cfg.set_amr_mode_old(False))");
+        }
+
         using AMRJeansLengthBased = typename AMRMode<Tvec, TgridVec>::JeansLengthBased;
         if (const AMRJeansLengthBased *cfg = std::get_if<AMRJeansLengthBased>(&amr_mode.config)) {
-            if (amr_mode.old_amr) {
-                shambase::throw_with_loc<std::invalid_argument>(
-                    "the Jeans length based refinement is only implemented in the new AMR "
-                    "(cfg.set_amr_mode_old(False))");
-            }
             if (cfg->N_J == 0) {
                 shambase::throw_with_loc<std::invalid_argument>("N_J must be > 0");
             }

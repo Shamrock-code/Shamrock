@@ -1427,11 +1427,13 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         using RSM = modules::RiemannSolverMode;
         switch (solver_config.riemann_config) {
-        case RSM::Rusanov : push_gas_flux_node(std::integral_constant<RSM, RSM::Rusanov>{}); break;
-        case RSM::HLL     : push_gas_flux_node(std::integral_constant<RSM, RSM::HLL>{}); break;
-        case RSM::HLLCPVRS: push_gas_flux_node(std::integral_constant<RSM, RSM::HLLCPVRS>{}); break;
-        case RSM::HLLCDavis:
-            push_gas_flux_node(std::integral_constant<RSM, RSM::HLLCDavis>{});
+        case RSM::Rusanov: push_gas_flux_node(std::integral_constant<RSM, RSM::Rusanov>{}); break;
+        case RSM::HLL    : push_gas_flux_node(std::integral_constant<RSM, RSM::HLL>{}); break;
+        case RSM::HLLC_PVRS:
+            push_gas_flux_node(std::integral_constant<RSM, RSM::HLLC_PVRS>{});
+            break;
+        case RSM::HLLC_Davis:
+            push_gas_flux_node(std::integral_constant<RSM, RSM::HLLC_Davis>{});
             break;
         default: shambase::throw_unimplemented("unknown flux mode");
         }

@@ -96,7 +96,7 @@ namespace shammodels::basegodunov {
             .def(
                 "set_riemann_solver_hllc_pvrs",
                 [](TConfig &self) {
-                    self.riemann_config = HLLCPVRS;
+                    self.riemann_config = HLLC_PVRS;
                 },
                 R"==(
     Set the HLLC Riemann solver, with wave speeds estimated from the primitive variable
@@ -112,7 +112,7 @@ namespace shammodels::basegodunov {
                             ".set_riemann_solver_hllc() is deprecated,\n"
                             "    -> use .set_riemann_solver_hllc_pvrs() (same solver) or\n"
                             "       .set_riemann_solver_hllc_davis() instead"));
-                    self.riemann_config = HLLCPVRS;
+                    self.riemann_config = HLLC_PVRS;
                 },
                 R"==(
     Set the HLLC Riemann solver with PVRS wave speeds.
@@ -124,7 +124,7 @@ namespace shammodels::basegodunov {
             .def(
                 "set_riemann_solver_hllc_davis",
                 [](TConfig &self) {
-                    self.riemann_config = HLLCDavis;
+                    self.riemann_config = HLLC_Davis;
                 },
                 R"==(
     Set the HLLC Riemann solver, using the Davis (1988) wave speed estimate

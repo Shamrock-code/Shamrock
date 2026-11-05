@@ -360,7 +360,12 @@ namespace shammodels::basegodunov {
                 },
                 py::arg("mass"),
                 py::arg("pos"),
-                py::arg("epsilon_soft"))
+                py::arg("epsilon_soft"),
+                R"==(
+                Add the gravity of a fixed point mass to the external forces:
+                a = -G M (r - pos) / (|r - pos|^2 + epsilon_soft^2)^{3/2}, with G from the unit system.
+                epsilon_soft must be > 0.
+                )==")
             .def(
                 "set_ext_force_coupling",
                 [](TConfig &self, ExtForceCoupling mode) {

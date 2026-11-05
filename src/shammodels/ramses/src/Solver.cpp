@@ -457,7 +457,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     if (solver_config.is_coordinate_field_required()) {
         // will be filled by NodeComputeCoordinates
         storage.coordinates = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
-            AMRBlock::block_size, "coordinates", "\\mathbf{xyz}");
+            AMRBlock::block_size, "coordinates", "\\mathbf{r}");
     }
 
     if (solver_config.amr_mode.need_level_zero_compute()) {
@@ -1948,6 +1948,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             }
         }
 
+        // retrieve the value of G
+        auto constant_G   = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("G", "G");
+        constant_G->value = solver_config.get_constant_G();
+
         // Time at which the forces must be evaluated to keep the scheme second order in time:
         //  - midpoint rule: at the half step t^{n+1/2}. This does not matter for a constant
         //    acceleration, but velocity dependent forces would need the half step velocity,
@@ -1972,12 +1976,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                     [&](const PointMassGravity &cfg) {
                         for (auto &[a_ext_level, dt_level] : a_ext_levels) {
                             modules::AddExtForcePointMassGravity<Tvec> node{
-                                AMRBlock::block_size,
-                                cfg.mass,
-                                cfg.pos,
-                                cfg.epsilon_soft,
-                                solver_config.get_constant_G()};
-                            node.set_edges(storage.block_counts, storage.coordinates, a_ext_level);
+                                AMRBlock::block_size, cfg.mass, cfg.pos, cfg.epsilon_soft};
+                            node.set_edges(
+                                storage.block_counts, storage.coordinates, constant_G, a_ext_level);
                             ext_force_sequence.push_back(
                                 std::make_shared<decltype(node)>(std::move(node)));
                         }

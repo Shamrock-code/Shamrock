@@ -18,6 +18,7 @@
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
@@ -26,13 +27,15 @@
     X_RO(                                                                                          \
         shamrock::solvergraph::IFieldSpan<Tvec>,                                                   \
         spans_coordinates) /* center coordinates of each cell */                                   \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, constant_G) /* Grav Constant*/                  \
                                                                                                    \
     /* ------------------- outputs ------------------- */                                          \
     X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_a_ext)
 
 namespace shammodels::basegodunov::modules {
 
-    /// Add a point mass gravitational acceleration g to the external forces acceleration
+    /// Add the softened acceleration of a point mass,
+    /// a = -G M (r - r0) / (|r - r0|^2 + eps^2)^{3/2}
     template<class Tvec>
     class AddExtForcePointMassGravity : public shamrock::solvergraph::INode {
 
@@ -42,13 +45,10 @@ namespace shammodels::basegodunov::modules {
         Tscal mass;
         Tvec pos;
         Tscal epsilon_soft;
-        Tscal const_G;
 
         public:
-        AddExtForcePointMassGravity(
-            u32 block_size, Tscal mass, Tvec pos, Tscal epsilon_soft, Tscal const_G)
-            : block_size(block_size), mass(mass), pos(pos), epsilon_soft(epsilon_soft),
-              const_G(const_G) {}
+        AddExtForcePointMassGravity(u32 block_size, Tscal mass, Tvec pos, Tscal epsilon_soft)
+            : block_size(block_size), mass(mass), pos(pos), epsilon_soft(epsilon_soft) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
@@ -56,7 +56,7 @@ namespace shammodels::basegodunov::modules {
 
         inline virtual std::string _impl_get_label() const { return "AddExtForcePointMassGravity"; }
 
-        inline virtual std::string _impl_get_tex() const { return "AddExtForcePointMassGravity"; }
+        inline virtual std::string _impl_get_tex() const;
     };
 
 } // namespace shammodels::basegodunov::modules

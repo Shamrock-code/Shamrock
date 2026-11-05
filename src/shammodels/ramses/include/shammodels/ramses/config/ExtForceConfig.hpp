@@ -22,6 +22,8 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/ramses/config/enum_ExtForceCoupling.hpp"
 #include <nlohmann/json.hpp>
+#include <algorithm>
+#include <cmath>
 #include <stdexcept>
 #include <string>
 #include <variant>
@@ -62,6 +64,10 @@ namespace shammodels::basegodunov {
 
         inline void add_constant_gravity(Tvec g) { ext_forces.push_back(ConstantGravity{g}); }
         inline void add_point_mass_gravity(Tscal mass, Tvec pos, Tscal epsilon_soft) {
+            if (!(std::isfinite(epsilon_soft) && epsilon_soft > 0)) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "point mass gravity: epsilon_soft must be finite and > 0");
+            }
             ext_forces.push_back(PointMassGravity{mass, pos, epsilon_soft});
         }
 

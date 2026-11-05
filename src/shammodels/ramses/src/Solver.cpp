@@ -1379,51 +1379,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> flux_sequence;
 
-        if (solver_config.riemann_config == Rusanov) {
-            modules::NodeComputeFluxGasMode<Tvec, TgridVec, modules::RiemannSolverMode::Rusanov>
-                node(
-                    "Gas flux compute",
-                    solver_config.get_eos_gamma(),
-                    storage.cell_graph_edge,
-                    storage.rho_face_xp,
-                    storage.rho_face_xm,
-                    storage.rho_face_yp,
-                    storage.rho_face_ym,
-                    storage.rho_face_zp,
-                    storage.rho_face_zm,
-                    storage.vel_face_xp,
-                    storage.vel_face_xm,
-                    storage.vel_face_yp,
-                    storage.vel_face_ym,
-                    storage.vel_face_zp,
-                    storage.vel_face_zm,
-                    storage.press_face_xp,
-                    storage.press_face_xm,
-                    storage.press_face_yp,
-                    storage.press_face_ym,
-                    storage.press_face_zp,
-                    storage.press_face_zm,
-                    storage.flux_rho_face_xp,
-                    storage.flux_rho_face_xm,
-                    storage.flux_rho_face_yp,
-                    storage.flux_rho_face_ym,
-                    storage.flux_rho_face_zp,
-                    storage.flux_rho_face_zm,
-                    storage.flux_rhov_face_xp,
-                    storage.flux_rhov_face_xm,
-                    storage.flux_rhov_face_yp,
-                    storage.flux_rhov_face_ym,
-                    storage.flux_rhov_face_zp,
-                    storage.flux_rhov_face_zm,
-                    storage.flux_rhoe_face_xp,
-                    storage.flux_rhoe_face_xm,
-                    storage.flux_rhoe_face_yp,
-                    storage.flux_rhoe_face_ym,
-                    storage.flux_rhoe_face_zp,
-                    storage.flux_rhoe_face_zm);
-            flux_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
-        } else if (solver_config.riemann_config == HLL) {
-            modules::NodeComputeFluxGasMode<Tvec, TgridVec, modules::RiemannSolverMode::HLL> node(
+        // Build the gas flux node for the Riemann solver mode carried by `mode_tag`
+        auto push_gas_flux_node = [&](auto mode_tag) {
+            constexpr modules::RiemannSolverMode mode = decltype(mode_tag)::value;
+            modules::NodeComputeFluxGasMode<Tvec, TgridVec, mode> node(
                 "Gas flux compute",
                 solver_config.get_eos_gamma(),
                 storage.cell_graph_edge,
@@ -1464,50 +1423,17 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.flux_rhoe_face_zp,
                 storage.flux_rhoe_face_zm);
             flux_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
-        } else if (solver_config.riemann_config == HLLC) {
-            modules::NodeComputeFluxGasMode<Tvec, TgridVec, modules::RiemannSolverMode::HLLC> node(
-                "Gas flux compute",
-                solver_config.get_eos_gamma(),
-                storage.cell_graph_edge,
-                storage.rho_face_xp,
-                storage.rho_face_xm,
-                storage.rho_face_yp,
-                storage.rho_face_ym,
-                storage.rho_face_zp,
-                storage.rho_face_zm,
-                storage.vel_face_xp,
-                storage.vel_face_xm,
-                storage.vel_face_yp,
-                storage.vel_face_ym,
-                storage.vel_face_zp,
-                storage.vel_face_zm,
-                storage.press_face_xp,
-                storage.press_face_xm,
-                storage.press_face_yp,
-                storage.press_face_ym,
-                storage.press_face_zp,
-                storage.press_face_zm,
-                storage.flux_rho_face_xp,
-                storage.flux_rho_face_xm,
-                storage.flux_rho_face_yp,
-                storage.flux_rho_face_ym,
-                storage.flux_rho_face_zp,
-                storage.flux_rho_face_zm,
-                storage.flux_rhov_face_xp,
-                storage.flux_rhov_face_xm,
-                storage.flux_rhov_face_yp,
-                storage.flux_rhov_face_ym,
-                storage.flux_rhov_face_zp,
-                storage.flux_rhov_face_zm,
-                storage.flux_rhoe_face_xp,
-                storage.flux_rhoe_face_xm,
-                storage.flux_rhoe_face_yp,
-                storage.flux_rhoe_face_ym,
-                storage.flux_rhoe_face_zp,
-                storage.flux_rhoe_face_zm);
-            flux_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
-        } else {
-            shambase::throw_unimplemented("unknown flux mode");
+        };
+
+        using RSM = modules::RiemannSolverMode;
+        switch (solver_config.riemann_config) {
+        case RSM::Rusanov: push_gas_flux_node(std::integral_constant<RSM, RSM::Rusanov>{}); break;
+        case RSM::HLL    : push_gas_flux_node(std::integral_constant<RSM, RSM::HLL>{}); break;
+        case RSM::HLLC   : push_gas_flux_node(std::integral_constant<RSM, RSM::HLLC>{}); break;
+        case RSM::HLLCDavis:
+            push_gas_flux_node(std::integral_constant<RSM, RSM::HLLCDavis>{});
+            break;
+        default: shambase::throw_unimplemented("unknown flux mode");
         }
 
         if (solver_config.is_dust_on()) {

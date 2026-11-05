@@ -142,6 +142,8 @@ def run_test(
         cfg.set_riemann_solver_hll()
     elif riemann_solver == "hllc":
         cfg.set_riemann_solver_hllc()
+    elif riemann_solver == "hllc_davis":
+        cfg.set_riemann_solver_hllc_davis()
     else:
         raise ValueError(f"Invalid Riemann solver: {riemann_solver}")
 

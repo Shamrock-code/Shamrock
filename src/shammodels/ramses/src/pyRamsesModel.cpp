@@ -95,7 +95,20 @@ namespace shammodels::basegodunov {
                 "set_riemann_solver_hllc",
                 [](TConfig &self) {
                     self.riemann_config = HLLC;
-                })
+                },
+                R"==(
+    Set the HLLC Riemann solver, using the pressure based (PVRS) wave speed estimate
+    from Toro (Riemann Solvers and Numerical Methods for Fluid Dynamics, chapter 10).
+)==")
+            .def(
+                "set_riemann_solver_hllc_davis",
+                [](TConfig &self) {
+                    self.riemann_config = HLLCDavis;
+                },
+                R"==(
+    Set the HLLC Riemann solver, using the Davis (1988) wave speed estimate
+    s_l = min(v_l - c_l, v_r - c_r), s_r = max(v_l + c_l, v_r + c_r).
+)==")
             .def(
                 "set_riemann_solver_rusanov",
                 [](TConfig &self) {

@@ -72,6 +72,9 @@ namespace shammodels::basegodunov::modules {
         if constexpr (mode == RiemannSolverMode::HLLC) {
             return shammath::hllc_adiab_toro_flux(fspec, prim_l, prim_r, n);
         }
+        if constexpr (mode == RiemannSolverMode::HLLCDavis) {
+            return shammath::hllc_davis_flux(fspec, prim_l, prim_r, n);
+        }
     }
 
     /**

@@ -181,6 +181,19 @@ template class shammodels::basegodunov::modules::
     NodeComputeFluxGasDirMode<f64_3, i64_3, RiemannSolverMode::HLLC, Direction::zp>;
 
 template class shammodels::basegodunov::modules::
+    NodeComputeFluxGasDirMode<f64_3, i64_3, RiemannSolverMode::HLLCDavis, Direction::xm>;
+template class shammodels::basegodunov::modules::
+    NodeComputeFluxGasDirMode<f64_3, i64_3, RiemannSolverMode::HLLCDavis, Direction::xp>;
+template class shammodels::basegodunov::modules::
+    NodeComputeFluxGasDirMode<f64_3, i64_3, RiemannSolverMode::HLLCDavis, Direction::ym>;
+template class shammodels::basegodunov::modules::
+    NodeComputeFluxGasDirMode<f64_3, i64_3, RiemannSolverMode::HLLCDavis, Direction::yp>;
+template class shammodels::basegodunov::modules::
+    NodeComputeFluxGasDirMode<f64_3, i64_3, RiemannSolverMode::HLLCDavis, Direction::zm>;
+template class shammodels::basegodunov::modules::
+    NodeComputeFluxGasDirMode<f64_3, i64_3, RiemannSolverMode::HLLCDavis, Direction::zp>;
+
+template class shammodels::basegodunov::modules::
     NodeComputeFluxDustDirMode<f64_3, i64_3, DustRiemannSolverMode::HB, Direction::xm>;
 template class shammodels::basegodunov::modules::
     NodeComputeFluxDustDirMode<f64_3, i64_3, DustRiemannSolverMode::HB, Direction::xp>;

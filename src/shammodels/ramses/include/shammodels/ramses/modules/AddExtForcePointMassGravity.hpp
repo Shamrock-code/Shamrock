@@ -56,7 +56,7 @@ namespace shammodels::basegodunov::modules {
 
         inline virtual std::string _impl_get_label() const { return "AddExtForcePointMassGravity"; }
 
-        inline virtual std::string _impl_get_tex() const;
+        virtual std::string _impl_get_tex() const;
     };
 
 } // namespace shammodels::basegodunov::modules

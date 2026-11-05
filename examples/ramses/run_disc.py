@@ -1,15 +1,20 @@
+"""
+Protoplanetary disc around a point mass in RAMSES solver
+========================================================
+
+A locally isothermal disc in rotational and vertical hydrostatic equilibrium around a softened
+point mass (``cfg.add_ext_force_point_mass_gravity``), optionally with self-gravity.
+"""
+
 import os
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import animation
 from shamrock.model_ramses import ExtForceCoupling
 from shamrock.utils.numba_helper import maybe_njit as njit
 
 import shamrock
-
-shamrock.enable_experimental_features()
 
 # %%
 # Parameters
@@ -21,25 +26,26 @@ shamrock.enable_experimental_features()
 # G = 1 in the code units (unit_mass = 1 / G_SI kg), self-gravity takes G from the unit system
 G_SI = shamrock.Constants(shamrock.UnitSystem()).G()
 units = shamrock.UnitSystem(unit_time=1.0, unit_length=1.0, unit_mass=1.0 / G_SI)
-
+G_code = shamrock.Constants(units).G()
+assert G_code == 1
 
 ## Grid setup
-resolution = 128
+resolution = 32
+boxlen = 1
 
 ## Initial conditions
-contrast_factor = 1000
+contrast_factor = 10
 ref_density = 1
 ref_sound_speed = 0.2
 cs_expo = 0.5
-point_mass_Gmass = 1
+point_mass = 1
 gravity_softening = 0.05
 outer_radius = 0.25
 inner_radius_factor = 0.1
 inner_iso_z_flaring = 2
 gamma0 = 1.00001
 smallr = 1e-4
-center = 0.5
-h_over_r = 1
+center = boxlen / 2.0
 
 ## Physics
 enable_sg = False
@@ -70,12 +76,14 @@ def get_cs(rc_soft, z):
 def get_omega(rs_soft, rc_soft, cs, inner_radius):
 
     if cs_expo == 0.5 or rc_soft > inner_radius:
-        omega2 = point_mass_Gmass / (rc_soft * rc_soft * rs_soft) - (4.0 - cs_expo) * (cs * cs) / (
-            rc_soft * rc_soft
-        )
+        omega2 = point_mass * G_code / (rc_soft * rc_soft * rs_soft) - (4.0 - cs_expo) * (
+            cs * cs
+        ) / (rc_soft * rc_soft)
         omega = np.sqrt(np.maximum(omega2, 0.0))
     else:
-        omega2 = point_mass_Gmass / (rs_soft**3) - (3.0 - cs_expo) * (cs * cs) / (rc_soft * rc_soft)
+        omega2 = point_mass * G_code / (rs_soft**3) - (3.0 - cs_expo) * (cs * cs) / (
+            rc_soft * rc_soft
+        )
         omega = np.sqrt(np.maximum(omega2, 0.0))
 
     return omega
@@ -97,7 +105,7 @@ def rho_map(rmin, rmax):
     dens = ref_density * (outer_radius / rc_soft) ** ((5.0 - 2.0 * cs_expo) / 2.0)
 
     # Vertical hydrostatic equilibrium
-    dens *= np.exp((point_mass_Gmass / (cs * cs)) * (1.0 / rs_soft - 1.0 / rc_soft))
+    dens *= np.exp((point_mass * G_code / (cs * cs)) * (1.0 / rs_soft - 1.0 / rc_soft))
 
     # Outer taper
     if rc_soft > outer_radius or np.abs(z) > 0.5 * outer_radius:
@@ -116,7 +124,6 @@ def rhovel_map(rmin, rmax):
     x, y, z = (rmin + rmax) / 2
 
     rc_soft = np.sqrt(x * x + y * y + gravity_softening**2)
-    rs = np.sqrt(x * x + y * y + z * z)
     rs_soft = np.sqrt(x * x + y * y + z * z + gravity_softening**2)
 
     cs, inner_radius = get_cs(rc_soft, z)
@@ -165,13 +172,15 @@ def make_cartesian_coords(nx, ny, z_val, min_x, max_x, min_y, max_y):
     return [tuple(pos) for pos in positions]
 
 
-nx, ny = 128, 128
+nx, ny = resolution, resolution
 
 
-positions = make_cartesian_coords(nx, ny, 0.5, 0, 1 - 1e-6, 0, 1 - 1e-6)
+positions = make_cartesian_coords(nx, ny, center, 0, boxlen - 1e-6, 0, boxlen - 1e-6)
 
 
-def plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name, dpi=200):
+def plot_rho_slice_cartesian(
+    metadata, arr_rho_pos, iplot, case_name, dpi=200, xlabel="x", ylabel="y"
+):
     ext = metadata["extent"]
 
     my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
@@ -188,8 +197,8 @@ def plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name, dpi=200):
         aspect="auto",
         norm=matplotlib.colors.LogNorm(vmin=1e-3, vmax=6),
     )
-    plt.xlabel("x")
-    plt.ylabel("y")
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     plt.title(f"t = {metadata['time']:0.5f} [seconds]")
     cbar = plt.colorbar(res, extend="both")
     plt.gca().set_aspect("equal")
@@ -204,10 +213,10 @@ def plot(t, iplot):
     plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, "disk")
     pos_XZ = [(x, z, y) for (x, y, z) in positions]
     arr_rho_pos = model.render_slice("rho", "f64", pos_XZ)
-    plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, "disk_xz")
+    plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, "disk_xz", ylabel="z")
     pos_YZ = [(z, y, x) for (x, y, z) in positions]
     arr_rho_pos = model.render_slice("rho", "f64", pos_YZ)
-    plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, "disk_yz")
+    plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, "disk_yz", xlabel="y", ylabel="z")
 
 
 # %%
@@ -228,7 +237,7 @@ base = resolution // cell_size
 
 cfg = model.gen_default_config()
 
-scale_fact = 1 / (cell_size * base)
+scale_fact = boxlen / (cell_size * base)
 cfg.set_scale_factor(scale_fact)
 cfg.set_eos_gamma(gamma0)
 cfg.set_Csafe(0.8)
@@ -239,10 +248,13 @@ cfg.set_face_time_interpolation(True)
 cfg.set_units(units)
 
 if enable_sg:
+    shamrock.enable_experimental_features()
     cfg.set_gravity_mode_cg()
     cfg.set_self_gravity_Niter_max(500)
     cfg.set_self_gravity_tol(1e-4)
-cfg.add_ext_force_point_mass_gravity(mass=1, pos=(0.5, 0.5, 0.5), epsilon_soft=0.05)
+cfg.add_ext_force_point_mass_gravity(
+    mass=point_mass, pos=(center, center, center), epsilon_soft=gravity_softening
+)
 cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)
 
 
@@ -266,17 +278,17 @@ print("initialisation done, plotting initial conditions...", flush=True)
 # ^^^^^^^^^^^^^^^^^^
 
 dt = 0.01
-for i in range(31):
+for i in range(21):
     t = dt * i
     model.evolve_until(dt * i)
     d = ctx.collect_data()
     print(
-        f"Step {i}, t = {t:0.5f} seconds, min rho = {d['rho'].min():0.5e}, max rho = {d['rho'].max():0.5e}"
+        f"Step {i}, t = {t:0.5f} [code unit], min rho = {d['rho'].min():0.5e}, max rho = {d['rho'].max():0.5e}"
     )
     print(
-        f"Step {i}, t = {t:0.5f} seconds, min rhoe = {d['rhoetot'].min():0.5e}, max rhov = {d['rhoetot'].max():0.5e}"
+        f"Step {i}, t = {t:0.5f} [code unit], min rhoe = {d['rhoetot'].min():0.5e}, max rhoe = {d['rhoetot'].max():0.5e}"
     )
     print(
-        f"Step {i}, t = {t:0.5f} seconds, min rhov = {d['rhovel'].min():0.5e}, max rhov = {d['rhovel'].max():0.5e}"
+        f"Step {i}, t = {t:0.5f} [code unit], min rhov = {d['rhovel'].min():0.5e}, max rhov = {d['rhovel'].max():0.5e}"
     )
     plot(t, i)

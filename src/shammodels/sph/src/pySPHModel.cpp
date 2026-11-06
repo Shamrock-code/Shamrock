@@ -24,6 +24,7 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/injection/py_particle_injection.hpp"
 #include "shammodels/common/modules/ComputeGravWave.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
@@ -545,6 +546,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("center"),
             py::arg("radius"));
+
+    shammodels::common::injection::add_particle_injection_defs<Tvec>(config_cls);
 
     std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
     py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())

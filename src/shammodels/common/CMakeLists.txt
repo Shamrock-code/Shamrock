@@ -17,6 +17,8 @@ set(Sources
     src/modules/AddForcePaczynskiWiita.cpp
     src/modules/AddForceCentralGravPotential.cpp
     src/modules/ComputeGravWave.cpp
+    src/injection/FallbackStreamSchedule.cpp
+    src/injection/ParticleInjector.cpp
     src/timestep_report.cpp
     src/SolverLog.cpp
 )

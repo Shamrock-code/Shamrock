@@ -20,6 +20,7 @@
 #include "shambase/StorageComponent.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/common/injection/ParticleInjector.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
@@ -118,6 +119,9 @@ namespace shammodels::sph {
         Component<shamrock::ComputeField<Tscal>> old_dtepsilon;
         Component<shamrock::ComputeField<Tvec>> old_dtdeltav;
         Component<shamrock::ComputeField<Tscal>> old_ds_j_dt;
+
+        /// Runtime state of the particle injectors, created on the first injection step
+        std::unique_ptr<shammodels::common::injection::ParticleInjector<Tvec>> particle_injector;
 
         struct Timings {
             f64 interface = 0;

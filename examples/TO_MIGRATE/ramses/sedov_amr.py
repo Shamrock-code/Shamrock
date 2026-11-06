@@ -155,7 +155,7 @@ def run_simulation(t_final, with_2to_1=True):
     cfg.set_boundary_condition("x", "periodic")
     cfg.set_boundary_condition("y", "periodic")
     cfg.set_boundary_condition("z", "periodic")
-    cfg.set_riemann_solver_hllc()
+    cfg.set_riemann_solver_hllc_pvrs()
     cfg.set_slope_lim_minmod()
 
     cfg.set_amr_mode_old(False)

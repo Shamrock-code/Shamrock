@@ -96,9 +96,11 @@ namespace shammodels::basegodunov {
 
                 Tscal scale_factor = solver.solver_config.grid_coord_to_pos_fact;
                 for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
-                    Tvec block_min  = cell_min[i].template convert<Tscal>() * scale_factor;
-                    Tvec block_max  = cell_max[i].template convert<Tscal>() * scale_factor;
-                    Tvec delta_cell = (block_max - block_min) / Block::side_size;
+                    Tvec block_min = cell_min[i].template convert<Tscal>() * scale_factor;
+                    // size from the int coords difference, so that it does not depend on the
+                    // block position
+                    Tvec delta_cell = (cell_max[i] - cell_min[i]).template convert<Tscal>()
+                                      * (scale_factor / Block::side_size);
 
                     Block::for_each_cell_in_block(delta_cell, [&](u32 lid, Tvec delta) {
                         Tvec bmin = block_min + delta;

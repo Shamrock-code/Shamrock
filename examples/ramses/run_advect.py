@@ -67,8 +67,8 @@ def run_advect(slope_limiter: str, riemann_solver: str, only_last_step: bool = T
         cfg.set_riemann_solver_rusanov()
     elif riemann_solver == "hll":
         cfg.set_riemann_solver_hll()
-    elif riemann_solver == "hllc":
-        cfg.set_riemann_solver_hllc()
+    elif riemann_solver == "hllc_pvrs":
+        cfg.set_riemann_solver_hllc_pvrs()
     else:
         raise ValueError(f"Invalid Riemann solver: {riemann_solver}")
 
@@ -121,17 +121,17 @@ def run_advect(slope_limiter: str, riemann_solver: str, only_last_step: bool = T
 data = {}
 data["none_rusanov"] = run_advect("none", "rusanov")
 data["none_hll"] = run_advect("none", "hll")
-data["none_hllc"] = run_advect("none", "hllc")
+data["none_hllc_pvrs"] = run_advect("none", "hllc_pvrs")
 data["vanleer_sym_rusanov"] = run_advect("vanleer_sym", "rusanov")
 data["vanleer_sym_hll"] = run_advect("vanleer_sym", "hll")
-data["vanleer_sym_hllc"] = run_advect("vanleer_sym", "hllc")
+data["vanleer_sym_hllc_pvrs"] = run_advect("vanleer_sym", "hllc_pvrs")
 data["minmod_rusanov"] = run_advect("minmod", "rusanov")
 data["minmod_hll"] = run_advect("minmod", "hll")
-data["minmod_hllc"] = run_advect("minmod", "hllc", only_last_step=False)
+data["minmod_hllc_pvrs"] = run_advect("minmod", "hllc_pvrs", only_last_step=False)
 
 # %%
 # Plot 1: Comparison grouped by Riemann solver (last timestep only)
-riemann_solvers = ["rusanov", "hll", "hllc"]
+riemann_solvers = ["rusanov", "hll", "hllc_pvrs"]
 slope_limiters = ["none", "vanleer", "vanleer_sym", "minmod"]
 
 fig, axes = plt.subplots(3, 1, figsize=(6, 15))
@@ -157,7 +157,7 @@ plt.tight_layout()
 plt.show()
 
 # %%
-# Plot 2: Animation of vanleer_sym_hllc configuration
+# Plot 2: Animation of minmod_hllc_pvrs configuration
 
 # sphinx_gallery_thumbnail_number = 2
 
@@ -169,15 +169,15 @@ ax2.set_ylabel("$\\rho$")
 ax2.set_ylim(0.9, 2.1)
 ax2.grid(True, alpha=0.3)
 
-x_positions = np.linspace(0, 1, len(data["minmod_hllc"][0]))
-(line,) = ax2.plot(x_positions, data["minmod_hllc"][0])
-ax2.set_title(f"minmod_hllc - t = {0.0:.3f} s")
+x_positions = np.linspace(0, 1, len(data["minmod_hllc_pvrs"][0]))
+(line,) = ax2.plot(x_positions, data["minmod_hllc_pvrs"][0])
+ax2.set_title(f"minmod_hllc_pvrs - t = {0.0:.3f} s")
 
 
 def animate(frame):
     t = tmax * frame / timestamps
-    line.set_ydata(data["minmod_hllc"][frame])
-    ax2.set_title(f"minmod_hllc - t = {t:.3f} s")
+    line.set_ydata(data["minmod_hllc_pvrs"][frame])
+    ax2.set_title(f"minmod_hllc_pvrs - t = {t:.3f} s")
     return (line,)
 
 

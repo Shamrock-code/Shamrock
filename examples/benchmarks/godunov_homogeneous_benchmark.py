@@ -71,7 +71,7 @@ multz = 1
 cfg = model.gen_default_config()
 scale_fact = 1 / (sz * N_per_axis * multx)
 cfg.set_scale_factor(scale_fact)
-cfg.set_riemann_solver_hllc()
+cfg.set_riemann_solver_hllc_pvrs()
 cfg.set_eos_gamma(1.66667)
 cfg.set_slope_lim_vanleer_sym()
 cfg.set_face_time_interpolation(True)

@@ -137,6 +137,23 @@ struct shamtree::CLBVHTraverserAccessed {
             [&](u32) {});
     }
 
+    /// Variant of rtree_for using the "while-while" traversal (same visiting order)
+    /// (see KarrasTreeTraverserAccessed::stack_based_traversal_while_while)
+    template<class Functor1, class Functor2>
+    inline void rtree_for_while_while(
+        Functor1 &&traverse_condition_with_aabb, Functor2 &&on_found_leaf) const {
+
+        tree_traverser.template stack_based_traversal_while_while<tree_depth_max>(
+            [&](u32 node_id) { // interaction crit
+                return traverse_condition_with_aabb(
+                    node_id, shammath::AABB<Tvec>{aabb_min[node_id], aabb_max[node_id]});
+            },
+            [&](u32 node_id) { // on leaf found
+                on_found_leaf(node_id);
+            },
+            [&](u32) {});
+    }
+
     /// version using a stack supplied by the caller instead of an internal std::array
     /// (e.g. a slice of a local_accessor for shared memory offload).
     /// `stack` is a functor `(u32 id) -> u32 &` giving access to the entry `id` of the stack and
@@ -185,6 +202,19 @@ struct shamtree::CLBVHObjectIteratorAccessed {
         Functor1 &&traverse_condition_with_aabb, Functor2 &&on_found_object) const {
 
         tree_traverser.rtree_for(
+            std::forward<Functor1>(traverse_condition_with_aabb),
+            [&](u32 node_id) { // on leaf found
+                u32 leaf_id = node_id - tree_traverser.tree_traverser.offset_leaf;
+                cell_iterator.for_each_in_leaf_cell(leaf_id, on_found_object);
+            });
+    }
+
+    /// Variant of rtree_for using the "while-while" traversal (same visiting order)
+    template<class Functor1, class Functor2>
+    inline void rtree_for_while_while(
+        Functor1 &&traverse_condition_with_aabb, Functor2 &&on_found_object) const {
+
+        tree_traverser.rtree_for_while_while(
             std::forward<Functor1>(traverse_condition_with_aabb),
             [&](u32 node_id) { // on leaf found
                 u32 leaf_id = node_id - tree_traverser.tree_traverser.offset_leaf;

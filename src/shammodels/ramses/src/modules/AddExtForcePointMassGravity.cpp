@@ -56,7 +56,7 @@ namespace shammodels::basegodunov::modules {
                 Tvec r_vec = cell_pos - pos;
 
                 // compute distance to the point mass
-                Tscal r_squared = sycl::dot(r_vec,r_vec);
+                Tscal r_squared = sycl::dot(r_vec, r_vec);
 
                 Tscal inv_r_soft           = sycl::rsqrt(r_squared + epsilon_soft * epsilon_soft);
                 Tscal one_over_r_cube_soft = inv_r_soft * inv_r_soft * inv_r_soft;

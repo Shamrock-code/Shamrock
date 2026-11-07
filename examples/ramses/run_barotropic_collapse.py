@@ -42,7 +42,7 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
-from shamrock.model_ramses import ExtForceCoupling
+from shamrock.model_ramses import HLLC_PVRS, ExtForceCoupling
 
 shamrock.enable_experimental_features()
 
@@ -159,7 +159,7 @@ cfg.set_Csafe(0.3)
 cfg.set_eos_reset_barotropic(rho_crit=rho_crit, cs0=cs0, gamma_baro=gamma, gamma=gamma)
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
-cfg.set_riemann_solver_hllc_pvrs()
+cfg.set_riemann_solver(HLLC_PVRS)
 cfg.set_units(codeu)
 cfg.set_gravity_mode_cg()
 cfg.set_self_gravity_tol(1e-6)

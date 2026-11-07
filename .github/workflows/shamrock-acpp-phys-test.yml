@@ -224,6 +224,8 @@ jobs:
             artifact_name: gallery_ramses_run_shu_osher
           - testfile: "examples/ramses/run_disc.py"
             artifact_name: gallery_ramses_run_disc
+          - testfile: "examples/ramses/run_barotropic_collapse.py"
+            artifact_name: gallery_ramses_run_barotropic_collapse
 
           # GSPH examples
           - testfile: "examples/gsph/run_sod.py"

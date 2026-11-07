@@ -6,15 +6,30 @@ A locally isothermal disc in rotational and vertical hydrostatic equilibrium aro
 point mass (``cfg.add_ext_force_point_mass_gravity``), optionally with self-gravity.
 """
 
+# sphinx_gallery_multi_image = "single"
+
 import os
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import animation
 from shamrock.model_ramses import ExtForceCoupling
-from shamrock.utils.numba_helper import maybe_njit as njit
+
+# maybe_njit applies numba.njit when numba is installed, and does nothing otherwise
+from shamrock.utils.numba_helper import maybe_njit
 
 import shamrock
+
+# If we use the shamrock executable to run this script instead of the python interpreter,
+# we should not initialize the system as the shamrock executable needs to handle specific MPI logic
+if not shamrock.sys.is_initialized():
+    shamrock.change_loglevel(1)
+    shamrock.sys.init("0:0")
+
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
 
 # %%
 # Parameters
@@ -30,7 +45,7 @@ G_code = shamrock.Constants(units).G()
 assert abs(G_code - 1) < 1e-12
 
 ## Grid setup
-resolution = 32
+resolution = 64
 boxlen = 1
 
 ## Initial conditions
@@ -50,13 +65,24 @@ center = boxlen / 2.0
 ## Physics
 enable_sg = False
 
+## Outputs
+dt_dump = 0.01
+n_dumps = 21
+
+sim_folder = "_to_trash/ramses_disc/"
+
+# %%
+# Create the dump directory if it does not exist
+if shamrock.sys.world_rank() == 0:
+    os.makedirs(sim_folder, exist_ok=True)
+
 
 # %%
 # Initial conditions
 # ^^^^^^^^^^^^^^^^^^
 
 
-@njit
+@maybe_njit
 def get_cs(rc_soft, z):
     inner_radius = np.sqrt(
         outer_radius
@@ -72,7 +98,7 @@ def get_cs(rc_soft, z):
     return cs, inner_radius
 
 
-@njit
+@maybe_njit
 def get_omega(rs_soft, rc_soft, cs, inner_radius):
 
     if cs_expo == 0.5 or rc_soft > inner_radius:
@@ -89,7 +115,7 @@ def get_omega(rs_soft, rc_soft, cs, inner_radius):
     return omega
 
 
-@njit
+@maybe_njit
 def rho_map(rmin, rmax):
 
     rmin = np.array(rmin) - center
@@ -114,7 +140,7 @@ def rho_map(rmin, rmax):
     return np.maximum(dens, smallr)
 
 
-@njit
+@maybe_njit
 def rhovel_map(rmin, rmax):
 
     rho = rho_map(rmin, rmax)
@@ -136,7 +162,7 @@ def rhovel_map(rmin, rmax):
     return (rho * vx, rho * vy, rho * vz)
 
 
-@njit
+@maybe_njit
 def rhoe_map(rmin, rmax):
 
     rho = rho_map(rmin, rmax)
@@ -203,18 +229,18 @@ def plot_rho_slice_cartesian(
     cbar = plt.colorbar(res, extend="both")
     plt.gca().set_aspect("equal")
     cbar.set_label(r"$\rho$ [code unit]")
-    plt.savefig(os.path.join(".", f"rho_{case_name}_{iplot:04d}.png"))
+    plt.savefig(os.path.join(sim_folder, f"rho_{case_name}_{iplot:04d}.png"))
     plt.close()
 
 
 def plot(t, iplot):
     metadata = {"extent": [0, boxlen, 0, boxlen], "time": t}
     arr_rho_pos = model.render_slice("rho", "f64", positions)
-    plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, "disk")
+    plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, "disk_face")
     pos_XZ = [(x, z, y) for (x, y, z) in positions]
     arr_rho_pos = model.render_slice("rho", "f64", pos_XZ)
     plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, "disk_xz", ylabel="z")
-    pos_YZ = [(z, y, x) for (x, y, z) in positions]
+    pos_YZ = [(z, x, y) for (x, y, z) in positions]
     arr_rho_pos = model.render_slice("rho", "f64", pos_YZ)
     plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, "disk_yz", xlabel="y", ylabel="z")
 
@@ -277,10 +303,9 @@ print("initialisation done, plotting initial conditions...", flush=True)
 # Run the simulation
 # ^^^^^^^^^^^^^^^^^^
 
-dt = 0.01
-for i in range(21):
-    t = dt * i
-    model.evolve_until(dt * i)
+for i in range(n_dumps):
+    t = dt_dump * i
+    model.evolve_until(t)
     d = ctx.collect_data()
     print(
         f"Step {i}, t = {t:0.5f} [code unit], min rho = {d['rho'].min():0.5e}, max rho = {d['rho'].max():0.5e}"
@@ -292,3 +317,41 @@ for i in range(21):
         f"Step {i}, t = {t:0.5f} [code unit], min rhov = {d['rhovel'].min():0.5e}, max rhov = {d['rhovel'].max():0.5e}"
     )
     plot(t, i)
+
+
+# %%
+# Density slices
+# ^^^^^^^^^^^^^^
+
+from shamrock.utils.plot import show_image_sequence
+
+
+def show_slice_animation(case_name):
+    # If the animation is not returned only a static image will be shown in the doc
+    ani = show_image_sequence(os.path.join(sim_folder, f"rho_{case_name}_*.png"), render_gif=True)
+
+    if shamrock.sys.world_rank() == 0:
+        # To save the animation using Pillow as a gif
+        writer = animation.PillowWriter(fps=5, metadata=dict(artist="Me"), bitrate=1800)
+        ani.save(os.path.join(sim_folder, f"rho_{case_name}.gif"), writer=writer)
+
+    return ani
+
+
+# %%
+# Midplane slice (:math:`z = z_{\rm center}`)
+
+ani = show_slice_animation("disk_face")
+plt.show()
+
+# %%
+# Vertical slice (:math:`y = y_{\rm center}`)
+
+ani = show_slice_animation("disk_xz")
+plt.show()
+
+# %%
+# Vertical slice (:math:`x = x_{\rm center}`)
+
+ani = show_slice_animation("disk_yz")
+plt.show()

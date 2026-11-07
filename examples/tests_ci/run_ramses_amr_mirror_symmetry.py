@@ -29,6 +29,7 @@ import numpy as np
 from matplotlib import animation
 from matplotlib.collections import LineCollection
 from matplotlib.colors import LogNorm
+from shamrock.model_ramses import HLLC_PVRS
 
 import shamrock
 
@@ -94,7 +95,7 @@ cfg.set_scale_factor(scale_fact)
 cfg.set_eos_gamma(gamma)
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
-cfg.set_riemann_solver_hllc_pvrs()
+cfg.set_riemann_solver(HLLC_PVRS)
 cfg.set_amr_mode_old(False)
 cfg.set_amr_mode_density_based(crit_mass=crit_mass)
 model.set_solver_config(cfg)

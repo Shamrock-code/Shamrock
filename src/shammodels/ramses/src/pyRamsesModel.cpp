@@ -18,6 +18,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/logs.hpp"
@@ -32,6 +33,23 @@
 #include <memory>
 
 namespace shammodels::basegodunov {
+
+    namespace {
+        /// Warn that a legacy ``cfg.set_riemann_solver_xxx()`` setter is deprecated
+        void warn_deprecated_riemann_setter(const char *old_name, const char *mode) {
+            ON_RANK_0(
+                shamcomm::logs::warn_ln(
+                    "Ramses",
+                    sham::format(
+                        ".{}() is deprecated and will be removed at some point, replace it by:\n"
+                        "    from shamrock.model_ramses import {}\n"
+                        "    cfg.set_riemann_solver({})",
+                        old_name,
+                        mode,
+                        mode)));
+        }
+    } // namespace
+
     template<class Tvec, class TgridVec>
     void add_instance(py::module &m, std::string name_config, std::string name_model) {
 
@@ -90,19 +108,53 @@ namespace shammodels::basegodunov {
                 py::arg("gamma_baro"),
                 py::arg("gamma"))
             .def(
+                "set_riemann_solver",
+                [](TConfig &self, RiemannSolverMode mode) {
+                    self.set_riemann_solver(mode);
+                },
+                py::arg("mode"),
+                R"==(
+    Set the gas Riemann solver.
+
+    Parameters
+    ----------
+    mode : RiemannSolverMode
+        One of ``Rusanov``, ``HLL`` (the default), ``HLLC_PVRS`` or ``HLLC_Davis``, see
+        :py:class:`RiemannSolverMode`.
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import HLLC_PVRS
+    >>> cfg.set_riemann_solver(HLLC_PVRS)
+
+    or equivalently
+
+    >>> from shamrock.model_ramses import RiemannSolverMode
+    >>> cfg.set_riemann_solver(RiemannSolverMode.HLLC_PVRS)
+)==")
+            .def(
                 "set_riemann_solver_hll",
                 [](TConfig &self) {
-                    self.riemann_config = HLL;
-                })
+                    warn_deprecated_riemann_setter("set_riemann_solver_hll", "HLL");
+                    self.set_riemann_solver(HLL);
+                },
+                R"==(
+    Set the HLL Riemann solver.
+
+    .. deprecated::
+        Use ``cfg.set_riemann_solver(HLL)`` instead (see :py:meth:`set_riemann_solver`).
+)==")
             .def(
                 "set_riemann_solver_hllc_pvrs",
                 [](TConfig &self) {
-                    self.riemann_config = HLLC_PVRS;
+                    warn_deprecated_riemann_setter("set_riemann_solver_hllc_pvrs", "HLLC_PVRS");
+                    self.set_riemann_solver(HLLC_PVRS);
                 },
                 R"==(
-    Set the HLLC Riemann solver, with wave speeds estimated from the primitive variable
-    Riemann solver (PVRS) star pressure, following Toro (Riemann Solvers and Numerical
-    Methods for Fluid Dynamics, chapter 10).
+    Set the HLLC_PVRS Riemann solver.
+
+    .. deprecated::
+        Use ``cfg.set_riemann_solver(HLLC_PVRS)`` instead (see :py:meth:`set_riemann_solver`).
 )==")
             .def(
                 "set_riemann_solver_hllc",
@@ -110,32 +162,44 @@ namespace shammodels::basegodunov {
                     const std::string msg
                         = ".set_riemann_solver_hllc() has been removed, as several HLLC variants "
                           "are now available. Select one explicitly:\n"
-                          "    -> .set_riemann_solver_hllc_pvrs() : the previous behaviour of "
+                          "    -> .set_riemann_solver(HLLC_PVRS) : the previous behaviour of "
                           ".set_riemann_solver_hllc()\n"
-                          "    -> .set_riemann_solver_hllc_davis()";
+                          "    -> .set_riemann_solver(HLLC_Davis)\n"
+                          "with `from shamrock.model_ramses import HLLC_PVRS, HLLC_Davis`";
                     ON_RANK_0(shamcomm::logs::err_ln("Ramses", msg));
                     shambase::throw_with_loc<std::runtime_error>(msg);
                 },
                 R"==(
     Removed, raises an error.
 
-    It was replaced by :py:meth:`set_riemann_solver_hllc_pvrs` (same solver as before) to lift
-    the ambiguity on the HLLC variant; see also :py:meth:`set_riemann_solver_hllc_davis`.
+    It was replaced by ``cfg.set_riemann_solver(HLLC_PVRS)`` (same solver as before) to lift the
+    ambiguity on the HLLC variant; see also ``cfg.set_riemann_solver(HLLC_Davis)`` and
+    :py:meth:`set_riemann_solver`.
 )==")
             .def(
                 "set_riemann_solver_hllc_davis",
                 [](TConfig &self) {
-                    self.riemann_config = HLLC_Davis;
+                    warn_deprecated_riemann_setter("set_riemann_solver_hllc_davis", "HLLC_Davis");
+                    self.set_riemann_solver(HLLC_Davis);
                 },
                 R"==(
-    Set the HLLC Riemann solver, using the Davis (1988) wave speed estimate
-    s_l = min(v_l - c_l, v_r - c_r), s_r = max(v_l + c_l, v_r + c_r).
+    Set the HLLC_Davis Riemann solver.
+
+    .. deprecated::
+        Use ``cfg.set_riemann_solver(HLLC_Davis)`` instead (see :py:meth:`set_riemann_solver`).
 )==")
             .def(
                 "set_riemann_solver_rusanov",
                 [](TConfig &self) {
-                    self.riemann_config = Rusanov;
-                })
+                    warn_deprecated_riemann_setter("set_riemann_solver_rusanov", "Rusanov");
+                    self.set_riemann_solver(Rusanov);
+                },
+                R"==(
+    Set the Rusanov Riemann solver.
+
+    .. deprecated::
+        Use ``cfg.set_riemann_solver(Rusanov)`` instead (see :py:meth:`set_riemann_solver`).
+)==")
             .def(
                 "set_slope_lim_none",
                 [](TConfig &self) {
@@ -623,6 +687,48 @@ ON_PYTHON_INIT {
     A force evaluated at :math:`t^{n+1}` may only depend on the density there (e.g.
     self-gravity), since it is known before the kick.
 )==");
+
+    py::enum_<RiemannSolverMode>(
+        mramses,
+        "RiemannSolverMode",
+        R"==(
+    Gas Riemann solver of the Ramses solver, to be given to ``cfg.set_riemann_solver``.
+
+    The values are also exported in ``shamrock.model_ramses`` directly.
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import HLLC_PVRS
+    >>> cfg.set_riemann_solver(HLLC_PVRS)
+)==")
+        .value(
+            "Rusanov",
+            RiemannSolverMode::Rusanov,
+            R"==(
+    Rusanov (local Lax-Friedrichs) flux.
+)==")
+        .value(
+            "HLL",
+            RiemannSolverMode::HLL,
+            R"==(
+    Harten-Lax-van Leer flux. This is the default.
+)==")
+        .value(
+            "HLLC_PVRS",
+            RiemannSolverMode::HLLC_PVRS,
+            R"==(
+    HLLC flux, with wave speeds estimated from the primitive variable Riemann solver (PVRS) star
+    pressure, following Toro (Riemann Solvers and Numerical Methods for Fluid Dynamics,
+    chapter 10).
+)==")
+        .value(
+            "HLLC_Davis",
+            RiemannSolverMode::HLLC_Davis,
+            R"==(
+    HLLC flux, using the Davis (1988) wave speed estimate
+    :math:`s_l = \min(v_l - c_l, v_r - c_r)`, :math:`s_r = \max(v_l + c_l, v_r + c_r)`.
+)==")
+        .export_values();
 
     add_instance<f64_3, i64_3>(
         mramses, base_name + "_f64_3_i64_3_SolverConfig", base_name + "_f64_3_i64_3_Model");

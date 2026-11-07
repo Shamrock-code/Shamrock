@@ -9,6 +9,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import PillowWriter
+from shamrock.model_ramses import HLLC_PVRS
 from shamrock.utils.plot import show_image_sequence
 
 import shamrock
@@ -155,7 +156,7 @@ def run_simulation(t_final, with_2to_1=True):
     cfg.set_boundary_condition("x", "periodic")
     cfg.set_boundary_condition("y", "periodic")
     cfg.set_boundary_condition("z", "periodic")
-    cfg.set_riemann_solver_hllc_pvrs()
+    cfg.set_riemann_solver(HLLC_PVRS)
     cfg.set_slope_lim_minmod()
 
     cfg.set_amr_mode_old(False)

@@ -119,7 +119,8 @@ namespace shammodels::basegodunov {
     Parameters
     ----------
     mode : RiemannSolverMode
-        One of ``Rusanov``, ``HLL`` (the default), ``HLLC_PVRS`` or ``HLLC_Davis``, see
+        One of ``Rusanov``, ``HLL`` (the default), ``HLLC_PVRS``, ``HLLC_Davis`` or
+        ``HLLC_RAMSES``, see
         :py:class:`RiemannSolverMode`.
 
     Usage
@@ -727,6 +728,15 @@ ON_PYTHON_INIT {
             R"==(
     HLLC flux, using the Davis (1988) wave speed estimate
     :math:`s_l = \min(v_l - c_l, v_r - c_r)`, :math:`s_r = \max(v_l + c_l, v_r + c_r)`.
+)==")
+        .value(
+            "HLLC_RAMSES",
+            RiemannSolverMode::HLLC_RAMSES,
+            R"==(
+    HLLC flux, using the wave speed estimate of the RAMSES code (``riemann_hllc`` in
+    ``hydro/godunov_utils.f90``)
+    :math:`s_l = \min(v_l, v_r) - \max(c_l, c_r)`, :math:`s_r = \max(v_l, v_r) + \max(c_l, c_r)`,
+    so that the flux matches the ``hllc`` solver of RAMSES.
 )==")
         .export_values();
 

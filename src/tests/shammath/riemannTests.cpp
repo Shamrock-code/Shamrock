@@ -282,6 +282,11 @@ NEW_TEST(Unittest, "shammath/flux_n_matches_directional", 1) {
         return shammath::hllc_davis_flux(fspec, a, b, n);
     });
 
+    check_gas_solver([](Tprim a, Tprim b, f64 g, Tvec n) {
+        shammath::FluidStateAdiabatic<Tvec> fspec{.m_gamma = g};
+        return shammath::hllc_ramses_flux(fspec, a, b, n);
+    });
+
     check_dust_solver([](DTprim a, DTprim b, Tvec n) {
         shammath::FluidStateDust<Tvec> fspec{};
         return shammath::d_hll_flux(fspec, a, b, n);
@@ -381,5 +386,8 @@ NEW_TEST(Unittest, "shammath/fluid_state_barotropic", 1) {
     });
     check_gas_solver([](auto f, Tprim a, Tprim b, Tvec n) {
         return shammath::hllc_davis_flux(f, a, b, n);
+    });
+    check_gas_solver([](auto f, Tprim a, Tprim b, Tvec n) {
+        return shammath::hllc_ramses_flux(f, a, b, n);
     });
 }

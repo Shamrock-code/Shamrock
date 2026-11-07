@@ -87,7 +87,6 @@ namespace shammodels::basegodunov {
     struct GravityConfig {
         using Tscal              = shambase::VecComponent<Tvec>;
         GravityMode gravity_mode = NoGravity;
-        bool analytical_gravity  = false; // whether to use an external analytical gravity
         /// Convergence tolerance of the Poisson solver
         Tscal tol = 1e-6;
         /// Tolerance of the BiCGSTAB lucky breakdown test (restarts the solver below it)
@@ -340,7 +339,7 @@ struct shammodels::basegodunov::SolverConfig {
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline Tscal get_happy_bk_grav_tol() { return gravity_config.tol_hp_bk; }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
-    inline bool is_coordinate_field_required() { return gravity_config.analytical_gravity; }
+    inline bool is_coordinate_field_required() { return ext_force_config.is_coordinates_needed(); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config (END)

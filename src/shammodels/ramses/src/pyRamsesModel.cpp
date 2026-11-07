@@ -453,6 +453,22 @@ namespace shammodels::basegodunov {
                 },
                 py::arg("g"))
             .def(
+                "add_ext_force_point_mass_gravity",
+                [](TConfig &self, Tscal mass, Tvec pos, Tscal epsilon_soft) {
+                    self.ext_force_config.add_point_mass_gravity(mass, pos, epsilon_soft);
+                },
+                py::arg("mass"),
+                py::arg("pos"),
+                py::arg("epsilon_soft"))
+            .def(
+                "add_ext_force_burkert_profile",
+                [](TConfig &self, Tscal rho_0, Tscal r_0, Tvec pos) {
+                    self.ext_force_config.add_burkert_profile(rho_0, r_0, pos);
+                },
+                py::arg("rho_0"),
+                py::arg("r_0"),
+                py::arg("pos"))
+            .def(
                 "set_ext_force_coupling",
                 [](TConfig &self, ExtForceCoupling mode) {
                     self.ext_force_config.set_coupling(mode);

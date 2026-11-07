@@ -65,7 +65,6 @@ namespace shammodels::basegodunov {
             {"eos_config", p.eos_config},
             {"face_half_time_interpolation", p.face_half_time_interpolation},
             {"gravity_solver", p.gravity_config.gravity_mode},
-            {"analytical_gravity", p.gravity_config.analytical_gravity},
             {"gravity_tol", p.gravity_config.tol},
             {"gravity_tol_happy_breakdown", p.gravity_config.tol_hp_bk},
             {"gravity_Niter_max", p.gravity_config.Niter_max},
@@ -125,7 +124,6 @@ namespace shammodels::basegodunov {
         }
         _get_to_if_contains("face_half_time_interpolation", p.face_half_time_interpolation);
         _get_to_if_contains("gravity_solver", p.gravity_config.gravity_mode);
-        _get_to_if_contains("analytical_gravity", p.gravity_config.analytical_gravity);
         _get_to_if_contains("gravity_tol", p.gravity_config.tol);
         _get_to_if_contains("gravity_tol_happy_breakdown", p.gravity_config.tol_hp_bk);
         _get_to_if_contains("gravity_Niter_max", p.gravity_config.Niter_max);

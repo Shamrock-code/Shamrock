@@ -1876,10 +1876,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             }
         }
 
-        // retrieve the value of G
-        auto constant_G   = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("G", "G");
-        constant_G->value = solver_config.get_constant_G();
-
         // Time at which the forces must be evaluated to keep the scheme second order in time:
         //  - midpoint rule: at the half step t^{n+1/2}. This does not matter for a constant
         //    acceleration, but velocity dependent forces would need the half step velocity,
@@ -1903,6 +1899,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                     },
                     [&](const PointMassGravity &cfg) {
                         for (auto &[a_ext_level, dt_level] : a_ext_levels) {
+
+                            // retrieve the value of G
+                            // TODO: move that somewhere else with a unitsystem edge for example
+                            auto constant_G
+                                = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
+                                    "G", "G");
+                            constant_G->value = solver_config.get_constant_G();
+
                             modules::AddExtForcePointMassGravity<Tvec> node{
                                 AMRBlock::block_size, cfg.mass, cfg.pos, cfg.epsilon_soft};
                             node.set_edges(

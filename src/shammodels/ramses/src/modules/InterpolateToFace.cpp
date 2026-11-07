@@ -9,6 +9,7 @@
 
 /**
  * @file InterpolateToFace.cpp
+ * @author Benoit Commercon (benoit.commercon@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *

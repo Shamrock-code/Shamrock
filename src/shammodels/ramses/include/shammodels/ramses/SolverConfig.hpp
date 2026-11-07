@@ -87,7 +87,6 @@ namespace shammodels::basegodunov {
     struct GravityConfig {
         using Tscal              = shambase::VecComponent<Tvec>;
         GravityMode gravity_mode = NoGravity;
-        bool analytical_gravity  = false; // whether to use an external analytical gravity
         /// Convergence tolerance of the Poisson solver
         Tscal tol = 1e-6;
         /// Tolerance of the BiCGSTAB lucky breakdown test (restarts the solver below it)
@@ -282,6 +281,9 @@ struct shammodels::basegodunov::SolverConfig {
     bool face_half_time_interpolation = true;
     AMRInterpMode amr_interp_mode     = FIRST_ORDER;
 
+    /// Set the gas Riemann solver
+    inline void set_riemann_solver(RiemannSolverMode mode) { riemann_config = mode; }
+
     inline bool should_compute_rho_mean() { return is_gravity_on() && is_boundary_periodic(); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -337,7 +339,7 @@ struct shammodels::basegodunov::SolverConfig {
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline Tscal get_happy_bk_grav_tol() { return gravity_config.tol_hp_bk; }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
-    inline bool is_coordinate_field_required() { return gravity_config.analytical_gravity; }
+    inline bool is_coordinate_field_required() { return ext_force_config.is_coordinates_needed(); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config (END)

@@ -29,6 +29,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shamrock.model_ramses import HLL, HLLC_PVRS, HLLC_Davis, Rusanov
 
 import shamrock
 
@@ -137,13 +138,13 @@ def run_test(
         raise ValueError(f"Invalid slope limiter: {slope_limiter}")
 
     if riemann_solver == "rusanov":
-        cfg.set_riemann_solver_rusanov()
+        cfg.set_riemann_solver(Rusanov)
     elif riemann_solver == "hll":
-        cfg.set_riemann_solver_hll()
+        cfg.set_riemann_solver(HLL)
     elif riemann_solver == "hllc_pvrs":
-        cfg.set_riemann_solver_hllc_pvrs()
+        cfg.set_riemann_solver(HLLC_PVRS)
     elif riemann_solver == "hllc_davis":
-        cfg.set_riemann_solver_hllc_davis()
+        cfg.set_riemann_solver(HLLC_Davis)
     else:
         raise ValueError(f"Invalid Riemann solver: {riemann_solver}")
 

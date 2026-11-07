@@ -12,6 +12,7 @@
 /**
  * @file ExtForceConfig.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief External forces config of the Ramses solver + json serialization/deserialization
  */
@@ -22,6 +23,8 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/ramses/config/enum_ExtForceCoupling.hpp"
 #include <nlohmann/json.hpp>
+#include <algorithm>
+#include <cmath>
 #include <stdexcept>
 #include <string>
 #include <variant>
@@ -44,7 +47,14 @@ namespace shammodels::basegodunov {
             Tvec g;
         };
 
-        using Variant = std::variant<ConstantGravity>;
+        // Point mass gravity
+        struct PointMassGravity {
+            Tscal mass         = 1;
+            Tvec pos           = Tvec(0.5, 0.5, 0.5);
+            Tscal epsilon_soft = 0.05;
+        };
+
+        using Variant = std::variant<ConstantGravity, PointMassGravity>;
 
         std::vector<Variant> ext_forces;
 
@@ -54,6 +64,19 @@ namespace shammodels::basegodunov {
         inline void set_coupling(ExtForceCoupling mode) { coupling = mode; }
 
         inline void add_constant_gravity(Tvec g) { ext_forces.push_back(ConstantGravity{g}); }
+        inline void add_point_mass_gravity(Tscal mass, Tvec pos, Tscal epsilon_soft) {
+            if (!(std::isfinite(epsilon_soft) && epsilon_soft > 0)) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "point mass gravity: epsilon_soft must be finite and > 0");
+            }
+            ext_forces.push_back(PointMassGravity{mass, pos, epsilon_soft});
+        }
+
+        inline bool is_coordinates_needed() const {
+            return std::any_of(ext_forces.begin(), ext_forces.end(), [](const Variant &f) {
+                return std::holds_alternative<PointMassGravity>(f);
+            });
+        }
 
         inline bool has_ext_forces() const { return !ext_forces.empty(); }
     };
@@ -69,6 +92,14 @@ namespace shammodels::basegodunov {
                     [&](const typename EF::ConstantGravity &cfg) {
                         force_list.push_back(
                             nlohmann::json{{"force_type", "constant_gravity"}, {"g", cfg.g}});
+                    },
+                    [&](const typename EF::PointMassGravity &cfg) {
+                        force_list.push_back(
+                            nlohmann::json{
+                                {"force_type", "point_mass_gravity"},
+                                {"mass", cfg.mass},
+                                {"pos", cfg.pos},
+                                {"epsilon_soft", cfg.epsilon_soft}});
                     },
                 },
                 var_force);
@@ -89,8 +120,14 @@ namespace shammodels::basegodunov {
 
         for (const auto &jforce : j.at("force_list")) {
             const std::string force_type = jforce.at("force_type").get<std::string>();
+            using Tscal                  = shambase::VecComponent<Tvec>;
             if (force_type == "constant_gravity") {
                 p.add_constant_gravity(jforce.at("g").get<Tvec>());
+            } else if (force_type == "point_mass_gravity") {
+                p.add_point_mass_gravity(
+                    jforce.at("mass").get<Tscal>(),
+                    jforce.at("pos").get<Tvec>(),
+                    jforce.at("epsilon_soft").get<Tscal>());
             } else {
                 shambase::throw_with_loc<std::runtime_error>(
                     "Invalid external force type: " + force_type);

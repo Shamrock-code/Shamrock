@@ -256,6 +256,9 @@ struct shammodels::basegodunov::SolverConfig {
     bool face_half_time_interpolation = true;
     AMRInterpMode amr_interp_mode     = FIRST_ORDER;
 
+    /// Set the gas Riemann solver
+    inline void set_riemann_solver(RiemannSolverMode mode) { riemann_config = mode; }
+
     inline bool should_compute_rho_mean() { return is_gravity_on() && is_boundary_periodic(); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

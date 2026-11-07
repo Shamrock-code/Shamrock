@@ -29,7 +29,7 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
-from shamrock.model_ramses import ExtForceCoupling
+from shamrock.model_ramses import HLLC_PVRS, ExtForceCoupling
 
 shamrock.enable_experimental_features()
 
@@ -61,7 +61,7 @@ def run(cs, solver, dt, nsteps):
     cfg.set_scale_factor(1 / (sz * base))
     cfg.set_eos_gamma(gamma)
     cfg.set_slope_lim_vanleer_sym()
-    cfg.set_riemann_solver_hllc_pvrs()
+    cfg.set_riemann_solver(HLLC_PVRS)
     cfg.set_face_time_interpolation(True)
     cfg.set_units(units)
     if solver == "cg":

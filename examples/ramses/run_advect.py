@@ -9,6 +9,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shamrock.model_ramses import HLL, HLLC_PVRS, Rusanov
 
 import shamrock
 
@@ -64,11 +65,11 @@ def run_advect(slope_limiter: str, riemann_solver: str, only_last_step: bool = T
         raise ValueError(f"Invalid slope limiter: {slope_limiter}")
 
     if riemann_solver == "rusanov":
-        cfg.set_riemann_solver_rusanov()
+        cfg.set_riemann_solver(Rusanov)
     elif riemann_solver == "hll":
-        cfg.set_riemann_solver_hll()
+        cfg.set_riemann_solver(HLL)
     elif riemann_solver == "hllc_pvrs":
-        cfg.set_riemann_solver_hllc_pvrs()
+        cfg.set_riemann_solver(HLLC_PVRS)
     else:
         raise ValueError(f"Invalid Riemann solver: {riemann_solver}")
 

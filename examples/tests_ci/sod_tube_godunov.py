@@ -9,6 +9,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shamrock.model_ramses import HLL
 
 import shamrock
 
@@ -40,8 +41,8 @@ scale_fact = 2 / (sz * base * multx)
 cfg.set_scale_factor(scale_fact)
 
 cfg.set_eos_gamma(gamma)
-# cfg.set_riemann_solver_rusanov()
-cfg.set_riemann_solver_hll()
+# cfg.set_riemann_solver(Rusanov)
+cfg.set_riemann_solver(HLL)
 
 # cfg.set_slope_lim_none()
 # cfg.set_slope_lim_vanleer_f()

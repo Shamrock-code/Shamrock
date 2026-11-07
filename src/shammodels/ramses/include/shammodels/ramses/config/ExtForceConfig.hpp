@@ -12,6 +12,7 @@
 /**
  * @file ExtForceConfig.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief External forces config of the Ramses solver + json serialization/deserialization
  */

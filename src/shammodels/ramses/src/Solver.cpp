@@ -484,7 +484,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         AMRBlock::block_size, "grad_P", "\\nabla P");
 
     // will be filled by NodeEulerTimeDerivativeGasAdiabatic or NodeEulerTimeDerivativeGasBarotropic
-    // euler_dt_press exists only for an adiabatic hydro step (Adiabatic or ResetBarotropic EOS):
+    // euler_dt_press exists only for an adiabatic hydro step (Adiabatic EOS):
     // with the Barotropic EOS the face pressure is recomputed from the face density, so no
     // pressure time derivative is needed
     storage.euler_dt_rho = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
@@ -1082,9 +1082,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 [&](const typename EOS::Adiabatic &cfg) {
                     push_adiabatic_node(cfg.gamma);
                 },
-                [&](const typename EOS::ResetBarotropic &cfg) {
-                    push_adiabatic_node(cfg.gamma);
-                },
                 [&](const typename EOS::Barotropic &cfg) {
                     modules::NodeConsToPrimGasBarotropic<Tvec> node{
                         AMRBlock::block_size, cfg.rho_crit, cfg.cs0, cfg.gamma};
@@ -1219,9 +1216,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             std::visit(
                 shambase::overloaded{
                     [&](const typename EOS::Adiabatic &cfg) {
-                        push_adiabatic_node(cfg.gamma);
-                    },
-                    [&](const typename EOS::ResetBarotropic &cfg) {
                         push_adiabatic_node(cfg.gamma);
                     },
                     [&](const typename EOS::Barotropic &) {
@@ -2170,10 +2164,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         }
     }
 
-    // ResetBarotropic EOS: project the state onto the barotrope before the CFL. Done outside of
-    // the dt_input > 0 branch so that the first step (dt_input = 0) also resets the initial state
-    if (std::holds_alternative<typename EOSConfig<Tvec>::ResetBarotropic>(
-            solver_config.eos_config.config)) {
+    // InstantBarotropic cooling: project the state onto the barotrope before the CFL. Done outside
+    // of the dt_input > 0 branch so that the first step (dt_input = 0) also resets the initial
+    // state
+    if (std::holds_alternative<typename CoolingConfig<Tvec>::InstantBarotropic>(
+            solver_config.cooling_config.config)) {
         modules::BarotropicEnergyReset energy_reset(context, solver_config, storage);
         energy_reset.reset_energy();
     }

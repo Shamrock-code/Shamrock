@@ -60,6 +60,7 @@ namespace shammodels::basegodunov {
         using T                = Model<Tvec, TgridVec>;
         using TConfig          = typename T::Solver::Config;
         using TAnalysisSodTube = shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>;
+        using TCooling         = CoolingConfig<Tvec>;
 
         shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
         shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
@@ -100,14 +101,60 @@ namespace shammodels::basegodunov {
                 py::arg("gamma"))
             .def(
                 "set_eos_reset_barotropic",
-                [](TConfig &self, Tscal rho_crit, Tscal cs0, Tscal gamma_baro, Tscal gamma) {
-                    self.eos_config.set_reset_barotropic(rho_crit, cs0, gamma_baro, gamma);
+                [](TConfig & /*self*/, py::args /*args*/, py::kwargs /*kwargs*/) {
+                    const std::string msg
+                        = ".set_eos_reset_barotropic(rho_crit, cs0, gamma_baro, gamma) has been "
+                          "removed, as the reset onto the barotrope is an instantaneous cooling "
+                          "and not an equation of state. Replace it by:\n"
+                          "    from shamrock.model_ramses import InstantBarotropic\n"
+                          "    cfg.set_eos_adiabatic(gamma)\n"
+                          "    cfg.set_cooling_mode(InstantBarotropic(rho0=rho_crit, "
+                          "gamma0=gamma_baro, cs0=cs0))";
+                    ON_RANK_0(shamcomm::logs::err_ln("Ramses", msg));
+                    shambase::throw_with_loc<std::runtime_error>(msg);
                 },
-                py::kw_only(),
-                py::arg("rho_crit"),
-                py::arg("cs0"),
-                py::arg("gamma_baro"),
-                py::arg("gamma"))
+                R"==(
+    Removed, raises an error.
+
+    The reset of the internal energy onto a barotrope is now a cooling mode, replace
+    ``cfg.set_eos_reset_barotropic(rho_crit=..., cs0=..., gamma_baro=..., gamma=...)`` by
+    ``cfg.set_eos_adiabatic(gamma)`` and
+    ``cfg.set_cooling_mode(InstantBarotropic(rho0=rho_crit, gamma0=gamma_baro, cs0=cs0))``.
+)==")
+            .def(
+                "set_cooling_mode",
+                [](TConfig &self, const typename TCooling::None &) {
+                    self.cooling_config.set_none();
+                },
+                py::arg("mode"),
+                R"==(
+    Disable the cooling (the default).
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import NoCooling
+    >>> cfg.set_cooling_mode(NoCooling())
+)==")
+            .def(
+                "set_cooling_mode",
+                [](TConfig &self, const typename TCooling::InstantBarotropic &mode) {
+                    self.cooling_config.config = mode;
+                },
+                py::arg("mode"),
+                R"==(
+    Set the instantaneous barotropic cooling (RAMSES-like).
+
+    At the end of each timestep, before the CFL condition, the internal energy of every cell is
+    overwritten by :math:`P_{\rm baro}(\rho) / (\gamma - 1)`, with :math:`\gamma` the
+    adiabatic index of the equation of state (``cfg.set_eos_adiabatic``) and
+    :math:`P_{\rm baro}(\rho) = c_{s,0}^2 \rho (1 + (\rho / \rho_0)^{\gamma_0 - 1})`
+    (isothermal below ``rho0``, adiabatic with index ``gamma0`` above).
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import InstantBarotropic
+    >>> cfg.set_cooling_mode(InstantBarotropic(rho0=1e-13, gamma0=1.4, cs0=0.2))
+)==")
             .def(
                 "set_riemann_solver",
                 [](TConfig &self, RiemannSolverMode mode) {
@@ -343,7 +390,7 @@ namespace shammodels::basegodunov {
 
     A block is refined if one of its cells has :math:`N_J \Delta x > \lambda_J =
     \sqrt{\pi c_s^2 / (G \rho)}`, with the sound speed of the equation of state (of the
-    barotrope for ``cfg.set_eos_reset_barotropic``) and the gravitational constant of the unit
+    barotrope with the ``InstantBarotropic`` cooling mode) and the gravitational constant of the unit
     system (``cfg.set_units``). It is derefined if the cells twice larger would still resolve the
     Jeans length by more than :math:`\sqrt{2} N_J` cells.
 
@@ -743,6 +790,66 @@ ON_PYTHON_INIT {
     :math:`s_l = \min(v_l - c_l, v_r - c_r)`, :math:`s_r = \max(v_l + c_l, v_r + c_r)`.
 )==")
         .export_values();
+
+    using Cooling = CoolingConfig<f64_3>;
+    using Tscal   = f64;
+
+    py::class_<typename Cooling::None>(
+        mramses,
+        "NoCooling",
+        R"==(
+    No cooling, to be given to ``cfg.set_cooling_mode``.
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import NoCooling
+    >>> cfg.set_cooling_mode(NoCooling())
+)==")
+        .def(py::init<>())
+        .def("__repr__", [](const typename Cooling::None &) {
+            return std::string("NoCooling()");
+        });
+
+    py::class_<typename Cooling::InstantBarotropic>(
+        mramses,
+        "InstantBarotropic",
+        R"==(
+    Instantaneous barotropic cooling (RAMSES-like), to be given to ``cfg.set_cooling_mode``.
+
+    At the end of each timestep, before the CFL condition, the internal energy of every cell is
+    overwritten by :math:`P_{\rm baro}(\rho) / (\gamma - 1)`, with :math:`\gamma` the
+    adiabatic index of the equation of state and
+    :math:`P_{\rm baro}(\rho) = c_{s,0}^2 \rho (1 + (\rho / \rho_0)^{\gamma_0 - 1})`.
+
+    Parameters
+    ----------
+    rho0 : float
+        Density of the isothermal to adiabatic transition of the barotrope (> 0)
+    gamma0 : float
+        Adiabatic index of the barotrope above ``rho0``
+    cs0 : float
+        Isothermal sound speed of the barotrope below ``rho0`` (> 0)
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import InstantBarotropic
+    >>> cfg.set_cooling_mode(InstantBarotropic(rho0=1e-13, gamma0=1.4, cs0=0.2))
+)==")
+        .def(
+            py::init([](Tscal rho0, Tscal gamma0, Tscal cs0) {
+                return typename Cooling::InstantBarotropic{rho0, cs0, gamma0};
+            }),
+            py::kw_only(),
+            py::arg("rho0"),
+            py::arg("gamma0"),
+            py::arg("cs0"))
+        .def_readwrite("rho0", &Cooling::InstantBarotropic::rho0)
+        .def_readwrite("gamma0", &Cooling::InstantBarotropic::gamma0)
+        .def_readwrite("cs0", &Cooling::InstantBarotropic::cs0)
+        .def("__repr__", [](const typename Cooling::InstantBarotropic &self) {
+            return sham::format(
+                "InstantBarotropic(rho0={}, gamma0={}, cs0={})", self.rho0, self.gamma0, self.cs0);
+        });
 
     add_instance<f64_3, i64_3>(
         mramses, base_name + "_f64_3_i64_3_SolverConfig", base_name + "_f64_3_i64_3_Model");

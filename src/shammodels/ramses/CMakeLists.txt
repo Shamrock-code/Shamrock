@@ -15,6 +15,7 @@ set(Sources
     src/Solver.cpp
     src/modules/NodeComputeFlux.cpp
     src/modules/DragIntegrator.cpp
+    src/modules/ApplyDragIRK1.cpp
     src/modules/TimeIntegrator.cpp
     src/modules/ForwardEulerGas.cpp
     src/modules/ForwardEulerDust.cpp

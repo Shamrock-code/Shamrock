@@ -19,22 +19,43 @@
 
 namespace {
 
-    std::vector<u8> mock_vector_tiled(u64 seed, size_t len) {
-        constexpr size_t mock_vector_tile_size = 65536;
-        static_assert(mock_vector_tile_size <= std::numeric_limits<u32>::max());
+    constexpr size_t mock_vector_tile_size = 65536;
+    static_assert(mock_vector_tile_size <= std::numeric_limits<u32>::max());
 
-        const size_t tile_len = mock_vector_tile_size;
-        std::vector<u8> tile
-            = shamalgs::primitives::mock_vector<u8>(seed, tile_len, u8{0}, u8{255});
-
-        std::vector<u8> buf(len);
-        for (size_t off = 0; off < len; off += tile_len) {
-            const size_t n = std::min<size_t>(tile_len, len - off);
-            std::memcpy(buf.data() + off, tile.data(), n);
-        }
-        return buf;
+    /// Random tile of mock_vector_tile_size bytes, repeated to build/check large buffers
+    std::vector<u8> mock_tile(u64 seed) {
+        return shamalgs::primitives::mock_vector<u8>(seed, mock_vector_tile_size, u8{0}, u8{255});
     }
 
+    /// Fill buf with the tile generated from seed, repeated
+    void fill_tiled(u64 seed, std::vector<u8> &buf) {
+        const std::vector<u8> tile = mock_tile(seed);
+        for (size_t off = 0; off < buf.size(); off += tile.size()) {
+            const size_t n = std::min<size_t>(tile.size(), buf.size() - off);
+            std::memcpy(buf.data() + off, tile.data(), n);
+        }
+    }
+
+    /// Check that buf contains the tile generated from seed, repeated
+    bool is_tiled(u64 seed, const std::vector<u8> &buf) {
+        const std::vector<u8> tile = mock_tile(seed);
+        for (size_t off = 0; off < buf.size(); off += tile.size()) {
+            const size_t n = std::min<size_t>(tile.size(), buf.size() - off);
+            if (std::memcmp(buf.data() + off, tile.data(), n) != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @brief Write two consecutive chunks to a file, read them back and check them
+     *
+     * To keep the memory footprint low (this is used with chunks larger than 2 GiB), the chunk
+     * contents are a repeated random tile: a single buffer is allocated for the largest chunk and
+     * is reused for writing then reading both chunks, the read data being checked against the
+     * regenerated tile instead of a stored copy. The file is deleted at the end.
+     */
     template<class WriteFn, class ReadFn>
     void test_read_write_at_chunks(
         const std::string &fname,
@@ -43,24 +64,37 @@ namespace {
         WriteFn &&write_fn,
         ReadFn &&read_fn) {
 
-        std::vector<u8> ref0, ref1;
+        constexpr u64 seed0 = 0x1111;
+        constexpr u64 seed1 = 0x2222;
+
+        std::vector<u8> buf;
         if (shamcomm::world_rank() == 0) {
             try {
-                ref0 = mock_vector_tiled(0x1111, chunk0_len);
-                ref1 = mock_vector_tiled(0x2222, chunk1_len);
+                buf.reserve(std::max(chunk0_len, chunk1_len));
             } catch (const std::bad_alloc &) {
                 REQUIRE(false);
                 return;
             }
         }
 
+        // resize (within the reserved capacity) and zero the buffer, so that a read that does not
+        // fill it cannot match the expected tile
+        auto reset_buf = [&](size_t len) {
+            buf.assign(len, u8{0});
+        };
+
         { // Write
             MPI_File mfile{};
 
             shamcomm::open_reset_file(mfile, fname);
             if (shamcomm::world_rank() == 0) {
-                write_fn(mfile, ref0.data(), chunk0_len, 0);
-                write_fn(mfile, ref1.data(), chunk1_len, chunk0_len);
+                reset_buf(chunk0_len);
+                fill_tiled(seed0, buf);
+                write_fn(mfile, buf.data(), chunk0_len, 0);
+
+                reset_buf(chunk1_len);
+                fill_tiled(seed1, buf);
+                write_fn(mfile, buf.data(), chunk1_len, chunk0_len);
             }
 
             MPI_File_close(&mfile);
@@ -71,14 +105,20 @@ namespace {
 
             shamcomm::open_read_only_file(mfile, fname);
             if (shamcomm::world_rank() == 0) {
-                std::vector<u8> out0(chunk0_len), out1(chunk1_len);
-                read_fn(mfile, out0.data(), chunk0_len, 0);
-                read_fn(mfile, out1.data(), chunk1_len, chunk0_len);
-                REQUIRE_EQUAL(ref0, out0);
-                REQUIRE_EQUAL(ref1, out1);
+                reset_buf(chunk0_len);
+                read_fn(mfile, buf.data(), chunk0_len, 0);
+                REQUIRE_NAMED("chunk 0 read back matches", is_tiled(seed0, buf));
+
+                reset_buf(chunk1_len);
+                read_fn(mfile, buf.data(), chunk1_len, chunk0_len);
+                REQUIRE_NAMED("chunk 1 read back matches", is_tiled(seed1, buf));
             }
 
             MPI_File_close(&mfile);
+        }
+
+        if (shamcomm::world_rank() == 0) {
+            MPI_File_delete(fname.c_str(), MPI_INFO_NULL);
         }
     }
 
@@ -161,8 +201,11 @@ NEW_TEST(Unittest, "shamalgs/collective/io/read_write_at", -1) {
 NEW_TEST(Unittest, "shamalgs/collective/io/read_write_at_large", -1) {
     test_read_write_at_chunks(
         "iotest_read_at_large",
-        2'600'000'000ull,
-        600'000'000ull,
+        // chunk 0 must exceed INT_MAX (2^31 - 1) bytes to exercise the large path, and chunk 1 is
+        // then written at an offset above 2^31. Both are kept just large enough to limit the
+        // memory (one buffer of chunk 0 size) and disk usage on small CI runners.
+        2'200'000'000ull,
+        12'345'678ull,
         [](MPI_File fh, u8 *buf, size_t len, u64 off) {
             shamalgs::collective::write_at_large(fh, buf, len, off);
         },

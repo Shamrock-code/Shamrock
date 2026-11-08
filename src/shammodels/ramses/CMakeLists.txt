@@ -15,6 +15,7 @@ set(Sources
     src/Solver.cpp
     src/modules/NodeComputeFlux.cpp
     src/modules/DragIntegrator.cpp
+    src/modules/ApplyDragIRK1.cpp
     src/modules/TimeIntegrator.cpp
     src/modules/ResetExtForceAcc.cpp
     src/modules/AddExtForceConstantGravity.cpp

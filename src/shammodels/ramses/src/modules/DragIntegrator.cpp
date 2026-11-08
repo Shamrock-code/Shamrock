@@ -22,9 +22,15 @@
 #include "shambackends/EventList.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shammath/matrix_exponential.hpp"
+#include "shammodels/ramses/modules/ApplyDragIRK1.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/GetFieldRefFromLayer.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/node/OperationSequence.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include <memory>
 #include <stdexcept>
 
 template<class Tvec, class TgridVec>
@@ -150,157 +156,93 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
     Tscal dt) {
     StackEntry stack_lock{};
 
-    using namespace shamrock::patch;
-    using namespace shamrock;
-    using namespace shammath;
-
-    shamrock::ComputeField<Tscal> &cfield_rho_new   = storage.rho_next_no_drag.get();
-    shamrock::ComputeField<Tvec> &cfield_rhov_new   = storage.rhov_next_no_drag.get();
-    shamrock::ComputeField<Tscal> &cfield_rhoe_new  = storage.rhoe_next_no_drag.get();
-    shamrock::ComputeField<Tscal> &cfield_rho_d_new = storage.rho_d_next_no_drag.get();
-    shamrock::ComputeField<Tvec> &cfield_rhov_d_new = storage.rhov_d_next_no_drag.get();
-
-    // load layout info
-    PatchDataLayerLayout &pdl = scheduler().pdl_old();
-
-    const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
-    const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
-    const u32 irho      = pdl.get_field_idx<Tscal>("rho");
-    const u32 irhoetot  = pdl.get_field_idx<Tscal>("rhoetot");
-    const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
-    const u32 irho_d    = pdl.get_field_idx<Tscal>("rho_dust");
-    const u32 irhovel_d = pdl.get_field_idx<Tvec>("rhovel_dust");
+    using namespace shamrock::solvergraph;
 
     const u32 ndust = solver_config.dust_config.ndust;
-    // alphas are dust collision rates
-    auto alphas_vector = solver_config.drag_config.alphas;
-    std::vector<Tscal> inv_dt_alphas(ndust);
-    bool enable_frictional_heating = solver_config.drag_config.enable_frictional_heating;
-    u32 friction_control           = (enable_frictional_heating == false) ? 1 : 0;
 
-    scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
-                                                const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchDataLayer &pdat) {
-        shamlog_debug_ln("[AMR enable drag ]", "irk1 drag patch", p.id_patch);
+    // load layout info
+    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
-        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        u32 id               = p.id_patch;
-        u32 cell_count       = pdat.get_obj_cnt() * AMRBlock::block_size;
+    auto dt_edge   = std::make_shared<ScalarEdge<Tscal>>("dt", "\\Delta t");
+    dt_edge->value = dt;
 
-        sham::DeviceBuffer<Tscal> &rho_new_patch   = cfield_rho_new.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &rhov_new_patch   = cfield_rhov_new.get_buf_check(id);
-        sham::DeviceBuffer<Tscal> &rhoe_new_patch  = cfield_rhoe_new.get_buf_check(id);
-        sham::DeviceBuffer<Tscal> &rho_d_new_patch = cfield_rho_d_new.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &rhov_d_new_patch = cfield_rhov_d_new.get_buf_check(id);
+    std::vector<std::shared_ptr<INode>> sequence;
 
-        sham::DeviceBuffer<Tscal> &rho_old   = pdat.get_field_buf_ref<Tscal>(irho);
-        sham::DeviceBuffer<Tvec> &rhov_old   = pdat.get_field_buf_ref<Tvec>(irhovel);
-        sham::DeviceBuffer<Tscal> &rhoe_old  = pdat.get_field_buf_ref<Tscal>(irhoetot);
-        sham::DeviceBuffer<Tscal> &rho_d_old = pdat.get_field_buf_ref<Tscal>(irho_d);
-        sham::DeviceBuffer<Tvec> &rhov_d_old = pdat.get_field_buf_ref<Tvec>(irhovel_d);
+    // refs to the fields of the patch data without ghosts (the ones that are integrated)
+    auto attach_source_field
+        = [&]<class T>(std::shared_ptr<FieldRefs<T>> &refs, const std::string &field_name) {
+              GetFieldRefFromLayer<T> attach{pdl, field_name};
+              attach.set_edges(storage.source_patches, refs);
+              sequence.push_back(std::make_shared<decltype(attach)>(std::move(attach)));
+          };
 
-        sham::DeviceBuffer<Tscal> alphas_buf(ndust, shamsys::instance::get_compute_scheduler_ptr());
+    // refs to the state at t^{n+1} without drag
+    auto refs_from_compute_field =
+        [&]<class T>(std::shared_ptr<FieldRefs<T>> &refs, shamrock::ComputeField<T> &field) {
+            refs->set_refs(field.field_data.template map<std::reference_wrapper<PatchDataField<T>>>(
+                [](u64 id_patch, PatchDataField<T> &pdf) {
+                    return std::ref(pdf);
+                }));
+        };
 
-        alphas_buf.copy_from_stdvec(alphas_vector);
+    auto refs_rho      = std::make_shared<FieldRefs<Tscal>>("rho_source", "\\rho");
+    auto refs_rhov     = std::make_shared<FieldRefs<Tvec>>("rhovel_source", "(\\rho \\mathbf{v})");
+    auto refs_rhoe     = std::make_shared<FieldRefs<Tscal>>("rhoetot_source", "(\\rho E)");
+    auto refs_rho_dust = std::make_shared<FieldRefs<Tscal>>("rho_dust_source", "\\rho_{\\rm dust}");
+    auto refs_rhov_dust = std::make_shared<FieldRefs<Tvec>>(
+        "rhovel_dust_source", "(\\rho_{\\rm dust} \\mathbf{v}_{\\rm dust})");
 
-        sham::EventList depend_list;
-        auto acc_rho_new_patch    = rho_new_patch.get_read_access(depend_list);
-        auto acc_rhov_new_patch   = rhov_new_patch.get_read_access(depend_list);
-        auto acc_rhoe_new_patch   = rhoe_new_patch.get_read_access(depend_list);
-        auto acc_rho_d_new_patch  = rho_d_new_patch.get_read_access(depend_list);
-        auto acc_rhov_d_new_patch = rhov_d_new_patch.get_read_access(depend_list);
+    attach_source_field(refs_rho, "rho");
+    attach_source_field(refs_rhov, "rhovel");
+    attach_source_field(refs_rhoe, "rhoetot");
+    attach_source_field(refs_rho_dust, "rho_dust");
+    attach_source_field(refs_rhov_dust, "rhovel_dust");
 
-        auto acc_rho_old    = rho_old.get_write_access(depend_list);
-        auto acc_rhov_old   = rhov_old.get_write_access(depend_list);
-        auto acc_rhoe_old   = rhoe_old.get_write_access(depend_list);
-        auto acc_rho_d_old  = rho_d_old.get_write_access(depend_list);
-        auto acc_rhov_d_old = rhov_d_old.get_write_access(depend_list);
+    auto refs_rho_next
+        = std::make_shared<FieldRefs<Tscal>>("rho_next_no_drag", "\\rho^{n+1}_{\\rm no\\,drag}");
+    auto refs_rhov_next = std::make_shared<FieldRefs<Tvec>>(
+        "rhov_next_no_drag", "(\\rho \\mathbf{v})^{n+1}_{\\rm no\\,drag}");
+    auto refs_rhoe_next = std::make_shared<FieldRefs<Tscal>>(
+        "rhoe_next_no_drag", "(\\rho E)^{n+1}_{\\rm no\\,drag}");
+    auto refs_rho_d_next = std::make_shared<FieldRefs<Tscal>>(
+        "rho_d_next_no_drag", "\\rho^{n+1}_{\\rm dust,\\,no\\,drag}");
+    auto refs_rhov_d_next = std::make_shared<FieldRefs<Tvec>>(
+        "rhov_d_next_no_drag",
+        "(\\rho_{\\rm dust} \\mathbf{v}_{\\rm dust})^{n+1}_{\\rm no\\,drag}");
 
-        auto acc_alphas = alphas_buf.get_read_access(depend_list);
+    refs_from_compute_field(refs_rho_next, storage.rho_next_no_drag.get());
+    refs_from_compute_field(refs_rhov_next, storage.rhov_next_no_drag.get());
+    refs_from_compute_field(refs_rhoe_next, storage.rhoe_next_no_drag.get());
+    refs_from_compute_field(refs_rho_d_next, storage.rho_d_next_no_drag.get());
+    refs_from_compute_field(refs_rhov_d_next, storage.rhov_d_next_no_drag.get());
 
-        auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, cell_count, "add_drag [irk1]", [=](u32 id_a) {
-                Tvec tmp_mom_1 = acc_rhov_new_patch[id_a];
-                Tscal tmp_rho  = acc_rho_old[id_a];
+    {
+        // alphas are dust collision rates
+        const auto &alphas = solver_config.drag_config.alphas;
 
-                for (u32 i = 0; i < ndust; i++) {
-                    const Tscal inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
-                    const Tscal dt_alphas     = dt * acc_alphas[i];
+        ApplyDragIRK1<Tvec> node{
+            AMRBlock::block_size,
+            ndust,
+            std::vector<Tscal>(alphas.begin(), alphas.end()),
+            solver_config.drag_config.enable_frictional_heating};
+        node.set_edges(
+            dt_edge,
+            storage.block_counts,
+            refs_rho_next,
+            refs_rhov_next,
+            refs_rhoe_next,
+            refs_rho_d_next,
+            refs_rhov_d_next,
+            refs_rho,
+            refs_rhov,
+            refs_rhoe,
+            refs_rho_dust,
+            refs_rhov_dust);
+        sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
 
-                    tmp_mom_1
-                        = tmp_mom_1
-                          + dt_alphas * inv_dt_alphas * acc_rhov_d_new_patch[id_a * ndust + i];
-                    tmp_rho = tmp_rho + dt_alphas * inv_dt_alphas * acc_rho_d_old[id_a * ndust + i];
-                }
-
-                Tscal tmp_inv_rho = 1.0 / tmp_rho;
-                Tvec tmp_vel      = tmp_inv_rho * tmp_mom_1;
-                Tscal Eg          = 0.0;
-
-                Tscal inv_rho_g = 1.0 / acc_rho_new_patch[id_a];
-                Tvec vg_bf      = inv_rho_g * acc_rhov_new_patch[id_a];
-                Tvec vg_af      = inv_rho_g * acc_rho_old[id_a] * tmp_vel;
-                ;
-                Tscal work_drag
-                    = 0.5
-                      * ((acc_rho_old[id_a] * tmp_vel[0] - acc_rhov_new_patch[id_a][0])
-                             * (vg_bf[0] + vg_af[0])
-                         + (acc_rho_old[id_a] * tmp_vel[1] - acc_rhov_new_patch[id_a][1])
-                               * (vg_bf[1] + vg_af[1])
-                         + (acc_rho_old[id_a] * tmp_vel[2] - acc_rhov_new_patch[id_a][2])
-                               * (vg_bf[2] + vg_af[2]));
-                Tscal dissipation = 0.0;
-                for (u32 i = 0; i < ndust; i++) {
-                    const Tscal inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
-                    const Tscal dt_alphas     = dt * acc_alphas[i];
-                    Tscal inv_rho_d           = 1.0 / acc_rho_d_new_patch[id_a * ndust + i];
-                    Tvec vd_bf                = inv_rho_d * acc_rhov_d_new_patch[id_a * ndust + i];
-                    Tvec vd_af = inv_rho_d * inv_dt_alphas
-                                 * (acc_rhov_d_new_patch[id_a * ndust + i]
-                                    + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
-                    dissipation += 0.5 * dt_alphas * inv_dt_alphas
-                                   * ((acc_rho_d_old[id_a * ndust + i] * tmp_vel[0]
-                                       - acc_rhov_d_new_patch[id_a * ndust + i][0])
-                                          * (vd_af[0] + vd_bf[0])
-                                      + (acc_rho_d_old[id_a * ndust + i] * tmp_vel[1]
-                                         - acc_rhov_d_new_patch[id_a * ndust + i][1])
-                                            * (vd_af[1] + vd_bf[1])
-                                      + (acc_rho_d_old[id_a * ndust + i] * tmp_vel[2]
-                                         - acc_rhov_d_new_patch[id_a * ndust + i][2])
-                                            * (vd_af[2] + vd_bf[2]));
-                }
-
-                Eg += acc_rhoe_new_patch[id_a] + (1 - friction_control) * work_drag
-                      - friction_control * dissipation;
-                acc_rhov_old[id_a] = tmp_vel * acc_rho_old[id_a];
-                acc_rhoe_old[id_a] = Eg;
-                acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
-                for (u32 i = 0; i < ndust; i++) {
-                    const Tscal inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
-                    const Tscal dt_alphas     = dt * acc_alphas[i];
-                    acc_rhov_d_old[id_a * ndust + i]
-                        = inv_dt_alphas
-                          * (acc_rhov_d_new_patch[id_a * ndust + i]
-                             + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
-                    acc_rho_d_old[id_a * ndust + i] = acc_rho_d_new_patch[id_a * ndust + i];
-                }
-            });
-        });
-
-        rho_new_patch.complete_event_state(e);
-        rhov_new_patch.complete_event_state(e);
-        rhoe_new_patch.complete_event_state(e);
-        rho_d_new_patch.complete_event_state(e);
-        rhov_d_new_patch.complete_event_state(e);
-
-        rho_old.complete_event_state(e);
-        rhov_old.complete_event_state(e);
-        rhoe_old.complete_event_state(e);
-        rho_d_old.complete_event_state(e);
-        rhov_d_old.complete_event_state(e);
-
-        alphas_buf.complete_event_state(e);
-    });
+    OperationSequence seq("Drag IRK1", std::move(sequence));
+    seq.evaluate();
 }
 
 template<class Tvec, class TgridVec>

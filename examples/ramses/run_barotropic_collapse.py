@@ -33,6 +33,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
+from shamrock.model_ramses import InstantBarotropic
 
 import shamrock
 
@@ -156,7 +157,8 @@ model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i
 cfg = model.gen_default_config()
 cfg.set_scale_factor(scale_fact)
 cfg.set_Csafe(0.3)
-cfg.set_eos_reset_barotropic(rho_crit=rho_crit, cs0=cs0, gamma_baro=gamma, gamma=gamma)
+cfg.set_eos_adiabatic(gamma)
+cfg.set_cooling_mode(InstantBarotropic(rho0=rho_crit, gamma0=gamma, cs0=cs0))
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
 cfg.set_riemann_solver(HLLC_PVRS)

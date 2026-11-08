@@ -23,8 +23,16 @@
 #include "shambackends/kernel_call.hpp"
 #include "shammath/matrix_exponential.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
+#include "shammodels/ramses/modules/ForwardEulerDust.hpp"
+#include "shammodels/ramses/modules/ForwardEulerGas.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include "shamrock/solvergraph/CopyPatchDataField.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/GetFieldRefFromLayer.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/node/OperationSequence.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include <memory>
 #include <stdexcept>
 
 template<class Tvec, class TgridVec>
@@ -37,112 +45,88 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
     using namespace shamrock;
     using namespace shammath;
 
+    using namespace shamrock::solvergraph;
+
     const u32 ndust = solver_config.dust_config.ndust;
-
-    SchedulerUtility utility(scheduler());
-    shamrock::ComputeField<Tscal> cfield_rho_next_bf_drag
-        = utility.make_compute_field<Tscal>("rho_next_bf_drag", AMRBlock::block_size);
-    shamrock::ComputeField<Tvec> cfield_rhov_next_bf_drag
-        = utility.make_compute_field<Tvec>("rhov_next_bf_drag", AMRBlock::block_size);
-    shamrock::ComputeField<Tscal> cfield_rhoe_next_bf_drag
-        = utility.make_compute_field<Tscal>("rhoe_next_bf_drag", AMRBlock::block_size);
-    shamrock::ComputeField<Tscal> cfield_rho_d_next_bf_drag
-        = utility.make_compute_field<Tscal>("rho_d_next_bf_drag", ndust * AMRBlock::block_size);
-    shamrock::ComputeField<Tvec> cfield_rhov_d_next_bf_drag
-        = utility.make_compute_field<Tvec>("rhov_d_next_bf_drag", ndust * AMRBlock::block_size);
-
-    shamrock::solvergraph::Field<Tscal> &cfield_dtrho  = shambase::get_check_ref(storage.dtrho);
-    shamrock::solvergraph::Field<Tvec> &cfield_dtrhov  = shambase::get_check_ref(storage.dtrhov);
-    shamrock::solvergraph::Field<Tscal> &cfield_dtrhoe = shambase::get_check_ref(storage.dtrhoe);
-    shamrock::solvergraph::Field<Tscal> &cfield_dtrho_d
-        = shambase::get_check_ref(storage.dtrho_dust);
-    shamrock::solvergraph::Field<Tvec> &cfield_dtrhov_d
-        = shambase::get_check_ref(storage.dtrhov_dust);
 
     // load layout info
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
-    const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
-    const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
-    const u32 irho      = pdl.get_field_idx<Tscal>("rho");
-    const u32 irhoetot  = pdl.get_field_idx<Tscal>("rhoetot");
-    const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
-    const u32 irho_d    = pdl.get_field_idx<Tscal>("rho_dust");
-    const u32 irhovel_d = pdl.get_field_idx<Tvec>("rhovel_dust");
+    storage.rho_next_no_drag = std::make_shared<Field<Tscal>>(
+        AMRBlock::block_size, "rho_next_bf_drag", "\\rho^{n+1}_{\\rm no\\,drag}");
+    storage.rhov_next_no_drag = std::make_shared<Field<Tvec>>(
+        AMRBlock::block_size, "rhov_next_bf_drag", "(\\rho \\mathbf{v})^{n+1}_{\\rm no\\,drag}");
+    storage.rhoe_next_no_drag = std::make_shared<Field<Tscal>>(
+        AMRBlock::block_size, "rhoe_next_bf_drag", "(\\rho E)^{n+1}_{\\rm no\\,drag}");
+    storage.rho_d_next_no_drag = std::make_shared<Field<Tscal>>(
+        ndust * AMRBlock::block_size, "rho_d_next_bf_drag", "\\rho^{n+1}_{\\rm dust,\\,no\\,drag}");
+    storage.rhov_d_next_no_drag = std::make_shared<Field<Tvec>>(
+        ndust * AMRBlock::block_size,
+        "rhov_d_next_bf_drag",
+        "(\\rho_{\\rm dust} \\mathbf{v}_{\\rm dust})^{n+1}_{\\rm no\\,drag}");
 
-    scheduler().for_each_patchdata_nonempty([&, dt, ndust](
-                                                const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchDataLayer &pdat) {
-        shamlog_debug_ln(
-            "[AMR evolve time step before drag ]", "evolve field with no drag patch", p.id_patch);
+    auto dt_edge   = std::make_shared<ScalarEdge<Tscal>>("dt", "\\Delta t");
+    dt_edge->value = dt;
 
-        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        u32 id               = p.id_patch;
+    std::vector<std::shared_ptr<INode>> sequence;
 
-        sham::DeviceBuffer<Tscal> &dt_rho_patch   = cfield_dtrho.get_buf(id);
-        sham::DeviceBuffer<Tvec> &dt_rhov_patch   = cfield_dtrhov.get_buf(id);
-        sham::DeviceBuffer<Tscal> &dt_rhoe_patch  = cfield_dtrhoe.get_buf(id);
-        sham::DeviceBuffer<Tscal> &dt_rho_d_patch = cfield_dtrho_d.get_buf(id);
-        sham::DeviceBuffer<Tvec> &dt_rhov_d_patch = cfield_dtrhov_d.get_buf(id);
+    // U^{n+1} starts as a copy of the state at t^n (patch data without ghosts), then gets the
+    // forward Euler update in place
+    auto copy_source_field = [&]<class T>(
+                                 const std::string &field_name,
+                                 const std::string &label,
+                                 const std::string &tex,
+                                 const std::shared_ptr<Field<T>> &target) {
+        auto refs = std::make_shared<FieldRefs<T>>(label, tex);
 
-        sham::DeviceBuffer<Tscal> &buf_rho   = pdat.get_field_buf_ref<Tscal>(irho);
-        sham::DeviceBuffer<Tvec> &buf_rhov   = pdat.get_field_buf_ref<Tvec>(irhovel);
-        sham::DeviceBuffer<Tscal> &buf_rhoe  = pdat.get_field_buf_ref<Tscal>(irhoetot);
-        sham::DeviceBuffer<Tscal> &buf_rho_d = pdat.get_field_buf_ref<Tscal>(irho_d);
-        sham::DeviceBuffer<Tvec> &buf_rhov_d = pdat.get_field_buf_ref<Tvec>(irhovel_d);
+        GetFieldRefFromLayer<T> attach{pdl, field_name};
+        attach.set_edges(storage.source_patches, refs);
+        sequence.push_back(std::make_shared<decltype(attach)>(std::move(attach)));
 
-        sham::DeviceBuffer<Tscal> &rho_patch   = cfield_rho_next_bf_drag.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &rhov_patch   = cfield_rhov_next_bf_drag.get_buf_check(id);
-        sham::DeviceBuffer<Tscal> &rhoe_patch  = cfield_rhoe_next_bf_drag.get_buf_check(id);
-        sham::DeviceBuffer<Tscal> &rho_d_patch = cfield_rho_d_next_bf_drag.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &rhov_d_patch = cfield_rhov_d_next_bf_drag.get_buf_check(id);
+        CopyPatchDataField<T> copy{};
+        copy.set_edges(refs, target);
+        sequence.push_back(std::make_shared<decltype(copy)>(std::move(copy)));
+    };
 
-        u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
+    copy_source_field("rho", "rho_source", "\\rho", storage.rho_next_no_drag);
+    copy_source_field("rhovel", "rhovel_source", "(\\rho \\mathbf{v})", storage.rhov_next_no_drag);
+    copy_source_field("rhoetot", "rhoetot_source", "(\\rho E)", storage.rhoe_next_no_drag);
+    copy_source_field(
+        "rho_dust", "rho_dust_source", "\\rho_{\\rm dust}", storage.rho_d_next_no_drag);
+    copy_source_field(
+        "rhovel_dust",
+        "rhovel_dust_source",
+        "(\\rho_{\\rm dust} \\mathbf{v}_{\\rm dust})",
+        storage.rhov_d_next_no_drag);
 
-        sham::kernel_call(
-            q,
-            sham::MultiRef{dt_rho_patch, dt_rhov_patch, dt_rhoe_patch, buf_rho, buf_rhov, buf_rhoe},
-            sham::MultiRef{rho_patch, rhov_patch, rhoe_patch},
-            cell_count,
-            [dt](
-                u32 id_a,
-                const Tscal *__restrict acc_dt_rho_patch,
-                const Tvec *__restrict acc_dt_rhov_patch,
-                const Tscal *__restrict acc_dt_rhoe_patch,
-                const Tscal *__restrict rho,
-                const Tvec *__restrict rhov,
-                const Tscal *__restrict rhoe,
-                Tscal *__restrict acc_rho,
-                Tvec *__restrict acc_rhov,
-                Tscal *__restrict acc_rhoe) {
-                acc_rho[id_a]  = rho[id_a] + dt * acc_dt_rho_patch[id_a];
-                acc_rhov[id_a] = rhov[id_a] + dt * acc_dt_rhov_patch[id_a];
-                acc_rhoe[id_a] = rhoe[id_a] + dt * acc_dt_rhoe_patch[id_a];
-            });
+    {
+        ForwardEulerGas<Tvec> node{AMRBlock::block_size};
+        node.set_edges(
+            dt_edge,
+            storage.block_counts,
+            storage.dtrho,
+            storage.dtrhov,
+            storage.dtrhoe,
+            storage.rho_next_no_drag,
+            storage.rhov_next_no_drag,
+            storage.rhoe_next_no_drag);
+        sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
 
-        sham::kernel_call(
-            q,
-            sham::MultiRef{dt_rho_d_patch, dt_rhov_d_patch, buf_rho_d, buf_rhov_d},
-            sham::MultiRef{rho_d_patch, rhov_d_patch},
-            ndust * cell_count,
-            [dt](
-                u32 id_a,
-                const Tscal *__restrict acc_dt_rho_d_patch,
-                const Tvec *__restrict acc_dt_rhov_d_patch,
-                const Tscal *__restrict rho_d,
-                const Tvec *__restrict rhov_d,
-                Tscal *__restrict acc_rho_d,
-                Tvec *__restrict acc_rhov_d) {
-                acc_rho_d[id_a]  = rho_d[id_a] + dt * acc_dt_rho_d_patch[id_a];
-                acc_rhov_d[id_a] = rhov_d[id_a] + dt * acc_dt_rhov_d_patch[id_a];
-            });
-    });
+    {
+        ForwardEulerDust<Tvec> node{AMRBlock::block_size, ndust};
+        node.set_edges(
+            dt_edge,
+            storage.block_counts,
+            storage.dtrho_dust,
+            storage.dtrhov_dust,
+            storage.rho_d_next_no_drag,
+            storage.rhov_d_next_no_drag);
+        sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
 
-    storage.rho_next_no_drag.set(std::move(cfield_rho_next_bf_drag));
-    storage.rhov_next_no_drag.set(std::move(cfield_rhov_next_bf_drag));
-    storage.rhoe_next_no_drag.set(std::move(cfield_rhoe_next_bf_drag));
-    storage.rho_d_next_no_drag.set(std::move(cfield_rho_d_next_bf_drag));
-    storage.rhov_d_next_no_drag.set(std::move(cfield_rhov_d_next_bf_drag));
+    OperationSequence seq("Forward Euler before drag", std::move(sequence));
+    seq.evaluate();
 }
 
 template<class Tvec, class TgridVec>
@@ -154,11 +138,16 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
     using namespace shamrock;
     using namespace shammath;
 
-    shamrock::ComputeField<Tscal> &cfield_rho_new   = storage.rho_next_no_drag.get();
-    shamrock::ComputeField<Tvec> &cfield_rhov_new   = storage.rhov_next_no_drag.get();
-    shamrock::ComputeField<Tscal> &cfield_rhoe_new  = storage.rhoe_next_no_drag.get();
-    shamrock::ComputeField<Tscal> &cfield_rho_d_new = storage.rho_d_next_no_drag.get();
-    shamrock::ComputeField<Tvec> &cfield_rhov_d_new = storage.rhov_d_next_no_drag.get();
+    shamrock::ComputeField<Tscal> &cfield_rho_new
+        = shambase::get_check_ref(storage.rho_next_no_drag).get_native();
+    shamrock::ComputeField<Tvec> &cfield_rhov_new
+        = shambase::get_check_ref(storage.rhov_next_no_drag).get_native();
+    shamrock::ComputeField<Tscal> &cfield_rhoe_new
+        = shambase::get_check_ref(storage.rhoe_next_no_drag).get_native();
+    shamrock::ComputeField<Tscal> &cfield_rho_d_new
+        = shambase::get_check_ref(storage.rho_d_next_no_drag).get_native();
+    shamrock::ComputeField<Tvec> &cfield_rhov_d_new
+        = shambase::get_check_ref(storage.rhov_d_next_no_drag).get_native();
 
     // load layout info
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
@@ -312,11 +301,16 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
     using namespace shamrock;
     using namespace shammath;
 
-    shamrock::ComputeField<Tscal> &cfield_rho_new   = storage.rho_next_no_drag.get();
-    shamrock::ComputeField<Tvec> &cfield_rhov_new   = storage.rhov_next_no_drag.get();
-    shamrock::ComputeField<Tscal> &cfield_rhoe_new  = storage.rhoe_next_no_drag.get();
-    shamrock::ComputeField<Tscal> &cfield_rho_d_new = storage.rho_d_next_no_drag.get();
-    shamrock::ComputeField<Tvec> &cfield_rhov_d_new = storage.rhov_d_next_no_drag.get();
+    shamrock::ComputeField<Tscal> &cfield_rho_new
+        = shambase::get_check_ref(storage.rho_next_no_drag).get_native();
+    shamrock::ComputeField<Tvec> &cfield_rhov_new
+        = shambase::get_check_ref(storage.rhov_next_no_drag).get_native();
+    shamrock::ComputeField<Tscal> &cfield_rhoe_new
+        = shambase::get_check_ref(storage.rhoe_next_no_drag).get_native();
+    shamrock::ComputeField<Tscal> &cfield_rho_d_new
+        = shambase::get_check_ref(storage.rho_d_next_no_drag).get_native();
+    shamrock::ComputeField<Tvec> &cfield_rhov_d_new
+        = shambase::get_check_ref(storage.rhov_d_next_no_drag).get_native();
 
     // load layout info
     PatchDataLayerLayout &pdl = scheduler().pdl_old();

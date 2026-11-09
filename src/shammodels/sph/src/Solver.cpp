@@ -1517,7 +1517,7 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_val
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache() {
+void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache(Tscal time_val) {
 
     StackEntry stack_loc{};
 
@@ -1526,6 +1526,53 @@ void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache() {
 
     using InterfaceBuildInfos = typename GhostHandle::InterfaceBuildInfos;
     using InterfaceIdTable    = typename GhostHandle::InterfaceIdTable;
+
+    // ----------------------------------------------------------------------------------------
+    // Generate the ghost handler
+    // ----------------------------------------------------------------------------------------
+
+    {
+        using CfgClass = sph::BasicSPHGhostHandlerConfig<Tvec>;
+
+        using BCFree             = typename CfgClass::Free;
+        using BCPeriodic         = typename CfgClass::Periodic;
+        using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
+
+        using SolverConfigBC           = typename Config::BCConfig;
+        using SolverBCFree             = typename SolverConfigBC::Free;
+        using SolverBCPeriodic         = typename SolverConfigBC::Periodic;
+        using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
+
+        // boundary condition selections
+        if (SolverBCFree *c = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
+            storage.ghost_handler.set(
+                GhostHandle{
+                    scheduler(), BCFree{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
+        } else if (
+            SolverBCPeriodic *c
+            = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
+            storage.ghost_handler.set(
+                GhostHandle{
+                    scheduler(),
+                    BCPeriodic{},
+                    storage.patch_rank_owner,
+                    storage.xyzh_ghost_layout});
+        } else if (
+            SolverBCShearingPeriodic *c
+            = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
+            storage.ghost_handler.set(
+                GhostHandle{
+                    scheduler(),
+                    BCShearingPeriodic{
+                        c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
+                    storage.patch_rank_owner,
+                    storage.xyzh_ghost_layout});
+        }
+    }
+
+    // ----------------------------------------------------------------------------------------
+    // Build the ghost cache
+    // ----------------------------------------------------------------------------------------
 
     PatchScheduler &sched         = scheduler();
     GhostHandle &ghost_handle     = storage.ghost_handler.get();
@@ -1809,8 +1856,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
     u32 hstep_max = solver_config.h_max_subcycles_count;
     for (; hstep_cnt < hstep_max; hstep_cnt++) {
 
-        gen_ghost_handler(time_val + dt);
-        build_ghost_cache();
+        build_ghost_cache(time_val + dt);
         merge_position_ghost();
         build_merged_pos_trees();
         compute_presteps_rint();

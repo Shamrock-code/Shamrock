@@ -139,12 +139,13 @@ namespace shammodels::gsph {
         using GhostHandle      = GSPHGhostHandler<Tvec>;
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
-        void gen_ghost_handler(Tscal time_val);
         inline void reset_ghost_handler() {
             shambase::get_check_ref(storage.ghost_handler).free_alloc();
         }
 
-        void build_ghost_cache();
+        /// Generates the ghost handler and builds the ghost interface cache, with boundary
+        /// conditions evaluated at time_val
+        void build_ghost_cache(Tscal time_val);
         void clear_ghost_cache();
 
         void merge_position_ghost();

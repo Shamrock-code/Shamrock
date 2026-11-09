@@ -28,6 +28,8 @@
 #include "shammodels/ramses/modules/AddExtForceConstantGravity.hpp"
 #include "shammodels/ramses/modules/AddExtForceField.hpp"
 #include "shammodels/ramses/modules/AddExtForcePointMassGravity.hpp"
+#include "shammodels/ramses/modules/ApplyDragExpo.hpp"
+#include "shammodels/ramses/modules/ApplyDragIRK1.hpp"
 #include "shammodels/ramses/modules/ApplyExtForceDust.hpp"
 #include "shammodels/ramses/modules/ApplyExtForceDustTrapezoidal.hpp"
 #include "shammodels/ramses/modules/ApplyExtForceGas.hpp"
@@ -45,13 +47,14 @@
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGasAdiabatic.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGasBarotropic.hpp"
-#include "shammodels/ramses/modules/DragIntegrator.hpp"
 #include "shammodels/ramses/modules/EulerTimeDerivativeDust.hpp"
 #include "shammodels/ramses/modules/EulerTimeDerivativeGasAdiabatic.hpp"
 #include "shammodels/ramses/modules/EulerTimeDerivativeGasBarotropic.hpp"
 #include "shammodels/ramses/modules/ExtractGhostLayer.hpp"
 #include "shammodels/ramses/modules/FindBlockNeigh.hpp"
 #include "shammodels/ramses/modules/FindGhostLayerIndices.hpp"
+#include "shammodels/ramses/modules/ForwardEulerDust.hpp"
+#include "shammodels/ramses/modules/ForwardEulerGas.hpp"
 #include "shammodels/ramses/modules/FuseGhostLayer.hpp"
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
 #include "shammodels/ramses/modules/NodeBiCGSTABLoop.hpp"
@@ -62,7 +65,6 @@
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
 #include "shammodels/ramses/modules/SumFluxDust.hpp"
 #include "shammodels/ramses/modules/SumFluxHydro.hpp"
-#include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/io/LegacyVtkWriter.hpp"
@@ -1993,6 +1995,211 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
     }
 
+    { // time integration (forward Euler, with or without drag)
+
+        shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
+
+        // refs to the fields of the patch data without ghosts (the ones that are integrated)
+        auto attach_source_field = [&]<class T>(
+                                       std::vector<std::shared_ptr<INode>> &sequence,
+                                       std::shared_ptr<FieldRefs<T>> &refs,
+                                       const std::string &field_name) {
+            GetFieldRefFromLayer<T> attach{pdl, field_name};
+            attach.set_edges(storage.source_patches, refs);
+            sequence.push_back(std::make_shared<decltype(attach)>(std::move(attach)));
+        };
+
+        // U^{n+1} without drag starts as a copy of the state at t^n (patch data without ghosts),
+        // then gets the forward Euler update in place
+        auto add_forward_euler_before_drag = [&]() {
+            const u32 ndust = solver_config.dust_config.ndust;
+
+            storage.rho_next_no_drag = std::make_shared<Field<Tscal>>(
+                AMRBlock::block_size, "rho_next_bf_drag", "\\rho^{n+1}_{\\rm no\\,drag}");
+            storage.rhov_next_no_drag = std::make_shared<Field<Tvec>>(
+                AMRBlock::block_size,
+                "rhov_next_bf_drag",
+                "(\\rho \\mathbf{v})^{n+1}_{\\rm no\\,drag}");
+            storage.rhoe_next_no_drag = std::make_shared<Field<Tscal>>(
+                AMRBlock::block_size, "rhoe_next_bf_drag", "(\\rho E)^{n+1}_{\\rm no\\,drag}");
+            storage.rho_d_next_no_drag = std::make_shared<Field<Tscal>>(
+                ndust * AMRBlock::block_size,
+                "rho_d_next_bf_drag",
+                "\\rho^{n+1}_{\\rm dust,\\,no\\,drag}");
+            storage.rhov_d_next_no_drag = std::make_shared<Field<Tvec>>(
+                ndust * AMRBlock::block_size,
+                "rhov_d_next_bf_drag",
+                "(\\rho_{\\rm dust} \\mathbf{v}_{\\rm dust})^{n+1}_{\\rm no\\,drag}");
+
+            std::vector<std::shared_ptr<INode>> sequence;
+
+            auto copy_source_field = [&]<class T>(
+                                         const std::string &field_name,
+                                         const std::string &label,
+                                         const std::string &tex,
+                                         const std::shared_ptr<Field<T>> &target) {
+                auto refs = std::make_shared<FieldRefs<T>>(label, tex);
+                attach_source_field(sequence, refs, field_name);
+
+                CopyPatchDataField<T> copy{};
+                copy.set_edges(refs, target);
+                sequence.push_back(std::make_shared<decltype(copy)>(std::move(copy)));
+            };
+
+            copy_source_field("rho", "rho_source", "\\rho", storage.rho_next_no_drag);
+            copy_source_field(
+                "rhovel", "rhovel_source", "(\\rho \\mathbf{v})", storage.rhov_next_no_drag);
+            copy_source_field("rhoetot", "rhoetot_source", "(\\rho E)", storage.rhoe_next_no_drag);
+            copy_source_field(
+                "rho_dust", "rho_dust_source", "\\rho_{\\rm dust}", storage.rho_d_next_no_drag);
+            copy_source_field(
+                "rhovel_dust",
+                "rhovel_dust_source",
+                "(\\rho_{\\rm dust} \\mathbf{v}_{\\rm dust})",
+                storage.rhov_d_next_no_drag);
+
+            {
+                modules::ForwardEulerGas<Tvec> node{AMRBlock::block_size};
+                node.set_edges(
+                    storage.dt,
+                    storage.block_counts,
+                    storage.dtrho,
+                    storage.dtrhov,
+                    storage.dtrhoe,
+                    storage.rho_next_no_drag,
+                    storage.rhov_next_no_drag,
+                    storage.rhoe_next_no_drag);
+                sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+            }
+
+            {
+                modules::ForwardEulerDust<Tvec> node{AMRBlock::block_size, ndust};
+                node.set_edges(
+                    storage.dt,
+                    storage.block_counts,
+                    storage.dtrho_dust,
+                    storage.dtrhov_dust,
+                    storage.rho_d_next_no_drag,
+                    storage.rhov_d_next_no_drag);
+                sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+            }
+
+            OperationSequence seq("Forward Euler before drag", std::move(sequence));
+            solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+        };
+
+        // apply the drag to U^{n+1} without drag, the result is written in the patch data
+        auto add_drag = [&]<class NodeDrag>(const std::string &name) {
+            const u32 ndust = solver_config.dust_config.ndust;
+
+            std::vector<std::shared_ptr<INode>> sequence;
+
+            auto refs_rho = std::make_shared<FieldRefs<Tscal>>("rho_source", "\\rho");
+            auto refs_rhov
+                = std::make_shared<FieldRefs<Tvec>>("rhovel_source", "(\\rho \\mathbf{v})");
+            auto refs_rhoe = std::make_shared<FieldRefs<Tscal>>("rhoetot_source", "(\\rho E)");
+            auto refs_rho_dust
+                = std::make_shared<FieldRefs<Tscal>>("rho_dust_source", "\\rho_{\\rm dust}");
+            auto refs_rhov_dust = std::make_shared<FieldRefs<Tvec>>(
+                "rhovel_dust_source", "(\\rho_{\\rm dust} \\mathbf{v}_{\\rm dust})");
+
+            attach_source_field(sequence, refs_rho, "rho");
+            attach_source_field(sequence, refs_rhov, "rhovel");
+            attach_source_field(sequence, refs_rhoe, "rhoetot");
+            attach_source_field(sequence, refs_rho_dust, "rho_dust");
+            attach_source_field(sequence, refs_rhov_dust, "rhovel_dust");
+
+            {
+                // alphas are dust collision rates
+                const auto &alphas = solver_config.drag_config.alphas;
+
+                NodeDrag node{
+                    AMRBlock::block_size,
+                    ndust,
+                    std::vector<Tscal>(alphas.begin(), alphas.end()),
+                    solver_config.drag_config.enable_frictional_heating};
+                node.set_edges(
+                    storage.dt,
+                    storage.block_counts,
+                    storage.rho_next_no_drag,
+                    storage.rhov_next_no_drag,
+                    storage.rhoe_next_no_drag,
+                    storage.rho_d_next_no_drag,
+                    storage.rhov_d_next_no_drag,
+                    refs_rho,
+                    refs_rhov,
+                    refs_rhoe,
+                    refs_rho_dust,
+                    refs_rhov_dust);
+                sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+            }
+
+            OperationSequence seq(name, std::move(sequence));
+            solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+        };
+
+        if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag) {
+
+            std::vector<std::shared_ptr<INode>> sequence;
+
+            {
+                auto refs_rho = std::make_shared<FieldRefs<Tscal>>("rho_source", "\\rho");
+                auto refs_rhov
+                    = std::make_shared<FieldRefs<Tvec>>("rhovel_source", "(\\rho \\mathbf{v})");
+                auto refs_rhoe = std::make_shared<FieldRefs<Tscal>>("rhoetot_source", "(\\rho E)");
+
+                attach_source_field(sequence, refs_rho, "rho");
+                attach_source_field(sequence, refs_rhov, "rhovel");
+                attach_source_field(sequence, refs_rhoe, "rhoetot");
+
+                modules::ForwardEulerGas<Tvec> node{AMRBlock::block_size};
+                node.set_edges(
+                    storage.dt,
+                    storage.block_counts,
+                    storage.dtrho,
+                    storage.dtrhov,
+                    storage.dtrhoe,
+                    refs_rho,
+                    refs_rhov,
+                    refs_rhoe);
+                sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+            }
+
+            if (solver_config.is_dust_on()) {
+                auto refs_rho_dust
+                    = std::make_shared<FieldRefs<Tscal>>("rho_dust_source", "\\rho_{\\rm dust}");
+                auto refs_rhov_dust = std::make_shared<FieldRefs<Tvec>>(
+                    "rhovel_dust_source", "(\\rho_{\\rm dust} \\mathbf{v}_{\\rm dust})");
+
+                attach_source_field(sequence, refs_rho_dust, "rho_dust");
+                attach_source_field(sequence, refs_rhov_dust, "rhovel_dust");
+
+                modules::ForwardEulerDust<Tvec> node{
+                    AMRBlock::block_size, solver_config.dust_config.ndust};
+                node.set_edges(
+                    storage.dt,
+                    storage.block_counts,
+                    storage.dtrho_dust,
+                    storage.dtrhov_dust,
+                    refs_rho_dust,
+                    refs_rhov_dust);
+                sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+            }
+
+            OperationSequence seq("Forward Euler", std::move(sequence));
+            solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+
+        } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1) {
+            add_forward_euler_before_drag();
+            add_drag.template operator()<modules::ApplyDragIRK1<Tvec>>("Drag IRK1");
+        } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::EXPO) {
+            add_forward_euler_before_drag();
+            add_drag.template operator()<modules::ApplyDragExpo<Tvec>>("Drag expo");
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
     shamrock::solvergraph::OperationSequence seq("Solver", std::move(solver_sequence));
     storage.solver_sequence = std::make_shared<decltype(seq)>(std::move(seq));
 
@@ -2118,22 +2325,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::get_check_ref(storage.solver_sequence).evaluate();
     }
 
-    // RK2 + flux lim
-    if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag) {
-        modules::TimeIntegrator dt_integ(context, solver_config, storage);
-        dt_integ.forward_euler(dt_input);
-    } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1) {
-        modules::DragIntegrator drag_integ(context, solver_config, storage);
-        drag_integ.involve_with_no_src(dt_input);
-        drag_integ.enable_irk1_drag_integrator(dt_input);
-    } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::EXPO) {
-        modules::DragIntegrator drag_integ(context, solver_config, storage);
-        drag_integ.involve_with_no_src(dt_input);
-        drag_integ.enable_expo_drag_integrator(dt_input);
-    } else {
-        shambase::throw_unimplemented();
-    }
-
     if (!solver_config.amr_mode.old_amr) {
         shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_rho{};
         node_copy_rho.set_edges(storage.refs_rho, storage.rho_primitive);
@@ -2184,11 +2375,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     set_time(t_current + dt_input);
 
     if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {
-        storage.rho_next_no_drag.reset();
-        storage.rhov_next_no_drag.reset();
-        storage.rhoe_next_no_drag.reset();
-        storage.rho_d_next_no_drag.reset();
-        storage.rhov_d_next_no_drag.reset();
+        shambase::get_check_ref(storage.rho_next_no_drag).free_alloc();
+        shambase::get_check_ref(storage.rhov_next_no_drag).free_alloc();
+        shambase::get_check_ref(storage.rhoe_next_no_drag).free_alloc();
+        shambase::get_check_ref(storage.rho_d_next_no_drag).free_alloc();
+        shambase::get_check_ref(storage.rhov_d_next_no_drag).free_alloc();
     }
 
     storage.merge_patch_bounds.reset();

@@ -34,6 +34,7 @@
 #include "shammodels/sph/modules/AnalysisDustMass.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyKinetic.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyPotential.hpp"
+#include "shammodels/sph/modules/AnalysisPlasmaBeta.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/AnalysisTotalMomentum.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
@@ -2040,6 +2041,40 @@ void add_analysisEnergyKinetic_instance(py::module &m, const std::string &name_m
 }
 
 template<class Tvec, template<class> class SPHKernel>
+void add_analysisPlasmaBeta_instance(py::module &m, const std::string &name_model) {
+    using namespace shammodels::sph;
+
+    using T        = Model<Tvec, SPHKernel>;
+    using Analysis = modules::AnalysisPlasmaBeta<Tvec, SPHKernel>;
+
+    py::class_<Analysis>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<Analysis>(model);
+        }))
+        .def(
+            "get_thermal_energy",
+            [](Analysis &self) {
+                return self.get_thermal_energy();
+            },
+            R"==(Sum of m u over all the particles (collective call))==")
+        .def(
+            "get_magnetic_energy",
+            [](Analysis &self) {
+                return self.get_magnetic_energy();
+            },
+            R"==(Sum of m B^2 / (2 mu_0 rho) with the SPH density (collective call))==")
+        .def(
+            "get_plasma_beta",
+            [](Analysis &self) {
+                return self.get_plasma_beta();
+            },
+            R"==(
+    Volume averaged plasma beta int P dV / int B^2 / (2 mu_0) dV = (gamma - 1) E_th / E_mag,
+    for an adiabatic EOS, with the SPH density. Collective call, every rank gets the result.
+)==");
+}
+
+template<class Tvec, template<class> class SPHKernel>
 void add_analysisEnergyPotential_instance(py::module &m, const std::string &name_model) {
     using namespace shammodels::sph;
 
@@ -2275,6 +2310,14 @@ ON_PYTHON_INIT {
     add_analysisEnergyKinetic_instance<f64_3, shammath::C4>(msph, "AnalysisEnergyKinetic_f64_3_C4");
     add_analysisEnergyKinetic_instance<f64_3, shammath::C6>(msph, "AnalysisEnergyKinetic_f64_3_C6");
 
+    add_analysisPlasmaBeta_instance<f64_3, shammath::M4>(msph, "AnalysisPlasmaBeta_f64_3_M4");
+    add_analysisPlasmaBeta_instance<f64_3, shammath::M6>(msph, "AnalysisPlasmaBeta_f64_3_M6");
+    add_analysisPlasmaBeta_instance<f64_3, shammath::M8>(msph, "AnalysisPlasmaBeta_f64_3_M8");
+
+    add_analysisPlasmaBeta_instance<f64_3, shammath::C2>(msph, "AnalysisPlasmaBeta_f64_3_C2");
+    add_analysisPlasmaBeta_instance<f64_3, shammath::C4>(msph, "AnalysisPlasmaBeta_f64_3_C4");
+    add_analysisPlasmaBeta_instance<f64_3, shammath::C6>(msph, "AnalysisPlasmaBeta_f64_3_C6");
+
     add_analysisEnergyPotential_instance<f64_3, shammath::M4>(
         msph, "AnalysisEnergyPotential_f64_3_M4");
     add_analysisEnergyPotential_instance<f64_3, shammath::M6>(
@@ -2316,6 +2359,7 @@ ON_PYTHON_INIT {
         msph, "analysisEnergyKinetic");
     register_analysis_impl_for_each_kernel<modules::AnalysisEnergyPotential>(
         msph, "analysisEnergyPotential");
+    register_analysis_impl_for_each_kernel<modules::AnalysisPlasmaBeta>(msph, "analysisPlasmaBeta");
     register_analysis_impl_for_each_kernel<modules::AnalysisTotalMomentum>(
         msph, "analysisTotalMomentum");
     register_analysis_impl_for_each_kernel<modules::AnalysisAngularMomentum>(

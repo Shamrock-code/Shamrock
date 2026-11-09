@@ -283,6 +283,25 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
     using namespace shamrock::solvergraph;
 
+    // register a synchronized edge only if missing, as it may have been restored from a dump
+    auto ensure_sync_edge = [&]<class T>(const std::string &name, const std::string &tex_symbol) {
+        if (!sync_data.has_edge(name)) {
+            sync_data.register_edge(name, IDataEdgeSerializable<T>(name, tex_symbol));
+        }
+    };
+
+    ensure_sync_edge.template operator()<std::vector<Tvec>>("sink_pos", "\\bf{r}_{\\mathrm{sink}}");
+    ensure_sync_edge.template operator()<std::vector<Tvec>>("sink_vel", "\\bf{v}_{\\mathrm{sink}}");
+    ensure_sync_edge.template operator()<std::vector<Tvec>>(
+        "sink_acc_sph", "\\bf{a}_{\\mathrm{sink, sph}}");
+    ensure_sync_edge.template operator()<std::vector<Tvec>>(
+        "sink_acc_ext", "\\bf{a}_{\\mathrm{sink, ext}}");
+    ensure_sync_edge.template operator()<std::vector<Tscal>>("sink_mass", "m_{\\mathrm{sink}}");
+    ensure_sync_edge.template operator()<std::vector<Tvec>>(
+        "sink_angular_momentum", "\\bf{L}_{\\mathrm{sink}}");
+    ensure_sync_edge.template operator()<std::vector<Tscal>>(
+        "sink_accretion_radius", "r_{\\mathrm{accretion}}");
+
     SolverGraph &solver_graph = storage.solver_graph;
 
     solver_graph.register_edge(

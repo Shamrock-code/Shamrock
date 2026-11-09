@@ -83,8 +83,6 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init() {
 
     solver.ensure_time_state_edges();
 
-    ensure_sink_edges<Tvec>(sched.synchronized_data);
-
     // must be bone after time state edges are ensured (it will connect to it)
     solver.init_solver_graph();
 }

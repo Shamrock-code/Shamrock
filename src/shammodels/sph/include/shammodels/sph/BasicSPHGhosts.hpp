@@ -56,11 +56,7 @@ namespace shammodels::sph {
     template<class vec>
     class BasicSPHGhostHandler {
 
-        using CfgClass = BasicSPHGhostHandlerConfig<vec>;
-        using Config   = typename CfgClass::Variant;
-
         PatchScheduler &sched;
-        Config ghost_config;
 
         public:
         using flt                = shambase::VecComponent<vec>;
@@ -87,14 +83,10 @@ namespace shammodels::sph {
 
         BasicSPHGhostHandler(
             PatchScheduler &sched,
-            Config ghost_config,
             std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner,
             std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &xyzh_ghost_layout)
-            : sched(sched), ghost_config(ghost_config),
-              patch_rank_owner(std::move(patch_rank_owner)), xyzh_ghost_layout(xyzh_ghost_layout) {}
-
-        /// Get the boundary condition config of this ghost handler
-        inline const Config &get_ghost_config() const { return ghost_config; }
+            : sched(sched), patch_rank_owner(std::move(patch_rank_owner)),
+              xyzh_ghost_layout(xyzh_ghost_layout) {}
 
         void gen_debug_patch_ghost(shambase::DistributedDataShared<InterfaceIdTable> &interf_info);
 

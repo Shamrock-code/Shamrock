@@ -79,6 +79,7 @@
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeConstant.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeEpstein.hpp"
+#include "shammodels/sph/modules/SinkParticlesAccreteDustMass.hpp"
 #include "shammodels/sph/modules/SinkParticlesAccreteQuantities.hpp"
 #include "shammodels/sph/modules/SinkParticlesEvictAccretedParticles.hpp"
 #include "shammodels/sph/modules/SinkParticlesFlagAccreteHard.hpp"
@@ -309,6 +310,11 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     ensure_sync_edge("sink_mass", "m_{\\mathrm{sink}}", std::vector<Tscal>{});
     ensure_sync_edge("sink_angular_momentum", "\\bf{L}_{\\mathrm{sink}}", std::vector<Tvec>{});
     ensure_sync_edge("sink_accretion_radius", "r_{\\mathrm{accretion}}", std::vector<Tscal>{});
+
+    if (has_s_j_field) {
+        // dust mass accreted by each sink, one row of ndust bins per sink
+        ensure_sync_edge("sink_dust_mass", "m_{\\mathrm{sink, dust}}", std::vector<Tscal>{});
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////
     // main solver graph
@@ -910,28 +916,68 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                 solver_graph.get_edge_ptr<Field<u32>>("sink_accretion_table"),
                 solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"));
 
+        std::vector<std::shared_ptr<INode>> accretion_sequence{
+            // the "time_step" sequence (set_gpart_mass, attach fields to scheduler, ...)
+            // has not run yet at this stage of the timestep
+            solver_graph.get_node_ptr_base("set_gpart_mass"),
+            solver_graph.get_node_ptr_base("set_scheduler_patchdata"),
+            solver_graph.get_node_ptr_base("attach_part_counts"),
+            solver_graph.get_node_ptr_base("attach_xyz"),
+            solver_graph.get_node_ptr_base("attach_vxyz"),
+            solver_graph.get_node_ptr_base("attach_axyz"),
+            // Actually perform the accretion
+            flag_node,
+            qty_node,
+        };
+
+        // track the dust mass accreted onto each sink, per dust bin (monofluid TVA only)
+        std::vector<std::shared_ptr<INode>> free_dust_refs{};
+        if (has_s_j_field) {
+            u32 ndust = solver_config.dust_config.get_dust_nvar();
+
+            auto hfactd_edge  = IDataEdge<Tscal>::make_shared("hfactd", "hfactd");
+            hfactd_edge->data = Kernel::hfactd;
+
+            auto dust_mass_node = solver_graph.register_node(
+                "accrete_dust_mass", modules::SinkParticlesAccreteDustMass<Tvec>(ndust));
+            shambase::get_check_ref(dust_mass_node)
+                .set_edges(
+                    solver_graph.get_edge_ptr<IDataEdge<Tscal>>("gpart_mass"),
+                    hfactd_edge,
+                    solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("hpart"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("s_j"),
+                    solver_graph.get_edge_ptr<Field<u32>>("sink_accretion_table"),
+                    sink_positions,
+                    sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tscal>>>(
+                        "sink_dust_mass"));
+
+            accretion_sequence.push_back(solver_graph.get_node_ptr_base("attach_hpart"));
+            accretion_sequence.push_back(solver_graph.get_node_ptr_base("attach_s_j"));
+            accretion_sequence.push_back(dust_mass_node);
+
+            auto free_hpart = solver_graph.register_node("free_hpart_refs", NodeFreeAlloc{});
+            shambase::get_check_ref(free_hpart)
+                .set_edges(solver_graph.get_edge_ptr<FieldRefs<Tscal>>("hpart"));
+
+            auto free_s_j = solver_graph.register_node("free_s_j_refs", NodeFreeAlloc{});
+            shambase::get_check_ref(free_s_j).set_edges(
+                solver_graph.get_edge_ptr<FieldRefs<Tscal>>("s_j"));
+
+            free_dust_refs = {free_hpart, free_s_j};
+        }
+
+        accretion_sequence.push_back(evict_node);
+
+        // free the refs since the particle counts may have changed
+        accretion_sequence.push_back(free_xyz);
+        accretion_sequence.push_back(free_vxyz);
+        accretion_sequence.push_back(free_axyz);
+        accretion_sequence.insert(
+            accretion_sequence.end(), free_dust_refs.begin(), free_dust_refs.end());
+
         auto if_has_sinks = solver_graph.register_node(
-            "if_has_sinks",
-            OperationSequence(
-                "if_has_sinks",
-                {
-                    // the "time_step" sequence (set_gpart_mass, attach fields to scheduler, ...)
-                    // has not run yet at this stage of the timestep
-                    solver_graph.get_node_ptr_base("set_gpart_mass"),
-                    solver_graph.get_node_ptr_base("set_scheduler_patchdata"),
-                    solver_graph.get_node_ptr_base("attach_part_counts"),
-                    solver_graph.get_node_ptr_base("attach_xyz"),
-                    solver_graph.get_node_ptr_base("attach_vxyz"),
-                    solver_graph.get_node_ptr_base("attach_axyz"),
-                    // Actually perform the accretion
-                    flag_node,
-                    qty_node,
-                    evict_node,
-                    // free the refs since the particle counts may have changed
-                    free_xyz,
-                    free_vxyz,
-                    free_axyz,
-                }));
+            "if_has_sinks", OperationSequence("if_has_sinks", std::move(accretion_sequence)));
 
         // register the actual node that will be used
         solver_graph.register_node(

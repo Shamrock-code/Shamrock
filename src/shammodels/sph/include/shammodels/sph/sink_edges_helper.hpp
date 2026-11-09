@@ -16,12 +16,15 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/type_name_info.hpp"
+#include "sham/format/format.hpp"
 #include "shambackends/type_traits.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SinkPartStruct.hpp"
 #include "shamsolvergraph/SolverGraphSerializable.hpp"
 #include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
+#include <stdexcept>
 #include <vector>
 
 namespace shambase {
@@ -103,6 +106,44 @@ namespace shammodels::sph {
         shamrock::solvergraph::SolverGraphSerializable &sync) {
         return details::get_sync_data<std::vector<shambase::VecComponent<Tvec>>>(
             sync, "sink_accretion_radius");
+    }
+
+    /**
+     * @brief Dust mass accreted by each sink, per dust bin (monofluid TVA only).
+     *
+     * One row of ndust bins per sink : | bin0, bin1, ... | bin0, bin1, ... |.
+     * The edge only exists when the s_j field does (see has_sink_dust_mass).
+     */
+    template<class Tvec>
+    inline std::vector<shambase::VecComponent<Tvec>> &get_sink_dust_mass(
+        shamrock::solvergraph::SolverGraphSerializable &sync) {
+        return details::get_sync_data<std::vector<shambase::VecComponent<Tvec>>>(
+            sync, "sink_dust_mass");
+    }
+
+    /// Check whether the sink dust mass edge is registered (monofluid TVA only)
+    inline bool has_sink_dust_mass(shamrock::solvergraph::SolverGraphSerializable &sync) {
+        return sync.has_edge("sink_dust_mass");
+    }
+
+    /**
+     * @brief Grow the sink dust mass edge to sink_count * ndust, new entries set to zero.
+     *
+     * Sinks are only ever appended, so this keeps the rows aligned with the sinks, both after
+     * adding a sink and when loading a dump written before the edge existed.
+     */
+    template<class Tvec>
+    inline void resize_sink_dust_mass(
+        shamrock::solvergraph::SolverGraphSerializable &sync, u32 ndust) {
+        auto &dust_mass   = get_sink_dust_mass<Tvec>(sync);
+        usize target_size = get_sink_pos<Tvec>(sync).size() * ndust;
+        if (dust_mass.size() > target_size) {
+            shambase::throw_with_loc<std::runtime_error>(sham::format(
+                "sink_dust_mass has {} entries, more than sink_count * ndust = {}",
+                dust_mass.size(),
+                target_size));
+        }
+        dust_mass.resize(target_size, 0);
     }
 
     /**

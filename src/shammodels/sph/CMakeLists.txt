@@ -30,6 +30,7 @@ set(Sources
     src/modules/SinkParticlesUpdate.cpp
     src/modules/SinkParticlesFlagAccreteHard.cpp
     src/modules/SinkParticlesAccreteQuantities.cpp
+    src/modules/SinkParticlesAccreteDustMass.cpp
     src/modules/SinkParticlesEvictAccretedParticles.cpp
     src/modules/ConservativeCheck.cpp
     src/modules/ExternalForces.cpp

@@ -20,9 +20,9 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/overloaded.hpp"
-#include "sham/format/format.hpp"
 #include "config/AVConfig.hpp"
 #include "config/BCConfig.hpp"
+#include "sham/format/format.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/type_traits.hpp"
@@ -1161,7 +1161,10 @@ struct shammodels::sph::SolverConfig {
 
     /// @brief Whether the solver has a field for the particle's uint
     ///
-    /// @note this is always true, even for equations of state where the pressure does not depend on uint (isothermal, polytropic, barotropic). In those cases uint is still integrated from du/dt (computed with the EOS pressure) but never read back by the EOS, keeping the energy conservation check meaningful.
+    /// @note this is always true, even for equations of state where the pressure does not depend on
+    /// uint (isothermal, polytropic, barotropic). In those cases uint is still integrated from
+    /// du/dt (computed with the EOS pressure) but never read back by the EOS, keeping the energy
+    /// conservation check meaningful.
     inline bool has_field_uint() { return true; }
 
     /// @brief Whether the solver has a field for alpha AV

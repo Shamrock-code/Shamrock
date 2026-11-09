@@ -109,9 +109,7 @@ rho_crit = 1e-12 * rho0
 cs0_poly = np.sqrt(K * rho_crit ** (gamma - 1))
 
 v_poly = run(lambda cfg: cfg.set_eos_polytropic(K, gamma))
-v_baro_poly = run(
-    lambda cfg: cfg.set_eos_barotropic(cs0=cs0_poly, rho_crit=rho_crit, gamma=gamma)
-)
+v_baro_poly = run(lambda cfg: cfg.set_eos_barotropic(cs0=cs0_poly, rho_crit=rho_crit, gamma=gamma))
 compare("adiabatic limit", v_poly, v_baro_poly, 1e-6)
 
 # %%

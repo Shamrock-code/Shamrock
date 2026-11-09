@@ -188,7 +188,9 @@ namespace shammodels {
             p.config = Fermi{j.at("mu_e").get<Tscal>()};
         } else if (eos_type == "barotropic") {
             p.config = Barotropic{
-                j.at("cs0").get<Tscal>(), j.at("rho_crit").get<Tscal>(), j.at("gamma").get<Tscal>()};
+                j.at("cs0").get<Tscal>(),
+                j.at("rho_crit").get<Tscal>(),
+                j.at("gamma").get<Tscal>()};
         } else {
             shambase::throw_unimplemented("Unknown or unsupported eos_type found in json");
         }

@@ -127,7 +127,7 @@ for bad in [
     cfg.set_eos_barotropic(**bad)
     try:
         model.set_solver_config(cfg)
-    except Exception as e:
+    except ValueError as e:
         print(f"rejected {bad} as expected: {type(e).__name__}")
     else:
         raise AssertionError(f"invalid barotropic parameters {bad} were accepted")

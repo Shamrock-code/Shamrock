@@ -28,11 +28,12 @@ namespace shammodels {
      * \code{.json}
      * {
      *    "Tvec": "f32_3"|"f64_3",
-     *    "eos_type": "adiabatic"|"locally_isothermal"|"locally_isothermal_lp07",
+     *    "eos_type": "adiabatic"|"locally_isothermal"|"locally_isothermal_lp07"|"barotropic",
      *    "gamma"?: number,
      *    "cs0"?: number,
      *    "q"?: number,
-     *    "r0"?: number
+     *    "r0"?: number,
+     *    "rho_crit"?: number
      * }
      * \endcode
      *
@@ -63,6 +64,7 @@ namespace shammodels {
         using LocIsoTFA2014         = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
         using LocIsoTFA2014Extended = typename EOSConfig<Tvec>::LocallyIsothermalFA2014Extended;
         using Fermi                 = typename EOSConfig<Tvec>::Fermi;
+        using Barotropic            = typename EOSConfig<Tvec>::Barotropic;
 
         if (const Isothermal *eos_config = std::get_if<Isothermal>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "isothermal"}, {"cs", eos_config->cs}};
@@ -100,6 +102,13 @@ namespace shammodels {
                 {"n_sinks", eos_config->n_sinks}};
         } else if (const Fermi *eos_config = std::get_if<Fermi>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "fermi"}, {"mu_e", eos_config->mu_e}};
+        } else if (const Barotropic *eos_config = std::get_if<Barotropic>(&p.config)) {
+            j = json{
+                {"Tvec", type_id},
+                {"eos_type", "barotropic"},
+                {"cs0", eos_config->cs0},
+                {"rho_crit", eos_config->rho_crit},
+                {"gamma", eos_config->gamma}};
         } else {
             shambase::throw_unimplemented(); // should never be reached
         }
@@ -154,6 +163,7 @@ namespace shammodels {
         using LocIsoTFA2014         = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
         using LocIsoTFA2014Extended = typename EOSConfig<Tvec>::LocallyIsothermalFA2014Extended;
         using Fermi                 = typename EOSConfig<Tvec>::Fermi;
+        using Barotropic            = typename EOSConfig<Tvec>::Barotropic;
 
         if (eos_type == "isothermal") {
             p.config = Isothermal{j.at("cs").get<Tscal>()};
@@ -176,6 +186,9 @@ namespace shammodels {
                 j.at("n_sinks").get<u32>()};
         } else if (eos_type == "fermi") {
             p.config = Fermi{j.at("mu_e").get<Tscal>()};
+        } else if (eos_type == "barotropic") {
+            p.config = Barotropic{
+                j.at("cs0").get<Tscal>(), j.at("rho_crit").get<Tscal>(), j.at("gamma").get<Tscal>()};
         } else {
             shambase::throw_unimplemented("Unknown or unsupported eos_type found in json");
         }

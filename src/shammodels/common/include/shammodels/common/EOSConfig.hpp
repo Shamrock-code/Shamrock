@@ -74,6 +74,9 @@ namespace shammodels {
         /// Fermi equation of state configuration
         using Fermi = shamphys::EOS_Config_Fermi<Tscal>;
 
+        /// Barotropic equation of state configuration
+        using Barotropic = shamphys::EOS_Config_Barotropic<Tscal>;
+
         /// Variant type to store the EOS configuration
         using Variant = std::variant<
             Isothermal,
@@ -83,7 +86,8 @@ namespace shammodels {
             LocallyIsothermalLP07,
             LocallyIsothermalFA2014,
             LocallyIsothermalFA2014Extended,
-            Fermi>;
+            Fermi,
+            Barotropic>;
 
         /// Current EOS configuration
         Variant config = Adiabatic{};
@@ -146,6 +150,20 @@ namespace shammodels {
         inline void set_fermi(Tscal mu_e) { config = Fermi{mu_e}; }
 
         /**
+         * @brief Set the EOS configuration to a barotropic equation of state
+         *
+         * The equation of state is given by:
+         * \f$ P = c_{s,0}^2 \rho \left[1 + (\rho / \rho_c)^{\gamma - 1}\right] \f$
+         *
+         * @param cs0 Isothermal sound speed of the low density regime
+         * @param rho_crit Critical density of the isothermal to adiabatic transition
+         * @param gamma Adiabatic index of the high density regime
+         */
+        inline void set_barotropic(Tscal cs0, Tscal rho_crit, Tscal gamma) {
+            config = Barotropic{cs0, rho_crit, gamma};
+        }
+
+        /**
          * @brief Print current status of the EOSConfig
          */
         inline void print_status();
@@ -190,6 +208,11 @@ void shammodels::EOSConfig<Tvec>::print_status() {
     } else if (Fermi *eos_config = std::get_if<Fermi>(&config)) {
         logger::raw_ln("Fermi : ");
         logger::raw_ln("mu_e", eos_config->mu_e);
+    } else if (Barotropic *eos_config = std::get_if<Barotropic>(&config)) {
+        logger::raw_ln("barotropic : ");
+        logger::raw_ln("cs0", eos_config->cs0);
+        logger::raw_ln("rho_crit", eos_config->rho_crit);
+        logger::raw_ln("gamma", eos_config->gamma);
     } else {
         shambase::throw_unimplemented();
     }

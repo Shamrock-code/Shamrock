@@ -976,8 +976,15 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         accretion_sequence.insert(
             accretion_sequence.end(), free_dust_refs.begin(), free_dust_refs.end());
 
+        auto accretion_body = solver_graph.register_node(
+            "sink accretion body",
+            OperationSequence("sink accretion body", std::move(accretion_sequence)));
+
+        // skip the accretion entirely when there are no sinks
         auto if_has_sinks = solver_graph.register_node(
-            "if_has_sinks", OperationSequence("if_has_sinks", std::move(accretion_sequence)));
+            "if_has_sinks", OperationIf("if_has_sinks", accretion_body));
+        shambase::get_check_ref(if_has_sinks)
+            .set_edges(solver_graph.get_edge_ptr<IDataEdge<bool>>("has_sinks"));
 
         // register the actual node that will be used
         solver_graph.register_node(

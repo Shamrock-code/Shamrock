@@ -14,10 +14,8 @@ set(Sources
     src/pyRamsesModel.cpp
     src/Solver.cpp
     src/modules/NodeComputeFlux.cpp
-    src/modules/DragIntegrator.cpp
     src/modules/ApplyDragIRK1.cpp
     src/modules/ApplyDragExpo.cpp
-    src/modules/TimeIntegrator.cpp
     src/modules/ForwardEulerGas.cpp
     src/modules/ForwardEulerDust.cpp
     src/modules/ResetExtForceAcc.cpp

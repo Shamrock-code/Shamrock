@@ -293,6 +293,30 @@ class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
+    ////////////////////////////////////////////////////////////////////////////////
+    /// synchronized edges
+    ////////////////////////////////////////////////////////////////////////////////
+
+    auto &sync_data = scheduler().synchronized_data;
+
+    // register a synchronized edge only if missing, as it may have been restored from a dump
+    auto ensure_sync_edge
+        = [&](const std::string &name, const std::string &tex_symbol, auto init_value) {
+              using T = decltype(init_value);
+              if (!sync_data.has_edge(name)) {
+                  auto edge = sync_data.register_edge(
+                      name, shamrock::solvergraph::IDataEdgeSerializable<T>(name, tex_symbol));
+                  edge->data = std::move(init_value);
+              }
+          };
+
+    ensure_sync_edge("time", "t", Tscal{0});
+    ensure_sync_edge("dt", "dt", Tscal{0});
+
+    ////////////////////////////////////////////////////////////////////////////////
+    /// main solver graph
+    ////////////////////////////////////////////////////////////////////////////////
+
     bool enable_mem_free = false;
 
     auto get_optional_free_mem = [&](auto &bind_to, auto &add_to) {

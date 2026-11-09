@@ -283,6 +283,10 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
     using namespace shamrock::solvergraph;
 
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // synchronized edges
+    ////////////////////////////////////////////////////////////////////////////////////////
+
     // register a synchronized edge only if missing, as it may have been restored from a dump
     auto ensure_sync_edge
         = [&](const std::string &name, const std::string &tex_symbol, auto init_value) {
@@ -301,6 +305,10 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     ensure_sync_edge("sink_mass", "m_{\\mathrm{sink}}", std::vector<Tscal>{});
     ensure_sync_edge("sink_angular_momentum", "\\bf{L}_{\\mathrm{sink}}", std::vector<Tvec>{});
     ensure_sync_edge("sink_accretion_radius", "r_{\\mathrm{accretion}}", std::vector<Tscal>{});
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // main solver graph
+    ////////////////////////////////////////////////////////////////////////////////////////
 
     SolverGraph &solver_graph = storage.solver_graph;
 

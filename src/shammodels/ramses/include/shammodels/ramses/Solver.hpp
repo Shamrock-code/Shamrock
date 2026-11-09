@@ -75,26 +75,6 @@ namespace shammodels::basegodunov {
         inline Tscal get_dt() { return dt_edge_value(); }
         inline void set_next_dt(Tscal dt) { dt_edge_value() = dt; }
 
-        /// Register time/dt synchronized edges if missing (idempotent)
-        inline void ensure_time_state_edges() {
-            auto &sync    = scheduler().synchronized_data;
-            auto names    = sync.get_edge_names();
-            auto has_edge = [&](const std::string &name) {
-                return std::find(names.begin(), names.end(), name) != names.end();
-            };
-
-            if (!has_edge("time")) {
-                auto edge = sync.register_edge(
-                    "time", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("time", "t"));
-                edge->data = 0;
-            }
-            if (!has_edge("dt")) {
-                auto edge = sync.register_edge(
-                    "dt", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("dt", "dt"));
-                edge->data = 0;
-            }
-        }
-
         struct SolverStepCallback {
             std::optional<std::function<void(void)>> step_begin_callback;
             std::optional<std::function<void(void)>> step_end_callback;

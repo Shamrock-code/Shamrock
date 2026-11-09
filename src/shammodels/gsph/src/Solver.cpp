@@ -66,6 +66,7 @@
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamrock/solvergraph/SerialPatchTreeEdge.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/KarrasRadixTreeField.hpp"
@@ -78,6 +79,30 @@
 
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // synchronized edges
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    auto &sync_data = scheduler().synchronized_data;
+
+    // register a synchronized edge only if missing, as it may have been restored from a dump
+    auto ensure_sync_edge
+        = [&](const std::string &name, const std::string &tex_symbol, auto init_value) {
+              using T = decltype(init_value);
+              if (!sync_data.has_edge(name)) {
+                  auto edge = sync_data.register_edge(
+                      name, shamrock::solvergraph::IDataEdgeSerializable<T>(name, tex_symbol));
+                  edge->data = std::move(init_value);
+              }
+          };
+
+    ensure_sync_edge("time", "t", Tscal{0});
+    ensure_sync_edge("dt", "dt", Tscal{0});
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // main solver graph
+    ////////////////////////////////////////////////////////////////////////////////////////
 
     storage.part_counts = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
         edges::part_counts, "N_{\\rm part}");
@@ -154,55 +179,35 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_ghost_cache(Tscal time_val) {
     // Generate the ghost handler
     // ----------------------------------------------------------------------------------------
 
-    {
-        using CfgClass = gsph::GSPHGhostHandlerConfig<Tvec>;
+    using CfgClass           = gsph::GSPHGhostHandlerConfig<Tvec>;
+    using BCConfig           = typename CfgClass::Variant;
+    using BCFree             = typename CfgClass::Free;
+    using BCPeriodic         = typename CfgClass::Periodic;
+    using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
 
-        using BCFree             = typename CfgClass::Free;
-        using BCPeriodic         = typename CfgClass::Periodic;
-        using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
+    using SolverConfigBC           = typename Config::BCConfig;
+    using SolverBCFree             = typename SolverConfigBC::Free;
+    using SolverBCPeriodic         = typename SolverConfigBC::Periodic;
+    using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
 
-        using SolverConfigBC           = typename Config::BCConfig;
-        using SolverBCFree             = typename SolverConfigBC::Free;
-        using SolverBCPeriodic         = typename SolverConfigBC::Periodic;
-        using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
+    // boundary condition selections
+    const auto &solver_bc = solver_config.boundary_config.config;
 
-        // Boundary condition selection - similar to SPH solver
-        // Note: Wall boundaries use Periodic with dynamic wall particles
-        if (SolverBCFree *c = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
-            shambase::get_check_ref(storage.ghost_handler)
-                .set(
-                    GhostHandle{
-                        scheduler(),
-                        BCFree{},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-        } else if (
-            SolverBCPeriodic *c
-            = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
-            shambase::get_check_ref(storage.ghost_handler)
-                .set(
-                    GhostHandle{
-                        scheduler(),
-                        BCPeriodic{},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-        } else if (
-            SolverBCShearingPeriodic *c
-            = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
-            // Shearing periodic boundaries (Stone 2010) - reuse SPH implementation
-            shambase::get_check_ref(storage.ghost_handler)
-                .set(
-                    GhostHandle{
-                        scheduler(),
-                        BCShearingPeriodic{
-                            c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-        } else {
-            shambase::throw_with_loc<std::runtime_error>(
-                "GSPH: Unsupported boundary condition type.");
-        }
+    BCConfig ghost_config;
+    if (std::holds_alternative<SolverBCFree>(solver_bc)) {
+        ghost_config = BCFree{};
+    } else if (std::holds_alternative<SolverBCPeriodic>(solver_bc)) {
+        ghost_config = BCPeriodic{};
+    } else if (
+        const SolverBCShearingPeriodic *c = std::get_if<SolverBCShearingPeriodic>(&solver_bc)) {
+        ghost_config = BCShearingPeriodic{
+            c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed};
+    } else {
+        shambase::throw_with_loc<std::runtime_error>("GSPH: Unsupported boundary condition type.");
     }
+
+    shambase::get_check_ref(storage.ghost_handler)
+        .set(GhostHandle{scheduler(), storage.patch_rank_owner, storage.xyzh_ghost_layout});
 
     // ----------------------------------------------------------------------------------------
     // Build the ghost cache
@@ -266,12 +271,6 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_ghost_cache(Tscal time_val) {
     });
 
     auto interface_infos = std::make_shared<DDSharedScalar<InterfaceBuildInfos>>("", "");
-
-    using CfgClass           = gsph::GSPHGhostHandlerConfig<Tvec>;
-    using BCPeriodic         = typename CfgClass::Periodic;
-    using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
-
-    const auto &ghost_config = ghost_handle.get_ghost_config();
 
     if (const BCPeriodic *cfg = std::get_if<BCPeriodic>(&ghost_config)) {
         sph::modules::FindGhostInterfacesPeriodic<Tvec> node;

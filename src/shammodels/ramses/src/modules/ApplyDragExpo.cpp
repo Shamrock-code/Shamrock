@@ -9,8 +9,8 @@
 
 /**
  * @file ApplyDragExpo.cpp
- * @author Anass Serhani (anass.serhani@cnrs.fr)
- * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Anass Serhani (anass.serhani@cnrs.fr) --no git blame--
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *

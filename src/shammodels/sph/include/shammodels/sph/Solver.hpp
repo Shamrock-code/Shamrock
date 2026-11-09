@@ -204,33 +204,6 @@ namespace shammodels::sph {
         inline Tscal get_cfl_multipler() { return cfl_multiplier_edge_value(); }
         inline void set_cfl_multipler(Tscal lambda) { cfl_multiplier_edge_value() = lambda; }
 
-        /// Register time/dt/cfl_multiplier synchronized edges if missing (idempotent)
-        inline void ensure_time_state_edges() {
-            auto &sync    = scheduler().synchronized_data;
-            auto names    = sync.get_edge_names();
-            auto has_edge = [&](const std::string &name) {
-                return std::find(names.begin(), names.end(), name) != names.end();
-            };
-
-            if (!has_edge("time")) {
-                auto edge = sync.register_edge(
-                    "time", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("time", "t"));
-                edge->data = 0;
-            }
-            if (!has_edge("dt")) {
-                auto edge = sync.register_edge(
-                    "dt", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("dt", "dt"));
-                edge->data = 0;
-            }
-            if (!has_edge("cfl_multiplier")) {
-                auto edge = sync.register_edge(
-                    "cfl_multiplier",
-                    shamrock::solvergraph::IDataEdgeSerializable<Tscal>(
-                        "cfl_multiplier", "C_{\\rm CFL}"));
-                edge->data = 1e-2;
-            }
-        }
-
         struct SolverStepCallback {
             std::optional<std::function<void(void)>> step_begin_callback;
             std::optional<std::function<void(void)>> step_end_callback;

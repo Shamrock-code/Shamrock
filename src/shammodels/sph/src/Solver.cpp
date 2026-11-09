@@ -298,6 +298,10 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
               }
           };
 
+    ensure_sync_edge("time", "t", Tscal{0});
+    ensure_sync_edge("dt", "dt", Tscal{0});
+    ensure_sync_edge("cfl_multiplier", "C_{\\rm CFL}", Tscal{1e-2});
+
     ensure_sync_edge("sink_pos", "\\bf{r}_{\\mathrm{sink}}", std::vector<Tvec>{});
     ensure_sync_edge("sink_vel", "\\bf{v}_{\\mathrm{sink}}", std::vector<Tvec>{});
     ensure_sync_edge("sink_acc_sph", "\\bf{a}_{\\mathrm{sink, sph}}", std::vector<Tvec>{});

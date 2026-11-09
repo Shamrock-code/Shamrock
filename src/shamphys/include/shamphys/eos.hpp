@@ -82,7 +82,8 @@ namespace shamphys {
      * Sound speed: \f$ c_s = \sqrt{\frac{dP}{d\rho}} = c_{s,0} \sqrt{1 + \gamma
      * \left(\frac{\rho}{\rho_c}\right)^{\gamma-1}} \f$
      *
-     * For \f$ \gamma = 5/3 \f$ this is the equation of state of e.g. Commercon et al (2008), eq. 3. The same form is used by shammath::FluidStateBarotropic.
+     * For \f$ \gamma = 5/3 \f$ this is the equation of state of e.g. Commercon et al (2008), eq. 3.
+     * The same form is used by shammath::FluidStateBarotropic.
      */
     template<class T>
     struct EOS_Barotropic {

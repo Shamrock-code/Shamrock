@@ -138,8 +138,7 @@ namespace shamphys {
     template<class Tscal>
     inline bool operator==(
         const EOS_Config_Barotropic<Tscal> &lhs, const EOS_Config_Barotropic<Tscal> &rhs) {
-        return (lhs.cs0 == rhs.cs0) && (lhs.rho_crit == rhs.rho_crit)
-               && (lhs.gamma == rhs.gamma);
+        return (lhs.cs0 == rhs.cs0) && (lhs.rho_crit == rhs.rho_crit) && (lhs.gamma == rhs.gamma);
     }
 
     /**

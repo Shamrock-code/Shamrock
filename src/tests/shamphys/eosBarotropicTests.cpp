@@ -55,7 +55,7 @@ NEW_TEST(Unittest, "shamphys/eos/barotropic/soundspeed_is_dP_drho", 1) {
         f64 dP_drho = (EOS::pressure(cs0, rho_crit, gamma, rho + eps)
                        - EOS::pressure(cs0, rho_crit, gamma, rho - eps))
                       / (2 * eps);
-        f64 cs = EOS::soundspeed(cs0, rho_crit, gamma, rho);
+        f64 cs      = EOS::soundspeed(cs0, rho_crit, gamma, rho);
 
         REQUIRE_FLOAT_EQUAL(cs * cs / dP_drho, 1., 1e-8);
     }

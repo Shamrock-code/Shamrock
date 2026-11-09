@@ -1244,11 +1244,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         SolverEOS_Barotropic *eos_config
         = std::get_if<SolverEOS_Barotropic>(&solver_config.eos_config.config)) {
 
-        auto cs0 = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("cs0", "c_{s,0}");
-        auto rho_crit
-            = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("rho_crit", "\\rho_c");
-        auto gamma = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("gamma", "\\gamma");
-        cs0->data      = eos_config->cs0;
+        auto cs0      = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("cs0", "c_{s,0}");
+        auto rho_crit = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("rho_crit", "\\rho_c");
+        auto gamma    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("gamma", "\\gamma");
+        cs0->data     = eos_config->cs0;
         rho_crit->data = eos_config->rho_crit;
         gamma->data    = eos_config->gamma;
 

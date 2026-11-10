@@ -1601,9 +1601,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
     MonofluidTVA &cfg_monofluid_tva
         = shambase::get_check_ref((std::get_if<MonofluidTVA>(&cfg.current_mode)));
 
-    // the pair gate replaces the per-particle xi switch of the smooth limiter
-    const bool use_pair_gate = cfg_monofluid_tva.smooth_s_positivity_limiter
-                               && cfg_monofluid_tva.pair_gate_s_positivity_limiter;
+    // the pair gate is independent of the limiter choice; when combined with the smooth limiter
+    // it replaces its per-particle xi switch
+    const bool use_pair_gate = cfg_monofluid_tva.pair_gate_s_positivity_limiter;
 
     std::shared_ptr<NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>> node
         = std::make_shared<NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>>(ndust, use_pair_gate);

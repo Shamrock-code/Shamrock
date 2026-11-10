@@ -158,10 +158,10 @@ namespace shammodels::sph {
                 return clamp_dust_frac.value_or(default_clamp_dust_frac);
             }
 
-            // Symmetrized per-pair (upwind) gate variant of the smooth positivity limiter (only
-            // used when smooth_s_positivity_limiter is set): the TVA flux of a pair is switched off
-            // when its upwind (donor) particle has s_j < 0. Replaces the per-particle xi switch,
-            // which breaks dust mass conservation.
+            // Symmetrized per-pair (upwind) positivity gate on the TVA flux: the flux of a pair is
+            // switched off when its upwind (donor) particle has s_j < 0. Independent of the other
+            // limiters; with smooth_s_positivity_limiter it replaces the per-particle xi switch
+            // (which breaks dust mass conservation), only the restoring term phi being kept.
             bool pair_gate_s_positivity_limiter = false;
         };
 

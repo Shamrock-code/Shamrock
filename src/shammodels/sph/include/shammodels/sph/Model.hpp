@@ -205,6 +205,17 @@ namespace shammodels::sph {
             shamlog_debug_ln("SPH", "add sink :", mass, pos, velocity, accretion_radius);
 
             shammodels::sph::add_sink(edges, mass, pos, velocity, accretion_radius);
+
+            resize_sink_dust_mass_if_tracked();
+        }
+
+        /// Keep one row of dust bins per sink in the sink dust mass edge, when it is tracked
+        inline void resize_sink_dust_mass_if_tracked() {
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            if (has_sink_dust_mass(sched.synchronized_data)) {
+                resize_sink_dust_mass<Tvec>(
+                    sched.synchronized_data, solver.solver_config.dust_config.get_dust_nvar());
+            }
         }
 
         template<class T>
@@ -956,6 +967,10 @@ namespace shammodels::sph {
                 auto edges = get_sink_edges<Tvec>(sched.synchronized_data);
                 set_sink_particles(edges, out);
             }
+
+            // dumps written before sink dust mass tracking have no sink_dust_mass edge, it is
+            // then created empty by init_solver_graph and must be padded with zeros
+            resize_sink_dust_mass_if_tracked();
 
             shamlog_debug_ln("Sys", "build local scheduler tables");
             sched.owned_patch_id = sched.patch_list.build_local();

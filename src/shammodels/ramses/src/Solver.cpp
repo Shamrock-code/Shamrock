@@ -1456,6 +1456,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         case RSM::HLLC_Davis:
             push_gas_flux_node(std::integral_constant<RSM, RSM::HLLC_Davis>{});
             break;
+        case RSM::HLLC_RAMSES:
+            push_gas_flux_node(std::integral_constant<RSM, RSM::HLLC_RAMSES>{});
+            break;
         default: shambase::throw_unimplemented("unknown flux mode");
         }
 

@@ -95,6 +95,7 @@ please wait for the corresponding feature to be published before publishing anyt
 | HLL | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) & [Thomas Guillet](https://github.com/thomasguillet) |  |  |
 | HLLC (PVRS wave speeds) | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Léodasce Sewanou](https://github.com/Akos299) |  |
 | HLLC (Davis wave speeds) | ![WIP](https://img.shields.io/badge/WIP-yellow) |  [Léodasce Sewanou](https://github.com/Akos299) |  |
+| HLLC (RAMSES wave speeds) | ![WIP](https://img.shields.io/badge/WIP-yellow) |  [Timothée David--Cléris](https://github.com/tdavidcl) |  |
 | Dusty HLL | ![WIP](https://img.shields.io/badge/WIP-yellow) |  [Léodasce Sewanou](https://github.com/Akos299) |  |
 | HB dust solver | ![WIP](https://img.shields.io/badge/WIP-yellow) |  [Léodasce Sewanou](https://github.com/Akos299) |  |
 

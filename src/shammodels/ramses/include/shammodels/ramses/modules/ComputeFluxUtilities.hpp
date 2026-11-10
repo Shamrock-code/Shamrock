@@ -75,6 +75,9 @@ namespace shammodels::basegodunov::modules {
         if constexpr (mode == RiemannSolverMode::HLLC_Davis) {
             return shammath::hllc_davis_flux(fspec, prim_l, prim_r, n);
         }
+        if constexpr (mode == RiemannSolverMode::HLLC_RAMSES) {
+            return shammath::hllc_ramses_flux(fspec, prim_l, prim_r, n);
+        }
     }
 
     /**

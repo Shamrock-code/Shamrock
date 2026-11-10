@@ -640,6 +640,35 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
+    // Boundary particles config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Whether the simulation contains frozen boundary particles
+     *
+     * When enabled, a `u32` field `freeze_id` is added to the layout. Particles with a non-zero
+     * `freeze_id` are boundary particles: they interact with their neighbours like gas, but all
+     * their time derivatives (acceleration, du/dt, d(B/rho)/dt, ...) are set to zero. They thus
+     * keep their velocity, internal energy and magnetic field, and drift at constant velocity.
+     *
+     * They impose fixed states at the edges of the domain (inflow/outflow, or a closed end next
+     * to gas at rest). Their pressure only reacts through their summed density, so a strong
+     * compression against them (e.g. a reflected shock) makes the gas leak into them: they are
+     * not a reflective hard wall.
+     */
+    bool use_boundary_particles = false;
+
+    /// Enable or disable the frozen boundary particles (adds the `freeze_id` field)
+    inline void set_boundary_particles(bool enable) { use_boundary_particles = enable; }
+
+    /// Whether the layout holds the `freeze_id` field
+    inline bool has_field_freeze_id() const { return use_boundary_particles; }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Boundary particles config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
     // CFL Configuration (config)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1507,6 +1536,8 @@ namespace shammodels::sph {
             {"debug_dump_filename", p.debug_dump_filename},
             // particle killing config
             {"particle_killing", p.particle_killing},
+            // boundary particles config
+            {"use_boundary_particles", p.use_boundary_particles},
         };
     }
 
@@ -1596,6 +1627,7 @@ namespace shammodels::sph {
         _get_to_if_contains("do_debug_dump", p.do_debug_dump);
         _get_to_if_contains("debug_dump_filename", p.debug_dump_filename);
         _get_to_if_contains("particle_killing", p.particle_killing);
+        _get_to_if_contains("use_boundary_particles", p.use_boundary_particles);
 
         if (has_used_defaults || has_updated_config) {
             if (shamcomm::world_rank() == 0) {

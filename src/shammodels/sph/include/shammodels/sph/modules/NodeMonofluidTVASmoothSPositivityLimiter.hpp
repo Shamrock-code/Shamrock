@@ -88,7 +88,9 @@ namespace shammodels::sph::modules {
                     }
 
                     // restore it slowly to 0
-                    ds_j_dt_a += (s_j_a < 0) ? -s_j_a / (10 * Ttilde_sj_a) : 0;
+                    // (|Ttilde_sj| as Ttilde_sj can become negative, which would push s_j further
+                    // into the negative range)
+                    ds_j_dt_a += (s_j_a < 0) ? -s_j_a / (10 * sycl::fabs(Ttilde_sj_a)) : 0;
 
                     ds_j_dt[thread_id] = ds_j_dt_a;
                 });
@@ -108,7 +110,7 @@ namespace shammodels::sph::modules {
                 \begin{align}
                 {xi_switch}{ds_j_dt}_{j,a} &\mathrel{+}=
                     \begin{cases}
-                        -{s_j}_{j,a} / (10\, {Ttilde_sj}_{j,a}) & {s_j}_{j,a} < 0 \\
+                        -{s_j}_{j,a} / (10\, \lvert {Ttilde_sj}_{j,a} \rvert) & {s_j}_{j,a} < 0 \\
                         0 & \text{otherwise}
                     \end{cases}
                 \end{align}

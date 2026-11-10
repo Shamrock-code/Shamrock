@@ -313,7 +313,9 @@ struct shammodels::basegodunov::SolverConfig {
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline Tscal get_happy_bk_grav_tol() { return gravity_config.tol_hp_bk; }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
-    inline bool is_coordinate_field_required() { return ext_force_config.is_coordinates_needed(); }
+    inline bool is_coordinate_field_required() {
+        return ext_force_config.is_coordinates_needed() || cooling_config.is_coordinates_needed();
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config (END)

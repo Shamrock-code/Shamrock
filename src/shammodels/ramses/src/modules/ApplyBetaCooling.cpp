@@ -8,12 +8,12 @@
 // -------------------------------------------------------//
 
 /**
- * @file BetaCooling.cpp
+ * @file ApplyBetaCooling.cpp
  * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @brief Apply beta-cooling (cooling time proportional to the rotation time)
  */
 
-#include "shammodels/ramses/modules/BetaCooling.hpp"
+#include "shammodels/ramses/modules/ApplyBetaCooling.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -21,7 +21,7 @@
 namespace shammodels::basegodunov::modules {
 
     template<class Tvec>
-    void BetaCooling<Tvec>::_impl_evaluate_internal() {
+    void ApplyBetaCooling<Tvec>::_impl_evaluate_internal() {
         using Tscal = shambase::VecComponent<Tvec>;
 
         auto edges = get_edges();
@@ -83,7 +83,7 @@ namespace shammodels::basegodunov::modules {
     }
 
     template<class Tvec>
-    std::string BetaCooling<Tvec>::_impl_get_tex() const {
+    std::string ApplyBetaCooling<Tvec>::_impl_get_tex() const {
         auto rhoe = get_rw_edge_base(0).get_tex_symbol();
         auto dt   = get_ro_edge_base(0).get_tex_symbol();
 
@@ -91,7 +91,7 @@ namespace shammodels::basegodunov::modules {
         Apply $\beta$-cooling
 
         \begin{align}
-        {{rhoe}}_i &= {{rhoe}}_i -  {{dt}} \dfrac{e_\mathrm{int,i} \Omega } {\beta}
+        {{rhoe}}_i &= {{rhoe}}_i - e_\mathrm{int,i} + e_\mathrm{int,i} \exp\left(\frac{ {{dt}} \Omega } {\beta} \right)
         \end{align}
     )tex";
 
@@ -103,4 +103,4 @@ namespace shammodels::basegodunov::modules {
 
 } // namespace shammodels::basegodunov::modules
 
-template class shammodels::basegodunov::modules::BetaCooling<f64_3>;
+template class shammodels::basegodunov::modules::ApplyBetaCooling<f64_3>;

@@ -156,6 +156,24 @@ namespace shammodels::basegodunov {
     >>> cfg.set_cooling_mode(InstantBarotropic(rho0=1e-13, gamma0=1.4, cs0=0.2))
 )==")
             .def(
+                "set_cooling_mode",
+                [](TConfig &self, const typename TCooling::BetaCooling &mode) {
+                    self.cooling_config.config = mode;
+                },
+                py::arg("mode"),
+                R"==(
+    Set the beta cooling.
+
+    Cooling time proportional to the rotation time.
+
+    :math:`e_\mathrm{int} = e_\mathrm{int,i} \exp\left(\frac{ {{dt}} \Omega } {\beta} \right)`
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import BetaCooling
+    >>> cfg.set_cooling_mode(BetaCooling(beta=10, center=(0.5, 0.5, 0.5)))
+)==")
+            .def(
                 "set_riemann_solver",
                 [](TConfig &self, RiemannSolverMode mode) {
                     self.set_riemann_solver(mode);

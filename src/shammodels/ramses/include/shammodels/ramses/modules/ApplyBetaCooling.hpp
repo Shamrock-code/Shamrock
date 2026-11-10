@@ -9,7 +9,7 @@
 
 #pragma once
 /**
- * @file BetaCooling.hpp
+ * @file ApplyBetaCooling.hpp
  * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @brief Apply beta-cooling (cooling time proportional to the rotation time)
  */
@@ -38,7 +38,7 @@ namespace shammodels::basegodunov::modules {
     /// Apply beta-cooling,
     /// tcool = beta / omega
     template<class Tvec>
-    class BetaCooling : public shamrock::solvergraph::INode {
+    class ApplyBetaCooling : public shamrock::solvergraph::INode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
@@ -47,14 +47,14 @@ namespace shammodels::basegodunov::modules {
         Tvec center;    ///< Center to compute omega
 
         public:
-        BetaCooling(u32 block_size, Tscal beta, Tvec center)
+        ApplyBetaCooling(u32 block_size, Tscal beta, Tvec center)
             : block_size(block_size), beta(beta), center(center) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "BetaCooling"; }
+        inline virtual std::string _impl_get_label() const { return "ApplyBetaCooling"; }
 
         virtual std::string _impl_get_tex() const;
     };

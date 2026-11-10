@@ -153,14 +153,14 @@ namespace shammodels {
          * @brief Set the EOS configuration to a barotropic equation of state
          *
          * The equation of state is given by:
-         * \f$ P = c_{s,0}^2 \rho \left[1 + (\rho / \rho_c)^{\gamma - 1}\right] \f$
+         * \f$ P = c_{s,0}^2 \rho \left[1 + (\rho / \rho_0)^{\gamma - 1}\right] \f$
          *
          * @param cs0 Isothermal sound speed of the low density regime
-         * @param rho_crit Critical density of the isothermal to adiabatic transition
+         * @param rho0 Critical density of the isothermal to adiabatic transition
          * @param gamma Adiabatic index of the high density regime
          */
-        inline void set_barotropic(Tscal cs0, Tscal rho_crit, Tscal gamma) {
-            config = Barotropic{cs0, rho_crit, gamma};
+        inline void set_barotropic(Tscal cs0, Tscal rho0, Tscal gamma) {
+            config = Barotropic{cs0, rho0, gamma};
         }
 
         /**
@@ -211,7 +211,7 @@ void shammodels::EOSConfig<Tvec>::print_status() {
     } else if (Barotropic *eos_config = std::get_if<Barotropic>(&config)) {
         logger::raw_ln("barotropic : ");
         logger::raw_ln("cs0", eos_config->cs0);
-        logger::raw_ln("rho_crit", eos_config->rho_crit);
+        logger::raw_ln("rho0", eos_config->rho0);
         logger::raw_ln("gamma", eos_config->gamma);
     } else {
         shambase::throw_unimplemented();

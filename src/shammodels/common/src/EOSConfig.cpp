@@ -33,7 +33,7 @@ namespace shammodels {
      *    "cs0"?: number,
      *    "q"?: number,
      *    "r0"?: number,
-     *    "rho_crit"?: number
+     *    "rho0"?: number
      * }
      * \endcode
      *
@@ -107,7 +107,7 @@ namespace shammodels {
                 {"Tvec", type_id},
                 {"eos_type", "barotropic"},
                 {"cs0", eos_config->cs0},
-                {"rho_crit", eos_config->rho_crit},
+                {"rho0", eos_config->rho0},
                 {"gamma", eos_config->gamma}};
         } else {
             shambase::throw_unimplemented(); // should never be reached
@@ -188,9 +188,7 @@ namespace shammodels {
             p.config = Fermi{j.at("mu_e").get<Tscal>()};
         } else if (eos_type == "barotropic") {
             p.config = Barotropic{
-                j.at("cs0").get<Tscal>(),
-                j.at("rho_crit").get<Tscal>(),
-                j.at("gamma").get<Tscal>()};
+                j.at("cs0").get<Tscal>(), j.at("rho0").get<Tscal>(), j.at("gamma").get<Tscal>()};
         } else {
             shambase::throw_unimplemented("Unknown or unsupported eos_type found in json");
         }

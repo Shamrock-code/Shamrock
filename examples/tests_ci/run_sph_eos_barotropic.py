@@ -5,17 +5,17 @@ CI test: SPH barotropic equation of state
 The barotropic equation of state
 
 .. math::
-    P = c_{s,0}^2 \\rho \\left[1 + \\left(\\frac{\\rho}{\\rho_c}\\right)^{\\gamma - 1}\\right]
+    P = c_{s,0}^2 \\rho \\left[1 + \\left(\\frac{\\rho}{\\rho_0}\\right)^{\\gamma - 1}\\right]
 
-is isothermal well below :math:`\\rho_c` and a polytrope
-:math:`P = K \\rho^\\gamma` with :math:`K = c_{s,0}^2 \\rho_c^{1-\\gamma}` well above it.
+is isothermal well below :math:`\\rho_0` and a polytrope
+:math:`P = K \\rho^\\gamma` with :math:`K = c_{s,0}^2 \\rho_0^{1-\\gamma}` well above it.
 
 This test evolves the same small periodic setup (a velocity perturbation in a
 uniform box) with
 
-* ``set_eos_barotropic`` with :math:`\\rho_c \\gg \\rho`, compared to
+* ``set_eos_barotropic`` with :math:`\\rho_0 \\gg \\rho`, compared to
   ``set_eos_isothermal(cs0)``,
-* ``set_eos_barotropic`` with :math:`\\rho_c \\ll \\rho`, compared to
+* ``set_eos_barotropic`` with :math:`\\rho_0 \\ll \\rho`, compared to
   ``set_eos_polytropic(K, gamma)``,
 
 and checks that both pairs of runs agree. It also checks that invalid
@@ -37,7 +37,7 @@ bmax = (0.6, 0.6, 0.6)
 t_end = 0.05
 
 # HCP neighbours are 2 dr apart, the number density is sqrt(2) / (2 dr)^3
-rho0 = pmass * np.sqrt(2) / (2 * dr) ** 3
+rho_mean = pmass * np.sqrt(2) / (2 * dr) ** 3
 
 
 def run(set_eos):
@@ -92,33 +92,33 @@ def compare(name, ref, got, rtol):
 gamma = 5.0 / 3.0
 
 # %%
-# Isothermal limit: rho_c >> rho
+# Isothermal limit: rho0 >> rho
 
 cs0 = 1.0
 v_iso = run(lambda cfg: cfg.set_eos_isothermal(cs0))
-v_baro_iso = run(lambda cfg: cfg.set_eos_barotropic(cs0=cs0, rho_crit=1e30, gamma=gamma))
+v_baro_iso = run(lambda cfg: cfg.set_eos_barotropic(cs0=cs0, rho0=1e30, gamma=gamma))
 compare("isothermal limit", v_iso, v_baro_iso, 1e-10)
 
 # %%
-# Adiabatic limit: rho_c << rho, choosing cs0 such that K = 1 (the sound speed stays ~1)
+# Adiabatic limit: rho0 << rho, choosing cs0 such that K = 1 (the sound speed stays ~1)
 #
-# The barotropic pressure differs from the polytrope by a relative (rho_c / rho)^(gamma - 1)
+# The barotropic pressure differs from the polytrope by a relative (rho0 / rho)^(gamma - 1)
 
 K = 1.0
-rho_crit = 1e-12 * rho0
-cs0_poly = np.sqrt(K * rho_crit ** (gamma - 1))
+rho0 = 1e-12 * rho_mean
+cs0_poly = np.sqrt(K * rho0 ** (gamma - 1))
 
 v_poly = run(lambda cfg: cfg.set_eos_polytropic(K, gamma))
-v_baro_poly = run(lambda cfg: cfg.set_eos_barotropic(cs0=cs0_poly, rho_crit=rho_crit, gamma=gamma))
+v_baro_poly = run(lambda cfg: cfg.set_eos_barotropic(cs0=cs0_poly, rho0=rho0, gamma=gamma))
 compare("adiabatic limit", v_poly, v_baro_poly, 1e-6)
 
 # %%
 # Invalid parameters must be rejected when the config is set
 
 for bad in [
-    dict(cs0=-1.0, rho_crit=1.0, gamma=gamma),
-    dict(cs0=1.0, rho_crit=0.0, gamma=gamma),
-    dict(cs0=1.0, rho_crit=1.0, gamma=1.0),
+    dict(cs0=-1.0, rho0=1.0, gamma=gamma),
+    dict(cs0=1.0, rho0=0.0, gamma=gamma),
+    dict(cs0=1.0, rho0=1.0, gamma=1.0),
 ]:
     ctx = shamrock.Context()
     ctx.pdata_layout_new()

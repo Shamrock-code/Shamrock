@@ -91,7 +91,7 @@ namespace shammodels::basegodunov::modules {
         Apply $\beta$-cooling
 
         \begin{align}
-        {{rhoe}}_i &= {{rhoe}}_i - e_\mathrm{int,i} + e_\mathrm{int,i} \exp\left(\frac{ {{dt}} \Omega } {\beta} \right)
+        {{rhoe}}_i &= {{rhoe}}_i - e_\mathrm{int,i} + e_\mathrm{int,i} \exp\left(-\frac{ {{dt}} \Omega } {\beta} \right)
         \end{align}
     )tex";
 

@@ -166,7 +166,7 @@ namespace shammodels::basegodunov {
 
     Cooling time proportional to the rotation time.
 
-    :math:`e_\mathrm{int} = e_\mathrm{int,i} \exp\left(\frac{ {{dt}} \Omega } {\beta} \right)`
+    :math:`e_\mathrm{int} = e_\mathrm{int,i} \exp\left(-\frac{ {{dt}} \Omega } {\beta} \right)`
 
     Usage
     -----
@@ -867,6 +867,49 @@ ON_PYTHON_INIT {
         .def("__repr__", [](const typename Cooling::InstantBarotropic &self) {
             return sham::format(
                 "InstantBarotropic(rho0={}, gamma0={}, cs0={})", self.rho0, self.gamma0, self.cs0);
+        });
+
+    py::class_<typename Cooling::BetaCooling>(
+        mramses,
+        "BetaCooling",
+        R"==(
+    Beta cooling (Gammie 2001), to be given to ``cfg.set_cooling_mode``.
+
+    The internal energy of every cell decays on the cooling time
+    :math:`t_{\rm cool} = \beta / |\Omega|`, with :math:`\Omega` the angular velocity of the gas
+    around the axis parallel to :math:`z` going through ``center``:
+
+    .. math::
+        e_{\rm int}^{n+1} = e_{\rm int}^{n} \exp\left(-\frac{|\Omega| \Delta t}{\beta}\right)
+
+    Parameters
+    ----------
+    beta : float
+        Cooling time in units of the inverse angular velocity (> 0)
+    center : tuple[float, float, float]
+        A point on the rotation axis (the axis is parallel to :math:`z`)
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import BetaCooling
+    >>> cfg.set_cooling_mode(BetaCooling(beta=10, center=(0.5, 0.5, 0.5)))
+)==")
+        .def(
+            py::init([](Tscal beta, f64_3 center) {
+                return typename Cooling::BetaCooling{beta, center};
+            }),
+            py::kw_only(),
+            py::arg("beta"),
+            py::arg("center"))
+        .def_readwrite("beta", &Cooling::BetaCooling::beta)
+        .def_readwrite("center", &Cooling::BetaCooling::center)
+        .def("__repr__", [](const typename Cooling::BetaCooling &self) {
+            return sham::format(
+                "BetaCooling(beta={}, center=({}, {}, {}))",
+                self.beta,
+                self.center.x(),
+                self.center.y(),
+                self.center.z());
         });
 
     add_instance<f64_3, i64_3>(

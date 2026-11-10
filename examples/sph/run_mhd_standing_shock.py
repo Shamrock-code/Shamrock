@@ -131,12 +131,18 @@ def _unstable_eigendirection():
     w, v = np.linalg.eig(_jacobian_at_left())
     idx = np.argmax(w.real)
     vec = v[:, idx].real
-    return vec / np.linalg.norm(vec)
+    vec = vec / np.linalg.norm(vec)
+    # the sign of an eigenvector is arbitrary: orient it toward the downstream state,
+    # otherwise the shooting follows the other branch of the unstable manifold
+    if vec[0] * (By_R - By_L) < 0:
+        vec = -vec
+    return vec
 
 
-def integrate_shock_profile(x_l, x_r, n=20000, epsilon=-1e-4):
-    """RK4 shooting solution from the left (upstream) boundary, perturbed
-    along the unstable manifold, integrated forward in x."""
+def integrate_shock_profile(x_l, x_r, n=20000, epsilon=1e-4):
+    """RK4 shooting solution from the left (upstream) boundary, perturbed by
+    `epsilon` along the unstable manifold (oriented toward the downstream state),
+    integrated forward in x."""
     eigvec = _unstable_eigendirection()
     xs = np.linspace(x_l, x_r, n)
     dx = xs[1] - xs[0]
@@ -160,6 +166,8 @@ print(
     f"analytic shooting solution: final By={By_th[-1]:.4f} (target {By_R}), "
     f"final Bz={Bz_th[-1]:.4f} (target {Bz_R})"
 )
+if not np.allclose((By_th[-1], Bz_th[-1]), (By_R, Bz_R), atol=1e-2):
+    raise RuntimeError("analytic shooting solution does not reach the downstream state")
 
 # %%
 ctx = shamrock.Context()
@@ -168,16 +176,13 @@ model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="C4"
 
 cfg = model.gen_default_config()
 cfg.set_units(codeu)
-cfg.set_artif_viscosity_None()  # artificial viscosity terms are computed in the MHD solver
+cfg.set_artif_viscosity_Constant(alpha_u=0, alpha_AV=1.0, beta_AV=2.0)
 cfg.set_NonIdealMHD(
     sigma_mhd=0,
-    sigma_u=0,
     etaO=COR,
     etaH=CHE,
     etaAD=CAD,
     alpha_B=1.0,
-    alpha_AV=1.0,
-    beta_AV=2.0,
     # semi-constant resistivities (as in Phantom's NICIL `icnstsemi` mode), recomputed every step
     # from the local state: etaO = COR, etaH = CHE |B|, etaAD = CAD |B|^2 / rho (mu_0 = 1)
     eta_semi_constant=True,
@@ -266,8 +271,11 @@ By_binned = np.array(
 )
 bin_centers = 0.5 * (bins[:-1] + bins[1:])
 valid = ~np.isnan(By_binned)
-i_sim = np.argmin(np.abs(By_binned[valid] - By_mid))
-x0_sim = bin_centers[valid][i_sim]
+# the periodic box also has a reversed transition at the x = +-half_width seam,
+# restrict the search to the central one
+central = valid & (np.abs(bin_centers) < half_width / 2)
+i_sim = np.argmin(np.abs(By_binned[central] - By_mid))
+x0_sim = bin_centers[central][i_sim]
 
 x_shift = x0_sim - x0_th
 

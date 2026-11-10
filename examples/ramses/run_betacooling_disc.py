@@ -340,7 +340,7 @@ ani = show_slice_animation("rho_face")
 plt.show()
 
 # %%
-# Vertical density slice (:math:`y = y_{\rm star}`)
+# Vertical density slice
 ani = show_slice_animation("rho_edge")
 plt.show()
 
@@ -350,6 +350,6 @@ ani = show_slice_animation("temp_face")
 plt.show()
 
 # %%
-# Vertical temperature slice (:math:`y = y_{\rm star}`)
+# Vertical temperature slice
 ani = show_slice_animation("temp_edge")
 plt.show()

@@ -13,6 +13,7 @@
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <shamunits/constant_table.hpp>
+#include <stdexcept>
 
 namespace {
 
@@ -69,5 +70,51 @@ NEW_TEST(Unittest, "shammodels/ramses/SolverConfig::gravity", 1) {
         REQUIRE_EQUAL(out.gravity_config.tol, 1e-7);
         REQUIRE_EQUAL(out.gravity_config.tol_hp_bk, 1e-6);
         REQUIRE_EQUAL(out.gravity_config.Niter_max, 100u);
+    }
+}
+
+NEW_TEST(Unittest, "shammodels/ramses/SolverConfig::gravity_check_config", 1) {
+
+    using namespace shammodels::basegodunov;
+
+    // a valid self-gravity config, except for the tested option (the checks below are done
+    // before the experimental feature check)
+    auto make_cfg = []() {
+        Config cfg{};
+        cfg.gravity_config.gravity_mode = CG;
+        cfg.ext_force_config.set_coupling(ExtForceCoupling::Trapezoidal);
+        return cfg;
+    };
+
+    { // the midpoint coupling (default) is rejected
+        Config cfg = make_cfg();
+        cfg.ext_force_config.set_coupling(ExtForceCoupling::Midpoint);
+        REQUIRE_EXCEPTION_THROW(cfg.check_config(), std::invalid_argument);
+    }
+
+    { // solvers that are not implemented
+        Config cfg                      = make_cfg();
+        cfg.gravity_config.gravity_mode = PCG;
+        REQUIRE_EXCEPTION_THROW(cfg.check_config(), std::invalid_argument);
+        cfg.gravity_config.gravity_mode = MULTIGRID;
+        REQUIRE_EXCEPTION_THROW(cfg.check_config(), std::invalid_argument);
+    }
+
+    { // dust
+        Config cfg                          = make_cfg();
+        cfg.dust_config.dust_riemann_config = HB;
+        cfg.dust_config.ndust               = 1;
+        REQUIRE_EXCEPTION_THROW(cfg.check_config(), std::invalid_argument);
+    }
+
+    { // drag
+        Config cfg                         = make_cfg();
+        cfg.drag_config.drag_solver_config = IRK1;
+        REQUIRE_EXCEPTION_THROW(cfg.check_config(), std::invalid_argument);
+    }
+
+    { // no self-gravity: the midpoint coupling is fine
+        Config cfg{};
+        cfg.check_config();
     }
 }

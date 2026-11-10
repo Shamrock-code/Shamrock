@@ -52,20 +52,6 @@ namespace shammodels::sph {
     namespace details {
 
         template<class T>
-        inline void ensure_sync_data_edge(
-            shamrock::solvergraph::SolverGraphSerializable &sync_data,
-            const std::string &name,
-            const std::string &tex_symbol,
-            T init_value) {
-
-            if (!sync_data.has_edge(name)) {
-                auto edge = sync_data.register_edge(
-                    name, shamrock::solvergraph::IDataEdgeSerializable<T>(name, tex_symbol));
-                edge->data = std::move(init_value);
-            }
-        }
-
-        template<class T>
         inline T &get_sync_data(
             shamrock::solvergraph::SolverGraphSerializable &sync, const std::string &name) {
             return sync.template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<T>>(name)
@@ -75,30 +61,7 @@ namespace shammodels::sph {
     } // namespace details
 
     /**
-     * @brief Register sink SoA synchronized edges if missing (idempotent).
-     */
-    template<class Tvec>
-    inline void ensure_sink_edges(shamrock::solvergraph::SolverGraphSerializable &sync) {
-        using Tscal = shambase::VecComponent<Tvec>;
-
-        details::ensure_sync_data_edge<std::vector<Tvec>>(
-            sync, "sink_pos", "\\bf{r}_{\\mathrm{sink}}", {});
-        details::ensure_sync_data_edge<std::vector<Tvec>>(
-            sync, "sink_vel", "\\bf{v}_{\\mathrm{sink}}", {});
-        details::ensure_sync_data_edge<std::vector<Tvec>>(
-            sync, "sink_acc_sph", "\\bf{a}_{\\mathrm{sink, sph}}", {});
-        details::ensure_sync_data_edge<std::vector<Tvec>>(
-            sync, "sink_acc_ext", "\\bf{a}_{\\mathrm{sink, ext}}", {});
-        details::ensure_sync_data_edge<std::vector<Tscal>>(
-            sync, "sink_mass", "m_{\\mathrm{sink}}", {});
-        details::ensure_sync_data_edge<std::vector<Tvec>>(
-            sync, "sink_angular_momentum", "\\bf{L}_{\\mathrm{sink}}", {});
-        details::ensure_sync_data_edge<std::vector<Tscal>>(
-            sync, "sink_accretion_radius", "r_{\\mathrm{accretion}}", {});
-    }
-
-    /**
-     * @brief Named SoA getters (edges must already exist; call ensure_sink_edges first).
+     * @brief Named SoA getters (edges must already exist; registered by Solver::init_solver_graph).
      * Prefer these when a function only needs a subset of sink fields.
      */
     template<class Tvec>
@@ -146,7 +109,7 @@ namespace shammodels::sph {
      * @brief Check whether any sinks are present by inspecting sink_pos only.
      *
      * Prefer this for early-exit checks instead of fetching the full SinkEdges struct.
-     * Edges must already exist (call ensure_sink_edges first).
+     * Edges must already exist (registered by Solver::init_solver_graph).
      */
     template<class Tvec>
     inline bool has_sinks(shamrock::solvergraph::SolverGraphSerializable &sync) {
@@ -156,7 +119,7 @@ namespace shammodels::sph {
     /**
      * @brief Fetch mutable references to the sink SoA synchronized edges.
      *
-     * Edges must already exist (call ensure_sink_edges first).
+     * Edges must already exist (registered by Solver::init_solver_graph).
      * Prefer named getters when only a subset of fields is needed.
      */
     template<class Tvec>

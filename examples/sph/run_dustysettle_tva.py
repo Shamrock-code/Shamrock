@@ -103,11 +103,11 @@ lx = 12
 ly = 12
 lz = int(os.environ.get("LZ", "64"))
 
-# Time
-tlist = [0.1 * i for i in range(1000)]
-iinject = 20
-tinject = tlist[iinject]
-t_end = tinject + 3.0
+# Time, in units of the orbital period at R0
+t_orb = 2 * np.pi * np.sqrt(R0**3 / (ucte.G() * central_mass))
+tinject = 2.0 * t_orb  # time at which the dust is injected
+t_end = tinject + 3.0 * t_orb
+dt_analysis = 0.1 * t_orb  # time between two analysis plots
 
 # Scheduler
 scheduler_split_val = int(2e7)
@@ -119,7 +119,7 @@ av_alpha_max = 1
 av_sigma_decay = 0.1
 av_alpha_u = 1
 av_beta_AV = 2
-vel_dissipation_eta = 5
+vel_dissipation_eta = 5 / t_orb
 
 # CFL (before dust injection)
 cfl_cour_setup = 0.25
@@ -129,7 +129,7 @@ cfl_cour_inject = 0.1
 cfl_force_inject = 0.1
 
 # Injection check
-max_v_inject_threshold = 1.0
+max_v_inject_threshold = 3.0  # in units of cs
 
 # Analytical reference
 reference_tau = 0.025
@@ -262,9 +262,15 @@ def compute_sj_new_j(patchdata, j):
 # ------------------------------------------
 
 
-def S_rho(rho, v, vp, hz, tau, Nz):
+# The matrix assembly loops are jitted with numba when available, but
+# ``solve_banded`` is a scipy function that numba cannot compile, so the solve
+# itself is done in plain Python by ``S_rho`` and ``S_v``.
+
+
+@maybe_njit
+def _S_rho_system(rho, v, vp, hz, tau, Nz):
     """
-    Step rho forward using Crank-Nicolson on continuity equation.
+    Assemble the banded Crank-Nicolson system for the continuity equation.
     """
 
     npts = Nz + 2
@@ -309,6 +315,15 @@ def S_rho(rho, v, vp, hz, tau, Nz):
     r[1:] += bd_lower[1:] * rho[:-1]
     r[:-1] += bd_upper[:-1] * rho[1:]
 
+    return ab_A, r
+
+
+def S_rho(rho, v, vp, hz, tau, Nz):
+    """
+    Step rho forward using Crank-Nicolson on continuity equation.
+    """
+
+    ab_A, r = _S_rho_system(rho, v, vp, hz, tau, Nz)
     ret = solve_banded((1, 1), ab_A, r)
     ret = np.maximum(ret, 0)
 
@@ -333,9 +348,10 @@ def S_rho(rho, v, vp, hz, tau, Nz):
     return ret
 
 
-def S_v(v, vbar, vbarp, rho, rhop, hz, zbar, tau, Nz, Stj):
+@maybe_njit
+def _S_v_system(v, vbar, vbarp, hz, zbar, tau, Nz, Stj):
     """
-    Step velocity forward using Crank-Nicolson.
+    Assemble the banded Crank-Nicolson system for the velocity equation.
     """
 
     npts = Nz + 2
@@ -372,11 +388,16 @@ def S_v(v, vbar, vbarp, rho, rhop, hz, zbar, tau, Nz, Stj):
     r[:-1] += bd_upper[:-1] * v[1:]
     r += E0
 
+    return ab_A, r
+
+
+def S_v(v, vbar, vbarp, rho, rhop, hz, zbar, tau, Nz, Stj):
+    """
+    Step velocity forward using Crank-Nicolson.
+    """
+
+    ab_A, r = _S_v_system(v, vbar, vbarp, hz, zbar, tau, Nz, Stj)
     return solve_banded((1, 1), ab_A, r)
-
-
-S_rho = maybe_njit(S_rho)
-S_v = maybe_njit(S_v)
 
 
 class ReferenceDustySettle:
@@ -641,14 +662,14 @@ def analyse_state(j):
             print(ana_epsilon.max(), ana_epsilon.min())
 
             L2_error = compute_L2_error(
-                z, s_j[:, i] ** 2 / rho, reference_dusty_settle.soluces[i].zbar, ana_epsilon
+                z, s_j[:, i] ** 2 / rho, reference_dusty_settle.soluces[i].z_arr(), ana_epsilon
             )
 
             l2_error_all[i] = L2_error
 
             reference_plots.append(
                 {
-                    "zbar": reference_dusty_settle.soluces[i].zbar,
+                    "z": reference_dusty_settle.soluces[i].z_arr(),
                     "rho": reference_dusty_settle.soluces[i].rho * reference_dusty_settle.rhoscale,
                     "epsilon": ana_epsilon,
                     "v": reference_dusty_settle.soluces[i].v * reference_dusty_settle.vscale,
@@ -730,14 +751,14 @@ def plot_state(j, snapshot_data):
 
         if reference_plots is not None:
             ax_rho.plot(
-                reference_plots[i]["zbar"],
+                reference_plots[i]["z"],
                 reference_plots[i]["rho"],
                 "--",
                 color="0.0",
             )
 
             ax_epsilon.plot(
-                reference_plots[i]["zbar"],
+                reference_plots[i]["z"],
                 reference_plots[i]["epsilon"],
                 "--",
                 color="0.0",
@@ -774,7 +795,7 @@ def plot_state(j, snapshot_data):
 
         if reference_plots is not None:
             ax_delta_v.plot(
-                reference_plots[i]["zbar"],
+                reference_plots[i]["z"],
                 reference_plots[i]["v"],
                 "--",
                 color="0.0",
@@ -917,7 +938,7 @@ def setup_model():
         raise ValueError(f"Invalid dust limiter: {limiter}")
 
     cfg.set_dust_drag_epstein(gamma, mrn_distribution.grain_size, mrn_distribution.rho_grains)
-    cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)
+    cfg.add_ext_force_vertical_disc_potential(central_mass=central_mass, R0=R0)
     cfg.add_ext_force_velocity_dissipation(eta=vel_dissipation_eta)
     cfg.set_neigh_cache_strategy(NeighCacheStrategy.SingleStage)
     cfg.set_show_cfl_detail(True)
@@ -954,7 +975,7 @@ def setup_model():
     if random_vel_pert:
         rng = np.random.default_rng(42)
 
-        ampl = dr / 1.0
+        ampl = dr / t_orb
         print(f"random velocity perturbation amplitude = {ampl}")
 
         def pert_func(r):
@@ -989,7 +1010,7 @@ class Simulation(SimulationRunner):
         max_v = get_max_v()
         print(f"max_v = {max_v}")
 
-        if max_v > max_v_inject_threshold:
+        if max_v > max_v_inject_threshold * cs:
             raise ValueError("max_v is too high, please increase the injection time")
 
         for k in range(ndust):
@@ -1004,7 +1025,7 @@ class Simulation(SimulationRunner):
 
         self.model.set_dt(0.0)  # to help the corrector on next step after adding dust
 
-    @callback(tsim_interval=0.1)  # Do the analysis every dt_stop
+    @callback(tsim_interval=dt_analysis)
     def analysis_plots(self, j):
         global reference_dusty_settle
 
@@ -1063,16 +1084,15 @@ if shamrock.sys.world_rank() == 0:
 t, dust_mass = load_data_from_json("dust_mass.json", "dust_mass")
 dust_mass = np.array(dust_mass)
 
-# tinject = first non nan
+# first analysis with dust (the dust mass is nan before the injection)
 iinject = np.argmax(~np.isnan(dust_mass)[:, 0])
-tinject = np.array(t)[iinject]
 
 t = np.array(t) - tinject
 
 St = np.zeros(ndust)
 
+t_dyn = 1 / omega_k(R0)
 for k in range(ndust):
-    t_dyn = 1
     ts = shamrock.phys.epstein_stopping_time(
         rho_grain=mrn_distribution.rho_grains[k],
         s_grain=mrn_distribution.grain_size[k],

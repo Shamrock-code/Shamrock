@@ -93,7 +93,7 @@ def plot_rho(ax, snapshot_data, dust_colors):
 
         if reference_plots is not None:
             ax.plot(
-                reference_plots[i]["zbar"],
+                reference_plots[i]["z"],
                 reference_plots[i]["rho"],
                 "--",
                 linewidth=1,

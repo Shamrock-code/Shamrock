@@ -96,9 +96,11 @@ namespace shammodels::basegodunov {
 
                 Tscal scale_factor = solver.solver_config.grid_coord_to_pos_fact;
                 for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
-                    Tvec block_min  = cell_min[i].template convert<Tscal>() * scale_factor;
-                    Tvec block_max  = cell_max[i].template convert<Tscal>() * scale_factor;
-                    Tvec delta_cell = (block_max - block_min) / Block::side_size;
+                    Tvec block_min = cell_min[i].template convert<Tscal>() * scale_factor;
+                    // size from the int coords difference, so that it does not depend on the
+                    // block position
+                    Tvec delta_cell = (cell_max[i] - cell_min[i]).template convert<Tscal>()
+                                      * (scale_factor / Block::side_size);
 
                     Block::for_each_cell_in_block(delta_cell, [&](u32 lid, Tvec delta) {
                         Tvec bmin = block_min + delta;
@@ -173,15 +175,12 @@ namespace shammodels::basegodunov {
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
-            // Migrate old dumps that stored time/dt in solver_config.time_state (before PR #1932)
-            auto sync_names = sched.synchronized_data.get_edge_names();
+            // Migrate old dumps that stored time/dt in solver_config.time_state (before PR #1932).
+            // Checking for time is equivalent to dumps written after this migration. It must be
+            // checked before init_solver_graph, which creates the time/dt edges if missing.
+            bool had_time_edge = sched.synchronized_data.has_edge("time");
 
-            // Checking for time is equivalent to dumps written after this migration
-            bool had_time_edge
-                = std::find(sync_names.begin(), sync_names.end(), "time") != sync_names.end();
-
-            // create time/dt synchronization edges if not present
-            solver.ensure_time_state_edges();
+            solver.init_solver_graph();
 
             if (!had_time_edge) {
                 if (j.at("solver_config").contains("time_state")) {

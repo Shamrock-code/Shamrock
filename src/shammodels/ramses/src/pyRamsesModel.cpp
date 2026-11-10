@@ -11,14 +11,19 @@
  * @file pyRamsesModel.cpp
  * @author Benoit Commercon (benoit.commercon@ens-lyon.fr)
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
 
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/ramses/Model.hpp"
 #include "shammodels/ramses/Solver.hpp"
@@ -29,6 +34,23 @@
 #include <memory>
 
 namespace shammodels::basegodunov {
+
+    namespace {
+        /// Warn that a legacy ``cfg.set_riemann_solver_xxx()`` setter is deprecated
+        void warn_deprecated_riemann_setter(const char *old_name, const char *mode) {
+            ON_RANK_0(
+                shamcomm::logs::warn_ln(
+                    "Ramses",
+                    sham::format(
+                        ".{}() is deprecated and will be removed at some point, replace it by:\n"
+                        "    from shamrock.model_ramses import {}\n"
+                        "    cfg.set_riemann_solver({})",
+                        old_name,
+                        mode,
+                        mode)));
+        }
+    } // namespace
+
     template<class Tvec, class TgridVec>
     void add_instance(py::module &m, std::string name_config, std::string name_model) {
 
@@ -38,6 +60,7 @@ namespace shammodels::basegodunov {
         using T                = Model<Tvec, TgridVec>;
         using TConfig          = typename T::Solver::Config;
         using TAnalysisSodTube = shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>;
+        using TCooling         = CoolingConfig<Tvec>;
 
         shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
         shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
@@ -78,29 +101,153 @@ namespace shammodels::basegodunov {
                 py::arg("gamma"))
             .def(
                 "set_eos_reset_barotropic",
-                [](TConfig &self, Tscal rho_crit, Tscal cs0, Tscal gamma_baro, Tscal gamma) {
-                    self.eos_config.set_reset_barotropic(rho_crit, cs0, gamma_baro, gamma);
+                [](TConfig & /*self*/, py::args /*args*/, py::kwargs /*kwargs*/) {
+                    const std::string msg
+                        = ".set_eos_reset_barotropic(rho_crit, cs0, gamma_baro, gamma) has been "
+                          "removed, as the reset onto the barotrope is an instantaneous cooling "
+                          "and not an equation of state. Replace it by:\n"
+                          "    from shamrock.model_ramses import InstantBarotropic\n"
+                          "    cfg.set_eos_adiabatic(gamma)\n"
+                          "    cfg.set_cooling_mode(InstantBarotropic(rho0=rho_crit, "
+                          "gamma0=gamma_baro, cs0=cs0))";
+                    ON_RANK_0(shamcomm::logs::err_ln("Ramses", msg));
+                    shambase::throw_with_loc<std::runtime_error>(msg);
                 },
-                py::kw_only(),
-                py::arg("rho_crit"),
-                py::arg("cs0"),
-                py::arg("gamma_baro"),
-                py::arg("gamma"))
+                R"==(
+    Removed, raises an error.
+
+    The reset of the internal energy onto a barotrope is now a cooling mode, replace
+    ``cfg.set_eos_reset_barotropic(rho_crit=..., cs0=..., gamma_baro=..., gamma=...)`` by
+    ``cfg.set_eos_adiabatic(gamma)`` and
+    ``cfg.set_cooling_mode(InstantBarotropic(rho0=rho_crit, gamma0=gamma_baro, cs0=cs0))``.
+)==")
+            .def(
+                "set_cooling_mode",
+                [](TConfig &self, const typename TCooling::None &) {
+                    self.cooling_config.set_none();
+                },
+                py::arg("mode"),
+                R"==(
+    Disable the cooling (the default).
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import NoCooling
+    >>> cfg.set_cooling_mode(NoCooling())
+)==")
+            .def(
+                "set_cooling_mode",
+                [](TConfig &self, const typename TCooling::InstantBarotropic &mode) {
+                    self.cooling_config.config = mode;
+                },
+                py::arg("mode"),
+                R"==(
+    Set the instantaneous barotropic cooling (RAMSES-like).
+
+    At the end of each timestep, before the CFL condition, the internal energy of every cell is
+    overwritten by :math:`P_{\rm baro}(\rho) / (\gamma - 1)`, with :math:`\gamma` the
+    adiabatic index of the equation of state (``cfg.set_eos_adiabatic``) and
+    :math:`P_{\rm baro}(\rho) = c_{s,0}^2 \rho (1 + (\rho / \rho_0)^{\gamma_0 - 1})`
+    (isothermal below ``rho0``, adiabatic with index ``gamma0`` above).
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import InstantBarotropic
+    >>> cfg.set_cooling_mode(InstantBarotropic(rho0=1e-13, gamma0=1.4, cs0=0.2))
+)==")
+            .def(
+                "set_riemann_solver",
+                [](TConfig &self, RiemannSolverMode mode) {
+                    self.set_riemann_solver(mode);
+                },
+                py::arg("mode"),
+                R"==(
+    Set the gas Riemann solver.
+
+    Parameters
+    ----------
+    mode : RiemannSolverMode
+        One of ``Rusanov``, ``HLL`` (the default), ``HLLC_PVRS`` or ``HLLC_Davis``, see
+        :py:class:`RiemannSolverMode`.
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import HLLC_PVRS
+    >>> cfg.set_riemann_solver(HLLC_PVRS)
+
+    or equivalently
+
+    >>> from shamrock.model_ramses import RiemannSolverMode
+    >>> cfg.set_riemann_solver(RiemannSolverMode.HLLC_PVRS)
+)==")
             .def(
                 "set_riemann_solver_hll",
                 [](TConfig &self) {
-                    self.riemann_config = HLL;
-                })
+                    warn_deprecated_riemann_setter("set_riemann_solver_hll", "HLL");
+                    self.set_riemann_solver(HLL);
+                },
+                R"==(
+    Set the HLL Riemann solver.
+
+    .. deprecated::
+        Use ``cfg.set_riemann_solver(HLL)`` instead (see :py:meth:`set_riemann_solver`).
+)==")
+            .def(
+                "set_riemann_solver_hllc_pvrs",
+                [](TConfig &self) {
+                    warn_deprecated_riemann_setter("set_riemann_solver_hllc_pvrs", "HLLC_PVRS");
+                    self.set_riemann_solver(HLLC_PVRS);
+                },
+                R"==(
+    Set the HLLC_PVRS Riemann solver.
+
+    .. deprecated::
+        Use ``cfg.set_riemann_solver(HLLC_PVRS)`` instead (see :py:meth:`set_riemann_solver`).
+)==")
             .def(
                 "set_riemann_solver_hllc",
+                [](TConfig & /*self*/) {
+                    const std::string msg
+                        = ".set_riemann_solver_hllc() has been removed, as several HLLC variants "
+                          "are now available. Select one explicitly:\n"
+                          "    -> .set_riemann_solver(HLLC_PVRS) : the previous behaviour of "
+                          ".set_riemann_solver_hllc()\n"
+                          "    -> .set_riemann_solver(HLLC_Davis)\n"
+                          "with `from shamrock.model_ramses import HLLC_PVRS, HLLC_Davis`";
+                    ON_RANK_0(shamcomm::logs::err_ln("Ramses", msg));
+                    shambase::throw_with_loc<std::runtime_error>(msg);
+                },
+                R"==(
+    Removed, raises an error.
+
+    It was replaced by ``cfg.set_riemann_solver(HLLC_PVRS)`` (same solver as before) to lift the
+    ambiguity on the HLLC variant; see also ``cfg.set_riemann_solver(HLLC_Davis)`` and
+    :py:meth:`set_riemann_solver`.
+)==")
+            .def(
+                "set_riemann_solver_hllc_davis",
                 [](TConfig &self) {
-                    self.riemann_config = HLLC;
-                })
+                    warn_deprecated_riemann_setter("set_riemann_solver_hllc_davis", "HLLC_Davis");
+                    self.set_riemann_solver(HLLC_Davis);
+                },
+                R"==(
+    Set the HLLC_Davis Riemann solver.
+
+    .. deprecated::
+        Use ``cfg.set_riemann_solver(HLLC_Davis)`` instead (see :py:meth:`set_riemann_solver`).
+)==")
             .def(
                 "set_riemann_solver_rusanov",
                 [](TConfig &self) {
-                    self.riemann_config = Rusanov;
-                })
+                    warn_deprecated_riemann_setter("set_riemann_solver_rusanov", "Rusanov");
+                    self.set_riemann_solver(Rusanov);
+                },
+                R"==(
+    Set the Rusanov Riemann solver.
+
+    .. deprecated::
+        Use ``cfg.set_riemann_solver(Rusanov)`` instead (see :py:meth:`set_riemann_solver`).
+)==")
             .def(
                 "set_slope_lim_none",
                 [](TConfig &self) {
@@ -233,12 +380,22 @@ namespace shammodels::basegodunov {
                 py::arg("error_max"))
             .def(
                 "set_amr_mode_jeans_length_based",
-                [](TConfig &self, u32 N_jeans, Tscal T_init) {
-                    self.amr_mode.set_refine_jeans_length_based(N_jeans, T_init);
+                [](TConfig &self, u32 N_jeans) {
+                    self.amr_mode.set_refine_jeans_length_based(N_jeans);
                 },
                 py::kw_only(),
                 py::arg("N_jeans"),
-                py::arg("T_init"))
+                R"==(
+    Refine the blocks where the Jeans length is resolved by less than ``N_jeans`` cells.
+
+    A block is refined if one of its cells has :math:`N_J \Delta x > \lambda_J =
+    \sqrt{\pi c_s^2 / (G \rho)}`, with the sound speed of the equation of state (of the
+    barotrope with the ``InstantBarotropic`` cooling mode) and the gravitational constant of the unit
+    system (``cfg.set_units``). It is derefined if the cells twice larger would still resolve the
+    Jeans length by more than :math:`\sqrt{2} N_J` cells.
+
+    Only implemented in the new AMR (``cfg.set_amr_mode_old(False)``).
+)==")
             .def(
                 "set_amr_mode_shear_based",
                 [](TConfig &self, Tscal threshold) {
@@ -270,7 +427,14 @@ namespace shammodels::basegodunov {
                 "set_gravity_mode_cg",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = CG;
-                })
+                },
+                R"==(
+    Enable self-gravity, with the Jacobi preconditioned conjugate gradient Poisson solver.
+
+    Self-gravity is applied as an external force and requires the trapezoidal coupling
+    (``cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)``). The gravitational constant
+    is the one of the unit system (``cfg.set_units``).
+)==")
             .def(
                 "set_gravity_mode_pcg",
                 [](TConfig &self) {
@@ -280,7 +444,23 @@ namespace shammodels::basegodunov {
                 "set_gravity_mode_bicgstab",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = BICGSTAB;
-                })
+                },
+                R"==(
+    Enable self-gravity, with the BiCGSTAB Poisson solver.
+
+    Self-gravity is applied as an external force and requires the trapezoidal coupling
+    (``cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)``). The gravitational constant
+    is the one of the unit system (``cfg.set_units``).
+)==")
+            .def(
+                "set_units",
+                &TConfig::set_units,
+                py::arg("units"),
+                R"==(
+    Set the unit system of the simulation (SI if not set).
+
+    It sets the gravitational constant used by self-gravity.
+)==")
             .def(
                 "set_self_gravity_Niter_max",
                 [](TConfig &self, u32 Niter) {
@@ -320,6 +500,19 @@ namespace shammodels::basegodunov {
                     self.ext_force_config.add_constant_gravity(g);
                 },
                 py::arg("g"))
+            .def(
+                "add_ext_force_point_mass_gravity",
+                [](TConfig &self, Tscal mass, Tvec pos, Tscal epsilon_soft) {
+                    self.ext_force_config.add_point_mass_gravity(mass, pos, epsilon_soft);
+                },
+                py::arg("mass"),
+                py::arg("pos"),
+                py::arg("epsilon_soft"),
+                R"==(
+                Add the gravity of a fixed point mass to the external forces:
+                a = -G M (r - pos) / (|r - pos|^2 + epsilon_soft^2)^{3/2}, with G from the unit system.
+                epsilon_soft must be > 0.
+                )==")
             .def(
                 "set_ext_force_coupling",
                 [](TConfig &self, ExtForceCoupling mode) {
@@ -555,6 +748,108 @@ ON_PYTHON_INIT {
     A force evaluated at :math:`t^{n+1}` may only depend on the density there (e.g.
     self-gravity), since it is known before the kick.
 )==");
+
+    py::enum_<RiemannSolverMode>(
+        mramses,
+        "RiemannSolverMode",
+        R"==(
+    Gas Riemann solver of the Ramses solver, to be given to ``cfg.set_riemann_solver``.
+
+    The values are also exported in ``shamrock.model_ramses`` directly.
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import HLLC_PVRS
+    >>> cfg.set_riemann_solver(HLLC_PVRS)
+)==")
+        .value(
+            "Rusanov",
+            RiemannSolverMode::Rusanov,
+            R"==(
+    Rusanov (local Lax-Friedrichs) flux.
+)==")
+        .value(
+            "HLL",
+            RiemannSolverMode::HLL,
+            R"==(
+    Harten-Lax-van Leer flux. This is the default.
+)==")
+        .value(
+            "HLLC_PVRS",
+            RiemannSolverMode::HLLC_PVRS,
+            R"==(
+    HLLC flux, with wave speeds estimated from the primitive variable Riemann solver (PVRS) star
+    pressure, following Toro (Riemann Solvers and Numerical Methods for Fluid Dynamics,
+    chapter 10).
+)==")
+        .value(
+            "HLLC_Davis",
+            RiemannSolverMode::HLLC_Davis,
+            R"==(
+    HLLC flux, using the Davis (1988) wave speed estimate
+    :math:`s_l = \min(v_l - c_l, v_r - c_r)`, :math:`s_r = \max(v_l + c_l, v_r + c_r)`.
+)==")
+        .export_values();
+
+    using Cooling = CoolingConfig<f64_3>;
+    using Tscal   = f64;
+
+    py::class_<typename Cooling::None>(
+        mramses,
+        "NoCooling",
+        R"==(
+    No cooling, to be given to ``cfg.set_cooling_mode``.
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import NoCooling
+    >>> cfg.set_cooling_mode(NoCooling())
+)==")
+        .def(py::init<>())
+        .def("__repr__", [](const typename Cooling::None &) {
+            return std::string("NoCooling()");
+        });
+
+    py::class_<typename Cooling::InstantBarotropic>(
+        mramses,
+        "InstantBarotropic",
+        R"==(
+    Instantaneous barotropic cooling (RAMSES-like), to be given to ``cfg.set_cooling_mode``.
+
+    At the end of each timestep, before the CFL condition, the internal energy of every cell is
+    overwritten by :math:`P_{\rm baro}(\rho) / (\gamma - 1)`, with :math:`\gamma` the
+    adiabatic index of the equation of state and
+    :math:`P_{\rm baro}(\rho) = c_{s,0}^2 \rho (1 + (\rho / \rho_0)^{\gamma_0 - 1})`.
+
+    Parameters
+    ----------
+    rho0 : float
+        Density of the isothermal to adiabatic transition of the barotrope (> 0)
+    gamma0 : float
+        Adiabatic index of the barotrope above ``rho0``
+    cs0 : float
+        Isothermal sound speed of the barotrope below ``rho0`` (> 0)
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import InstantBarotropic
+    >>> cfg.set_cooling_mode(InstantBarotropic(rho0=1e-13, gamma0=1.4, cs0=0.2))
+)==")
+        .def(
+            py::init([](Tscal rho0, Tscal gamma0, Tscal cs0) {
+                return typename Cooling::InstantBarotropic{rho0, cs0, gamma0};
+            }),
+            py::kw_only(),
+            py::arg("rho0"),
+            py::arg("gamma0"),
+            py::arg("cs0"))
+        .def_readwrite("rho0", &Cooling::InstantBarotropic::rho0)
+        .def_readwrite("gamma0", &Cooling::InstantBarotropic::gamma0)
+        .def_readwrite("cs0", &Cooling::InstantBarotropic::cs0)
+        .def("__repr__", [](const typename Cooling::InstantBarotropic &self) {
+            return sham::format(
+                "InstantBarotropic(rho0={}, gamma0={}, cs0={})", self.rho0, self.gamma0, self.cs0);
+        });
 
     add_instance<f64_3, i64_3>(
         mramses, base_name + "_f64_3_i64_3_SolverConfig", base_name + "_f64_3_i64_3_Model");

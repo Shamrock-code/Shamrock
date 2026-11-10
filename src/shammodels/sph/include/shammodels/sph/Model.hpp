@@ -920,25 +920,16 @@ namespace shammodels::sph {
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
-            ensure_sink_edges<Tvec>(sched.synchronized_data);
-            if (j.contains("sinks") && !j.at("sinks").is_null()) {
-                std::vector<SinkParticle<Tvec>> out;
-                j.at("sinks").get_to(out);
-                auto edges = get_sink_edges<Tvec>(sched.synchronized_data);
-                set_sink_particles(edges, out);
-            }
-
-            // Migrate old dumps that stored time/dt/cfl in solver_config.time_state
-            auto sync_names = sched.synchronized_data.get_edge_names();
-
             // PR #1928 introduces time/dt/cfl synchronization edges
             // so checking for time is equivalent to commit >= PR #1928
-            bool had_time_edge
-                = std::find(sync_names.begin(), sync_names.end(), "time") != sync_names.end();
+            // (must be checked before init_solver_graph, which creates them if missing)
+            bool had_time_edge = sched.synchronized_data.has_edge("time");
 
-            // create time/dt/cfl synchronization edges if not present
-            solver.ensure_time_state_edges();
+            solver.init_ghost_layout();
 
+            solver.init_solver_graph();
+
+            // Migrate old dumps that stored time/dt/cfl in solver_config.time_state
             if (!had_time_edge) { // before PR #1928
                 if (j.at("solver_config").contains("time_state")) {
                     ON_RANK_0(
@@ -957,9 +948,14 @@ namespace shammodels::sph {
                 }
             }
 
-            solver.init_ghost_layout();
-
-            solver.init_solver_graph();
+            // Old dumps stored sinks in the metadata rather than as synchronized edges
+            // (sink edges are ensured by init_solver_graph)
+            if (j.contains("sinks") && !j.at("sinks").is_null()) {
+                std::vector<SinkParticle<Tvec>> out;
+                j.at("sinks").get_to(out);
+                auto edges = get_sink_edges<Tvec>(sched.synchronized_data);
+                set_sink_particles(edges, out);
+            }
 
             shamlog_debug_ln("Sys", "build local scheduler tables");
             sched.owned_patch_id = sched.patch_list.build_local();

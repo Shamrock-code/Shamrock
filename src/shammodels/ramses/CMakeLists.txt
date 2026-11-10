@@ -14,10 +14,15 @@ set(Sources
     src/pyRamsesModel.cpp
     src/Solver.cpp
     src/modules/NodeComputeFlux.cpp
-    src/modules/DragIntegrator.cpp
-    src/modules/TimeIntegrator.cpp
+    src/modules/ApplyDragIRK1.cpp
+    src/modules/ApplyDragExpo.cpp
+    src/modules/ForwardEulerGas.cpp
+    src/modules/ForwardEulerDust.cpp
     src/modules/ResetExtForceAcc.cpp
     src/modules/AddExtForceConstantGravity.cpp
+    src/modules/AddExtForcePointMassGravity.cpp
+    src/modules/AddExtForceField.cpp
+    src/modules/ComputeNextRho.cpp
     src/modules/ApplyExtForceGas.cpp
     src/modules/ApplyExtForceDust.cpp
     src/modules/ApplyExtForceGasTrapezoidal.cpp

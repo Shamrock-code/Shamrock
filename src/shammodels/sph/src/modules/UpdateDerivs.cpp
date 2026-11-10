@@ -1630,6 +1630,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
         auto rhodust_eps  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
         rhodust_eps->data = cfg_evol->rhodust_eps;
 
+        auto tau_frac  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+        tau_frac->data = cfg_evol->tau_frac;
+
         auto vfrag_threshold  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
         vfrag_threshold->data = cfg_evol->vfrag_threshold;
 
@@ -1675,7 +1678,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
             S_coag);
 
         node_add_source_term->set_edges(
-            part_counts, rhodust_eps, dt_hydro_edge, S_coag, s_j_refs, ds_j_dt_refs);
+            part_counts, rhodust_eps, tau_frac, dt_hydro_edge, S_coag, s_j_refs, ds_j_dt_refs);
 
         press_grad_node->evaluate();
         delta_v_node->evaluate();

@@ -22,7 +22,6 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/common/SolverLog.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -205,33 +204,6 @@ namespace shammodels::sph {
         inline Tscal get_cfl_multipler() { return cfl_multiplier_edge_value(); }
         inline void set_cfl_multipler(Tscal lambda) { cfl_multiplier_edge_value() = lambda; }
 
-        /// Register time/dt/cfl_multiplier synchronized edges if missing (idempotent)
-        inline void ensure_time_state_edges() {
-            auto &sync    = scheduler().synchronized_data;
-            auto names    = sync.get_edge_names();
-            auto has_edge = [&](const std::string &name) {
-                return std::find(names.begin(), names.end(), name) != names.end();
-            };
-
-            if (!has_edge("time")) {
-                auto edge = sync.register_edge(
-                    "time", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("time", "t"));
-                edge->data = 0;
-            }
-            if (!has_edge("dt")) {
-                auto edge = sync.register_edge(
-                    "dt", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("dt", "dt"));
-                edge->data = 0;
-            }
-            if (!has_edge("cfl_multiplier")) {
-                auto edge = sync.register_edge(
-                    "cfl_multiplier",
-                    shamrock::solvergraph::IDataEdgeSerializable<Tscal>(
-                        "cfl_multiplier", "C_{\\rm CFL}"));
-                edge->data = 1e-2;
-            }
-        }
-
         struct SolverStepCallback {
             std::optional<std::function<void(void)>> step_begin_callback;
             std::optional<std::function<void(void)>> step_end_callback;
@@ -248,54 +220,12 @@ namespace shammodels::sph {
         using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
-        inline void gen_ghost_handler(Tscal time_val) {
-
-            using CfgClass = sph::BasicSPHGhostHandlerConfig<Tvec>;
-            using BCConfig = typename CfgClass::Variant;
-
-            using BCFree             = typename CfgClass::Free;
-            using BCPeriodic         = typename CfgClass::Periodic;
-            using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
-
-            using SolverConfigBC           = typename Config::BCConfig;
-            using SolverBCFree             = typename SolverConfigBC::Free;
-            using SolverBCPeriodic         = typename SolverConfigBC::Periodic;
-            using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
-
-            // boundary condition selections
-            if (SolverBCFree *c
-                = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(
-                    GhostHandle{
-                        scheduler(),
-                        BCFree{},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-            } else if (
-                SolverBCPeriodic *c
-                = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(
-                    GhostHandle{
-                        scheduler(),
-                        BCPeriodic{},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-            } else if (
-                SolverBCShearingPeriodic *c
-                = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(
-                    GhostHandle{
-                        scheduler(),
-                        BCShearingPeriodic{
-                            c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-            }
-        }
         inline void reset_ghost_handler() { storage.ghost_handler.reset(); }
 
-        /// @brief Builds ghost particle interface cache for inter-patch communication
-        void build_ghost_cache();
+        /// @brief Generates the ghost handler and builds the ghost particle interface cache for
+        /// inter-patch communication
+        /// @param time_val the time at which the boundary conditions are evaluated
+        void build_ghost_cache(Tscal time_val);
         /// @brief Clears ghost particle cache to free memory
         void clear_ghost_cache();
 

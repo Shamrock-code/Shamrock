@@ -1980,30 +1980,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             }
         }
 
-        if (auto *cfg = std::get_if<typename CoolingConfig<Tvec>::BetaCooling>(
-                &solver_config.cooling_config.config)) { // Cooling
-            auto refs_rho
-                = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("rho_source", "\\rho");
-            auto refs_rhov = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
-                "rhovel_source", "(\\rho \\mathbf{v})");
-            auto refs_rhoe = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-                "rhoetot_source", "(\\rho E)");
-
-            attach_source_field(refs_rho, "rho");
-            attach_source_field(refs_rhov, "rhovel");
-            attach_source_field(refs_rhoe, "rhoetot");
-
-            modules::ApplyBetaCooling<Tvec> node{AMRBlock::block_size, cfg->beta, cfg->center};
-            node.set_edges(
-                storage.dt,
-                storage.block_counts,
-                refs_rho,
-                refs_rhov,
-                storage.coordinates,
-                refs_rhoe);
-            solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
-        }
-
         if (solver_config.is_dust_on()) { // apply to the dust
             auto refs_rho_dust = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
                 "rho_dust_source", "\\rho_{\\rm dust}");
@@ -2042,6 +2018,25 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         shamrock::solvergraph::OperationSequence seq(
             "External forces", std::move(ext_force_sequence));
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+    }
+
+    if (auto *cfg = std::get_if<typename CoolingConfig<Tvec>::BetaCooling>(
+            &solver_config.cooling_config.config)) { // Cooling
+        auto refs_rho
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("rho_source", "\\rho");
+        auto refs_rhov = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
+            "rhovel_source", "(\\rho \\mathbf{v})");
+        auto refs_rhoe = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+            "rhoetot_source", "(\\rho E)");
+
+        attach_source_field(refs_rho, "rho");
+        attach_source_field(refs_rhov, "rhovel");
+        attach_source_field(refs_rhoe, "rhoetot");
+
+        modules::ApplyBetaCooling<Tvec> node{AMRBlock::block_size, cfg->beta, cfg->center};
+        node.set_edges(
+            storage.dt, storage.block_counts, refs_rho, refs_rhov, storage.coordinates, refs_rhoe);
+        solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
     }
 
     { // time integration (forward Euler, with or without drag)

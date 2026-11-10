@@ -160,8 +160,8 @@ namespace shammodels::sph {
 
             // Symmetrized per-pair (upwind) positivity gate on the TVA flux: the flux of a pair is
             // switched off when its upwind (donor) particle has s_j < 0.
-            // With smooth_s_positivity_limiter it replaces the per-particle xi switch
-            // (which breaks dust mass conservation when s_j < 0), only the restoring term phi being kept.
+            // With smooth_s_positivity_limiter it replaces the per-particle xi switch (which breaks
+            // dust mass conservation when s_j < 0), only the restoring term phi being kept.
             bool pair_gate_s_positivity_limiter = false;
         };
 

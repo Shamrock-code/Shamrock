@@ -303,6 +303,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_boundary_periodic", &TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic", &TConfig::set_boundary_shearing_periodic)
         .def(
+            "set_boundary_particles",
+            &TConfig::set_boundary_particles,
+            py::arg("enable"))
+        .def(
             "set_dust_mode_none",
             [](TConfig &self) {
                 self.dust_config.set_none();
@@ -1177,6 +1181,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                const std::function<f64_3(Tvec)> pos_to_val,
                const u32 offset) {
                 return self.template set_field_value_lambda<f64_3>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0)
+        .def(
+            "set_field_value_lambda_u32",
+            [](T &self,
+               std::string field_name,
+               const std::function<u32(Tvec)> pos_to_val,
+               const u32 offset) {
+                return self.template set_field_value_lambda<u32>(
                     std::move(field_name), pos_to_val, offset);
             },
             py::arg("field_name"),

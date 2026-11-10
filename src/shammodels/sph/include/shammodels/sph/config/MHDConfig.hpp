@@ -18,6 +18,7 @@
  */
 
 #include "shambackends/vec.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
@@ -149,6 +150,23 @@ struct shammodels::sph::MHDConfig {
 
             if (!shamrock::are_experimental_features_allowed()) {
                 shambase::throw_with_loc<std::runtime_error>("Non Ideal MHD is experimental");
+            }
+
+            NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD);
+            if (v->eta_fields && v->eta_semi_constant) {
+                ON_RANK_0(
+                    logger::warn_ln(
+                        "SPH::config",
+                        "eta_fields and eta_semi_constant are both set: the semi-constant "
+                        "prescription recomputes the eta_o/eta_h/eta_ad fields every step and "
+                        "overwrites any user-set values"));
+            } else if (v->eta_fields) {
+                ON_RANK_0(
+                    logger::warn_ln(
+                        "SPH::config",
+                        "eta_fields is set: the eta_o/eta_h/eta_ad fields must be filled by the "
+                        "user (also after a restart), they default to 0 which disables the "
+                        "non-ideal terms and the non-ideal MHD timestep limit"));
             }
         }
     }

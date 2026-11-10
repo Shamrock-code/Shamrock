@@ -3050,14 +3050,13 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 "a dt that is too large");
         }
 
-        // the semi-constant etas depend on B and rho, needs refresh them before they are sent to
-        // ghosts
+        // the semi-constant etas depend on B and rho, refresh them before they are sent to the ghosts
         if (solver_config.has_eta_semi_constant()) {
             update_eta_semi_constant();
         }
 
         // communicate fields
-        communicate_merge_ghosts_fields(); // is hpart_with_ghosts populated ?
+        communicate_merge_ghosts_fields();
 
         if (solver_config.has_field_alphaAV()) {
 

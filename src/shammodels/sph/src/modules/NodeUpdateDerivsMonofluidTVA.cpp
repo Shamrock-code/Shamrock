@@ -20,100 +20,6 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVA.hpp"
 #include "shamrock/patch/PatchDataField.hpp" // IWYU pragma: keep
-#include <type_traits>
-#include <cstddef>
-
-/**
- * @brief TVA ds_j/dt kernel body (eq. 51, Hutchison 2018), shared by the plain and the pair gated
- * variants.
- *
- * The flux term of the pair (a,b) is multiplied by `pair_weight(s_j_a, s_j_b, g_ab)`, with
- * g_ab = Tw_ab (P_a - P_b) Fbar_ab / r_ab (antisymmetric, g_ba = -g_ab bitwise). Since the dust
- * mass flux of the pair is antisymmetric in (a,b), any weight symmetric in (a,b) keeps the dust
- * mass conservation exact. The compression term (s_a / 2 rho_a) drho_a/dt is not a flux (it cancels
- * in d(m s^2/rho)/dt) and is left untouched.
- */
-template<class Tvec, template<class> class SPHKernel, class PairWeight>
-inline shambase::VecComponent<Tvec> compute_ds_j_dt_monofluid_tva(
-    shambase::VecComponent<Tvec> pmass,
-    u32 ndust,
-    u32 id_a,
-    u32 jdust,
-    const Tvec *__restrict xyz,
-    const shambase::VecComponent<Tvec> *__restrict hpart,
-    const Tvec *__restrict vxyz,
-    const shambase::VecComponent<Tvec> *__restrict omega,
-    const shambase::VecComponent<Tvec> *__restrict pressure,
-    const shambase::VecComponent<Tvec> *__restrict s_j,
-    const shambase::VecComponent<Tvec> *__restrict Ttilde_sj,
-    shamrock::tree::ObjectCache::ptrs_read ploop_ptrs,
-    PairWeight &&pair_weight) {
-
-    using Tscal                  = shambase::VecComponent<Tvec>;
-    using Kernel                 = SPHKernel<Tscal>;
-    static constexpr Tscal Rkern = Kernel::Rkern;
-    static constexpr Tscal Rker2 = Rkern * Rkern;
-
-    u32 thread_id = id_a * ndust + jdust;
-
-    Tscal h_a         = hpart[id_a];
-    Tvec xyz_a        = xyz[id_a];
-    Tvec vxyz_a       = vxyz[id_a];
-    Tscal P_a         = pressure[id_a];
-    Tscal omega_a     = omega[id_a];
-    Tscal s_j_a       = s_j[thread_id];
-    Tscal Ttilde_sj_a = Ttilde_sj[thread_id];
-
-    using namespace shamrock::sph;
-    Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
-
-    Tscal term1 = 0;
-    Tscal term2 = 0;
-
-    shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-    particle_looper.for_each_object(id_a, [&](u32 id_b) {
-        Tvec dr    = xyz_a - xyz[id_b];
-        Tscal rab2 = sycl::dot(dr, dr);
-        Tscal h_b  = hpart[id_b];
-
-        if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
-            return;
-        }
-
-        Tvec vxyz_b       = vxyz[id_b];
-        Tscal P_b         = pressure[id_b];
-        Tscal s_j_b       = s_j[id_b * ndust + jdust];
-        Tscal Ttilde_sj_b = Ttilde_sj[id_b * ndust + jdust];
-
-        Tscal rab         = sycl::sqrt(rab2);
-        Tscal rab_inv_sat = sham::inv_sat_positive(rab);
-
-        Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
-
-        Tscal Fab_a = Kernel::dW_3d(rab, h_a);
-        Tscal Fab_b = Kernel::dW_3d(rab, h_b);
-
-        Tvec v_ab = vxyz_a - vxyz_b;
-
-        Tvec r_ab_unit = dr * rab_inv_sat;
-
-        Tscal F_ab_bar    = (Fab_a + Fab_b) / 2;
-        Tscal delta_P     = P_a - P_b;
-        Tscal Ts_weighted = (Ttilde_sj_a / rho_a + Ttilde_sj_b / rho_b);
-
-        Tscal g_ab = Ts_weighted * delta_P * F_ab_bar * rab_inv_sat;
-
-        if constexpr (std::is_same_v<std::decay_t<PairWeight>, std::nullptr_t>) {
-            term1 += (pmass * s_j_b / rho_b) * g_ab;
-        } else {
-            term1 += pair_weight(s_j_a, s_j_b, g_ab) * (pmass * s_j_b / rho_b) * g_ab;
-        }
-        term2 += pmass * sham::dot(v_ab, r_ab_unit * Fab_a);
-    });
-
-    // eq 51, Hutchison 2018
-    return Tscal{-0.5} * term1 + (s_j_a / (2 * rho_a * omega_a)) * term2;
-}
 
 /**
  * @brief Symmetrized per-pair gate of the smooth positivity limiter.
@@ -132,9 +38,22 @@ inline Tscal monofluid_tva_pair_gate(Tscal s_a, Tscal s_b, Tscal g_ab) {
     return blocked ? Tscal{0} : Tscal{1};
 }
 
+/**
+ * @brief TVA ds_j/dt kernel (eq. 51, Hutchison 2018), optionally with the pair gate.
+ *
+ * With `pair_gate`, the flux term of the pair (a,b) is multiplied by
+ * `monofluid_tva_pair_gate(s_j_a, s_j_b, g_ab)`, with g_ab = Tw_ab (P_a - P_b) Fbar_ab / r_ab
+ * (antisymmetric, g_ba = -g_ab bitwise). Since the dust mass flux of the pair is antisymmetric in
+ * (a,b), any weight symmetric in (a,b) keeps the dust mass conservation exact. The compression
+ * term (s_a / 2 rho_a) drho_a/dt is not a flux (it cancels in d(m s^2/rho)/dt) and is left
+ * untouched.
+ */
 template<class Tvec, template<class> class SPHKernel, bool pair_gate>
 struct KernelUpdateDerivsMonofluidTVA {
-    using Tscal = shambase::VecComponent<Tvec>;
+    using Tscal                  = shambase::VecComponent<Tvec>;
+    using Kernel                 = SPHKernel<Tscal>;
+    static constexpr Tscal Rkern = Kernel::Rkern;
+    static constexpr Tscal Rker2 = Rkern * Rkern;
 
     Tscal pmass;
     u32 ndust;
@@ -156,30 +75,64 @@ struct KernelUpdateDerivsMonofluidTVA {
         u32 id_a  = thread_id / ndust;
         u32 jdust = thread_id % ndust;
 
-        auto compute = [&](auto &&pair_weight) {
-            return compute_ds_j_dt_monofluid_tva<Tvec, SPHKernel>(
-                pmass,
-                ndust,
-                id_a,
-                jdust,
-                xyz,
-                hpart,
-                vxyz,
-                omega,
-                pressure,
-                s_j,
-                Ttilde_sj,
-                ploop_ptrs,
-                pair_weight);
-        };
+        Tscal h_a         = hpart[id_a];
+        Tvec xyz_a        = xyz[id_a];
+        Tvec vxyz_a       = vxyz[id_a];
+        Tscal P_a         = pressure[id_a];
+        Tscal omega_a     = omega[id_a];
+        Tscal s_j_a       = s_j[thread_id];
+        Tscal Ttilde_sj_a = Ttilde_sj[thread_id];
 
-        if constexpr (pair_gate) {
-            ds_j_dt[thread_id] = compute([](Tscal s_a, Tscal s_b, Tscal g_ab) {
-                return monofluid_tva_pair_gate(s_a, s_b, g_ab);
-            });
-        } else {
-            ds_j_dt[thread_id] = compute(nullptr);
-        }
+        using namespace shamrock::sph;
+        Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
+
+        Tscal term1 = 0;
+        Tscal term2 = 0;
+
+        shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+        particle_looper.for_each_object(id_a, [&](u32 id_b) {
+            Tvec dr    = xyz_a - xyz[id_b];
+            Tscal rab2 = sycl::dot(dr, dr);
+            Tscal h_b  = hpart[id_b];
+
+            if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                return;
+            }
+
+            Tvec vxyz_b       = vxyz[id_b];
+            Tscal P_b         = pressure[id_b];
+            Tscal s_j_b       = s_j[id_b * ndust + jdust];
+            Tscal Ttilde_sj_b = Ttilde_sj[id_b * ndust + jdust];
+
+            Tscal rab         = sycl::sqrt(rab2);
+            Tscal rab_inv_sat = sham::inv_sat_positive(rab);
+
+            Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
+
+            Tscal Fab_a = Kernel::dW_3d(rab, h_a);
+            Tscal Fab_b = Kernel::dW_3d(rab, h_b);
+
+            Tvec v_ab = vxyz_a - vxyz_b;
+
+            Tvec r_ab_unit = dr * rab_inv_sat;
+
+            Tscal F_ab_bar    = (Fab_a + Fab_b) / 2;
+            Tscal delta_P     = P_a - P_b;
+            Tscal Ts_weighted = (Ttilde_sj_a / rho_a + Ttilde_sj_b / rho_b);
+
+            Tscal g_ab = Ts_weighted * delta_P * F_ab_bar * rab_inv_sat;
+
+            if constexpr (pair_gate) {
+                Tscal gate = monofluid_tva_pair_gate(s_j_a, s_j_b, g_ab);
+                term1 += gate * (pmass * s_j_b / rho_b) * g_ab;
+            } else {
+                term1 += (pmass * s_j_b / rho_b) * g_ab;
+            }
+            term2 += pmass * sham::dot(v_ab, r_ab_unit * Fab_a);
+        });
+
+        // eq 51, Hutchison 2018
+        ds_j_dt[thread_id] = Tscal{-0.5} * term1 + (s_j_a / (2 * rho_a * omega_a)) * term2;
     }
 };
 

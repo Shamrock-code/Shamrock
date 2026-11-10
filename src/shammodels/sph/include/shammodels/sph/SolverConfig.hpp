@@ -928,15 +928,15 @@ struct shammodels::sph::SolverConfig {
     /**
      * @brief Set the EOS configuration to a barotropic equation of state
      *
-     * \f$ P = c_{s,0}^2 \rho \left[1 + (\rho / \rho_0)^{\gamma - 1}\right] \f$, with the sound
+     * \f$ P = c_{s,0}^2 \rho \left[1 + (\rho / \rho_0)^{\gamma_0 - 1}\right] \f$, with the sound
      * speed \f$ c_s = \sqrt{dP/d\rho} \f$, see shamphys::EOS_Barotropic.
      *
      * @param cs0 Isothermal sound speed of the low density regime
      * @param rho0 Critical density of the isothermal to adiabatic transition
-     * @param gamma Adiabatic index of the high density regime
+     * @param gamma0 Adiabatic index of the high density regime
      */
-    inline void set_eos_barotropic(Tscal cs0, Tscal rho0, Tscal gamma) {
-        eos_config.set_barotropic(cs0, rho0, gamma);
+    inline void set_eos_barotropic(Tscal cs0, Tscal rho0, Tscal gamma0) {
+        eos_config.set_barotropic(cs0, rho0, gamma0);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -1251,13 +1251,13 @@ struct shammodels::sph::SolverConfig {
 
         using EOSBarotropic = typename EOSConfig::Barotropic;
         if (const EOSBarotropic *eos = std::get_if<EOSBarotropic>(&eos_config.config)) {
-            if (!(eos->cs0 > 0) || !(eos->rho0 > 0) || !(eos->gamma > 1)) {
+            if (!(eos->cs0 > 0) || !(eos->rho0 > 0) || !(eos->gamma0 > 1)) {
                 shambase::throw_with_loc<std::invalid_argument>(sham::format(
-                    "barotropic EOS requires cs0 > 0, rho0 > 0 and gamma > 1, got cs0 = {}, "
-                    "rho0 = {}, gamma = {}",
+                    "barotropic EOS requires cs0 > 0, rho0 > 0 and gamma0 > 1, got cs0 = {}, "
+                    "rho0 = {}, gamma0 = {}",
                     eos->cs0,
                     eos->rho0,
-                    eos->gamma));
+                    eos->gamma0));
             }
         }
     }

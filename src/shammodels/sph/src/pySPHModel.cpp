@@ -172,13 +172,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("mu_e"))
         .def(
             "set_eos_barotropic",
-            [](TConfig &self, Tscal cs0, Tscal rho0, Tscal gamma) {
-                self.set_eos_barotropic(cs0, rho0, gamma);
+            [](TConfig &self, Tscal cs0, Tscal rho0, Tscal gamma0) {
+                self.set_eos_barotropic(cs0, rho0, gamma0);
             },
             py::kw_only(),
             py::arg("cs0"),
             py::arg("rho0"),
-            py::arg("gamma") = Tscal{5.0 / 3.0})
+            py::arg("gamma0") = Tscal{5.0 / 3.0})
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "set_artif_viscosity_Constant",

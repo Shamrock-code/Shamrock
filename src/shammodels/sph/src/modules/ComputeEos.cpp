@@ -359,7 +359,7 @@ namespace shammodels::common::modules {
     /* ------------------- inputs ------------------- */                                           \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, cs0)                                             \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, rho0)                                            \
-    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, gamma)                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, gamma0)                                          \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, hfactd)                                          \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pmass)                                           \
     X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                             \
@@ -385,13 +385,13 @@ namespace shammodels::common::modules {
         inline static void internal_eos(
             const Tscal &cs0,
             const Tscal &rho0,
-            const Tscal &gamma,
+            const Tscal &gamma0,
             const Tscal &rho,
             Tscal &pressure,
             Tscal &soundspeed) noexcept {
             using EOS  = shamphys::EOS_Barotropic<Tscal>;
-            pressure   = EOS::pressure(cs0, rho0, gamma, rho);
-            soundspeed = EOS::soundspeed(cs0, rho0, gamma, rho);
+            pressure   = EOS::pressure(cs0, rho0, gamma0, rho);
+            soundspeed = EOS::soundspeed(cs0, rho0, gamma0, rho);
         }
 
         inline void _impl_evaluate_internal() {
@@ -414,7 +414,7 @@ namespace shammodels::common::modules {
 
             Tscal cs0    = edges.cs0.data;
             Tscal rho0   = edges.rho0.data;
-            Tscal gamma  = edges.gamma.data;
+            Tscal gamma0 = edges.gamma0.data;
             Tscal pmass  = edges.pmass.data;
             Tscal hfactd = edges.hfactd.data;
 
@@ -432,9 +432,9 @@ namespace shammodels::common::modules {
                     sham::DDMultiRef{spans_rho.get_spans()},
                     out_refs,
                     edges.sizes.indexes,
-                    [cs0, rho0, gamma](
+                    [cs0, rho0, gamma0](
                         u32 gid, const Tscal *rho, Tscal *pressure, Tscal *soundspeed) {
-                        internal_eos(cs0, rho0, gamma, rho[gid], pressure[gid], soundspeed[gid]);
+                        internal_eos(cs0, rho0, gamma0, rho[gid], pressure[gid], soundspeed[gid]);
                     });
             } else if (has_h) {
                 auto &spans_h = edges.spans_h.value().get();
@@ -445,11 +445,11 @@ namespace shammodels::common::modules {
                     sham::DDMultiRef{spans_h.get_spans()},
                     out_refs,
                     edges.sizes.indexes,
-                    [cs0, rho0, gamma, pmass, hfactd](
+                    [cs0, rho0, gamma0, pmass, hfactd](
                         u32 gid, const Tscal *h, Tscal *pressure, Tscal *soundspeed) {
                         using namespace shamrock::sph;
                         Tscal rho = rho_h(pmass, h[gid], hfactd);
-                        internal_eos(cs0, rho0, gamma, rho, pressure[gid], soundspeed[gid]);
+                        internal_eos(cs0, rho0, gamma0, rho, pressure[gid], soundspeed[gid]);
                     });
             }
         }
@@ -1243,18 +1243,18 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         SolverEOS_Barotropic *eos_config
         = std::get_if<SolverEOS_Barotropic>(&solver_config.eos_config.config)) {
 
-        auto cs0    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("cs0", "c_{s,0}");
-        auto rho0   = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("rho0", "\\rho_0");
-        auto gamma  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("gamma", "\\gamma");
-        cs0->data   = eos_config->cs0;
-        rho0->data  = eos_config->rho0;
-        gamma->data = eos_config->gamma;
+        auto cs0     = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("cs0", "c_{s,0}");
+        auto rho0    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("rho0", "\\rho_0");
+        auto gamma0  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("gamma0", "\\gamma_0");
+        cs0->data    = eos_config->cs0;
+        rho0->data   = eos_config->rho0;
+        gamma0->data = eos_config->gamma0;
 
         shammodels::common::modules::ComputeEOSBarotropic<Tvec> node;
         node.set_edges(
             cs0,
             rho0,
-            gamma,
+            gamma0,
             hfactd,
             pmass,
             spans_rho,

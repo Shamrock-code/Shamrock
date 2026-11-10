@@ -19,7 +19,7 @@ namespace {
 
     constexpr f64 cs0      = 0.19;
     constexpr f64 rho_crit = 1e-13;
-    constexpr f64 gamma    = 5. / 3.;
+    constexpr f64 gamma_ad = 5. / 3.;
 } // namespace
 
 NEW_TEST(Unittest, "shamphys/eos/barotropic/limits", 1) {
@@ -27,22 +27,22 @@ NEW_TEST(Unittest, "shamphys/eos/barotropic/limits", 1) {
     // well below rho_crit: isothermal, P = cs0^2 rho and cs = cs0
     f64 rho_lo = 1e-10 * rho_crit;
     REQUIRE_FLOAT_EQUAL(
-        EOS::pressure(cs0, rho_crit, gamma, rho_lo) / (cs0 * cs0 * rho_lo), 1., 1e-6);
-    REQUIRE_FLOAT_EQUAL(EOS::soundspeed(cs0, rho_crit, gamma, rho_lo) / cs0, 1., 1e-6);
+        EOS::pressure(cs0, rho_crit, gamma_ad, rho_lo) / (cs0 * cs0 * rho_lo), 1., 1e-6);
+    REQUIRE_FLOAT_EQUAL(EOS::soundspeed(cs0, rho_crit, gamma_ad, rho_lo) / cs0, 1., 1e-6);
 
     // well above rho_crit: polytrope P = K rho^gamma with K = cs0^2 rho_crit^(1 - gamma),
     // and cs^2 = gamma P / rho
     f64 rho_hi = 1e10 * rho_crit;
-    f64 K      = cs0 * cs0 * std::pow(rho_crit, 1. - gamma);
-    f64 P_hi   = EOS::pressure(cs0, rho_crit, gamma, rho_hi);
-    REQUIRE_FLOAT_EQUAL(P_hi / (K * std::pow(rho_hi, gamma)), 1., 1e-6);
+    f64 K      = cs0 * cs0 * std::pow(rho_crit, 1. - gamma_ad);
+    f64 P_hi   = EOS::pressure(cs0, rho_crit, gamma_ad, rho_hi);
+    REQUIRE_FLOAT_EQUAL(P_hi / (K * std::pow(rho_hi, gamma_ad)), 1., 1e-6);
 
-    f64 cs_hi = EOS::soundspeed(cs0, rho_crit, gamma, rho_hi);
-    REQUIRE_FLOAT_EQUAL(cs_hi * cs_hi / (gamma * P_hi / rho_hi), 1., 1e-6);
+    f64 cs_hi = EOS::soundspeed(cs0, rho_crit, gamma_ad, rho_hi);
+    REQUIRE_FLOAT_EQUAL(cs_hi * cs_hi / (gamma_ad * P_hi / rho_hi), 1., 1e-6);
 
     // at rho_crit the adiabatic and isothermal contributions are equal
     REQUIRE_FLOAT_EQUAL(
-        EOS::pressure(cs0, rho_crit, gamma, rho_crit) / (2 * cs0 * cs0 * rho_crit), 1., 1e-14);
+        EOS::pressure(cs0, rho_crit, gamma_ad, rho_crit) / (2 * cs0 * cs0 * rho_crit), 1., 1e-14);
 }
 
 NEW_TEST(Unittest, "shamphys/eos/barotropic/soundspeed_is_dP_drho", 1) {
@@ -52,10 +52,10 @@ NEW_TEST(Unittest, "shamphys/eos/barotropic/soundspeed_is_dP_drho", 1) {
         f64 rho = x * rho_crit;
         f64 eps = 1e-5 * rho;
 
-        f64 dP_drho = (EOS::pressure(cs0, rho_crit, gamma, rho + eps)
-                       - EOS::pressure(cs0, rho_crit, gamma, rho - eps))
+        f64 dP_drho = (EOS::pressure(cs0, rho_crit, gamma_ad, rho + eps)
+                       - EOS::pressure(cs0, rho_crit, gamma_ad, rho - eps))
                       / (2 * eps);
-        f64 cs      = EOS::soundspeed(cs0, rho_crit, gamma, rho);
+        f64 cs      = EOS::soundspeed(cs0, rho_crit, gamma_ad, rho);
 
         REQUIRE_FLOAT_EQUAL(cs * cs / dP_drho, 1., 1e-8);
     }
@@ -64,7 +64,7 @@ NEW_TEST(Unittest, "shamphys/eos/barotropic/soundspeed_is_dP_drho", 1) {
 NEW_TEST(Unittest, "shamphys/eos/barotropic/matches_FluidStateBarotropic", 1) {
 
     // the Ramses solver uses shammath::FluidStateBarotropic, both must stay identical
-    shammath::FluidStateBarotropic<f64_3> fspec{rho_crit, cs0, gamma};
+    shammath::FluidStateBarotropic<f64_3> fspec{rho_crit, cs0, gamma_ad};
 
     for (f64 x : {1e-6, 1e-2, 1., 1e2, 1e6}) {
         f64 rho = x * rho_crit;
@@ -74,8 +74,8 @@ NEW_TEST(Unittest, "shamphys/eos/barotropic/matches_FluidStateBarotropic", 1) {
         prim.press = fspec.pressure(rho);
 
         REQUIRE_FLOAT_EQUAL(
-            EOS::pressure(cs0, rho_crit, gamma, rho) / fspec.pressure(rho), 1., 1e-14);
+            EOS::pressure(cs0, rho_crit, gamma_ad, rho) / fspec.pressure(rho), 1., 1e-14);
         REQUIRE_FLOAT_EQUAL(
-            EOS::soundspeed(cs0, rho_crit, gamma, rho) / fspec.sound_speed(prim), 1., 1e-14);
+            EOS::soundspeed(cs0, rho_crit, gamma_ad, rho) / fspec.sound_speed(prim), 1., 1e-14);
     }
 }

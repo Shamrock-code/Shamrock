@@ -52,7 +52,7 @@ assert abs(G_code - 1) < 1e-12
 # Gravity
 star_mass = 1.0
 sink_soft = 8
-softening = sink_soft * boxlen / 2**levelmax  # = 0.09375
+softening = sink_soft * boxlen / 2**levelmax
 
 enable_self_gravity = True
 

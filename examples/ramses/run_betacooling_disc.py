@@ -37,8 +37,8 @@ shamrock.matplotlib.set_shamrock_mpl_style()
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 # Grid
-boxlen = 48.0
-levelmax = 12
+boxlen = 12.0
+levelmax = 6
 resolution = 2**levelmax
 center = boxlen / 2.0
 
@@ -89,7 +89,7 @@ n_dumps = round(tend / delta_tout) + 1
 frame_width = 6.0
 
 
-sim_folder = "betacooling_disc/"
+sim_folder = "_to_trash/godunov_betacooling_disc/"
 
 # %%
 # Create the dump directory if it does not exist
@@ -107,7 +107,6 @@ def disk_ic(x, y, z):
     """Density, velocity and sound speed of the disk at (x, y, z) relative to the star"""
 
     rc_soft = np.sqrt(x * x + y * y + softening**2)
-    rs = max(np.sqrt(x * x + y * y + z * z), 1e-30)
     rs_soft = np.sqrt(x * x + y * y + z * z + softening**2)
 
     # inner isothermal zone
@@ -142,9 +141,9 @@ def disk_ic(x, y, z):
         omega2 = GM / (rs_soft**3) - (3.0 - temper_expo / 2.0) * (cs * cs) / (rc_soft * rc_soft)
     omega = np.sqrt(max(omega2, 0.0))
 
-    # velocity, with the softened coordinates of RAMSES (x * rs_soft / rs)
-    vx = -omega * y * (rs_soft / rs)
-    vy = omega * x * (rs_soft / rs)
+    # velocity
+    vx = -omega * y
+    vy = omega * x
     vz = 0.0
 
     return dens, vx, vy, vz, cs
@@ -183,7 +182,7 @@ def rhoe_map(rmin, rmax):
 
 
 # %%
-# Plotting helpers (frames of width ``deltax_frame`` centred on the star, as the RAMSES movies)
+# Plotting helpers (frames of width ``deltax_frame`` centred on the star)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 npix = 256
@@ -353,248 +352,4 @@ plt.show()
 # %%
 # Vertical temperature slice (:math:`y = y_{\rm star}`)
 ani = show_slice_animation("temp_edge")
-plt.show()
-
-
-# %%
-# Analysis of the last output (20 orbits)
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#
-#
-# * radial profiles of the surface density :math:`\Sigma`, of the Toomre parameter
-#   :math:`Q = c_s \Omega_K / (\pi G \Sigma)` and of :math:`c_s / v_\phi`, averaged on annuli;
-# * the Reynolds and gravitational stresses,
-#   :math:`\alpha_R = \frac{2}{3 \gamma P} \int \rho v_R \delta v_\phi dz` and
-#   :math:`\alpha_G = \frac{2}{3 \gamma P} \int \frac{g_R g_\phi}{4 \pi G} dz`, compared with the
-#   gravito-turbulent value :math:`\alpha = 4 / (9 \gamma (\gamma - 1) \beta)` (Gammie 2001);
-# * a map of the surface density.
-#
-# The analysis is done in the box of width ``frame_width`` centred on the star, as in the RAMSES
-# script (the yt ``ds.box`` region). The gravitational acceleration :math:`\mathbf{g}` is the one of
-# the gas self-gravity (:math:`-\nabla \phi`), without the star.
-
-from matplotlib.colors import LogNorm
-from scipy.interpolate import interp1d
-
-G = G_code
-M = star_mass
-iout = n_dumps - 1
-t_last = model.get_time()
-print(f"analysis of output {iout}, t = {t_last:0.3f} ({t_last / orbit_period:0.2f} orbits)")
-
-
-def get_cube():
-    """Fields of the uniform grid as (resolution, resolution, resolution) arrays, indexed [ix, iy, iz]"""
-    dic = ctx.collect_data()
-
-    # cell centers, from the block bounds (cells are ordered block by block, x fastest)
-    block_min = np.array(dic["cell_min"], dtype=float)
-    block_max = np.array(dic["cell_max"], dtype=float)
-    lid = np.arange(cell_size**3)
-    local_coord = np.stack(
-        [lid % cell_size, (lid // cell_size) % cell_size, lid // (cell_size * cell_size)], axis=1
-    )
-    csize = (block_max - block_min) / cell_size
-    pos = block_min[:, None, :] + (local_coord[None, :, :] + 0.5) * csize[:, None, :]
-    pos = pos.reshape(-1, 3) * (boxlen / (cell_size * base))
-
-    dx_cell = boxlen / resolution
-    idx = np.floor(pos / dx_cell).astype(int)
-
-    def to_cube(arr):
-        cube = np.zeros((resolution, resolution, resolution) + arr.shape[1:])
-        cube[idx[:, 0], idx[:, 1], idx[:, 2]] = arr
-        return cube
-
-    cube = {
-        "rho": to_cube(np.array(dic["rho"])),
-        "rhovel": to_cube(np.array(dic["rhovel"]).reshape(-1, 3)),
-        "rhoetot": to_cube(np.array(dic["rhoetot"])),
-    }
-    if enable_self_gravity:
-        cube["phi"] = to_cube(np.array(dic["phi"]))
-    return cube, dx_cell
-
-
-cube, dx_cell = get_cube()
-
-# coordinates relative to the star
-coords_1d = (np.arange(resolution) + 0.5) * dx_cell - center
-X, Y, Z = np.meshgrid(coords_1d, coords_1d, coords_1d, indexing="ij")
-
-# self-gravity acceleration g = -grad(phi), centred differences (periodic, as the Poisson solver)
-if enable_self_gravity:
-    phi = cube["phi"]
-    g_x = -(np.roll(phi, -1, axis=0) - np.roll(phi, 1, axis=0)) / (2 * dx_cell)
-    g_y = -(np.roll(phi, -1, axis=1) - np.roll(phi, 1, axis=1)) / (2 * dx_cell)
-else:
-    g_x = np.zeros_like(X)
-    g_y = np.zeros_like(X)
-
-# region of width frame_width centred on the star (the yt box of the RAMSES script)
-in_region = (
-    (np.abs(X) <= frame_width / 2) & (np.abs(Y) <= frame_width / 2) & (np.abs(Z) <= frame_width / 2)
-)
-
-x = X[in_region]
-y = Y[in_region]
-z = Z[in_region]
-dv = np.full_like(x, dx_cell**3)
-rho = cube["rho"][in_region]
-vx = cube["rhovel"][..., 0][in_region] / rho
-vy = cube["rhovel"][..., 1][in_region] / rho
-vz = cube["rhovel"][..., 2][in_region] / rho
-press = (gamma - 1) * (cube["rhoetot"][in_region] - 0.5 * rho * (vx**2 + vy**2 + vz**2))
-gx = g_x[in_region]
-gy = g_y[in_region]
-R = np.sqrt(x**2 + y**2)
-
-Rbins = 64
-
-
-def vertical_integrate(val, R=R, dv=dv, return_R_grid=False):
-    # extent of vertical integrate
-    box_height = np.amax(z) - np.amin(z)
-    # just average around given R
-    R_grid = np.geomspace(0.3, 3, Rbins)
-    sig = 1 / 64
-    res = np.zeros_like(R_grid)
-    for i in range(len(R_grid)):
-        I = (R > R_grid[i] * (1 - 3 * sig)) & (R <= R_grid[i] * (1 + 3 * sig))
-        if not np.any(I):
-            # annulus thinner than a cell (inner radii at low resolution): no data
-            res[i] = np.nan
-            continue
-        weight = np.exp(-((R[I] / R_grid[i] - 1) ** 2) / (2 * sig**2))
-        res[i] = np.sum(val[I] * dv[I] * weight) / np.sum(dv[I] * weight) * box_height
-    if return_R_grid:
-        return R_grid, res
-    return res
-
-
-R_1d, Sigma = vertical_integrate(rho, return_R_grid=True)
-P = vertical_integrate(press)
-cs_iso = np.sqrt(P / Sigma)
-cs = cs_iso * np.sqrt(gamma)
-Q = cs * np.sqrt(G * M / R_1d**3) / (np.pi * G * Sigma)
-
-vphi = (-vx * y + vy * x) / R
-vR = (vx * x + vy * y) / R
-vphi_1d = vertical_integrate(vphi * rho) / Sigma
-
-f_vphi = interp1d(R_1d, vphi_1d, fill_value="extrapolate")
-dvphi = vphi - f_vphi(R)
-gphi = (-gx * y + gy * x) / R
-gR = (gx * x + gy * y) / R
-alpha_R = vertical_integrate(rho * vR * dvphi) * 2 / 3 / gamma / P
-alpha_G = vertical_integrate(gR * gphi) / (4 * np.pi * G) * 2 / 3 / gamma / P
-
-# gravito-turbulent stress expected for a beta cooling (Gammie 2001)
-alpha_analytic = 4 / (9 * gamma * (gamma - 1) * disk_beta_cool)
-
-# Sigma snapshot, at the grid resolution (the RAMSES level 9 cell size)
-in_frame = np.abs(coords_1d) <= frame_width / 2
-xf, yf = np.meshgrid(coords_1d[in_frame], coords_1d[in_frame], indexing="ij")
-rf = np.sqrt(xf**2 + yf**2)
-rho_frame = cube["rho"][np.ix_(in_frame, in_frame, in_frame)]
-box_height = np.amax(z) - np.amin(z)
-Sigma_2d = np.mean(rho_frame, axis=2) * box_height
-Sigma_2d[(rf < 0.3) | (rf > 3)] = 0
-
-if shamrock.sys.world_rank() == 0:
-    np.savez(
-        os.path.join(sim_folder, f"cart_t3_{iout}.npz"),
-        R=R_1d,
-        Q=Q,
-        Sigma=Sigma,
-        cs_vphi=cs / vphi_1d,
-        alpha=alpha_R + alpha_G,
-        alpha_G=alpha_G,
-        alpha_R=alpha_R,
-        xf=xf,
-        yf=yf,
-        Sigma_2d=Sigma_2d,
-    )
-
-# %%
-# Column density projections (width 8, as the yt ``ProjectionPlot``)
-
-proj_width = 8.0
-in_proj = np.abs(coords_1d) <= proj_width / 2
-proj_extent = [
-    coords_1d[in_proj][0] - dx_cell / 2,
-    coords_1d[in_proj][-1] + dx_cell / 2,
-    coords_1d[in_proj][0] - dx_cell / 2,
-    coords_1d[in_proj][-1] + dx_cell / 2,
-]
-
-for axis_name, axis, (xlabel, ylabel) in (("z", 2, ("x", "y")), ("x", 0, ("y", "z"))):
-    column = np.sum(cube["rho"], axis=axis) * dx_cell  # integrated through the whole box
-    column = column[np.ix_(in_proj, in_proj)]
-
-    plt.figure()
-    res = plt.imshow(
-        column.T,
-        origin="lower",
-        extent=proj_extent,
-        cmap="inferno",
-        norm=LogNorm(),
-        rasterized=True,
-    )
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(
-        f"projection along {axis_name}, t = {t_last:0.2f} ({t_last / orbit_period:0.1f} orbits)"
-    )
-    plt.colorbar(res, label=r"$\int \rho \, d" + axis_name + "$")
-    plt.gca().set_aspect("equal", "box")
-    plt.savefig(os.path.join(sim_folder, f"snap_{axis_name}_{iout:05}.png"))
-plt.show()
-
-# %%
-# Plots from the saved data
-
-fname = os.path.join(sim_folder, f"cart_t3_{iout}")
-data = np.load(fname + ".npz")
-
-plt.figure()
-plt.plot(data["R"], data["Q"], label="Q")
-plt.plot(data["R"], data["Sigma"], label="Sigma")
-plt.plot(data["R"], data["cs_vphi"], label="cs/vphi")
-plt.yscale("log")
-plt.ylim(1e-3, 1e1)
-plt.xlim(0.3, 3)
-plt.legend()
-plt.xlabel("R")
-plt.tight_layout()
-plt.savefig(f"{fname}_radial.pdf")
-
-plt.figure()
-plt.plot(data["R"], data["alpha_R"], label="alpha_R")
-plt.plot(data["R"], data["alpha_G"], label="alpha_G")
-plt.plot(data["R"], data["alpha"], label="alpha")
-plt.yscale("log")
-plt.plot([0.3, 6], [alpha_analytic, alpha_analytic], "k:", label="analytic")
-plt.ylim(1e-3, 1e0)
-plt.xlim(0.3, 3)
-plt.legend()
-plt.xlabel("R")
-plt.ylabel("alpha")
-plt.tight_layout()
-plt.savefig(f"{fname}_alpha.pdf")
-
-plt.figure()
-plt.pcolormesh(
-    data["xf"],
-    data["yf"],
-    data["Sigma_2d"],
-    norm=LogNorm(vmin=1e-4, vmax=1),
-    cmap="Blues",
-    rasterized=True,
-)
-plt.xlim(-3, 3)
-plt.ylim(-3, 3)
-plt.gca().set_aspect("equal", "box")
-plt.colorbar(label="Sigma")
-plt.savefig(f"{fname}_Sigma.pdf")
 plt.show()

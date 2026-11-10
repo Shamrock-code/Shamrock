@@ -101,13 +101,14 @@ inline shambase::VecComponent<Tvec> compute_ds_j_dt_monofluid_tva(
         Tscal delta_P     = P_a - P_b;
         Tscal Ts_weighted = (Ttilde_sj_a / rho_a + Ttilde_sj_b / rho_b);
 
+        Tscal g_ab = Ts_weighted * delta_P * F_ab_bar * rab_inv_sat;
+
         if constexpr (std::is_same_v<std::decay_t<PairWeight>, std::nullptr_t>) {
-            // plain TVA: keep exactly the historical floating point expression
+            // plain TVA: keep exactly the historical floating point expression (not rewritten with
+            // g_ab, as the different association would change the result bitwise)
             term1 += (pmass * s_j_b / rho_b) * Ts_weighted * delta_P * F_ab_bar * rab_inv_sat;
         } else {
-            Tscal g_ab = Ts_weighted * delta_P * F_ab_bar * rab_inv_sat;
-            term1 += pair_weight(s_j_a, s_j_b, g_ab) * (pmass * s_j_b / rho_b) * Ts_weighted
-                     * delta_P * F_ab_bar * rab_inv_sat;
+            term1 += pair_weight(s_j_a, s_j_b, g_ab) * (pmass * s_j_b / rho_b) * g_ab;
         }
         term2 += pmass * sham::dot(v_ab, r_ab_unit * Fab_a);
     });

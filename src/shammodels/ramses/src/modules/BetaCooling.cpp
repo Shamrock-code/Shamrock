@@ -10,8 +10,7 @@
 /**
  * @file BetaCooling.cpp
  * @author Noé Brucy (noe.brucy@ens-lyon.fr)
- * @brief Compute a gravitational acceleration at the center of each cell,
-    using an analytical formula.
+ * @brief Apply beta-cooling (cooling time proportional to the rotation time)
  */
 
 #include "shammodels/ramses/modules/BetaCooling.hpp"
@@ -55,12 +54,12 @@ namespace shammodels::basegodunov::modules {
             [center = center, beta = beta, dt = dt](
                 u32 i,
                 const Tvec *__restrict cell_coor,
-                Tscal *__restrict rho,
-                Tvec *__restrict rhov,
+                const Tscal *__restrict rho,
+                const Tvec *__restrict rhov,
                 Tscal *__restrict rhoe) {
                 Tvec cell_pos = cell_coor[i];
 
-                // compute vector from the point mass to the cell
+                // compute vector from the centerto the cell
                 Tvec r_vec = cell_pos - center;
                 Tscal x    = r_vec[0];
                 Tscal y    = r_vec[1];
@@ -68,16 +67,16 @@ namespace shammodels::basegodunov::modules {
                 Tscal vy   = rhov[i][1] / rho[i];
 
                 // compute distance to the point mass
-                Tscal r_squared = sycl::dot(r_vec, r_vec);
+                Tscal r_squared = sycl::max(x * x + y * y, 1e-20);
 
                 Tscal omega = (-y * vx + x * vy) / r_squared;
 
                 // compute old thermal energy
-                Tscal ekin = sycl::dot(rhov[i], rhov[i]) / rho[i];
+                Tscal ekin = 0.5 * sycl::dot(rhov[i], rhov[i]) / rho[i];
                 Tscal eint = rhoe[i] - ekin;
 
                 // compute new thermal energy
-                eint = sycl::max(eint - eint * dt * omega / beta, 1e-10);
+                eint *= sycl::exp(-dt * sycl::fabs(omega) / beta);
 
                 rhoe[i] = ekin + eint;
             });

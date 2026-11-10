@@ -55,31 +55,3 @@ namespace shammodels::sph::modules {
 } // namespace shammodels::sph::modules
 
 #undef NODE_EDGES
-
-#define NODE_EDGES(X_RO, X_RW)                                                                     \
-    X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
-    X_RO(shamrock::solvergraph::IFieldSpan<u32>, mask)                                             \
-    X_RW(shamrock::solvergraph::IFieldSpan<T>, field_to_set)
-
-namespace shammodels::sph::modules {
-
-    template<class T>
-    class SetWhenMask : public shamrock::solvergraph::INode {
-
-        T val_to_set;
-
-        public:
-        SetWhenMask(T val_to_set) : val_to_set(val_to_set) {}
-
-        EXPAND_NODE_EDGES(NODE_EDGES)
-
-        void _impl_evaluate_internal();
-
-        inline virtual std::string _impl_get_label() const { return "SetWhenMask"; };
-
-        virtual std::string _impl_get_tex() const;
-    };
-
-} // namespace shammodels::sph::modules
-
-#undef NODE_EDGES

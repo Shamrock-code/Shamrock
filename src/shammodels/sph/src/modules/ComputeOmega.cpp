@@ -78,36 +78,6 @@ std::string shammodels::sph::modules::NodeComputeOmega<Tvec, SPHKernel>::_impl_g
     return "TODO";
 }
 
-template<class T>
-void shammodels::sph::modules::SetWhenMask<T>::_impl_evaluate_internal() {
-    __shamrock_stack_entry();
-
-    auto edges = get_edges();
-
-    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-
-    edges.mask.check_sizes(edges.part_counts.indexes);
-    edges.field_to_set.ensure_sizes(edges.part_counts.indexes);
-
-    sham::distributed_data_kernel_call(
-        dev_sched,
-        sham::DDMultiRef{edges.mask.get_spans()},
-        sham::DDMultiRef{edges.field_to_set.get_spans()},
-        edges.part_counts.indexes,
-        [val_to_set = this->val_to_set](u32 id, const u32 *mask, T *field_to_set) {
-            if (mask[id] == 1) {
-                field_to_set[id] = val_to_set;
-            }
-        });
-}
-
-template<class T>
-std::string shammodels::sph::modules::SetWhenMask<T>::_impl_get_tex() const {
-    return "TODO";
-}
-
-template class shammodels::sph::modules::SetWhenMask<f64>;
-
 using namespace shammath;
 template class shammodels::sph::modules::NodeComputeOmega<f64_3, M4>;
 template class shammodels::sph::modules::NodeComputeOmega<f64_3, M6>;

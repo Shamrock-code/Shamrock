@@ -17,13 +17,11 @@
  *
  */
 
-#include "shambase/stacktrace.hpp"
-#include "shambase/string.hpp"
-#include "shambackends/kernel_call_distrib.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamsolvergraph/node/INode.hpp"
-#include "shamsys/NodeInstance.hpp"
+#include <string>
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
@@ -53,52 +51,11 @@ namespace shammodels::sph::modules {
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
-        inline void _impl_evaluate_internal() {
-            __shamrock_stack_entry();
-
-            auto edges = get_edges();
-
-            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-
-            edges.mask.check_sizes(edges.part_counts.indexes);
-            edges.field_to_set.ensure_sizes(edges.part_counts.indexes);
-
-            auto var_counts = edges.part_counts.indexes.template map<u32>([&](u64, u32 count) {
-                return count * nvar;
-            });
-
-            sham::distributed_data_kernel_call(
-                dev_sched,
-                sham::DDMultiRef{edges.mask.get_spans()},
-                sham::DDMultiRef{edges.field_to_set.get_spans()},
-                var_counts,
-                [val_to_set = this->val_to_set,
-                 nvar       = this->nvar](u32 id_var, const u32 *mask, T *field_to_set) {
-                    if (mask[id_var / nvar] != 0) {
-                        field_to_set[id_var] = val_to_set;
-                    }
-                });
-        }
+        void _impl_evaluate_internal();
 
         inline virtual std::string _impl_get_label() const { return "SetWhenMask"; };
 
-        inline virtual std::string _impl_get_tex() const {
-            auto mask         = get_ro_edge_base(1).get_tex_symbol();
-            auto field_to_set = get_rw_edge_base(0).get_tex_symbol();
-
-            std::string tex = R"tex(
-    Set the field to a constant value \(c\) where the mask is non-zero
-    \begin{align}
-    {field}_{i,k} &= c \quad \text{if } {mask}_i \neq 0, \quad k = 0, \dots, {nvar} - 1
-    \end{align}
-    )tex";
-
-            shambase::replace_all(tex, "{field}", field_to_set);
-            shambase::replace_all(tex, "{mask}", mask);
-            shambase::replace_all(tex, "{nvar}", std::to_string(nvar));
-
-            return tex;
-        }
+        virtual std::string _impl_get_tex() const;
     };
 
 } // namespace shammodels::sph::modules

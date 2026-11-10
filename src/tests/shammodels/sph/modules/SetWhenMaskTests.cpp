@@ -21,8 +21,6 @@ namespace {
     template<class T>
     void test_set_when_mask(u32 nvar, T val_to_set, std::vector<T> f0, std::vector<T> f1) {
 
-        // patch 0 has 4 objects, patch 1 has 3 objects
-        // any non-zero value of the mask selects the object (freeze_id semantics)
         std::vector<u32> mask0 = {0, 1, 0, 2};
         std::vector<u32> mask1 = {1, 0, 0};
 

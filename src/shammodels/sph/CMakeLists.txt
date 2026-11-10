@@ -13,7 +13,6 @@ set(Sources
     src/BasicSPHGhosts.cpp
     src/Model.cpp
     src/Solver.cpp
-    src/SPHUtilities.cpp
     src/io/PhantomDump.cpp
     src/io/Phantom2Shamrock.cpp
     src/io/PhantomDumpEOSUtils.cpp
@@ -24,6 +23,7 @@ set(Sources
     src/modules/SolverStorage.cpp
     src/modules/BuildTrees.cpp
     src/modules/BuildGhostInterfaceIdTable.cpp
+    src/modules/FindGhostInterfaces.cpp
     src/modules/UpdateViscosity.cpp
     src/modules/DiffOperator.cpp
     src/modules/DiffOperatorDtDivv.cpp
@@ -48,9 +48,11 @@ set(Sources
     src/modules/GetParticlesOutsideSphere.cpp
     src/modules/IterateSmoothingLengthDensity.cpp
     src/modules/IterateSmoothingLengthDensityNeighLim.cpp
+    src/modules/IterateSmoothingLengthDensityBisectingNR.cpp
     src/modules/LoopSmoothingLengthIter.cpp
     src/modules/ComputeNeighStats.cpp
     src/modules/NodeUpdateDerivsVaryingAlphaAV.cpp
+    src/modules/NodeUpdateDerivsVaryingAlphaAVMHD.cpp
     src/modules/NodeUpdateDerivsVaryingAlphaAVDustTVA.cpp
     src/modules/NodeUpdateDerivsMonofluidTVA.cpp
     src/modules/NodeComputePressureGrad.cpp

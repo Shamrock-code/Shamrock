@@ -109,26 +109,6 @@ namespace shammodels::gsph {
         inline Tscal get_dt() { return dt_edge_value(); }
         inline void set_next_dt(Tscal dt) { dt_edge_value() = dt; }
 
-        /// Register time/dt synchronized edges if missing (idempotent)
-        inline void ensure_time_state_edges() {
-            auto &sync    = scheduler().synchronized_data;
-            auto names    = sync.get_edge_names();
-            auto has_edge = [&](const std::string &name) {
-                return std::find(names.begin(), names.end(), name) != names.end();
-            };
-
-            if (!has_edge("time")) {
-                auto edge = sync.register_edge(
-                    "time", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("time", "t"));
-                edge->data = 0;
-            }
-            if (!has_edge("dt")) {
-                auto edge = sync.register_edge(
-                    "dt", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("dt", "dt"));
-                edge->data = 0;
-            }
-        }
-
         inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
 
         // Serial patch tree control
@@ -139,12 +119,13 @@ namespace shammodels::gsph {
         using GhostHandle      = GSPHGhostHandler<Tvec>;
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
-        void gen_ghost_handler(Tscal time_val);
         inline void reset_ghost_handler() {
             shambase::get_check_ref(storage.ghost_handler).free_alloc();
         }
 
-        void build_ghost_cache();
+        /// Generates the ghost handler and builds the ghost interface cache, with boundary
+        /// conditions evaluated at time_val
+        void build_ghost_cache(Tscal time_val);
         void clear_ghost_cache();
 
         void merge_position_ghost();

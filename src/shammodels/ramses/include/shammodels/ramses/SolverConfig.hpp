@@ -28,6 +28,8 @@
 #include "shamcomm/logs.hpp"
 #include "shammath/riemann_common.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
+#include "shammodels/ramses/config/CoolingConfig.hpp"
+#include "shammodels/ramses/config/ExtForceConfig.hpp"
 #include "shammodels/ramses/config/enum_AMRInterpMode.hpp"
 #include "shammodels/ramses/config/enum_DragSolverMode.hpp"
 #include "shammodels/ramses/config/enum_DustRiemannSolverMode.hpp"
@@ -41,6 +43,7 @@
 #include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <shamunits/constant_table.hpp>
 #include <stdexcept>
 #include <variant>
 
@@ -85,8 +88,12 @@ namespace shammodels::basegodunov {
     struct GravityConfig {
         using Tscal              = shambase::VecComponent<Tvec>;
         GravityMode gravity_mode = NoGravity;
-        bool analytical_gravity  = false; // whether to use an external analytical gravity
-        Tscal tol                = 1e-6;
+        /// Convergence tolerance of the Poisson solver
+        Tscal tol = 1e-6;
+        /// Tolerance of the BiCGSTAB lucky breakdown test (restarts the solver below it)
+        Tscal tol_hp_bk = 1e-6;
+        /// Maximum number of iterations of the Poisson solver
+        u32 Niter_max = 100;
         inline Tscal get_tolerance() { return tol; }
         inline bool is_gravity_on() { return gravity_mode != NoGravity; }
     };
@@ -107,9 +114,18 @@ namespace shammodels::basegodunov {
             Tscal error_max;
         };
 
+        /**
+         * @brief Refine the blocks where the Jeans length is resolved by less than N_J cells
+         *
+         * A block is refined if one of its cells has \f$ N_J \Delta x > \lambda_J =
+         * \sqrt{\pi c_s^2 / (G \rho)} \f$, with the sound speed of the equation of state (of
+         * the barotrope with the InstantBarotropic cooling). It is derefined if the coarse cells of
+         * size
+         * \f$ 2 \Delta x \f$ would still resolve the Jeans length of all its cells by more than
+         * \f$ \sqrt{2} N_J \f$ cells (hysteresis margin).
+         */
         struct JeansLengthBased {
-            u32 N_J   = 4;
-            Tscal T_0 = 10.;
+            u32 N_J = 4;
         };
 
         struct ShearBased {
@@ -129,9 +145,7 @@ namespace shammodels::basegodunov {
             config = PseudoGradientBased{error_min, error_max};
         }
 
-        void set_refine_jeans_length_based(u32 N_J, Tscal T_0) {
-            config = JeansLengthBased{N_J, T_0};
-        }
+        void set_refine_jeans_length_based(u32 N_J) { config = JeansLengthBased{N_J}; }
 
         void set_refine_shear_based(Tscal thresh) { config = ShearBased{thresh}; }
 
@@ -142,7 +156,8 @@ namespace shammodels::basegodunov {
     /**
      * @brief Equation of state of the gas, each alternative maps to a shammath FluidStateSpec
      *
-     * The solver only supports the Adiabatic alternative for now.
+     * The solver supports the Adiabatic alternative only for now. The RAMSES-like reset of the
+     * internal energy onto a barotrope is a cooling, see CoolingConfig::InstantBarotropic.
      */
     template<class Tvec>
     struct EOSConfig {
@@ -176,6 +191,9 @@ namespace shammodels::basegodunov {
         inline void set_barotropic(Tscal rho_crit, Tscal cs0, Tscal gamma) {
             config = Barotropic{rho_crit, cs0, gamma};
         }
+
+        /// True if the hydro step is the adiabatic one
+        inline bool is_hydro_adiabatic() const { return std::holds_alternative<Adiabatic>(config); }
     };
 
     struct BCConfig {
@@ -215,22 +233,30 @@ struct shammodels::basegodunov::SolverConfig {
     /// Set an adiabatic equation of state (kept for backward compatibility)
     inline void set_eos_gamma(Tscal gamma) { eos_config.set_adiabatic(gamma); }
 
-    /// Adiabatic index of the gas, throws if the equation of state is not adiabatic
+    /// Adiabatic index of the hydro step, throws if the hydro step is not adiabatic
     inline Tscal get_eos_gamma() const {
         using Adiabatic = typename EOSConfig<Tvec>::Adiabatic;
         if (const Adiabatic *cfg = std::get_if<Adiabatic>(&eos_config.config)) {
             return cfg->gamma;
         }
         shambase::throw_with_loc<std::invalid_argument>(
-            "The Ramses solver only supports the adiabatic equation of state for now");
+            "The Ramses solver only supports an adiabatic hydro step (Adiabatic equation of "
+            "state) for now");
         return {};
     }
+
+    /// Cooling of the gas
+    CoolingConfig<Tvec> cooling_config{};
+
+    inline bool is_cooling_on() const { return cooling_config.is_cooling_on(); }
 
     RiemannSolverMode riemann_config  = HLL;
     SlopeMode slope_config            = VanLeer_sym;
     bool face_half_time_interpolation = true;
+    AMRInterpMode amr_interp_mode     = FIRST_ORDER;
 
-    AMRInterpMode amr_interp_mode = FIRST_ORDER;
+    /// Set the gas Riemann solver
+    inline void set_riemann_solver(RiemannSolverMode mode) { riemann_config = mode; }
 
     inline bool should_compute_rho_mean() { return is_gravity_on() && is_boundary_periodic(); }
 
@@ -269,27 +295,43 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config
     //////////////////////////////////////////////////////////////////////////////////////////////
-    inline Tscal get_constant_G() {
+    /// The unit system of the config, or the default one (SI) if it is not set
+    inline shamunits::UnitSystem<Tscal> get_unit_sys() {
         if (!unit_sys) {
             ON_RANK_0(logger::warn_ln("amr::Config", "the unit system is not set"));
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.G();
+            return shamunits::UnitSystem<Tscal>{};
         } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.G();
+            return *unit_sys;
         }
+    }
+    inline Tscal get_constant_G() { return get_unit_sys().template get<shamunits::constants::G>(); }
+    inline Tscal get_constant_4piG() {
+        return get_unit_sys().template get<4 * shamunits::pi<double> * shamunits::constants::G>();
     }
     inline bool is_boundary_periodic() { return true; }
     GravityConfig<Tvec> gravity_config{};
-    inline Tscal get_constant_4piG() {
-        auto scal_G = get_constant_G();
-        return 4 * M_PI * scal_G;
-    }
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
+    inline Tscal get_happy_bk_grav_tol() { return gravity_config.tol_hp_bk; }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
-    inline bool is_coordinate_field_required() { return gravity_config.analytical_gravity; }
+    inline bool is_coordinate_field_required() { return ext_force_config.is_coordinates_needed(); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // External forces config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using ExtForceConfig = shammodels::basegodunov::ExtForceConfig<Tvec>;
+
+    /// External forces applied to the gas
+    ExtForceConfig ext_force_config{};
+
+    inline bool has_ext_forces() { return ext_force_config.has_ext_forces(); }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // External forces config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     /// AMR refinement mode
@@ -331,6 +373,32 @@ struct shammodels::basegodunov::SolverConfig {
         }
 
         if (is_gravity_on()) {
+            if (gravity_config.gravity_mode != CG && gravity_config.gravity_mode != BICGSTAB) {
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
+                    "self-gravity: only the cg and bicgstab Poisson solvers are implemented, got "
+                    "gravity mode {}",
+                    nlohmann::json(gravity_config.gravity_mode).dump()));
+            }
+
+            // self-gravity is applied through the external forces, its acceleration at t^{n+1}
+            // only depending on the density at t^{n+1} (see Solver::init_solver_graph)
+            if (ext_force_config.coupling != ExtForceCoupling::Trapezoidal) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "self-gravity requires the trapezoidal coupling of the external forces");
+            }
+
+            // Combinations that were not validated with this self-gravity scheme (only gas
+            // self-gravity was). The external forces path would apply the self-gravity
+            // acceleration to the dust as well, and the drag integrator is not coupled to it.
+            if (is_dust_on()) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "self-gravity with dust is not supported yet");
+            }
+            if (drag_config.drag_solver_config != NoDrag) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "self-gravity with drag is not supported yet");
+            }
+
             ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental"));
             u32 mode = gravity_config.gravity_mode;
 
@@ -353,6 +421,8 @@ struct shammodels::basegodunov::SolverConfig {
                 "The barotropic equation of state is not supported by the Ramses solver yet");
         }
 
+        cooling_config.check_config();
+
         if (is_gas_passive_scalar_on()) {
             ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental"));
             shamrock::experimental_feature_check(
@@ -365,6 +435,24 @@ struct shammodels::basegodunov::SolverConfig {
 
         if (!amr_mode.old_amr) {
             shamrock::experimental_feature_check("new AMR is experimental");
+        }
+
+        using AMRNone         = typename AMRMode<Tvec, TgridVec>::None;
+        using AMRDensityBased = typename AMRMode<Tvec, TgridVec>::DensityBased;
+        if (amr_mode.old_amr
+            && !(
+                std::holds_alternative<AMRNone>(amr_mode.config)
+                || std::holds_alternative<AMRDensityBased>(amr_mode.config))) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "the old AMR only implements the None and DensityBased refinement criteria, the "
+                "selected one is only implemented in the new AMR (cfg.set_amr_mode_old(False))");
+        }
+
+        using AMRJeansLengthBased = typename AMRMode<Tvec, TgridVec>::JeansLengthBased;
+        if (const AMRJeansLengthBased *cfg = std::get_if<AMRJeansLengthBased>(&amr_mode.config)) {
+            if (cfg->N_J == 0) {
+                shambase::throw_with_loc<std::invalid_argument>("N_J must be > 0");
+            }
         }
     }
 
@@ -438,7 +526,7 @@ namespace shammodels::basegodunov {
                    {"error_min", cfg->error_min},
                    {"error_max", cfg->error_max}};
         } else if (const auto *cfg = std::get_if<typename AMR::JeansLengthBased>(&p.config)) {
-            j = {{"type", "jeans_length_based"}, {"N_J", cfg->N_J}, {"T_0", cfg->T_0}};
+            j = {{"type", "jeans_length_based"}, {"N_J", cfg->N_J}};
         } else if (const auto *cfg = std::get_if<typename AMR::ShearBased>(&p.config)) {
             j = {{"type", "shear_based"}, {"threshold", cfg->threshold}};
         } else {
@@ -459,7 +547,7 @@ namespace shammodels::basegodunov {
             p.set_refine_pseudo_gradient_based(
                 j.at("error_min").get<Tscal>(), j.at("error_max").get<Tscal>());
         } else if (type == "jeans_length_based") {
-            p.set_refine_jeans_length_based(j.at("N_J").get<u32>(), j.at("T_0").get<Tscal>());
+            p.set_refine_jeans_length_based(j.at("N_J").get<u32>());
         } else if (type == "shear_based") {
             p.set_refine_shear_based(j.at("threshold").get<Tscal>());
         } else {
@@ -499,6 +587,13 @@ namespace shammodels::basegodunov {
                 j.at("rho_crit").get<Tscal>(),
                 j.at("cs0").get<Tscal>(),
                 j.at("gamma").get<Tscal>());
+        } else if (type == "reset_barotropic") {
+            // legacy EOS, now an adiabatic EOS + CoolingConfig::InstantBarotropic, only
+            // converted when deserializing a whole SolverConfig
+            shambase::throw_with_loc<std::runtime_error>(
+                "The reset_barotropic EOS was replaced by an adiabatic EOS with the "
+                "instant_barotropic cooling, it can only be converted when deserializing a "
+                "SolverConfig");
         } else {
             shambase::throw_with_loc<std::runtime_error>("Invalid EOS type: " + type);
         }

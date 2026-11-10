@@ -117,13 +117,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                               "    -> calling this is a no-op,\n"
                               "    -> you can remove the call to that function"););
             })
+        .def("set_filter_empty_patch_gz", &TConfig::set_filter_empty_patch_gz)
         .def("set_smoothing_length_density_based", &TConfig::set_smoothing_length_density_based)
         .def(
             "set_smoothing_length_density_based_neigh_lim",
             &TConfig::set_smoothing_length_density_based_neigh_lim)
+        .def(
+            "set_smoothing_length_density_based_bisecting_nr",
+            &TConfig::set_smoothing_length_density_based_bisecting_nr)
         .def("set_enable_particle_reordering", &TConfig::set_enable_particle_reordering)
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_show_ghost_zone_graph", &TConfig::set_show_ghost_zone_graph)
+        .def("set_show_ghost_stats", &TConfig::set_show_ghost_stats)
         .def("use_luminosity", &TConfig::use_luminosity)
         .def("compute_GW", &TConfig::use_GW)
         .def("set_save_dt_to_fields", &TConfig::set_save_dt_to_fields)
@@ -220,54 +225,31 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("beta_AV"))
         .def(
             "set_IdealMHD",
-            [](TConfig &self,
-               Tscal sigma_mhd,
-               Tscal sigma_u,
-               Tscal alpha_B,
-               Tscal alpha_AV,
-               Tscal beta_AV) {
-                self.set_ideal_mhd({sigma_mhd, sigma_u, alpha_B, alpha_AV, beta_AV});
+            [](TConfig &self, Tscal sigma_mhd, Tscal alpha_B) {
+                self.set_ideal_mhd({sigma_mhd, alpha_B});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
-            py::arg("sigma_u"),
-            py::arg("alpha_B")  = 1.0,
-            py::arg("alpha_AV") = 1.0,
-            py::arg("beta_AV")  = 1.0)
+            py::arg("alpha_B") = 1.0)
         .def(
             "set_NonIdealMHD",
             [](TConfig &self,
                Tscal sigma_mhd,
-               Tscal sigma_u,
                Tscal etaO,
                Tscal etaH,
                Tscal etaAD,
                Tscal alpha_B,
-               Tscal alpha_AV,
-               Tscal beta_AV,
                bool eta_fields,
                bool eta_semi_constant) {
                 self.set_non_ideal_mhd(
-                    {sigma_mhd,
-                     sigma_u,
-                     alpha_B,
-                     alpha_AV,
-                     beta_AV,
-                     etaO,
-                     etaH,
-                     etaAD,
-                     eta_fields,
-                     eta_semi_constant});
+                    {sigma_mhd, alpha_B, etaO, etaH, etaAD, eta_fields, eta_semi_constant});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
-            py::arg("sigma_u"),
             py::arg("etaO"),
             py::arg("etaH"),
             py::arg("etaAD"),
             py::arg("alpha_B")           = 1.0,
-            py::arg("alpha_AV")          = 1.0,
-            py::arg("beta_AV")           = 1.0,
             py::arg("eta_fields")        = false,
             py::arg("eta_semi_constant") = false)
         .def(
@@ -400,7 +382,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal rhodust_eps,
                Tscal vfrag_threshold,
                std::vector<Tscal> massgrid,
-               py::array_t<Tscal> tabflux_coag) {
+               py::array_t<Tscal> tabflux_coag,
+               Tscal tau_frac) {
                 if (massgrid.size() == 0) {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
                         "massgrid must not be empty");
@@ -444,6 +427,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
                 self.dust_config.set_dust_evol_coala(
                     {.rhodust_eps     = rhodust_eps,
+                     .tau_frac        = tau_frac,
                      .vfrag_threshold = vfrag_threshold,
                      .massgrid        = massgrid,
                      .tabflux_coag    = tabflux_coag_vec});
@@ -452,6 +436,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("vfrag_threshold"),
             py::arg("massgrid"),
             py::arg("tabflux_coag"),
+            py::arg("tau_frac") = Tscal(10),
             R"pbdoc(
         Enable the COALA dust coagulation source term.
 
@@ -466,6 +451,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             massgrid: Dust mass grid bin edges, of size ``nbins + 1``.
             tabflux_coag: Tabulated coagulation flux, of shape
                 ``(nbins, nbins, nbins)``.
+            tau_frac: The source term on ``s_j`` is integrated implicitly over
+                ``dt_eff = max(dt, tau_frac * rhodust_eps / |S|)``, that is over at
+                least the time needed to move ``tau_frac * rhodust_eps``. This bounds
+                the rate of an empty bin when ``dt`` is null or tiny (e.g. right after
+                a dust injection). Must be positive.
         )pbdoc")
         .def(
             "set_dust_ballabio_ts_limiter",

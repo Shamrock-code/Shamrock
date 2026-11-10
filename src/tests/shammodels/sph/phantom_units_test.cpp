@@ -11,8 +11,8 @@
 #include "shammodels/sph/io/Phantom2Shamrock.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shamunits/Constants.hpp"
 #include "shamunits/UnitSystem.hpp"
+#include "shamunits/constant_table.hpp"
 #include <cmath>
 #include <optional>
 
@@ -24,10 +24,9 @@ NEW_TEST(Unittest, "shammodels/sph/phantom-units-cgs", 1) {
 
     // Phantom's default disc units: au, solar mass, yr/(2 pi)
     UnitSystem<f64> si{};
-    Constants<f64> si_ctes{si};
-    f64 au_m    = si_ctes.au();
-    f64 msol_kg = si_ctes.sol_mass();
-    f64 utime_s = si_ctes.year() / (2 * shambase::constants::pi<f64>);
+    f64 au_m    = si.get<constants::au>();
+    f64 msol_kg = si.get<constants::sol_mass>();
+    f64 utime_s = si.get<constants::year>() / (2 * shambase::constants::pi<f64>);
 
     std::optional<UnitSystem<f64>> units = UnitSystem<f64>(utime_s, au_m, msol_kg);
 
@@ -60,7 +59,7 @@ NEW_TEST(Unittest, "shammodels/sph/phantom-units-cgs", 1) {
 
     // G = 1 in au / solar mass / (yr / 2 pi) is the defining property of phantom disc units.
     // It is not exact here since shamunits' year, au and solar mass are independent constants.
-    f64 g_code = Constants<f64>(read_units).G();
+    f64 g_code = read_units.get<constants::G>();
     REQUIRE_FLOAT_EQUAL(g_code, 1., 1e-3);
 }
 
@@ -87,7 +86,7 @@ NEW_TEST(Unittest, "shammodels/sph/phantom-units-cgs-read", 1) {
     using namespace shamunits;
 
     // Header as phantom writes it for au / solar mass units, with utime set such that G = 1
-    f64 g_cgs = Constants<f64>::Si::G * 1e3; // cm3.g-1.s-2
+    f64 g_cgs = constants::G.si_factor * 1e3; // cm3.g-1.s-2
     f64 udist = 1.495978707e13;
     f64 umass = 1.98847e33;
     f64 utime = std::sqrt(udist * udist * udist / (g_cgs * umass));
@@ -105,7 +104,7 @@ NEW_TEST(Unittest, "shammodels/sph/phantom-units-cgs-read", 1) {
     REQUIRE_FLOAT_EQUAL(read_units.m_inv / 1.495978707e11, 1., 1e-12);
     REQUIRE_FLOAT_EQUAL(read_units.kg_inv / 1.98847e30, 1., 1e-12);
     REQUIRE_FLOAT_EQUAL(read_units.s_inv / utime, 1., 1e-12);
-    f64 g_code = Constants<f64>(read_units).G();
+    f64 g_code = read_units.get<constants::G>();
     REQUIRE_FLOAT_EQUAL(g_code, 1., 1e-10);
 
     // Writing these units back must reproduce phantom's header

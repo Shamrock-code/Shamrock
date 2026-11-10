@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from shamrock.model_ramses import HLLC_PVRS
 
 import shamrock
 
@@ -19,7 +20,7 @@ def run_sim(vanleer=True, label="none"):
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
     cfg.set_scale_factor(scale_fact)
-    cfg.set_riemann_solver_hllc()
+    cfg.set_riemann_solver(HLLC_PVRS)
     cfg.set_eos_gamma(1.66667)
 
     cfg.set_slope_lim_vanleer_sym()

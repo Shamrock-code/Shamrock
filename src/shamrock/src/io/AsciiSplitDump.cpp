@@ -51,14 +51,6 @@ void AsciiSplitDump::PatchDump::write_table(std::vector<T> buf, u32 len) {
     }
 }
 
-template<class T>
-void AsciiSplitDump::PatchDump::write_table(sycl::buffer<T> buf, u32 len) {
-    sycl::host_accessor acc{buf, sycl::read_only};
-    for (u32 i = 0; i < len; i++) {
-        write_val(acc[i]);
-    }
-}
-
 #ifndef DOXYGEN
     #define XMAC_TYPES                                                                             \
         X(f32)                                                                                     \
@@ -82,9 +74,7 @@ void AsciiSplitDump::PatchDump::write_table(sycl::buffer<T> buf, u32 len) {
     #define X(_arg_)                                                                               \
         template void AsciiSplitDump::PatchDump::write_val<_arg_>(_arg_ val);                      \
         template void AsciiSplitDump::PatchDump::write_table<_arg_>(                               \
-            std::vector<_arg_> buf, u32 len);                                                      \
-        template void AsciiSplitDump::PatchDump::write_table<_arg_>(                               \
-            sycl::buffer<_arg_> buf, u32 len);
+            std::vector<_arg_> buf, u32 len);
 
 XMAC_TYPES
     #undef X

@@ -105,8 +105,9 @@ cfg.set_units(codeu)
 mu_0 = ucte.mu_0()
 print(f"mu_0: {mu_0}")
 
-cfg.set_artif_viscosity_None()  # artificial viscosity terms are computed in the MHD solver
-cfg.set_IdealMHD(sigma_mhd=1, sigma_u=1)
+# with MHD, the artificial viscosity uses the fast magnetosonic speed as signal velocity
+cfg.set_artif_viscosity_Constant(alpha_u=1, alpha_AV=1, beta_AV=1)
+cfg.set_IdealMHD(sigma_mhd=1)
 cfg.set_show_cfl_detail(True)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)

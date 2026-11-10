@@ -29,6 +29,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shamrock.model_ramses import HLL, HLLC_PVRS, HLLC_Davis, Rusanov
 
 import shamrock
 
@@ -137,11 +138,13 @@ def run_test(
         raise ValueError(f"Invalid slope limiter: {slope_limiter}")
 
     if riemann_solver == "rusanov":
-        cfg.set_riemann_solver_rusanov()
+        cfg.set_riemann_solver(Rusanov)
     elif riemann_solver == "hll":
-        cfg.set_riemann_solver_hll()
-    elif riemann_solver == "hllc":
-        cfg.set_riemann_solver_hllc()
+        cfg.set_riemann_solver(HLL)
+    elif riemann_solver == "hllc_pvrs":
+        cfg.set_riemann_solver(HLLC_PVRS)
+    elif riemann_solver == "hllc_davis":
+        cfg.set_riemann_solver(HLLC_Davis)
     else:
         raise ValueError(f"Invalid Riemann solver: {riemann_solver}")
 
@@ -338,10 +341,10 @@ def run_and_plot(cases, test_number, case_anim):
 cases = [
     # ("none", "rusanov"),
     ("none", "hll"),
-    # ("none", "hllc"),
+    # ("none", "hllc_pvrs"),
     ("minmod", "rusanov"),
     ("minmod", "hll"),
-    ("minmod", "hllc"),
+    ("minmod", "hllc_pvrs"),
 ]
 
 # %%
@@ -351,19 +354,19 @@ plot, anim = run_and_plot(cases, 1, "minmod_hll")
 plot, anim = run_and_plot(cases, 2, "minmod_hll")
 
 # %%
-plot, anim = run_and_plot(cases, 3, "minmod_hllc")
+plot, anim = run_and_plot(cases, 3, "minmod_hllc_pvrs")
 
 # %%
-plot, anim = run_and_plot(cases, 4, "minmod_hllc")
+plot, anim = run_and_plot(cases, 4, "minmod_hllc_pvrs")
 
 # %%
-plot, anim = run_and_plot(cases, 5, "minmod_hllc")
+plot, anim = run_and_plot(cases, 5, "minmod_hllc_pvrs")
 
 # %%
-plot, anim = run_and_plot(cases, 6, "minmod_hllc")
+plot, anim = run_and_plot(cases, 6, "minmod_hllc_pvrs")
 
 # %%
-plot, anim = run_and_plot(cases, 7, "minmod_hllc")
+plot, anim = run_and_plot(cases, 7, "minmod_hllc_pvrs")
 
 # %%
 plt.show()

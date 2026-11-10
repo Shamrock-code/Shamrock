@@ -73,21 +73,16 @@ namespace shammodels::sph::modules {
         using IdealMHD    = typename Cfg_MHD::IdealMhdConstrainedHyperPara;
         using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
 
+        // Adds the pure MHD terms to the derivatives (the hydro ones, i.e. pressure, artificial
+        // viscosity & conductivity, must have been computed beforehand).
+        // One templated implementation, specialised per MHDType at the call sites below.
         template<shamrock::sph::mhd::MHDType mhd_mode>
         void update_derivs_mhd_impl(
-            Tscal sigma_mhd,
-            Tscal alpha_u,
-            Tscal alpha_B,
-            Tscal alpha_AV,
-            Tscal beta_AV,
-            Tscal etaO,
-            Tscal etaH,
-            Tscal etaAD,
-            bool eta_fields);
+            Tscal sigma_mhd, Tscal alpha_B, Tscal etaO, Tscal etaH, Tscal etaAD, bool eta_fields);
 
         // Thin wrappers that unpack the variant and forward to the template above.
         void update_derivs_mhd(IdealMHD cfg);
-        void update_derivs_mhd(NonIdealMHD cfg);
+        void update_derivs_nimhd(NonIdealMHD cfg);
     };
 
 } // namespace shammodels::sph::modules

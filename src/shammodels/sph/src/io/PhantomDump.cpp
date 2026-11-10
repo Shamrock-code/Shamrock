@@ -27,7 +27,6 @@
 #include "shammodels/sph/config/AVConfig.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamunits/UnitSystem.hpp"
 #include <unordered_map>
 #include <string>
 #include <vector>

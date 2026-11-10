@@ -31,6 +31,7 @@
 #include "imgui_impl_opengl3.h"
 #include "sham/gui/FrameTimings.hpp"
 #include "sham/gui/GuiClock.hpp"
+#include "sham/gui/ScaledDrawList.hpp"
 #include "sham/gui/font.hpp"
 #include "sham/gui/screenshot.hpp"
 #include "sham/gui/style.hpp"
@@ -189,6 +190,7 @@ int main(int argc, char **argv) {
     g_fonts = load_fonts(g_assets / "fonts");
     setup_style();
 
+    UI ui; // scale 1 for now
     GuiClock gui_clock(!cli.interactive_mode());
     FrameTimings timings; // only filled with --bench
 
@@ -215,16 +217,12 @@ int main(int argc, char **argv) {
         {
             const double t = gui_clock.now();
             const ImVec2 c(360 + 200 * float(std::cos(t)), 240 + 120 * float(std::sin(2 * t)));
-            ImDrawList *dl = ImGui::GetForegroundDrawList();
-            dl->AddRectFilled(
+            ScaledDrawList dl{.d = ImGui::GetForegroundDrawList(), .ui = ui};
+            dl.AddRectFilled(
                 ImVec2(c.x - 20, c.y - 20),
                 ImVec2(c.x + 20, c.y + 20),
                 IM_COL32(232, 163, 61, 255));
-            const char *label       = "Placeholder text";
-            const float size        = 13.0f;
-            const ImVec2 label_size = g_fonts.sans->CalcTextSizeA(size, FLT_MAX, 0.0f, label);
-            dl->AddText(
-                g_fonts.sans, size, ImVec2(c.x + 28, c.y - label_size.y / 2), theme::TEXT, label);
+            draw_text_vc(dl, g_fonts.sans, 13, c.x + 28, c.y, theme::TEXT, "Placeholder text");
         }
         ImGui::Render();
         glfwGetFramebufferSize(window, &fbw, &fbh);

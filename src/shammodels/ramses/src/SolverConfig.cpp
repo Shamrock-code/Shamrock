@@ -12,7 +12,7 @@
  * @author Anass Serhani (anass.serhani@cnrs.fr) --no git blame--
  * @author Benoit Commercon (benoit.commercon@ens-lyon.fr) --no git blame--
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Noé Brucy (noe.brucy@ens-lyon.fr) --no git blame--
+ * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief
@@ -44,6 +44,7 @@ namespace shammodels::basegodunov {
 
         if (is_gravity_on()) {
             pdl.add_field<Tscal>("phi", AMRBlock::block_size);
+            pdl.add_field<Tscal>("phi_old", AMRBlock::block_size);
         }
 
         if (is_gas_passive_scalar_on()) {
@@ -62,10 +63,12 @@ namespace shammodels::basegodunov {
             {"dust_riemann_solver", p.dust_config.dust_riemann_config},
             {"ndust", p.dust_config.ndust},
             {"eos_config", p.eos_config},
+            {"cooling_config", p.cooling_config},
             {"face_half_time_interpolation", p.face_half_time_interpolation},
             {"gravity_solver", p.gravity_config.gravity_mode},
-            {"analytical_gravity", p.gravity_config.analytical_gravity},
             {"gravity_tol", p.gravity_config.tol},
+            {"gravity_tol_happy_breakdown", p.gravity_config.tol_hp_bk},
+            {"gravity_Niter_max", p.gravity_config.Niter_max},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
             {"hydro_riemann_solver", p.riemann_config},
             {"passive_scalar_mode", p.npscal_gas_config.npscal_gas},
@@ -74,7 +77,8 @@ namespace shammodels::basegodunov {
             {"drag_config", p.drag_config},
             {"bc_config", p.bc_config},
             {"amr_mode", p.amr_mode},
-            {"amr_interp_mode", p.amr_interp_mode}};
+            {"amr_interp_mode", p.amr_interp_mode},
+            {"ext_force_config", p.ext_force_config}};
     }
 
     template<class Tvec, class TgridVec>
@@ -105,7 +109,29 @@ namespace shammodels::basegodunov {
         _get_to_if_contains("courant_safety_factor", p.Csafe);
         _get_to_if_contains("dust_riemann_solver", p.dust_config.dust_riemann_config);
         _get_to_if_contains("ndust", p.dust_config.ndust);
-        if (j.contains("eos_config")) {
+        // configs dumped before the cooling existed stored the instantaneous barotropic cooling as
+        // the "reset_barotropic" EOS: the adiabatic EOS of index gamma with the barotrope
+        // (rho_crit, cs0, gamma_baro)
+        bool is_legacy_reset_barotropic = j.contains("eos_config")
+                                          && j.at("eos_config").contains("type")
+                                          && j.at("eos_config").at("type") == "reset_barotropic";
+
+        if (is_legacy_reset_barotropic) {
+            using Tscal                 = typename T::Tscal;
+            const nlohmann::json &j_eos = j.at("eos_config");
+            p.eos_config.set_adiabatic(j_eos.at("gamma").get<Tscal>());
+            p.cooling_config.set_instant_barotropic(
+                j_eos.at("rho_crit").get<Tscal>(),
+                j_eos.at("cs0").get<Tscal>(),
+                j_eos.at("gamma_baro").get<Tscal>());
+            has_updated_config = true;
+            if (shamcomm::world_rank() == 0) {
+                logger::warn_ln(
+                    "Ramses::SolverConfig",
+                    "Updating old [eos_config] of type [reset_barotropic] to an adiabatic "
+                    "[eos_config] with an [instant_barotropic] [cooling_config] in from_json");
+            }
+        } else if (j.contains("eos_config")) {
             j.at("eos_config").get_to(p.eos_config);
         } else if (j.contains("eos_gamma")) {
             // legacy configs only stored the adiabatic index
@@ -119,10 +145,14 @@ namespace shammodels::basegodunov {
         } else {
             has_used_defaults = true;
         }
+        if (!is_legacy_reset_barotropic) {
+            _get_to_if_contains("cooling_config", p.cooling_config);
+        }
         _get_to_if_contains("face_half_time_interpolation", p.face_half_time_interpolation);
         _get_to_if_contains("gravity_solver", p.gravity_config.gravity_mode);
-        _get_to_if_contains("analytical_gravity", p.gravity_config.analytical_gravity);
         _get_to_if_contains("gravity_tol", p.gravity_config.tol);
+        _get_to_if_contains("gravity_tol_happy_breakdown", p.gravity_config.tol_hp_bk);
+        _get_to_if_contains("gravity_Niter_max", p.gravity_config.Niter_max);
         _get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
         _get_to_if_contains("hydro_riemann_solver", p.riemann_config);
         _get_to_if_contains("passive_scalar_mode", p.npscal_gas_config.npscal_gas);
@@ -132,6 +162,7 @@ namespace shammodels::basegodunov {
         _get_to_if_contains("bc_config", p.bc_config);
         _get_to_if_contains("amr_mode", p.amr_mode);
         _get_to_if_contains("amr_interp_mode", p.amr_interp_mode);
+        _get_to_if_contains("ext_force_config", p.ext_force_config);
 
         if (has_used_defaults || has_updated_config) {
             if (shamcomm::world_rank() == 0) {

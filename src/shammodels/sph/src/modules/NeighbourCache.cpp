@@ -26,7 +26,6 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/TreeTraversal.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
-#include "shamunits/Constants.hpp"
 
 template<class Tvec, class Tmorton, template<class> class SPHKernel>
 void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_neighbors_cache() {

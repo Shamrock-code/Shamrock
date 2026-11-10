@@ -64,7 +64,7 @@ unit_names = [
     ("Henry", "H"),
     ("lumens", "lm"),
     ("lux", "lx"),
-    ("Bequerel", "Bq"),
+    ("Becquerel", "Bq"),
     ("Gray", "Gy"),
     ("Sievert", "Sv"),
     ("katal", "kat"),

@@ -39,18 +39,12 @@ struct shammodels::sph::MHDConfig {
 
     struct IdealMhdConstrainedHyperPara {
         Tscal sigma_mhd = 0.1;
-        Tscal alpha_u   = 1.;
         Tscal alpha_B   = 1.;
-        Tscal alpha_AV  = 1.;
-        Tscal beta_AV   = 1.;
     };
 
     struct NonIdealMHD {
         Tscal sigma_mhd = 0.1;
-        Tscal alpha_u   = 1.;
         Tscal alpha_B   = 1.;
-        Tscal alpha_AV  = 1.;
-        Tscal beta_AV   = 1.;
         Tscal etaO      = 1.;
         Tscal etaH      = 1.;
         Tscal etaAD     = 1.;
@@ -124,14 +118,10 @@ struct shammodels::sph::MHDConfig {
             logger::raw_ln("  Config MHD  : Ideal MHD, constrained hyperbolic/parabolic treatment");
             logger::raw_ln("  sigma_mhd  =", v->sigma_mhd);
             logger::raw_ln("  alpha_B    =", v->alpha_B);
-            logger::raw_ln("  alpha_AV   =", v->alpha_AV);
-            logger::raw_ln("  beta_AV    =", v->beta_AV);
         } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD)) {
             logger::raw_ln("  Config MHD Type : Non Ideal MHD");
             logger::raw_ln("  sigma_mhd   =", v->sigma_mhd);
             logger::raw_ln("  alpha_B     =", v->alpha_B);
-            logger::raw_ln("  alpha_AV    =", v->alpha_AV);
-            logger::raw_ln("  beta_AV     =", v->beta_AV);
             if (v->eta_semi_constant) {
                 logger::raw_ln("  etaO/etaH/etaAD : semi-constant, recomputed every step");
                 logger::raw_ln("  C_O         =", v->etaO);
@@ -189,20 +179,14 @@ namespace shammodels::sph {
             j = {
                 {"mhd_type", "ideal_mhd_constrained_hyper_para"},
                 {"sigma_mhd", v->sigma_mhd},
-                {"alpha_u", v->alpha_u},
                 {"alpha_B", v->alpha_B},
-                {"alpha_AV", v->alpha_AV},
-                {"beta_AV", v->beta_AV},
             };
         } else if (const NonIdealMHD *v = std::get_if<NonIdealMHD>(&p.configMHD)) {
             // Write the shear base, direction, and speed into the JSON object
             j = {
                 {"mhd_type", "non_ideal_mhd"},
                 {"sigma_mhd", v->sigma_mhd},
-                {"alpha_u", v->alpha_u},
                 {"alpha_B", v->alpha_B},
-                {"alpha_AV", v->alpha_AV},
-                {"beta_AV", v->beta_AV},
                 {"etaO", v->etaO},
                 {"etaH", v->etaH},
                 {"etaAD", v->etaAD},
@@ -243,26 +227,22 @@ namespace shammodels::sph {
         if (mhd_type == "none") {
             p.set(None{});
         } else if (mhd_type == "ideal_mhd_constrained_hyper_para") {
-            // alpha_B, alpha_AV & beta_AV were added later, older configs fall back to defaults
+            // alpha_u, alpha_AV & beta_AV are now in the artificial viscosity config, they are
+            // ignored if present in older configs
             IMHD def{};
             p.set(
                 IMHD{
                     j.at("sigma_mhd").get<Tscal>(),
-                    j.at("alpha_u").get<Tscal>(),
                     j.value("alpha_B", def.alpha_B),
-                    j.value("alpha_AV", def.alpha_AV),
-                    j.value("beta_AV", def.beta_AV),
                 });
         } else if (mhd_type == "non_ideal_mhd") {
-            // all fields beyond alpha_u were added later, older configs fall back to defaults
+            // alpha_u, alpha_AV & beta_AV are now in the artificial viscosity config, they are
+            // ignored if present in older configs
             NonIdealMHD def{};
             p.set(
                 NonIdealMHD{
                     j.at("sigma_mhd").get<Tscal>(),
-                    j.at("alpha_u").get<Tscal>(),
                     j.value("alpha_B", def.alpha_B),
-                    j.value("alpha_AV", def.alpha_AV),
-                    j.value("beta_AV", def.beta_AV),
                     j.value("etaO", def.etaO),
                     j.value("etaH", def.etaH),
                     j.value("etaAD", def.etaAD),

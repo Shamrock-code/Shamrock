@@ -226,20 +226,14 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_force(Tscal dt
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::EventList depends_list;
-
-        auto forces = forces_buf.get_read_access(depends_list);
-        auto vel    = vel_buf.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(
-                cgh, mpdat.total_elements * Block::block_size, "add ext force", [=](u64 id_a) {
-                    vel[id_a] += dt * forces[id_a];
-                });
-        });
-
-        forces_buf.complete_event_state(e);
-        vel_buf.complete_event_state(e);
+        sham::kernel_call(
+            q,
+            sham::MultiRef{forces_buf},
+            sham::MultiRef{vel_buf},
+            mpdat.total_elements * Block::block_size,
+            [dt](u32 id_a, const Tvec *__restrict forces, Tvec *__restrict vel) {
+                vel[id_a] += dt * forces[id_a];
+            });
 
         // logger::raw_ln(storage.forces.get().get_field(p.id_patch).compute_max());
     });

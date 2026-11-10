@@ -297,6 +297,17 @@ namespace shamsys::instance {
         "syclfirst",
         "Select the MPI init strategy (mpifirst, syclfirst) [default: syclfirst]");
 
+    namespace {
+        /// Closes the instance on destruction if nothing closed it before
+        struct InstanceCloser {
+            ~InstanceCloser() {
+                if (syclinit::initialized) {
+                    syclinit::finalize();
+                }
+            }
+        };
+    } // namespace
+
     void init_sycl_mpi(std::string search_key, MPIInitInfo mpi_info) {
 
         if (init_strategy == "syclfirst") {
@@ -311,6 +322,10 @@ namespace shamsys::instance {
 
         shambase::get_check_ref(syclinit::device_compute).update_mpi_prop();
         shambase::get_check_ref(syclinit::device_alt).update_mpi_prop();
+
+        // Registered for static teardown once the queues exist, so it runs before the
+        // statics the SYCL runtime set up while creating them
+        static InstanceCloser closer;
     }
 
     void init(int argc, char *argv[]) {

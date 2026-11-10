@@ -15,7 +15,16 @@ from pathlib import Path
 root = Path(__file__).resolve().parent.parent
 shamunits_dir = root / "src" / "shamunits"
 include_dir = shamunits_dir / "include" / "shamunits"
-roots = [include_dir / "Constants.hpp", include_dir / "UnitSystem.hpp"]
+roots = [
+    include_dir / name
+    for name in [
+        "Constants.hpp",
+        "UnitSystem.hpp",
+        "unit_table.hpp",
+        "prefix_table.hpp",
+        "constant_table.hpp",
+    ]
+]
 example = shamunits_dir / "exemple.cpp"
 output = shamunits_dir / "doc" / "godbolt.cpp"
 
@@ -33,6 +42,14 @@ def split_license(path):
     return lines[:end], lines[end:]
 
 
+def resolve_local(path, inc):
+    """Resolve `#include "inc"` seen in `path`: relative to it, else as "shamunits/..."."""
+    candidate = path.parent / inc
+    if not candidate.exists():
+        candidate = include_dir.parent / inc
+    return candidate.resolve()
+
+
 def inline(path, seen, sys_includes, out):
     if path in seen:
         return
@@ -43,7 +60,7 @@ def inline(path, seen, sys_includes, out):
         body.pop(0)
     for line in body:
         if m := local_include.match(line):
-            inline((path.parent / m.group(1)).resolve(), seen, sys_includes, out)
+            inline(resolve_local(path, m.group(1)), seen, sys_includes, out)
         elif m := system_include.match(line):
             sys_includes.setdefault(m.group(1), None)
         else:

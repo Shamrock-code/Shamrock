@@ -9,6 +9,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import PillowWriter
+from shamrock.model_ramses import HLLC_PVRS
 from shamrock.utils.plot import show_image_sequence
 
 import shamrock
@@ -226,7 +227,7 @@ def run_case(interp_mode, png_prefix, dump_path):
     cfg.set_boundary_condition("x", "reflective")
     cfg.set_boundary_condition("y", "reflective")
     cfg.set_boundary_condition("z", "reflective")
-    cfg.set_riemann_solver_hllc()
+    cfg.set_riemann_solver(HLLC_PVRS)
     cfg.set_amr_mode_old(False)
     if interp_mode == "second":
         cfg.set_second_order_interpolation_mode()

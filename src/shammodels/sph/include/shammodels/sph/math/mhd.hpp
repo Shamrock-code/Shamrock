@@ -25,7 +25,6 @@
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
 #include "shamphys/mhd.hpp"
-#include "shamunits/Constants.hpp"
 #include <tuple>
 
 namespace shamrock::sph::mhd {
@@ -286,6 +285,12 @@ namespace shamrock::sph::mhd {
         return parabolic_diff;
     }
 
+    /**
+     * @brief Add the pure MHD terms of the pair (a,b) to the derivatives of particle a.
+     *
+     * The gas pressure, artificial viscosity & artificial conductivity terms are not included
+     * here, they are added beforehand by the hydro update derivs (using the MHD signal velocity).
+     */
     template<class Kernel, class Tvec, class Tscal, MHDType mhd_mode = Ideal>
     inline void add_to_derivs_spmhd(
         Tscal pmass,
@@ -293,8 +298,6 @@ namespace shamrock::sph::mhd {
         Tscal rab,
         Tscal rho_a,
         Tscal rho_a_sq,
-        Tscal omega_a_rho_a_inv,
-        Tscal rho_a_inv,
         Tscal rho_b,
         Tscal omega_a,
         Tscal omega_b,
@@ -302,19 +305,12 @@ namespace shamrock::sph::mhd {
         Tscal Fab_b,
         Tvec vxyz_a,
         Tvec vxyz_b,
-        Tscal u_a,
-        Tscal u_b,
-        Tscal P_a,
-        Tscal P_b,
         Tscal cs_a,
         Tscal cs_b,
         Tscal h_a,
         Tscal h_b,
 
-        Tscal alpha_u,
         Tscal alpha_B,
-        Tscal alpha_AV,
-        Tscal beta_AV,
 
         Tvec B_a,
         Tvec B_b,
@@ -343,28 +339,16 @@ namespace shamrock::sph::mhd {
 
         Tvec &mag_pressure,
         Tvec &mag_tension,
-        Tvec &gas_pressure,
         Tvec &tensile_corr,
 
         Tscal &psi_propag,
         Tscal &psi_diff,
-        Tscal &psi_cons,
-
-        Tscal &u_pressure_viscous_heating) {
+        Tscal &psi_cons) {
 
         using namespace shamrock::sph;
 
         Tvec v_ab      = vxyz_a - vxyz_b;
         Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
-
-        Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
-        Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
-
-        Tscal vsig_u = shamrock::sph::vsig_u(P_a, P_b, rho_a, rho_b);
-        Tscal vsig_a = shamphys::MHD_physics<Tvec, Tscal>::vsig_MHD(
-            v_ab, r_ab_unit, cs_a, B_a, rho_a, mu_0, alpha_AV, beta_AV);
-        Tscal vsig_b = shamphys::MHD_physics<Tvec, Tscal>::vsig_MHD(
-            v_ab, r_ab_unit, cs_b, B_b, rho_b, mu_0, alpha_AV, beta_AV);
 
         Tscal dWab_a = Fab_a;
         Tscal dWab_b = Fab_b;
@@ -376,17 +360,13 @@ namespace shamrock::sph::mhd {
         Tscal v_shock_b = shamphys::MHD_physics<Tvec, Tscal>::v_shock(cs_b, B_b, rho_b, mu_0);
         Tscal vsig_B    = shamphys::MHD_physics<Tvec, Tscal>::vsigB(v_ab, r_ab_unit);
 
-        Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
-        Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
-
-        Tscal AV_P_a = P_a + qa_ab;
-        Tscal AV_P_b = P_b + qb_ab;
-
         Tvec sum_mag_tension{}, sum_fdivB{};
         Tscal sum_psi_propag{}, sum_psi_diff{};
 
-        // dv/dt = gas_pressure_pishock + magnetic_pressure_term + sum_mag_tension + sum_fdivB;
-        // du/dt = pressure_term + viscous_heating + shock_conductivity + artificial_resistivity;
+        // (gas_pressure_pishock, pressure_term, viscous_heating & shock_conductivity are added by
+        // the hydro update derivs)
+        // dv/dt += magnetic_pressure_term + sum_mag_tension + sum_fdivB;
+        // du/dt += artificial_resistivity;
         // d(B/rho)/dt = induction_term + psi_term + dissipation_term
         // d(psi/ch)/dt = psi_propag + psi_diff + psi_cons (not in the SPH sum, hence added in
         // update_derivs)
@@ -394,17 +374,6 @@ namespace shamrock::sph::mhd {
         // dv/dt terms
         sum_fdivB += fdiv_b(
             pmass, B_a, B_b, r_ab_unit * dWab_a, r_ab_unit * dWab_b, sub_fact_a, sub_fact_b, mu_0);
-
-        Tvec gas_pressure_pishock = sph::sph_pressure_symetric(
-            pmass,
-            rho_a_sq,
-            rho_b * rho_b,
-            AV_P_a,
-            AV_P_b,
-            omega_a,
-            omega_b,
-            r_ab_unit * dWab_a,
-            r_ab_unit * dWab_b);
 
         sum_mag_tension += -b_dot_grad_w(
             pmass,
@@ -430,30 +399,16 @@ namespace shamrock::sph::mhd {
                                           r_ab_unit * dWab_a,
                                           r_ab_unit * dWab_b);
 
-        dv_dt += gas_pressure_pishock + magnetic_pressure_term + sum_mag_tension + sum_fdivB;
+        dv_dt += magnetic_pressure_term + sum_mag_tension + sum_fdivB;
         // end dv/dt terms
 
         // get terms for debugging
         mag_pressure += magnetic_pressure_term;
-        gas_pressure += gas_pressure_pishock;
         mag_tension += sum_mag_tension;
         tensile_corr += sum_fdivB;
         // end get terms for debugging
 
         // du/dt terms
-        u_pressure_viscous_heating = sph::duint_dt_pressure(
-            pmass, AV_P_a, omega_a_rho_a_inv * rho_a_inv, v_ab, r_ab_unit * dWab_a);
-
-        du_dt += u_pressure_viscous_heating;
-
-        du_dt += sph::lambda_shock_conductivity(
-            pmass,
-            alpha_u,
-            vsig_u,
-            u_a - u_b,
-            dWab_a * omega_a_rho_a_inv,
-            dWab_b / (rho_b * omega_b));
-
         du_dt += alpha_B
                  * lambda_artes(
                      pmass,

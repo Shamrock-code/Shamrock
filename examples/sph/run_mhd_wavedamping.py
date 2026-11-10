@@ -72,10 +72,8 @@ model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="C4"
 # -------------------------------
 cfg = model.gen_default_config()
 cfg.set_units(codeu)
-cfg.set_artif_viscosity_None()  # no artificial viscosity
-cfg.set_NonIdealMHD(
-    sigma_mhd=0, sigma_u=0, etaO=0, etaH=0, etaAD=etaAD_cgs, alpha_B=0, alpha_AV=0, beta_AV=0
-)
+cfg.set_artif_viscosity_Constant(alpha_u=0, alpha_AV=0, beta_AV=0)  # no artificial viscosity
+cfg.set_NonIdealMHD(sigma_mhd=0, etaO=0, etaH=0, etaAD=etaAD_cgs, alpha_B=0)
 cfg.set_boundary_periodic()  # periodic boundaries in all directions
 cfg.set_eos_isothermal(cs)  # isothermal equation of state
 cfg.print_status()

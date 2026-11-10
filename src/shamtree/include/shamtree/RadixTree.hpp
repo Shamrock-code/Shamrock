@@ -109,16 +109,6 @@ class RadixTree {
     void compute_cell_ibounding_box(sycl::queue &queue);
     void convert_bounding_box(sycl::queue &queue);
 
-    inline std::unique_ptr<sycl::buffer<Umorton>> build_new_morton_buf(
-        sycl::buffer<Tvec> &pos_buf, u32 obj_cnt) {
-
-        return tree_morton_codes.build_raw(
-            shamsys::instance::get_compute_queue(),
-            shammath::CoordRange<Tvec>{bounding_box},
-            obj_cnt,
-            pos_buf);
-    }
-
     RadixTree(
         sycl::queue &queue,
         std::tuple<Tvec, Tvec> treebox,

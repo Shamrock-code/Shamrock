@@ -20,8 +20,10 @@
 #include <nlohmann/json.hpp>
 #include <pybind11/cast.h>
 #include <shamunits/Constants.hpp>
-#include <shamunits/Names.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <shamunits/constant_table.hpp>
+#include <shamunits/prefix_table.hpp>
+#include <shamunits/unit_table.hpp>
 #include <memory>
 
 ON_PYTHON_INIT {
@@ -58,9 +60,8 @@ ON_PYTHON_INIT {
         .def(
             "get",
             [](UnitSystem &self, std::string name, i32 power, std::string pref) {
-                shamunits::UnitPrefix pref_ = shamunits::unit_prefix_from_name(pref);
-
-                return self.runtime_get(pref_, shamunits::units::unit_from_name(name), power);
+                return self.get(
+                    shamunits::prefix::from_name(pref) * shamunits::units::from_name(name), power);
             },
             // py::arg("self"),
             py::arg("name"),
@@ -69,9 +70,8 @@ ON_PYTHON_INIT {
         .def(
             "to",
             [](UnitSystem &self, std::string name, i32 power, std::string pref) {
-                shamunits::UnitPrefix pref_ = shamunits::unit_prefix_from_name(pref);
-
-                return self.runtime_to(pref_, shamunits::units::unit_from_name(name), power);
+                return self.to(
+                    shamunits::prefix::from_name(pref) * shamunits::units::from_name(name), power);
             },
             // py::arg("self"),
             py::arg("name"),
@@ -96,24 +96,19 @@ ON_PYTHON_INIT {
             },
             "Sets the unit system from a json like dictionary");
 
-    py::class_<shamunits::Constants<f64>>(m, "Constants")
-        .def(py::init([](UnitSystem s) {
-            return std::make_unique<shamunits::Constants<f64>>(s);
-        }))
-////////////////// Xmacro
-/// X macro to define the conversion constants bindings
-#define X(st, conv)                                                                                \
-    .def(                                                                                          \
-        #st,                                                                                       \
-        [](shamunits::Constants<f64> &cte, i32 power) {                                            \
-            return sycl::pown(cte.st(), power);                                                    \
-        },                                                                                         \
-        py::arg("power") = 1)
-        //////////////////
-        UNITS_CONSTANTS
-//////////////////
-#undef X
-        //////////////////
+    auto constants_cls
+        = py::class_<shamunits::Constants<f64>>(m, "Constants").def(py::init([](UnitSystem s) {
+              return std::make_unique<shamunits::Constants<f64>>(s);
+          }));
 
-        ;
+    // One method per entry of the constants registry, e.g. Constants(usys).G(power=2): a constant
+    // added to shamunits/constant_table.hpp appears here with no binding edit.
+    for (const shamunits::NamedUnit &e : shamunits::constants::registry) {
+        constants_cls.def(
+            std::string(e.long_name).c_str(),
+            [u = e.unit](shamunits::Constants<f64> &cte, i32 power) {
+                return cte.get(u, power);
+            },
+            py::arg("power") = 1);
+    }
 }

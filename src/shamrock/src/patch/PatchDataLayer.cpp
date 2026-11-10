@@ -444,15 +444,6 @@ namespace shamrock::patch {
 
         PatchDataField<T> &main_field = fields[0].get_if_ref_throw<T>();
 
-        // auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
-        //     return main_field.get_elements_with_range(
-        //         [&](T val, T vmin, T vmax) {
-        //             return Patch::is_in_patch_converted(val, vmin, vmax);
-        //         },
-        //         vmin,
-        //         vmax);
-        // };
-
         auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
             return main_field.get_ids_vec_where(
                 [&](const auto &acc, u32 idx, T vmin, T vmax) {

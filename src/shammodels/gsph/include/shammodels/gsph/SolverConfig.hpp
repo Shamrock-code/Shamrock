@@ -49,8 +49,8 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include <nlohmann/json.hpp>
-#include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <shamunits/constant_table.hpp>
 #include <variant>
 #include <vector>
 
@@ -127,10 +127,9 @@ struct shammodels::gsph::SolverConfig {
     inline Tscal get_constant_G() const {
         if (!unit_sys) {
             ON_RANK_0(logger::warn_ln("gsph::Config", "the unit system is not set"));
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.G();
+            return shamunits::UnitSystem<Tscal>{}.template get<shamunits::constants::G>();
         } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.G();
+            return unit_sys->template get<shamunits::constants::G>();
         }
     }
 

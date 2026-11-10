@@ -123,7 +123,7 @@ namespace shamrock::solvergraph {
 
             auto ptr = std::dynamic_pointer_cast<T>(edge);
             if (ptr) {
-                return std::cref(*ptr);
+                return std::ref(*ptr);
             }
 
             if (is_null_opt_edge(edge)) {

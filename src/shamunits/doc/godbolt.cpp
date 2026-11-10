@@ -21,10 +21,11 @@
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
-#include <unordered_map>
+#include <string_view>
+#include <span>
 #include <stdexcept>
 #include <string>
-#include <cmath>
+#include <array>
 
 // begin shamunits/Constants.hpp
 /**
@@ -32,131 +33,195 @@
  * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief
+ * @brief Physical constants in a unit system, plus a few dimensionless numbers
+ *
+ * The constants themselves are the values of shamunits::constants (constant_table.hpp).
+ * Constants<T> is kept for backward compatibility: it is a thin wrapper around a UnitSystem,
+ * and Constants<T>{usys}.get<constants::G>() is the same as usys.get<constants::G>().
  */
 
 
-// begin shamunits/ConversionConstants.hpp
+// begin shamunits/UnitSystem.hpp
 /**
- * @file ConversionConstants.hpp
+ * @file UnitSystem.hpp
  * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief A unit system: the values of the seven SI base units in code units
+ */
+
+
+// begin shamunits/Unit.hpp
+/**
+ * @file Unit.hpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief A physical unit as a value: its SI dimension and its magnitude in SI base units
+ *
+ * Units, prefixes and physical constants are all the same thing: a dimension plus a factor.
+ * Everything here is constexpr and STL-free so it can be used in device code.
+ *
+ * Unit<Tscal> is a structural type for any floating-point Tscal: it can be passed by value as a
+ * template argument (`template<Unit u>`, or `template<Unit<double> u>`), which is what lets
+ * UnitSystem::get<u>() keep every exponent a constant expression. Only a raw
+ * `template<double>` parameter is unsupported on clang < 18, so do not add one.
+ *
+ * The algebra never converts precisions implicitly, not even for a scalar operand: a scalar must
+ * have exactly the unit's type (`149597870700. * Unit<float>{}` does not compile, write
+ * `149597870700.f`), and units of different precisions are converted with unit_cast<T>() first.
+ * Spell the precision when brace-initialising (`Unit<float>{.dim = ..., .si_factor = ...}`):
+ * class template argument deduction from an aggregate initializer needs clang >= 17.
  */
 
 namespace shamunits {
 
-    /// Conversion constants from a units to another one
-    /// \todo Could be also a XMacro next to names definitions
-    template<class T>
-    struct ConversionConstants {
+    /// Exponents of the seven SI base dimensions
+    struct Dimension {
+        int second   = 0; ///< time exponent
+        int metre    = 0; ///< length exponent
+        int kilogram = 0; ///< mass exponent
+        int ampere   = 0; ///< electric current exponent
+        int kelvin   = 0; ///< temperature exponent
+        int mole     = 0; ///< amount of substance exponent
+        int candela  = 0; ///< luminous intensity exponent
 
-        static constexpr T au_to_m     = 149597870700;     //(m)
-        static constexpr T ly_to_m     = 9460730472580800; //(m)
-        static constexpr T pc_to_m     = 3.0857e16;        //(m)
-        static constexpr T rsol_to_m   = 6.957e8;          //(m)
-        static constexpr T rearth_to_m = 6.378137e6;       // Earth equatorial radius (m)
-
-        static constexpr T sol_mass_to_kg = 1.98847e30; //(kg)
-
-        static constexpr T mn_to_s  = 60;            //(s)
-        static constexpr T hr_to_s  = 3600;          //(s)
-        static constexpr T dy_to_s  = 24 * hr_to_s;  //(s)
-        static constexpr T yr_to_s  = 31557600;      //(s)
-        static constexpr T Myr_to_s = 1e6 * yr_to_s; //(s)
-        static constexpr T Gyr_to_s = 1e9 * yr_to_s; //(s)
-
-        static constexpr T eV_to_J  = 1.602176634e-19; // (J)
-        static constexpr T erg_to_J = 1e-7;            // (J)
-
-        static constexpr T K_degC_offset = 273.15;
-
-        static constexpr T litre_to_pint = 0.568;
-
-        /// We first want to thanks E. Lynch for his useful contribution to the devellopement of
-        ///    numerical methods and new standard of measurement
-        /// \verbatim
-        /// todo find a more precise measurement of the Guinness density (shall be done in Ireland)
-        /// protocol :
-        ///  1 - start by ordering the most precise pint of guiness (in ireland)
-        ///  2 - weight the pint
-        ///  4 - proceed to drink the beer (including any leftover foam)
-        ///  54 - weight the pint again
-        ///  745 - proceed to compute the dedzabfgzi if the zad beer
-        ///  current estimation is sourced from
-        ///     - Tinseth, Glenn. Javascript Beer Specs Calculator. The Real Beer Page. 1997.
-        /// \endverbatim
-        static constexpr T gcm3_to_guiness_density = 1.017; // in g.cm-3
+        /// Exponent-wise equality
+        constexpr bool operator==(const Dimension &) const = default;
     };
 
+    /// Dimension of a product: exponents add
+    constexpr Dimension operator*(Dimension a, Dimension b) noexcept {
+        return {
+            .second   = a.second + b.second,
+            .metre    = a.metre + b.metre,
+            .kilogram = a.kilogram + b.kilogram,
+            .ampere   = a.ampere + b.ampere,
+            .kelvin   = a.kelvin + b.kelvin,
+            .mole     = a.mole + b.mole,
+            .candela  = a.candela + b.candela,
+        };
+    }
+
+    /// Dimension of a quotient: exponents subtract
+    constexpr Dimension operator/(Dimension a, Dimension b) noexcept {
+        return {
+            .second   = a.second - b.second,
+            .metre    = a.metre - b.metre,
+            .kilogram = a.kilogram - b.kilogram,
+            .ampere   = a.ampere - b.ampere,
+            .kelvin   = a.kelvin - b.kelvin,
+            .mole     = a.mole - b.mole,
+            .candela  = a.candela - b.candela,
+        };
+    }
+
+    /// Dimension raised to an integer power: exponents scale
+    constexpr Dimension dim_pow(Dimension d, int n) noexcept {
+        return {
+            .second   = d.second * n,
+            .metre    = d.metre * n,
+            .kilogram = d.kilogram * n,
+            .ampere   = d.ampere * n,
+            .kelvin   = d.kelvin * n,
+            .mole     = d.mole * n,
+            .candela  = d.candela * n,
+        };
+    }
+
+    /// A unit: its dimension and its magnitude expressed in SI base units, in precision Tscal
+    template<class Tscal = double>
+    struct Unit {
+        Dimension dim{};     ///< SI dimension
+        Tscal si_factor = 1; ///< value of one of this unit in SI base units
+
+        /// Exact equality of dimension and factor
+        constexpr bool operator==(const Unit &) const = default;
+    };
+
+    /// Explicit precision conversion, e.g. `unit_cast<float>(units::metre)`
+    template<class Tdst, class Tsrc>
+    constexpr Unit<Tdst> unit_cast(Unit<Tsrc> u) noexcept {
+        return {.dim = u.dim, .si_factor = static_cast<Tdst>(u.si_factor)};
+    }
+
+    /// Product of two units: exponents add, factors multiply
+    template<class T>
+    constexpr Unit<T> operator*(Unit<T> a, Unit<T> b) noexcept {
+        return {.dim = a.dim * b.dim, .si_factor = a.si_factor * b.si_factor};
+    }
+
+    /// Quotient of two units: exponents subtract, factors divide
+    template<class T>
+    constexpr Unit<T> operator/(Unit<T> a, Unit<T> b) noexcept {
+        return {.dim = a.dim / b.dim, .si_factor = a.si_factor / b.si_factor};
+    }
+
+    /// Scale a unit, e.g. `149597870700. * metre`
+    template<class T>
+    constexpr Unit<T> operator*(T s, Unit<T> u) noexcept {
+        return {.dim = u.dim, .si_factor = s * u.si_factor};
+    }
+
+    /// Scale a unit, e.g. `metre * 1e3`
+    template<class T>
+    constexpr Unit<T> operator*(Unit<T> u, T s) noexcept {
+        return {.dim = u.dim, .si_factor = u.si_factor * s};
+    }
+
+    /// Divide a unit by a scalar, e.g. `joule / 1e7`
+    template<class T>
+    constexpr Unit<T> operator/(Unit<T> u, T s) noexcept {
+        return {.dim = u.dim, .si_factor = u.si_factor / s};
+    }
+
+    /// Scalar over a unit, e.g. `1. / second`: the dimension is inverted
+    template<class T>
+    constexpr Unit<T> operator/(T s, Unit<T> u) noexcept {
+        return {.dim = Dimension{} / u.dim, .si_factor = s / u.si_factor};
+    }
+
+    /**
+     * @brief Integer power of a unit
+     *
+     * Named upow rather than pow so argument-dependent lookup never competes with std::pow or
+     * sycl::pow. This is the only place in the unit algebra that can divide (for n < 0), and it
+     * folds at compile time whenever its argument is a constant expression.
+     */
+    template<class T>
+    constexpr Unit<T> upow(Unit<T> u, int n) noexcept {
+        T f   = 1;
+        T b   = u.si_factor;
+        int k = (n < 0) ? -n : n;
+        while (k != 0) {
+            if ((k & 1) != 0) {
+                f *= b;
+            }
+            k >>= 1;
+            if (k != 0) { // squaring past the last bit could overflow when the result fits
+                b *= b;
+            }
+        }
+        return {.dim = dim_pow(u.dim, n), .si_factor = (n < 0) ? T(1) / f : f};
+    }
+
+    /// A base unit of the given dimension with factor 1, e.g. `base_unit({.metre = 1})`
+    template<class T = double>
+    constexpr Unit<T> base_unit(Dimension d) noexcept {
+        return {.dim = d, .si_factor = T(1)};
+    }
+
+    /// A dimensionless scale factor, e.g. a prefix: `scale(1e6)` (precision of the argument)
+    template<class T>
+    constexpr Unit<T> scale(T s) noexcept {
+        return {.dim = Dimension{}, .si_factor = s};
+    }
+
 } // namespace shamunits
-
-/**
- * @fn shamunits::ConversionConstants::au_to_m()
- * @brief conversion factor from au to meters
- *
- * @fn shamunits::ConversionConstants::ly_to_m()
- * @brief conversion factor from light years to meters
- *
- * @fn shamunits::ConversionConstants::pc_to_m()
- * @brief conversion factor from parsecs to meters
- *
- * @fn shamunits::ConversionConstants::rsol_to_m()
- * @brief conversion factor from solar radii to meters
- *
- * @fn shamunits::ConversionConstants::rearth_to_m()
- * @brief conversion factor from earth equatorial radii to meters
- *
- * @fn shamunits::ConversionConstants::sol_mass_to_kg()
- * @brief conversion factor from solar masses to kilograms
- *
- * @fn shamunits::ConversionConstants::mn_to_s()
- * @brief conversion factor from minutes to seconds
- *
- * @fn shamunits::ConversionConstants::hr_to_s()
- * @brief conversion factor from hours to seconds
- *
- * @fn shamunits::ConversionConstants::dy_to_s()
- * @brief conversion factor from days to seconds
- *
- * @fn shamunits::ConversionConstants::yr_to_s()
- * @brief conversion factor from years to seconds
- *
- * @fn shamunits::ConversionConstants::Myr_to_s()
- * @brief conversion factor from $10^6$ years to seconds
- *
- * @fn shamunits::ConversionConstants::Gyr_to_s()
- * @brief conversion factor from $10^9$ years to seconds
- *
- * @fn shamunits::ConversionConstants::eV_to_J()
- * @brief conversion factor from electron volts to joules
- *
- * @fn shamunits::ConversionConstants::erg_to_J()
- * @brief conversion factor from ergs to joules
- *
- * @fn shamunits::ConversionConstants::K_degC_offset()
- * @brief conversion offset from kelvin degrees to celsius
- *
- * @fn shamunits::ConversionConstants::litre_to_pint()
- * @brief conversion offset from litre to british pint
- *
- */
-// end shamunits/ConversionConstants.hpp
-
-// begin shamunits/Names.hpp
-/**
- * @file Names.hpp
- * @author David Fang (david.fang@ikmail.com)
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
- */
-
+// end shamunits/Unit.hpp
 
 // begin shamunits/details/utils.hpp
 /**
  * @file utils.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Integer powers with a supplied reciprocal, so a negative exponent never divides
  */
 
 namespace shamunits::details {
@@ -177,316 +242,79 @@ namespace shamunits::details {
             return tmp * tmp * a;
         }
     }
+
+    /**
+     * @brief Runtime twin of pow_constexpr_fast_inv, for an exponent only known at run time
+     *
+     * Same square-and-multiply order (most significant bit first), so for any n it returns
+     * exactly what pow_constexpr_fast_inv<n> returns. The caller supplies the reciprocal, so a
+     * negative exponent uses a_inv and never divides.
+     */
+    template<class T>
+    inline constexpr T ipow(T a, int n, T a_inv) noexcept {
+        T base     = (n < 0) ? a_inv : a;
+        unsigned k = (n < 0) ? 0u - static_cast<unsigned>(n) : static_cast<unsigned>(n);
+
+        int top_bit = -1;
+        for (unsigned t = k; t != 0; t >>= 1) {
+            ++top_bit;
+        }
+
+        T res = T{1};
+        for (int b = top_bit; b >= 0; --b) {
+            res = res * res;
+            if (((k >> b) & 1u) != 0) {
+                res = res * base;
+            }
+        }
+        return res;
+    }
 } // namespace shamunits::details
 // end shamunits/details/utils.hpp
 
-/// \brief Definition of all units
-///
-/// This defines units and their short name
-#define XMAC_UNITS                                                                                 \
-    X1(second, s) /*base units*/                                                                   \
-    X1(metre, m)                                                                                   \
-    X1(kilogram, kg)                                                                               \
-    X1(Ampere, A)                                                                                  \
-    X1(Kelvin, K)                                                                                  \
-    X1(mole, mol)                                                                                  \
-    X1(candela, cd)                                                                                \
-    /*derived units*/                                                                              \
-    X1(Hertz, Hz)    /* hertz : frequency (s-1) */                                                 \
-    X1(Newton, N)    /* (kg.m.s-2)*/                                                               \
-    X1(Pascal, Pa)   /* (kg.m-1.s-2) = (N/m2)*/                                                    \
-    X1(Joule, J)     /* (kg.m2.s-2) = (N.m = Pa.m3)*/                                              \
-    X1(Watt, W)      /* (kg.m2.s-3) = (J/s)*/                                                      \
-    X1(Coulomb, C)   /* (s.A)*/                                                                    \
-    X1(Volt, V)      /* (kg.m2.s-3.A-1) = (W/A) = (J/C)*/                                          \
-    X1(Farad, F)     /* (kg-1.m-2.s4.A2) = (C/V) = (C2/J)*/                                        \
-    X1(Ohm, ohm)     /* (kg.m2.s-3.A-2) = (V/A) = (J.s/C2)*/                                       \
-    X1(Siemens, S)   /* (kg-1.m-2.s3.A2) = (ohm-1)*/                                               \
-    X1(Weber, Wb)    /* (kg.m2.s-2.A-1) = (V.s)*/                                                  \
-    X1(Tesla, T)     /* (kg.s-2.A-1) = (Wb/m2)*/                                                   \
-    X1(Henry, H)     /* (kg.m2.s-2.A-2) = (Wb/A)*/                                                 \
-    X1(lumens, lm)   /* (cd.sr) = (cd.sr)*/                                                        \
-    X1(lux, lx)      /* (cd.sr.m-2) = (lm/m2)*/                                                    \
-    X1(Bequerel, Bq) /* (s-1)*/                                                                    \
-    X1(Gray, Gy)     /* (m2.s-2) = (J/kg)*/                                                        \
-    X1(Sievert, Sv)  /* (m2.s-2) = (J/kg)*/                                                        \
-    X1(katal, kat)   /* (mol.s-1) */                                                               \
-    /*relative units*/                                                                             \
-    X1(minutes, mn)                                                                                \
-    X1(hours, hr)                                                                                  \
-    X1(days, dy)                                                                                   \
-    X1(years, yr)                                                                                  \
-    X1(astronomical_unit, au)                                                                      \
-    X1(light_year, ly)                                                                             \
-    X1(parsec, pc)                                                                                 \
-    X1(solar_radius, rsol)                                                                         \
-    X1(earth_radius, rearth)                                                                       \
-    X1(solar_mass, sol_mass)                                                                       \
-    X1(electron_volt, eV)                                                                          \
-    X1(ergs, erg)                                                                                  \
-    X1(british_pint, pint)
-
-/// Definition of all prefixes
-#define XMAC_UNIT_PREFIX                                                                           \
-    X(tera, T, 12)                                                                                 \
-    X(giga, G, 9)                                                                                  \
-    X(mega, M, 6)                                                                                  \
-    X(kilo, k, 3)                                                                                  \
-    X(hecto, hect, 2)                                                                              \
-    X(deca, dec, 1)                                                                                \
-    X(None, _, 0)                                                                                  \
-    /*X(deci  ,deci_, -1)*/                                                                        \
-    X(centi, c, -2)                                                                                \
-    X(milli, m, -3)                                                                                \
-    X(micro, mu, -6)                                                                               \
-    X(nano, n, -9)                                                                                 \
-    X(pico, p, -12)                                                                                \
-    X(femto, f, -15)
-
 namespace shamunits {
 
-    /// Enum of all prefixes
-    enum UnitPrefix {
-    /// Macro expending to all units prefixes in the enum
-    // clang-format off
-        #define X(longname, shortname, value) longname = value, shortname = value,
-        XMAC_UNIT_PREFIX
-        #undef X
-        // clang-format on
-    };
-
-    /// Get the value of a prefix
-    template<class T, UnitPrefix p>
-    inline constexpr T get_prefix_val() {
-        return details::pow_constexpr_fast_inv<p, T>(10, 1e-1);
-    }
-
-    /// Map to convert from a prefix name to a prefix enum value
-    /// Ideally this should be replaced by cpp reflexion one day
-    static const std::unordered_map<std::string, UnitPrefix> map_name_to_unit_prefix{
-    // clang-format off
-        #define X(longname, shortname, value) {#longname, longname}, {#shortname, shortname},
-        XMAC_UNIT_PREFIX
-        #undef X
-        // clang-format on
-    };
-
-    /// Map to convert from unit prefix to prefix name in string
-    /// Ideally this should be replaced by cpp reflexion one day
-    static const std::unordered_map<UnitPrefix, std::string> map_u_to_name_prefix = {
-    // clang-format off
-        #define X(longname, shortname, value) {shortname, #shortname},
-        XMAC_UNIT_PREFIX
-        #undef X
-        // clang-format on
-    };
-
-    /// Get the prefix name for a UnitPrefix enum value
-    inline const std::string get_unit_prefix_name(UnitPrefix p) {
-
-        map_u_to_name_prefix.find(p);
-
-        if (auto search = map_u_to_name_prefix.find(p); search != map_u_to_name_prefix.end()) {
-            return search->second;
-        }
-
-        return "[Unknown Unit prefix name]";
-    }
-
-    /// Get the UnitPrefix enum value from a prefix name as a string
-    inline const UnitPrefix unit_prefix_from_name(std::string p) {
-
-        map_name_to_unit_prefix.find(p);
-
-        if (auto search = map_name_to_unit_prefix.find(p);
-            search != map_name_to_unit_prefix.end()) {
-            return search->second;
-        }
-
-        throw std::invalid_argument("this unit prefix name is unknown");
-        return None; // to silence a warning
-    }
-
-    namespace units {
-
-        // clang-format off
-        /// List of all units name
-        enum UnitName {
-            /// Macro expanding to all unit names
-            #define X1(longname, shortname) longname, shortname = longname,
-            XMAC_UNITS
-            #undef X1
-        };
-
-        /// Map to convert from string to unit name
-        static const std::unordered_map<std::string, UnitName> map_name_to_unit{
-            /// Macro expanding to the string->UnitName map
-            #define X1(longname, shortname) {#longname, longname}, {#shortname, shortname},
-            XMAC_UNITS
-            #undef X1
-        };
-
-        /// Map to convert from unit name to string
-        static const std::unordered_map<UnitName, std::string> map_u_to_name = {
-            /// Macro expanding to the UnitName->string map
-            #define X1(longname, shortname) {shortname, #shortname},
-            XMAC_UNITS
-            #undef X1
-        };
-        // clang-format on
-
-        /// Get the unit name for a UnitName enum value
-        inline const std::string get_unit_name(UnitName p) {
-
-            map_u_to_name.find(p);
-
-            if (auto search = map_u_to_name.find(p); search != map_u_to_name.end()) {
-                return search->second;
-            }
-
-            return "[Unknown Unit name]";
-        }
-
-        /// Get the UnitName enum value from a unit name as a string
-        inline const UnitName unit_from_name(std::string p) {
-
-            auto search = map_name_to_unit.find(p);
-
-            if (search != map_name_to_unit.end()) {
-                return search->second;
-            }
-
-            throw std::invalid_argument("this unit name is unknown : " + p);
-            return s; // to silence a warning
-        }
-
-    } // namespace units
-
-} // namespace shamunits
-// end shamunits/Names.hpp
-
-// begin shamunits/UnitSystem.hpp
-/**
- * @file UnitSystem.hpp
- * @author David Fang (david.fang@ikmail.com)
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
- */
-
-
-/// Macro to add a unit getter
-#define addget(uname)                                                                              \
-    template<                                                                                      \
-        UnitPrefix pref = None,                                                                    \
-        units::UnitName u,                                                                         \
-        int power                                = 1,                                              \
-        std::enable_if_t<u == units::uname, int> = 0>                                              \
-    inline constexpr T get() const noexcept
-
-/// Shorthand for unit getter
-#define Uget(unitname, mult_pow) get<None, units::unitname, (mult_pow) * power>()
-/// Shorthand for constant getter
-#define Cget(constant_name, mult_pow)                                                              \
-    details::pow_constexpr_fast_inv<(mult_pow) * power>(constant_name, T(1) / constant_name)
-/// Shorthand for prefix handling
-#define PREF Cget((get_prefix_val<T, pref>()), 1)
-
-namespace shamunits {
-
-    /// \brief Defines a unit system
-    ///
-    /// Example of usage :
-    /// \code {.cpp}
-    ///    using namespace shamunits;
-    ///
-    ///    //create si units
-    ///    UnitSystem<double> si {};
-    ///
-    ///    // get the value of au^2 in the unit system
-    ///    // but it is quite big :)
-    ///    std::cout << si.get<units::astronomical_unit,2>() << std::endl;
-    ///
-    ///    double sol_mass = Constants<double>(si).sol_mass();
-    ///
-    ///    /*
-    ///    * create a unit system with time in Myr, length in au, mass in solar masses
-    ///    */
-    ///    UnitSystem<double> astro_units {
-    ///        si.get<mega, units::years>(),
-    ///        si.get<units::astronomical_unit>(),
-    ///        si.get<units::kilogram>()*sol_mass,
-    ///    };
-    ///
-    ///    //this time it returns 1 because the base length is the astronomical unit
-    ///    std::cout << astro_units.get<units::astronomical_unit,2>() << std::endl;
-    ///
-    ///    Constants<double> astro_cte {astro_units};
-    ///
-    ///    // in those units G is 3.94781e+13
-    ///    std::cout << astro_cte.G() << std::endl;
-    /// @endcode
-    ///
-    ///
+    /**
+     * @brief A unit system, defined by the SI value of its base units
+     *
+     * Units, prefixes and constants come from shamunits/unit_table.hpp,
+     * shamunits/prefix_table.hpp and shamunits/constant_table.hpp, and compose freely:
+     * @code{.cpp}
+     * using namespace shamunits;
+     *
+     * constexpr UnitSystem<double> si{};
+     *
+     * // time in Myr, length in au, mass in solar masses
+     * constexpr UnitSystem<double> astro{
+     *     si.get<prefix::mega * units::year>(),
+     *     si.get<units::astronomical_unit>(),
+     *     si.get<constants::sol_mass>(),
+     * };
+     *
+     * astro.get<upow(units::astronomical_unit, 2)>(); // 1
+     * astro.get<constants::G>();                      // 3.947813e13
+     * astro.to<units::second>();                      // one code time unit in s
+     * astro.get<constants::G, float>();               // result in another precision
+     * astro.get(units::from_name("pc"), -1);          // unit known at run time
+     * @endcode
+     */
     template<class T>
     class UnitSystem {
-
-        template<int power>
-        inline static constexpr T pow_constexpr(T a, T a_inv) noexcept {
-            return details::pow_constexpr_fast_inv<power>(a, a_inv);
-        }
-
-        inline T pown(T a, int n) { return std::pow(a, n); }
-
-        using Uconvert = ConversionConstants<T>;
-
         public:
-        /**
-         * @fn s
-         * \brief value of a second in this system
-         *
-         * @fn m
-         * \brief value of a meter in this system
-         *
-         * @fn kg
-         * \brief value of a kilogram in this system
-         *
-         * @fn A
-         * \brief value of a Ampere in this system
-         *
-         * @fn K
-         * \brief value of a Kelvin in this system
-         *
-         * @fn mol
-         * \brief value of a mol in this system
-         *
-         * @fn cd
-         * \brief value of a candela in this system
-         *
-         * @fn s_inv
-         * \brief inverse value of a second in this system
-         *
-         * @fn m_inv
-         * \brief inverse value of a meter in this system
-         *
-         * @fn kg_inv
-         * \brief inverse value of a kilogram in this system
-         *
-         * @fn A_inv
-         * \brief inverse value of a Ampere in this system
-         *
-         * @fn K_inv
-         * \brief inverse value of a Kelvin in this system
-         *
-         * @fn mol_inv
-         * \brief inverse value of a mol in this system
-         *
-         * @fn cd_inv
-         * \brief inverse value of a candela in this system
-         *
-         */
-
-        T s, m, kg, A, K, mol, cd;
-        T s_inv, m_inv, kg_inv, A_inv, K_inv, mol_inv, cd_inv;
+        T s;       ///< value of a second in this system
+        T m;       ///< value of a metre in this system
+        T kg;      ///< value of a kilogram in this system
+        T A;       ///< value of an ampere in this system
+        T K;       ///< value of a kelvin in this system
+        T mol;     ///< value of a mole in this system
+        T cd;      ///< value of a candela in this system
+        T s_inv;   ///< inverse value of a second in this system (the time unit in s)
+        T m_inv;   ///< inverse value of a metre in this system (the length unit in m)
+        T kg_inv;  ///< inverse value of a kilogram in this system (the mass unit in kg)
+        T A_inv;   ///< inverse value of an ampere in this system
+        T K_inv;   ///< inverse value of a kelvin in this system
+        T mol_inv; ///< inverse value of a mole in this system
+        T cd_inv;  ///< inverse value of a candela in this system
 
         /**
          * @brief Construct a new UnitSystem from either supplied base units or SI by default
@@ -499,7 +327,7 @@ namespace shamunits {
          * @param unit_qte
          * @param unit_lumint
          */
-        explicit UnitSystem(
+        constexpr explicit UnitSystem(
             T unit_time        = 1,
             T unit_length      = 1,
             T unit_mass        = 1,
@@ -512,244 +340,441 @@ namespace shamunits {
               m_inv(unit_length), kg_inv(unit_mass), A_inv(unit_current), K_inv(unit_temperature),
               mol_inv(unit_qte), cd_inv(unit_lumint) {}
 
-#ifdef DOXYGEN
-        /**
-         * @brief get the value of a units in the current system
-         * \todo better doc with example
-         * @tparam pref unit prefix (default to none)
-         * @tparam u the units
-         * @tparam power the power of the units (also applied to the prefix)
-         * @return constexpr T the value in this system
-         */
-        template<UnitPrefix pref = None, units::UnitName u, int power = 1>
-        inline constexpr T get() const noexcept;
-#else
+        // ---------------------------------------------------------------------------------------
+        // Getters. Units come from shamunits::units, prefixes from shamunits::prefix and constants
+        // from shamunits::constants, and compose freely: get<prefix::mega * units::year>(),
+        // get<upow(units::metre, 2)>(). get<u>(), to<u>() and get(u) never divide.
+        //
+        // Precision: the product is accumulated in Tacc, the widest of T, Tret and double, and
+        // converted to Tret once at the end. Units and their factors are double by design, so
+        // this costs nothing for UnitSystem<f64>; for f32 it keeps intermediate powers (e.g.
+        // s^-3 = 3e40 in a Myr system) from overflowing, so the result is the correctly rounded
+        // value whenever it fits in Tret. The factor is applied last.
+        /// Accumulation type of the Unit-value getters: the widest of T, Tret and double
+        template<class Tret>
+        using acc_t = decltype(T{} * Tret{} * double{});
 
-        // clang-format off
-        addget(second)    { return PREF* pow_constexpr<power>(s  , s_inv);   }
-        addget(metre)     { return PREF* pow_constexpr<power>(m  , m_inv);   }
-        addget(kilogram)  { return PREF* pow_constexpr<power>(kg , kg_inv);  }
-        addget(Ampere)    { return PREF* pow_constexpr<power>(A  , A_inv);   }
-        addget(Kelvin)    { return PREF* pow_constexpr<power>(K  , K_inv);   }
-        addget(mole)      { return PREF* pow_constexpr<power>(mol, mol_inv); }
-        addget(candela)   { return PREF* pow_constexpr<power>(cd , cd_inv);  }
-
-        addget(Hertz)   { return PREF* Uget(s, -1); }
-        //addget(mps)     { return PREF* Uget(m, 1)       * Uget(s, -1); }
-        addget(Newton) { return PREF* Uget(kg, 1)      * Uget(m, 1)  * Uget(s, -2); }
-        addget(Pascal)  { return PREF* Uget(kg, 1)      * Uget(m, -1) * Uget(s, -2); }
-        addget(Joule)   { return PREF* Uget(Newton, 1) * Uget(m, 1); }
-        addget(Watt)    { return PREF* Uget(Joule, 1)   * Uget(s, -1); }
-        addget(Coulomb) { return PREF* Uget(s, 1)       * Uget(A, 1); }
-        addget(Volt)    { return PREF* Uget(Watt, 1)    * Uget(A, -1); }
-        addget(Farad)   { return PREF* Uget(Coulomb, 1) * Uget(Volt, -1); }
-        addget(Ohm)     { return PREF* Uget(Volt, 1)    * Uget(Ampere, -1); }
-        addget(Siemens) { return PREF* Uget(Ohm, -1); }
-        addget(Weber)   { return PREF* Uget(Volt, 1)    * Uget(second, 1); }
-        addget(Tesla)   { return PREF* Uget(Weber, 1)   * Uget(m, -2); }
-        addget(Henry)   { return PREF* Uget(Weber, 1)   * Uget(A, -1); }
-        addget(lumens)  { return PREF* Uget(candela, 1); }
-        addget(lux)     { return PREF* Uget(lumens, 1)  * Uget(m, -2); }
-        addget(Bequerel){ return PREF* Uget(s, -1); }
-        addget(Gray)    { return PREF* Uget(m, 2)       *Uget(s, -2)  ; }
-        addget(Sievert) { return PREF* Uget(m, 2)       *Uget(s, -2)  ; }
-        addget(katal)   { return PREF* Uget(mol, 1)     *Uget(s, -1)  ; }
-
-
-        // alternative base units
-        addget(minutes){ return PREF* Uget(s, 1) * Cget(Uconvert::mn_to_s, 1); }
-        addget(hours)  { return PREF* Uget(s, 1) * Cget(Uconvert::hr_to_s, 1); }
-        addget(days)   { return PREF* Uget(s, 1) * Cget(Uconvert::dy_to_s, 1); }
-        addget(years)  { return PREF* Uget(s, 1) * Cget(Uconvert::yr_to_s, 1); }
-
-        addget(astronomical_unit) { return PREF* Uget(m, 1) * Cget(Uconvert::au_to_m, 1); }
-        addget(light_year)        { return PREF* Uget(m, 1) * Cget(Uconvert::ly_to_m, 1); }
-        addget(parsec)            { return PREF* Uget(m, 1) * Cget(Uconvert::pc_to_m, 1); }
-        addget(solar_radius)      { return PREF* Uget(m, 1) * Cget(Uconvert::rsol_to_m, 1); }
-        addget(earth_radius)      { return PREF* Uget(m, 1) * Cget(Uconvert::rearth_to_m, 1); }
-        addget(solar_mass)        { return PREF* Uget(kg, 1) * Cget(Uconvert::sol_mass_to_kg, 1); }
-
-        addget(eV) {return PREF* Uget(Joule, 1) * Cget(Uconvert::eV_to_J,1);}
-        addget(erg) {return PREF* Uget(Joule, 1) * Cget(Uconvert::erg_to_J,1);}
-
-        addget(pint) {return PREF* Uget(m, 3) * Cget(Uconvert::litre_to_pint/1000,1);}
-        #endif
-
-        // clang-format on
+        // ---------------------------------------------------------------------------------------
 
         /**
-         * @brief To the si units (convert a system unit to si ones). This function is the inverse
-         * of get \todo better doc with example
-         * @tparam pref unit prefix (default to none)
-         * @tparam u the units
-         * @tparam power the power of the units (also applied to the prefix)
-         * @return constexpr T the value in si units
+         * @brief Value of the compile-time unit `u` in this system
+         *
+         * `u` is a by-value template parameter, so every exponent is a constant expression:
+         * dimensions with exponent 0 expand to nothing. The parameter is `Unit u` (deduced) on
+         * purpose; it compiles on clang 15. Never replace it with a raw `double` template
+         * parameter, which clang < 18 rejects.
+         *
+         * @code{.cpp}
+         * astro.get<units::astronomical_unit>();              // in this system's lengths
+         * si.get<prefix::mega * units::year>();               // 3.15576e13
+         * usys.get<constants::G, f32>();                      // result as f32
+         * @endcode
          */
-        template<UnitPrefix pref = None, units::UnitName u, int power = 1>
-        inline constexpr T to() {
-            return get<u, -power>();
+        template<Unit u, class Tret = T>
+        constexpr Tret get() const noexcept {
+            using details::pow_constexpr_fast_inv;
+            using Tacc = acc_t<Tret>;
+            return Tret(
+                pow_constexpr_fast_inv<u.dim.second>(Tacc(s), Tacc(s_inv))
+                * pow_constexpr_fast_inv<u.dim.metre>(Tacc(m), Tacc(m_inv))
+                * pow_constexpr_fast_inv<u.dim.kilogram>(Tacc(kg), Tacc(kg_inv))
+                * pow_constexpr_fast_inv<u.dim.ampere>(Tacc(A), Tacc(A_inv))
+                * pow_constexpr_fast_inv<u.dim.kelvin>(Tacc(K), Tacc(K_inv))
+                * pow_constexpr_fast_inv<u.dim.mole>(Tacc(mol), Tacc(mol_inv))
+                * pow_constexpr_fast_inv<u.dim.candela>(Tacc(cd), Tacc(cd_inv))
+                * Tacc(u.si_factor));
         }
 
-        /// Simplified signature for \ref get without prefix
-        template<units::UnitName u, int power = 1>
-        inline constexpr T get() {
-            return get<None, u, power>();
+        /// Inverse of get<u>(): one unit of this system expressed in `u`, e.g.
+        /// to<units::kilogram>() is the code mass unit in kg. The reciprocal of the factor is a
+        /// constant expression, so this does not divide either.
+        template<Unit u, class Tret = T>
+        constexpr Tret to() const noexcept {
+            return get<upow(u, -1), Tret>();
         }
 
-        /// Simplified signature for \ref to without prefix
-        template<units::UnitName u, int power = 1>
-        inline constexpr T to() {
-            return to<None, u, power>();
+        /// Value of a unit only known at run time (e.g. looked up by name). Exponents are runtime
+        /// values; the stored *_inv members serve negative exponents, so there is no division.
+        template<class Tret = T, class Tu>
+        constexpr Tret get(Unit<Tu> u) const noexcept {
+            using details::ipow;
+            using Tacc = acc_t<Tret>;
+            return Tret(
+                ipow(Tacc(s), u.dim.second, Tacc(s_inv)) * ipow(Tacc(m), u.dim.metre, Tacc(m_inv))
+                * ipow(Tacc(kg), u.dim.kilogram, Tacc(kg_inv))
+                * ipow(Tacc(A), u.dim.ampere, Tacc(A_inv))
+                * ipow(Tacc(K), u.dim.kelvin, Tacc(K_inv))
+                * ipow(Tacc(mol), u.dim.mole, Tacc(mol_inv))
+                * ipow(Tacc(cd), u.dim.candela, Tacc(cd_inv)) * Tacc(u.si_factor));
         }
 
-        private:
-        template<UnitPrefix pref = None>
-        inline T getter_1(units::UnitName name) {
-            switch (name) {
-
-            case units::second  : return get<pref, units::second>(); break;
-            case units::metre   : return get<pref, units::metre>(); break;
-            case units::kilogram: return get<pref, units::kilogram>(); break;
-            case units::Ampere  : return get<pref, units::Ampere>(); break;
-            case units::Kelvin  : return get<pref, units::Kelvin>(); break;
-            case units::mole    : return get<pref, units::mole>(); break;
-            case units::candela : return get<pref, units::candela>(); break;
-            // case units::mps: return get<pref, units::mps>(); break;
-            case units::Hertz            : return get<pref, units::Hertz>(); break;
-            case units::Newton           : return get<pref, units::Newton>(); break;
-            case units::Pascal           : return get<pref, units::Pascal>(); break;
-            case units::Joule            : return get<pref, units::Joule>(); break;
-            case units::Watt             : return get<pref, units::Watt>(); break;
-            case units::Coulomb          : return get<pref, units::Coulomb>(); break;
-            case units::Volt             : return get<pref, units::Volt>(); break;
-            case units::Farad            : return get<pref, units::Farad>(); break;
-            case units::Ohm              : return get<pref, units::Ohm>(); break;
-            case units::Siemens          : return get<pref, units::Siemens>(); break;
-            case units::Weber            : return get<pref, units::Weber>(); break;
-            case units::Tesla            : return get<pref, units::Tesla>(); break;
-            case units::Henry            : return get<pref, units::Henry>(); break;
-            case units::lumens           : return get<pref, units::lumens>(); break;
-            case units::lux              : return get<pref, units::lux>(); break;
-            case units::Bequerel         : return get<pref, units::Bequerel>(); break;
-            case units::Gray             : return get<pref, units::Gray>(); break;
-            case units::Sievert          : return get<pref, units::Sievert>(); break;
-            case units::katal            : return get<pref, units::katal>(); break;
-            case units::minutes          : return get<pref, units::minutes>(); break;
-            case units::hours            : return get<pref, units::hours>(); break;
-            case units::days             : return get<pref, units::days>(); break;
-            case units::years            : return get<pref, units::years>(); break;
-            case units::astronomical_unit: return get<pref, units::astronomical_unit>(); break;
-            case units::light_year       : return get<pref, units::light_year>(); break;
-            case units::parsec           : return get<pref, units::parsec>(); break;
-            case units::solar_radius     : return get<pref, units::solar_radius>(); break;
-            case units::earth_radius     : return get<pref, units::earth_radius>(); break;
-            case units::solar_mass       : return get<pref, units::solar_mass>(); break;
-            case units::eV               : return get<pref, units::eV>(); break;
-            case units::erg              : return get<pref, units::erg>(); break;
-            case units::pint             : return get<pref, units::pint>(); break;
-            }
+        /// get(u) for `u` raised to a runtime power: exactly get(upow(u, power)). The only entry
+        /// point that can divide (in upow, for power < 0); this is the Python path.
+        template<class Tret = T, class Tu>
+        constexpr Tret get(Unit<Tu> u, int power) const noexcept {
+            return get<Tret>(upow(u, power));
         }
 
-        inline T getter_2(UnitPrefix pref, units::UnitName name) {
-            switch (pref) {
-
-            case tera : return getter_1<tera>(name); break;
-            case giga : return getter_1<giga>(name); break;
-            case mega : return getter_1<mega>(name); break;
-            case kilo : return getter_1<kilo>(name); break;
-            case hecto: return getter_1<hecto>(name); break;
-            case deca : return getter_1<deca>(name); break;
-            case None : return getter_1<None>(name); break;
-            // case deci: return getter_1<deci>(name); break;
-            case centi: return getter_1<centi>(name); break;
-            case milli: return getter_1<milli>(name); break;
-            case micro: return getter_1<micro>(name); break;
-            case nano : return getter_1<nano>(name); break;
-            case pico : return getter_1<pico>(name); break;
-            case femto: return getter_1<femto>(name); break;
-            }
+        /// Inverse of get(u)
+        template<class Tret = T, class Tu>
+        constexpr Tret to(Unit<Tu> u) const noexcept {
+            return get<Tret>(upow(u, -1));
         }
 
-        public:
-        /// Non templated version of \ref get
-        inline T runtime_get(UnitPrefix pref, units::UnitName name, int power) {
-            return pown(getter_2(pref, name), power);
-        }
-
-        /// Non templated version of \ref to
-        inline T runtime_to(UnitPrefix pref, units::UnitName name, int power) {
-            return pown(getter_2(pref, name), -power);
+        /// Inverse of get(u, power)
+        template<class Tret = T, class Tu>
+        constexpr Tret to(Unit<Tu> u, int power) const noexcept {
+            return get<Tret>(upow(u, -power));
         }
     };
 
 } // namespace shamunits
-
-#undef addget
-#undef PREF
-#undef Uget
-#undef Cget
 // end shamunits/UnitSystem.hpp
 
-/// @brief Macro to add a constant to the \ref shamunits::Constants class
-/// For example one can add a new constant by adding the following statement inside
-/// shamunits::Constants
-/// \code{.cpp}
-///     addconstant(delta_nu_cs) { return Cget(Si::delta_nu_cs,1) * Uget(Hertz, 1); }
-/// \endcode
-#define addconstant(name)                                                                          \
-    template<int power = 1>                                                                        \
-    inline constexpr T name()
+// begin shamunits/constant_table.hpp
+/**
+ * @file constant_table.hpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief The table of physical constants: each constant is a Unit (its SI value and dimension)
+ *
+ * A constant is the same thing as a unit: `usys.get<constants::G>()` is G in the system `usys`.
+ * Derived constants are written from other constants, so their dimension is derived and checked
+ * rather than retyped. To add a constant: declare it below, then add one registry row; it then
+ * appears in Python with no binding edit. Combine with double literals only.
+ */
 
-/// Utility macro to get the value of a unit in the current unit system with its power
-#define Uget(unitname, mult_pow) units.template get<None, units::unitname, (mult_pow) * power>()
 
-/// Utility macro to get the value of a constant in the current unit system with its power
-#define Cget(constant_name, mult_pow)                                                              \
-    details::pow_constexpr_fast_inv<(mult_pow) * power>(constant_name, 1 / constant_name)
+// begin shamunits/details/registry.hpp
+/**
+ * @file registry.hpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief Name tables mapping long and short names to units, with constexpr lookup
+ *
+ * Each category (units, prefixes, constants) owns one registry, a constexpr array of
+ * NamedUnit next to its table. Names only need to be unique within one registry, so "m" can be
+ * both metre (units) and milli (prefixes). Host-only: unlike Unit.hpp this uses the standard
+ * library and exceptions.
+ */
 
-/// X macro to list all constants conversion & bindings
-#define UNITS_CONSTANTS                                                                            \
-    /* si base ctes  */                                                                            \
-    X(delta_nu_cs /**/, Uget(Hertz, 1))                                                            \
-    X(c /************/, Uget(m, 1) * Uget(s, -1))                                                  \
-    X(h /************/, Uget(Joule, 1) * Uget(s, 1))                                               \
-    X(e /************/, Uget(Coulomb, 1))                                                          \
-    X(k /************/, Uget(Joule, 1) * Uget(Kelvin, -1))                                         \
-    X(Na /***********/, Uget(mole, -1))                                                            \
-    X(Kcd /**********/, Uget(lm, 1) * Uget(Watt, -1))                                              \
-    /* times */                                                                                    \
-    X(second /**/, Uget(s, 1))                                                                     \
-    X(minute /**/, Uget(s, 1))                                                                     \
-    X(hour /**/, Uget(s, 1))                                                                       \
-    X(day /***/, Uget(s, 1))                                                                       \
-    X(year /**/, Uget(s, 1))                                                                       \
-    /* sizes */                                                                                    \
-    X(au /*****************/, Uget(m, 1))                                                          \
-    X(astronomical_unit /**/, Uget(m, 1))                                                          \
-    X(light_year /*********/, Uget(m, 1))                                                          \
-    X(parsec /*************/, Uget(m, 1))                                                          \
-    X(solar_radius /*******/, Uget(m, 1))                                                          \
-    X(earth_radius /*******/, Uget(m, 1))                                                          \
-    X(planck_length /******/, Uget(m, 1))                                                          \
-    /* masses */                                                                                   \
-    X(proton_mass /****/, Uget(kg, 1))                                                             \
-    X(electron_mass /**/, Uget(kg, 1))                                                             \
-    X(earth_mass /*****/, Uget(kg, 1))                                                             \
-    X(jupiter_mass /***/, Uget(kg, 1))                                                             \
-    X(sol_mass /*******/, Uget(kg, 1))                                                             \
-    X(planck_mass /****/, Uget(kg, 1))                                                             \
-    X(dalton /*********/, Uget(kg, 1))                                                             \
-    /* densities */                                                                                \
-    X(guiness_density, Uget(kg, 1) * Uget(m, -3))                                                  \
-    /* derived ctes  */                                                                            \
-    X(G /**********/, Uget(N, 1) * Uget(m, 2) * Uget(kg, -2))                                      \
-    X(hbar /*******/, Uget(Joule, 1) * Uget(s, 1))                                                 \
-    X(mu_0 /*******/, Uget(N, 1) * Uget(A, -2))                                                    \
-    X(Z_0 /********/, Uget(Ohm, 1))                                                                \
-    X(epsilon_0 /**/, Uget(F, 1) * Uget(m, -1))                                                    \
-    X(ke /*********/, Uget(N, 1) * Uget(m, 2) * Uget(Coulomb, -2))                                 \
-    X(kb /*********/, Uget(J, 1) * Uget(K, -1))                                                    \
-    X(sigma /******/, Uget(W, 1) * Uget(m, -2) * Uget(K, -4))
+
+namespace shamunits {
+
+    /// One registry entry: a unit and the two names it can be looked up by
+    struct NamedUnit {
+        std::string_view long_name;  ///< e.g. "metre", "astronomical_unit"
+        std::string_view short_name; ///< e.g. "m", "au"
+        Unit<> unit;                 ///< the unit, always in the reference precision (double)
+
+        /// Constructor, so registry rows stay compact: `{"metre", "m", metre}`
+        constexpr NamedUnit(std::string_view lname, std::string_view sname, Unit<> u) noexcept
+            : long_name(lname), short_name(sname), unit(u) {}
+    };
+
+} // namespace shamunits
+
+namespace shamunits::details {
+
+    /// Entry whose long or short name is `name`, or nullptr
+    constexpr const NamedUnit *find_named(
+        std::span<const NamedUnit> registry, std::string_view name) noexcept {
+        for (const NamedUnit &e : registry) {
+            if (e.long_name == name || e.short_name == name) {
+                return &e;
+            }
+        }
+        return nullptr;
+    }
+
+    /// Unit named `name` in `registry`; throws std::invalid_argument when unknown
+    inline Unit<> unit_from_name(
+        std::span<const NamedUnit> registry,
+        std::string_view name,
+        std::string_view kind = "unit") {
+        if (const NamedUnit *e = find_named(registry, name); e != nullptr) {
+            return e->unit;
+        }
+        throw std::invalid_argument(
+            "unknown " + std::string(kind) + " name : '" + std::string(name) + "'");
+    }
+
+    /// True when no name is empty and no name appears twice, long and short names together
+    constexpr bool names_are_valid(std::span<const NamedUnit> registry) noexcept {
+        for (std::size_t i = 0; i < registry.size(); i++) {
+            const NamedUnit &a = registry[i];
+            if (a.long_name.empty() || a.short_name.empty()) {
+                return false;
+            }
+            for (std::size_t j = i + 1; j < registry.size(); j++) {
+                const NamedUnit &b = registry[j];
+                if (a.long_name == b.long_name || a.long_name == b.short_name
+                    || a.short_name == b.long_name || a.short_name == b.short_name) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+} // namespace shamunits::details
+// end shamunits/details/registry.hpp
+
+// begin shamunits/unit_table.hpp
+/**
+ * @file unit_table.hpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief The table of units: one constexpr Unit per unit, plus its name registry
+ *
+ * To add a unit: declare it below from existing units, then add one row to the registry. Both
+ * are checked at compile time (dimensions, unique names). Factors are Unit<> (double); combine
+ * them with double literals only (`60. * second`, not `60 * second`).
+ */
+
+
+namespace shamunits::units {
+
+    // SI base units
+    inline constexpr Unit<> second   = base_unit({.second = 1});   ///< s
+    inline constexpr Unit<> metre    = base_unit({.metre = 1});    ///< m
+    inline constexpr Unit<> kilogram = base_unit({.kilogram = 1}); ///< kg
+    inline constexpr Unit<> ampere   = base_unit({.ampere = 1});   ///< A
+    inline constexpr Unit<> kelvin   = base_unit({.kelvin = 1});   ///< K
+    inline constexpr Unit<> mole     = base_unit({.mole = 1});     ///< mol
+    inline constexpr Unit<> candela  = base_unit({.candela = 1});  ///< cd
+
+    // SI derived units
+    inline constexpr Unit<> hertz     = 1. / second;                        ///< Hz = s-1
+    inline constexpr Unit<> newton    = kilogram * metre / upow(second, 2); ///< N = kg.m.s-2
+    inline constexpr Unit<> pascal    = newton / upow(metre, 2);            ///< Pa = N.m-2
+    inline constexpr Unit<> joule     = newton * metre;                     ///< J = N.m
+    inline constexpr Unit<> watt      = joule / second;                     ///< W = J.s-1
+    inline constexpr Unit<> coulomb   = second * ampere;                    ///< C = s.A
+    inline constexpr Unit<> volt      = watt / ampere;                      ///< V = W.A-1
+    inline constexpr Unit<> farad     = coulomb / volt;                     ///< F = C.V-1
+    inline constexpr Unit<> ohm       = volt / ampere;                      ///< ohm = V.A-1
+    inline constexpr Unit<> siemens   = 1. / ohm;                           ///< S = ohm-1
+    inline constexpr Unit<> weber     = volt * second;                      ///< Wb = V.s
+    inline constexpr Unit<> tesla     = weber / upow(metre, 2);             ///< T = Wb.m-2
+    inline constexpr Unit<> henry     = weber / ampere;                     ///< H = Wb.A-1
+    inline constexpr Unit<> lumen     = candela;                            ///< lm = cd.sr
+    inline constexpr Unit<> lux       = lumen / upow(metre, 2);             ///< lx = lm.m-2
+    inline constexpr Unit<> becquerel = 1. / second;                        ///< Bq = s-1
+    inline constexpr Unit<> gray      = joule / kilogram;                   ///< Gy = J.kg-1
+    inline constexpr Unit<> sievert   = joule / kilogram;                   ///< Sv = J.kg-1
+    inline constexpr Unit<> katal     = mole / second;                      ///< kat = mol.s-1
+
+    // Other units
+    inline constexpr Unit<> minute            = 60. * second;              ///< mn
+    inline constexpr Unit<> hour              = 3600. * second;            ///< hr
+    inline constexpr Unit<> day               = 86400. * second;           ///< dy
+    inline constexpr Unit<> year              = 31557600. * second;        ///< yr (Julian)
+    inline constexpr Unit<> astronomical_unit = 149597870700. * metre;     ///< au
+    inline constexpr Unit<> light_year        = 9460730472580800. * metre; ///< ly
+    inline constexpr Unit<> parsec            = 3.0857e16 * metre;         ///< pc
+    inline constexpr Unit<> solar_radius      = 6.957e8 * metre;           ///< rsol
+    inline constexpr Unit<> earth_radius      = 6.378137e6 * metre;        ///< rearth (equatorial)
+    inline constexpr Unit<> solar_mass        = 1.98847e30 * kilogram;     ///< sol_mass
+    inline constexpr Unit<> electron_volt     = 1.602176634e-19 * joule;   ///< eV
+    inline constexpr Unit<> erg               = 1e-7 * joule;              ///< erg
+    inline constexpr Unit<> british_pint      = 5.68e-4 * upow(metre, 3);  ///< pint (0.568 L)
+
+    /// Name registry: long and short names. Python and saved scripts resolve these strings, so
+    /// they must stay
+    inline constexpr auto registry = std::to_array<NamedUnit>({
+        {"second", "s", second},
+        {"metre", "m", metre},
+        {"kilogram", "kg", kilogram},
+        {"Ampere", "A", ampere},
+        {"Kelvin", "K", kelvin},
+        {"mole", "mol", mole},
+        {"candela", "cd", candela},
+        {"Hertz", "Hz", hertz},
+        {"Newton", "N", newton},
+        {"Pascal", "Pa", pascal},
+        {"Joule", "J", joule},
+        {"Watt", "W", watt},
+        {"Coulomb", "C", coulomb},
+        {"Volt", "V", volt},
+        {"Farad", "F", farad},
+        {"Ohm", "ohm", ohm},
+        {"Siemens", "S", siemens},
+        {"Weber", "Wb", weber},
+        {"Tesla", "T", tesla},
+        {"Henry", "H", henry},
+        {"lumens", "lm", lumen},
+        {"lux", "lx", lux},
+        {"Becquerel", "Bq", becquerel},
+        {"Gray", "Gy", gray},
+        {"Sievert", "Sv", sievert},
+        {"katal", "kat", katal},
+        {"minutes", "mn", minute},
+        {"hours", "hr", hour},
+        {"days", "dy", day},
+        {"years", "yr", year},
+        {"astronomical_unit", "au", astronomical_unit},
+        {"light_year", "ly", light_year},
+        {"parsec", "pc", parsec},
+        {"solar_radius", "rsol", solar_radius},
+        {"earth_radius", "rearth", earth_radius},
+        {"solar_mass", "sol_mass", solar_mass},
+        {"electron_volt", "eV", electron_volt},
+        {"ergs", "erg", erg},
+        {"british_pint", "pint", british_pint},
+    });
+
+    static_assert(details::names_are_valid(registry), "empty or duplicate unit name");
+
+    // Dimension cross-checks: catch a wrong composition at compile time
+    static_assert(pascal.dim == Dimension{.second = -2, .metre = -1, .kilogram = 1});
+    static_assert(joule.dim == Dimension{.second = -2, .metre = 2, .kilogram = 1});
+    static_assert(watt.dim == Dimension{.second = -3, .metre = 2, .kilogram = 1});
+    static_assert(volt.dim == Dimension{.second = -3, .metre = 2, .kilogram = 1, .ampere = -1});
+    static_assert(farad.dim == Dimension{.second = 4, .metre = -2, .kilogram = -1, .ampere = 2});
+    static_assert(ohm.dim == Dimension{.second = -3, .metre = 2, .kilogram = 1, .ampere = -2});
+    static_assert(siemens.dim == Dimension{.second = 3, .metre = -2, .kilogram = -1, .ampere = 2});
+    static_assert(weber.dim == Dimension{.second = -2, .metre = 2, .kilogram = 1, .ampere = -1});
+    static_assert(tesla.dim == Dimension{.second = -2, .kilogram = 1, .ampere = -1});
+    static_assert(henry.dim == Dimension{.second = -2, .metre = 2, .kilogram = 1, .ampere = -2});
+    static_assert(lux.dim == Dimension{.metre = -2, .candela = 1});
+    static_assert(gray.dim == Dimension{.second = -2, .metre = 2});
+    static_assert(katal.dim == Dimension{.second = -1, .mole = 1});
+    static_assert(electron_volt.dim == joule.dim && erg.dim == joule.dim);
+    static_assert(british_pint.dim == Dimension{.metre = 3});
+
+    /// Unit from its long or short name; throws std::invalid_argument if unknown
+    inline Unit<> from_name(std::string_view name) {
+        return details::unit_from_name(registry, name, "unit");
+    }
+
+} // namespace shamunits::units
+// end shamunits/unit_table.hpp
+
+namespace shamunits::details {
+    /// pi, as a plain number for building constants (same value as shamunits::pi<double>)
+    inline constexpr double pi = 3.141592653589793116;
+} // namespace shamunits::details
+
+namespace shamunits::constants {
+
+    // SI defining constants
+    inline constexpr Unit<> delta_nu_cs = 9192631770. * units::hertz; ///< Cs hyperfine frequency
+    inline constexpr Unit<> c = 299792458. * units::metre / units::second;     ///< speed of light
+    inline constexpr Unit<> h = 6.62607015e-34 * units::joule * units::second; ///< Planck constant
+    inline constexpr Unit<> e = 1.602176634e-19 * units::coulomb;            ///< elementary charge
+    inline constexpr Unit<> k = 1.380649e-23 * units::joule / units::kelvin; ///< Boltzmann constant
+    // NOLINTNEXTLINE(readability-identifier-naming): physics symbol, also the Python method name
+    inline constexpr Unit<> Na = 6.02214076e23 / units::mole; ///< Avogadro constant
+    // NOLINTNEXTLINE(readability-identifier-naming): physics symbol, also the Python method name
+    inline constexpr Unit<> Kcd = 683. * units::lumen / units::watt; ///< luminous efficacy
+
+    // Times
+    inline constexpr Unit<> second = units::second; ///< second
+    inline constexpr Unit<> minute = units::minute; ///< minute
+    inline constexpr Unit<> hour   = units::hour;   ///< hour
+    inline constexpr Unit<> day    = units::day;    ///< day
+    inline constexpr Unit<> year   = units::year;   ///< Julian year
+
+    // Lengths
+    inline constexpr Unit<> astronomical_unit = units::astronomical_unit; ///< au
+    inline constexpr Unit<> au           = units::astronomical_unit; ///< alias of astronomical_unit
+    inline constexpr Unit<> light_year   = units::light_year;        ///< light year
+    inline constexpr Unit<> parsec       = units::parsec;            ///< parsec
+    inline constexpr Unit<> solar_radius = units::solar_radius;      ///< solar radius
+    inline constexpr Unit<> earth_radius = units::earth_radius;      ///< Earth equatorial radius
+    inline constexpr Unit<> planck_length = 1.61625518e-35 * units::metre; ///< Planck length
+
+    // Masses
+    inline constexpr Unit<> proton_mass = 1.67262192e-27 * units::kilogram; ///< proton mass
+    /// electron mass, from the proton/electron mass ratio
+    inline constexpr Unit<> electron_mass = proton_mass * (1. / 1836.1526734311);
+    inline constexpr Unit<> earth_mass    = 5.9722e24 * units::kilogram;     ///< Earth mass
+    inline constexpr Unit<> jupiter_mass  = 1.898e27 * units::kilogram;      ///< Jupiter mass
+    inline constexpr Unit<> sol_mass      = units::solar_mass;               ///< solar mass
+    inline constexpr Unit<> planck_mass   = 2.17643424e-8 * units::kilogram; ///< Planck mass
+    inline constexpr Unit<> dalton = 1.66053906892e-27 * units::kilogram;    ///< atomic mass unit
+
+    // Densities
+    /// density of Guinness, 1.017 g.cm-3
+    inline constexpr Unit<> guiness_density
+        = (1.017 * 1000.) * units::kilogram / upow(units::metre, 3);
+
+    // Derived constants
+    // NOLINTNEXTLINE(readability-identifier-naming): physics symbol, also the Python method name
+    inline constexpr Unit<> G
+        = 6.6743015e-11 * units::newton * upow(units::metre, 2) / upow(units::kilogram, 2);
+    inline constexpr Unit<> hbar = h / (2. * details::pi); ///< reduced Planck
+    inline constexpr Unit<> mu_0
+        = 1.2566370621219e-6 * units::newton / upow(units::ampere, 2); ///< vacuum permeability
+    // NOLINTNEXTLINE(readability-identifier-naming): physics symbol, also the Python method name
+    inline constexpr Unit<> Z_0       = mu_0 * c;       ///< vacuum impedance
+    inline constexpr Unit<> epsilon_0 = 1. / (Z_0 * c); ///< vacuum permittivity
+    inline constexpr Unit<> ke        = 1. / (4. * details::pi * epsilon_0); ///< Coulomb constant
+    inline constexpr Unit<> kb
+        = 1.380649e-23 * units::joule / units::kelvin; ///< Boltzmann constant
+    /// Stefan-Boltzmann constant
+    inline constexpr Unit<> sigma
+        = 5.670374419e-8 * units::watt / upow(units::metre, 2) / upow(units::kelvin, 4);
+
+    /// Name registry: one name per constant (long and short are the same). These are the Python
+    /// method names (Constants(usys).G())
+    inline constexpr auto registry = std::to_array<NamedUnit>({
+        {"delta_nu_cs", "delta_nu_cs", delta_nu_cs},
+        {"c", "c", c},
+        {"h", "h", h},
+        {"e", "e", e},
+        {"k", "k", k},
+        {"Na", "Na", Na},
+        {"Kcd", "Kcd", Kcd},
+        {"second", "second", second},
+        {"minute", "minute", minute},
+        {"hour", "hour", hour},
+        {"day", "day", day},
+        {"year", "year", year},
+        {"au", "au", au},
+        {"astronomical_unit", "astronomical_unit", astronomical_unit},
+        {"light_year", "light_year", light_year},
+        {"parsec", "parsec", parsec},
+        {"solar_radius", "solar_radius", solar_radius},
+        {"earth_radius", "earth_radius", earth_radius},
+        {"planck_length", "planck_length", planck_length},
+        {"proton_mass", "proton_mass", proton_mass},
+        {"electron_mass", "electron_mass", electron_mass},
+        {"earth_mass", "earth_mass", earth_mass},
+        {"jupiter_mass", "jupiter_mass", jupiter_mass},
+        {"sol_mass", "sol_mass", sol_mass},
+        {"planck_mass", "planck_mass", planck_mass},
+        {"dalton", "dalton", dalton},
+        {"guiness_density", "guiness_density", guiness_density},
+        {"G", "G", G},
+        {"hbar", "hbar", hbar},
+        {"mu_0", "mu_0", mu_0},
+        {"Z_0", "Z_0", Z_0},
+        {"epsilon_0", "epsilon_0", epsilon_0},
+        {"ke", "ke", ke},
+        {"kb", "kb", kb},
+        {"sigma", "sigma", sigma},
+    });
+
+    static_assert(details::names_are_valid(registry), "empty or duplicate constant name");
+
+    // Dimension checks: derived constants must land on the expected dimension
+    static_assert(h.dim == (units::joule * units::second).dim && hbar.dim == h.dim);
+    static_assert(G.dim == Dimension{.second = -2, .metre = 3, .kilogram = -1});
+    static_assert(mu_0.dim == (units::newton / upow(units::ampere, 2)).dim);
+    static_assert(Z_0.dim == units::ohm.dim);
+    static_assert(epsilon_0.dim == (units::farad / units::metre).dim);
+    static_assert(ke.dim == (units::newton * upow(units::metre, 2) / upow(units::coulomb, 2)).dim);
+    static_assert(sigma.dim == (units::watt / upow(units::metre, 2) / upow(units::kelvin, 4)).dim);
+    static_assert(Kcd.dim == (units::lumen / units::watt).dim && Na.dim == (1. / units::mole).dim);
+    static_assert(guiness_density.dim == (units::kilogram / upow(units::metre, 3)).dim);
+    static_assert(k == kb && au == astronomical_unit);
+
+    /// Constant from its name; throws std::invalid_argument if unknown
+    inline Unit<> from_name(std::string_view name) {
+        return shamunits::details::unit_from_name(registry, name, "constant");
+    }
+
+} // namespace shamunits::constants
+// end shamunits/constant_table.hpp
 
 namespace shamunits {
 
@@ -773,293 +798,99 @@ namespace shamunits {
     constexpr T electron_proton_ratio = 1 / proton_electron_ratio<T>;
 
     /**
-     * @brief Physical constants
+     * @brief Physical constants in a unit system
+     *
+     * \code{.cpp}
+     * shamunits::Constants<f64> cte{usys};
+     * f64 G  = cte.get<shamunits::constants::G>();
+     * f64 G2 = cte.get(shamunits::constants::from_name("G"), 2);
+     * \endcode
      */
     template<class T>
     struct Constants {
-
-        /// Alias to the conversion constants
-        using Conv = ConversionConstants<T>;
-
-        /// Physical constant in SI units
-        struct Si {
-
-            // si system base constants
-            static constexpr T delta_nu_cs = 9192631770;      // (s-1)
-            static constexpr T c           = 299792458;       // (m.s-1)
-            static constexpr T h           = 6.62607015e-34;  // (J.s)
-            static constexpr T e           = 1.602176634e-19; // (C)
-            static constexpr T k           = 1.380649e-23;    // (J.K-1 )
-            static constexpr T Na          = 6.02214076e23;   // (mol-1 )
-            static constexpr T Kcd         = 683;             // (lm.W-1)
-
-            // other constants in si units
-            static constexpr T G         = 6.6743015e-11;               // (N.m2.kg-2)
-            static constexpr T hbar      = h / (2 * pi<T>);             // (J.s)
-            static constexpr T mu_0      = 1.2566370621219e-6;          // (N.A-2)
-            static constexpr T Z_0       = mu_0 * c;                    // (Ohm)
-            static constexpr T epsilon_0 = 1 / (Z_0 * c);               // (F.m-1)
-            static constexpr T ke        = 1 / (4 * pi<T> * epsilon_0); // (N.m2.C-2)
-            static constexpr T kb        = 1.380649e-23;                // (J.K-1)
-
-            /// Stephan Boltzmann constant (W.m-2.K-4)
-            static constexpr T sigma = 5.670374419e-8;
-
-            static constexpr T second = 1;             //(s)
-            static constexpr T minute = Conv::mn_to_s; //(s)
-            static constexpr T hour   = Conv::hr_to_s; //(s)
-            static constexpr T day    = Conv::dy_to_s; //(s)
-            static constexpr T year   = Conv::yr_to_s; //(s)
-
-            static constexpr T astronomical_unit = Conv::au_to_m;     //(m)
-            static constexpr T au                = astronomical_unit; //(m)
-            static constexpr T light_year        = Conv::ly_to_m;     //(m)
-            static constexpr T parsec            = Conv::pc_to_m;     //(m)
-            static constexpr T solar_radius      = Conv::rsol_to_m;   //(m)
-            static constexpr T earth_radius      = Conv::rearth_to_m; //(m)
-            static constexpr T planck_length     = 1.61625518e-35;    //(m)
-
-            static constexpr T proton_mass   = 1.67262192e-27;                         //(kg)
-            static constexpr T electron_mass = proton_mass * electron_proton_ratio<T>; //(kg)
-            static constexpr T earth_mass    = 5.9722e24;                              //(kg)
-            static constexpr T jupiter_mass  = 1.898e27;                               //(kg)
-            static constexpr T sol_mass      = Conv::sol_mass_to_kg;                   //(kg)
-            static constexpr T planck_mass   = 2.17643424e-8;                          //(kg)
-            static constexpr T dalton        = 1.66053906892e-27;                      //(kg)
-
-            static constexpr T guiness_density = Conv::gcm3_to_guiness_density * 1000; //(kg.m-3)
-        };
 
         /// Current unit system of the constants
         const UnitSystem<T> units;
 
         /// Construct the \ref shamunits::Constants class with a unit system
-        explicit Constants(const UnitSystem<T> units) : units(units) {}
+        constexpr explicit Constants(const UnitSystem<T> units) : units(units) {}
 
-/// Define the constant conversions functions
-#define X(name, conv)                                                                              \
-    addconstant(name) { return Cget(Si::name, 1) * conv; }
-        UNITS_CONSTANTS
-#undef X
+        /// Value of the constant (or unit) `u` in this unit system, e.g. get<constants::G>().
+        /// Same as units.get<u, Tret>(); see UnitSystem::get.
+        template<Unit u, class Tret = T>
+        constexpr Tret get() const noexcept {
+            return units.template get<u, Tret>();
+        }
+
+        /// Value of a constant only known at run time, e.g. get(constants::from_name("G"))
+        template<class Tret = T, class Tu>
+        constexpr Tret get(Unit<Tu> u) const noexcept {
+            return units.template get<Tret>(u);
+        }
+
+        /// get(u) raised to a runtime power: the Python path, Constants(usys).G(power=2)
+        template<class Tret = T, class Tu>
+        constexpr Tret get(Unit<Tu> u, int power) const noexcept {
+            return units.template get<Tret>(u, power);
+        }
     };
 
 } // namespace shamunits
-
-/**
- * \fn shamunits::Constants::delta_nu_cs()
- * \brief get delta_nu_cs in the current unit system @ref units (s-1)
- *
- * \fn shamunits::Constants::Si::delta_nu_cs()
- * \brief get delta_nu_cs in the si unit system (s-1)
- *
- * \fn shamunits::Constants::c()
- * \brief get c in the current unit system @ref units (m.s-1)
- *
- * \fn shamunits::Constants::Si::c()
- * \brief get c in the si unit system (m.s-1)
- *
- * \fn shamunits::Constants::h()
- * \brief get h in the current unit system @ref units (J.s)
- *
- * \fn shamunits::Constants::Si::h()
- * \brief get h in the si unit system (J.s)
- *
- * \fn shamunits::Constants::e()
- * \brief get e in the current unit system @ref units (C)
- *
- * \fn shamunits::Constants::Si::e()
- * \brief get e in the si unit system (C)
- *
- * \fn shamunits::Constants::k()
- * \brief get k in the current unit system @ref units (J.K-1 )
- *
- * \fn shamunits::Constants::Si::k()
- * \brief get k in the si unit system (J.K-1 )
- *
- * \fn shamunits::Constants::Na()
- * \brief get Na in the current unit system @ref units (mol-1 )
- *
- * \fn shamunits::Constants::Si::Na()
- * \brief get Na in the si unit system (mol-1 )
- *
- * \fn shamunits::Constants::Kcd()
- * \brief get Kcd in the current unit system @ref units (lm.W-1)
- *
- * \fn shamunits::Constants::Si::Kcd()
- * \brief get Kcd in the si unit system (lm.W-1)
- */
-
-/**
- * \fn shamunits::Constants::G()
- * \brief get the value of G in the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::G()
- * \brief get the value of G in the si unit system (N.m2.kg-2)
- *
- * \fn shamunits::Constants::hbar()
- * \brief get the value of hbar in the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::hbar()
- * \brief get the value of hbar in the si unit system (J.s)
- *
- * \fn shamunits::Constants::mu_0()
- * \brief get the value of mu_0 in the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::mu_0()
- * \brief get the value of mu_0 in the si unit system (N.A-2)
- *
- * \fn shamunits::Constants::Z_0()
- * \brief get the value of Z_0 in the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::Z_0()
- * \brief get the value of Z_0 in the si unit system (Ohm)
- *
- * \fn shamunits::Constants::epsilon_0()
- * \brief get the value of epsilon_0 in the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::epsilon_0()
- * \brief get the value of epsilon_0 in the si unit system (F.m-1)
- *
- * \fn shamunits::Constants::ke()
- * \brief get the value of ke in the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::ke()
- * \brief get the value of ke in the si unit system (N.m2.C-2)
- *
- * \fn shamunits::Constants::kb()
- * \brief get the value of kb in the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::kb()
- * \brief get the value of kb in the si unit system (J.K-1)
- *
- */
-
-/**
- * \fn shamunits::Constants::sigma()
- * \brief get the value of sigma (Stephan Boltzmann constant) in the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::sigma()
- * \brief get the value of sigma (Stephan Boltzmann constant) in the si unit system (W.m-2.K-4)
- */
-
-/**
- * \fn shamunits::Constants::hour()
- * \brief get the value of a hour in the time unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::hour()
- * \brief get the value of a hour in the time unit of the si unit system (s)
- *
- * \fn shamunits::Constants::day()
- * \brief get the value of a day in the time unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::day()
- * \brief get the value of a day in the time unit of the si unit system (s)
- *
- * \fn shamunits::Constants::year()
- * \brief get the value of a year in the time unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::year()
- * \brief get the value of a year in the time unit of the si unit system (s)
- */
-
-/**
- * \fn shamunits::Constants::astronomical_unit()
- * \brief get the value of an astronomical_unit in the distance unit of the current unit system
- * @ref units
- *
- * \fn shamunits::Constants::Si::astronomical_unit()
- * \brief get the value of an astronomical_unit in the distance unit of the si unit system (m)
- *
- * \fn shamunits::Constants::au()
- * \brief get the value of an au in the distance unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::au()
- * \brief get the value of an au in the distance unit of the si unit system (m)
- *
- * \fn shamunits::Constants::light_year()
- * \brief get the value of a light_year in the distance unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::light_year()
- * \brief get the value of a light_year in the distance unit of the si unit system (m)
- *
- * \fn shamunits::Constants::parsec()
- * \brief get the value of a parsec in the distance unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::parsec()
- * \brief get the value of a parsec in the distance unit of the si unit system (m)
- *
- * \fn shamunits::Constants::solar_radius()
- * \brief get the value of a solar radius in the distance unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::solar_radius()
- * \brief get the value of a solar radius in the distance unit of the si unit system (m)
- *
- * \fn shamunits::Constants::earth_radius()
- * \brief get the value of one earth equatorial radius in the distance unit of the current unit
- * system @ref units
- *
- * \fn shamunits::Constants::Si::earth_radius()
- * \brief get the value of one earth equatorial radius in the distance unit of the si unit system
- * (m)
- *
- * \fn shamunits::Constants::planck_length()
- * \brief get the value of a planck_length in the distance unit of the current unit system @ref
- * units
- *
- * \fn shamunits::Constants::Si::planck_length()
- * \brief get the value of a planck_length in the distance unit of the si unit system (m)
- */
-
-/**
- * \fn shamunits::Constants::proton_mass()
- * \brief get the value of a proton_mass in the mass unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::proton_mass()
- * \brief get the value of a proton_mass in the mass unit of the si unit system (kg)
- *
- * \fn shamunits::Constants::electron_mass()
- * \brief get the value of a electron_mass in the mass unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::electron_mass()
- * \brief get the value of a electron_mass in the mass unit of the si unit system (kg)
- *
- * \fn shamunits::Constants::earth_mass()
- * \brief get the value of a earth_mass in the mass unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::earth_mass()
- * \brief get the value of a earth_mass in the mass unit of the si unit system (kg)
- *
- * \fn shamunits::Constants::jupiter_mass()
- * \brief get the value of a jupiter_mass in the mass unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::jupiter_mass()
- * \brief get the value of a jupiter_mass in the mass unit of the si unit system (kg)
- *
- * \fn shamunits::Constants::sol_mass()
- * \brief get the value of a sol_mass in the mass unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::sol_mass()
- * \brief get the value of a sol_mass in the mass unit of the si unit system (kg)
- *
- * \fn shamunits::Constants::planck_mass()
- * \brief get the value of a planck_mass in the mass unit of the current unit system @ref units
- *
- * \fn shamunits::Constants::Si::planck_mass()
- * \brief get the value of a planck_mass in the mass unit of the si unit system (kg)
- */
-
-/**
- * \fn shamunits::Constants::guiness_density()
- * \brief get the value of the guiness density in the density unit of the current unit system @ref
- * units
- *
- * \fn shamunits::Constants::Si::guiness_density()
- * \brief get the value of a guiness_density in the density of the si unit system (kg.m-3)
- */
-
-#undef Uget
-#undef addconstant
 // end shamunits/Constants.hpp
+
+// begin shamunits/prefix_table.hpp
+/**
+ * @file prefix_table.hpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief The table of unit prefixes: a prefix is a dimensionless Unit
+ *
+ * A prefix multiplies a unit once: `prefix::mega * units::year` is one Myr, and
+ * `upow(prefix::kilo * units::metre, 2)` is one km2.
+ */
+
+
+namespace shamunits::prefix {
+
+    inline constexpr Unit<> tera  = scale(1e12);  ///< T
+    inline constexpr Unit<> giga  = scale(1e9);   ///< G
+    inline constexpr Unit<> mega  = scale(1e6);   ///< M
+    inline constexpr Unit<> kilo  = scale(1e3);   ///< k
+    inline constexpr Unit<> hecto = scale(1e2);   ///< hect
+    inline constexpr Unit<> deca  = scale(1e1);   ///< dec
+    inline constexpr Unit<> none  = scale(1.);    ///< no prefix ("None", "_")
+    inline constexpr Unit<> centi = scale(1e-2);  ///< c
+    inline constexpr Unit<> milli = scale(1e-3);  ///< m
+    inline constexpr Unit<> micro = scale(1e-6);  ///< mu
+    inline constexpr Unit<> nano  = scale(1e-9);  ///< n
+    inline constexpr Unit<> pico  = scale(1e-12); ///< p
+    inline constexpr Unit<> femto = scale(1e-15); ///< f
+
+    /// Name registry: Python passes pref="None" by default, so "None" must stay
+    inline constexpr auto registry = std::to_array<NamedUnit>({
+        {"tera", "T", tera},
+        {"giga", "G", giga},
+        {"mega", "M", mega},
+        {"kilo", "k", kilo},
+        {"hecto", "hect", hecto},
+        {"deca", "dec", deca},
+        {"None", "_", none},
+        {"centi", "c", centi},
+        {"milli", "m", milli},
+        {"micro", "mu", micro},
+        {"nano", "n", nano},
+        {"pico", "p", pico},
+        {"femto", "f", femto},
+    });
+
+    static_assert(details::names_are_valid(registry), "empty or duplicate prefix name");
+
+    /// Prefix from its long or short name; throws std::invalid_argument if unknown
+    inline Unit<> from_name(std::string_view name) {
+        return details::unit_from_name(registry, name, "prefix");
+    }
+
+} // namespace shamunits::prefix
+// end shamunits/prefix_table.hpp
 
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
@@ -1078,28 +909,39 @@ int main(void) {
     using namespace shamunits;
 
     // create si units
-    UnitSystem<double> si{};
+    constexpr UnitSystem<double> si{};
 
     // get the value of au^2 in the unit system
     // but it is quite big :)
-    std::cout << si.get<units::astronomical_unit, 2>() << std::endl;
-
-    double sol_mass = Constants<double>(si).sol_mass();
+    std::cout << si.get<upow(units::astronomical_unit, 2)>() << std::endl;
 
     /*
      * create a unit system with time in Myr, length in au, mass in solar masses
      */
-    UnitSystem<double> astro_units{
-        si.get<mega, units::years>(),
+    constexpr UnitSystem<double> astro{
+        si.get<prefix::mega * units::year>(),
         si.get<units::astronomical_unit>(),
-        si.get<units::kilogram>() * sol_mass,
+        si.get<constants::sol_mass>(),
     };
 
     // this time it returns 1 because the base length is the astronomical unit
-    std::cout << astro_units.get<units::astronomical_unit, 2>() << std::endl;
-
-    Constants<double> astro_cte{astro_units};
+    std::cout << astro.get<upow(units::astronomical_unit, 2)>() << std::endl;
 
     // in those units G is 3.94781e+13
-    std::cout << astro_cte.G() << std::endl;
+    std::cout << astro.get<constants::G>() << std::endl;
+
+    // units compose: one km/s is 210950 au/Myr
+    std::cout << astro.get<prefix::kilo * units::metre / units::second>() << std::endl;
+
+    // a value returned by the code in astro units (here 12 Myr) converted to seconds:
+    // prints 3.78691e+14 s
+    double t = 12;
+    std::cout << t * astro.to<units::second>() << " s" << std::endl;
+
+    // units, prefixes and constants can also be looked up by name at run time:
+    // one parsec is 206266 au
+    std::cout << astro.get(units::from_name("pc")) << std::endl;
+
+    // Constants<T> is kept for backward compatibility: this is astro.get<constants::G>()
+    std::cout << Constants<double>{astro}.get<constants::G>() << std::endl;
 }

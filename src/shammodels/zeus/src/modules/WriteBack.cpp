@@ -46,31 +46,22 @@ void shammodels::zeus::modules::WriteBack<Tvec, TgridVec>::write_back_merged_dat
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::EventList depends_list;
-        auto acc_rho_src  = rho_merged.get_read_access(depends_list);
-        auto acc_eint_src = eint_merged.get_read_access(depends_list);
-        auto acc_vel_src  = vel_merged.get_read_access(depends_list);
-
-        auto acc_rho_dest  = rho_dest.get_write_access(depends_list);
-        auto acc_eint_dest = eint_dest.get_write_access(depends_list);
-        auto acc_vel_dest  = vel_dest.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(
-                cgh, mpdat.original_elements * Block::block_size, "copy_back", [=](u32 id) {
-                    acc_rho_dest[id]  = acc_rho_src[id];
-                    acc_eint_dest[id] = acc_eint_src[id];
-                    acc_vel_dest[id]  = acc_vel_src[id];
-                });
-        });
-
-        rho_merged.complete_event_state(e);
-        eint_merged.complete_event_state(e);
-        vel_merged.complete_event_state(e);
-
-        rho_dest.complete_event_state(e);
-        eint_dest.complete_event_state(e);
-        vel_dest.complete_event_state(e);
+        sham::kernel_call(
+            q,
+            sham::MultiRef{rho_merged, eint_merged, vel_merged},
+            sham::MultiRef{rho_dest, eint_dest, vel_dest},
+            mpdat.original_elements * Block::block_size,
+            [](u32 id,
+               const Tscal *__restrict acc_rho_src,
+               const Tscal *__restrict acc_eint_src,
+               const Tvec *__restrict acc_vel_src,
+               Tscal *__restrict acc_rho_dest,
+               Tscal *__restrict acc_eint_dest,
+               Tvec *__restrict acc_vel_dest) {
+                acc_rho_dest[id]  = acc_rho_src[id];
+                acc_eint_dest[id] = acc_eint_src[id];
+                acc_vel_dest[id]  = acc_vel_src[id];
+            });
 
         if (mpdat.pdat.has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in write back");

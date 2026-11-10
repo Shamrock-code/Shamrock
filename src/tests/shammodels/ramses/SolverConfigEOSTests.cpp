@@ -79,6 +79,7 @@ NEW_TEST(Unittest, "shammodels/ramses/SolverConfig::eos", 1) {
         cfg.eos_config.set_barotropic(1e-13, 0.2, 1.4);
         REQUIRE_EXCEPTION_THROW(cfg.check_config(), std::invalid_argument);
         REQUIRE_EXCEPTION_THROW(cfg.get_eos_gamma(), std::invalid_argument);
+        REQUIRE(!cfg.eos_config.is_hydro_adiabatic());
     }
 
     { // gamma <= 1 is rejected

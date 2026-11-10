@@ -16,8 +16,8 @@
  */
 
 #include "shambackends/sycl.hpp"
-#include "shamunits/Constants.hpp"
 #include "shamunits/UnitSystem.hpp"
+#include "shamunits/constant_table.hpp"
 
 namespace shamphys {
 
@@ -33,7 +33,7 @@ namespace shamphys {
 
     template<class T, class Tu>
     T keplerian_speed(T M, T R, const shamunits::UnitSystem<Tu> usys = {}) {
-        return keplerian_speed(shamunits::Constants{usys}.G(), M, R);
+        return keplerian_speed(usys.template get<shamunits::constants::G>(), M, R);
     }
 
 } // namespace shamphys

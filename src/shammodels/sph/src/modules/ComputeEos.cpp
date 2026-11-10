@@ -34,6 +34,7 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
+#include "shamunits/unit_table.hpp"
 #include <memory>
 
 #define NODE_EDGES(X_RO, X_RW, X_RO_OPTIONAL, X_RW_OPTIONAL)                                       \
@@ -1095,12 +1096,11 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         SolverEOS_Fermi *eos_config
         = std::get_if<SolverEOS_Fermi>(&solver_config.eos_config.config)) {
 
-        using namespace shamunits;
         auto unit_sys = *solver_config.unit_sys;
 
-        Tscal mass   = unit_sys.template to<units::kilogram>();
-        Tscal length = unit_sys.template to<units::metre>();
-        Tscal time   = unit_sys.template to<units::second>();
+        Tscal mass   = unit_sys.template to<shamunits::units::kilogram>();
+        Tscal length = unit_sys.template to<shamunits::units::metre>();
+        Tscal time   = unit_sys.template to<shamunits::units::second>();
 
         auto mu_e  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("mu_e", "\\mu_e");
         mu_e->data = eos_config->mu_e;

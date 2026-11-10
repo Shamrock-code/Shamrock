@@ -509,20 +509,6 @@ namespace shamrock::patch {
                 vmax);
         };
 
-        // auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
-        //     return main_field.get_elements_with_range(
-        //         [&](T val, T vmin, T vmax) {
-        //             if (shambase::VectorProperties<T>::dimension == 3) {
-        //                 return shammath::is_in_half_open(val, vmin, vmax);
-        //             } else {
-        //                 throw shambase::make_except_with_loc<std::runtime_error>(
-        //                     "dimension != 3 is not handled");
-        //             }
-        //         },
-        //         vmin,
-        //         vmax);
-        // };
-
         std::vector<u32> idx_lst = get_vec_idx(bmin, bmax);
 
         shamlog_debug_sycl_ln("PatchDataLayer", "inserting element cnt =", idx_lst.size());

@@ -63,8 +63,8 @@ cfg.set_units(codeu)
 
 mu_0 = ucte.mu_0()
 
-cfg.set_artif_viscosity_None()
-cfg.set_IdealMHD(sigma_mhd=1, sigma_u=1)
+cfg.set_artif_viscosity_Constant(alpha_u=1, alpha_AV=1, beta_AV=1)
+cfg.set_IdealMHD(sigma_mhd=1)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
 model.set_solver_config(cfg)

@@ -43,8 +43,8 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/RadixTree.hpp"
-#include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <shamunits/constant_table.hpp>
 #include <stdexcept>
 #include <variant>
 #include <vector>
@@ -112,6 +112,11 @@ namespace shammodels::sph {
     template<class Tscal>
     struct DustEvolCoalaCoag {
         Tscal rhodust_eps;
+
+        /// The implicit source term on s_j integrates over at least the time needed to move
+        /// tau_frac * rhodust_eps (dt_eff = max(dt, tau_frac * rhodust_eps / |S|)), must be
+        /// positive. It bounds the rate of an empty bin when dt is null or tiny.
+        Tscal tau_frac;
 
         /// Fragmentation velocity threshold, must be positive (infinity disables it).
         /// In coagulation-only mode, a dust pair whose differential velocity exceeds it gets
@@ -341,6 +346,7 @@ namespace shammodels::sph {
                         j
                             = {{"type", "coala_coag"},
                                {"rhodust_eps", cfg.rhodust_eps},
+                               {"tau_frac", cfg.tau_frac},
                                {"vfrag_threshold", cfg.vfrag_threshold},
                                {"massgrid", cfg.massgrid},
                                {"tabflux_coag", cfg.tabflux_coag}};
@@ -354,7 +360,9 @@ namespace shammodels::sph {
                 dust_evol_config = None{};
             } else if (j.at("type").get<std::string>() == "coala_coag") {
                 dust_evol_config = DustEvolCoalaCoag<Tscal>{
-                    .rhodust_eps     = j.at("rhodust_eps").get<Tscal>(),
+                    .rhodust_eps = j.at("rhodust_eps").get<Tscal>(),
+                    // older dumps predate tau_frac, use the python default
+                    .tau_frac        = j.value("tau_frac", Tscal(10)),
                     .vfrag_threshold = j.at("vfrag_threshold").get<Tscal>(),
                     .massgrid        = j.at("massgrid").get<std::vector<Tscal>>(),
                     .tabflux_coag    = j.at("tabflux_coag").get<std::vector<Tscal>>()};
@@ -430,6 +438,11 @@ namespace shammodels::sph {
                             + std::to_string(cfg->rhodust_eps));
                     }
 
+                    if (!(cfg->tau_frac > 0)) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "tau_frac must be positive, got " + std::to_string(cfg->tau_frac));
+                    }
+
                     if (cfg->vfrag_threshold <= 0) {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
                             "vfrag_threshold must be positive, got "
@@ -453,8 +466,9 @@ namespace shammodels::sph {
         struct DensityBasedNeighLim {
             u32 max_neigh_count = 500;
         };
+        struct DensityBasedBisectingNR {};
 
-        using mode = std::variant<DensityBased, DensityBasedNeighLim>;
+        using mode = std::variant<DensityBased, DensityBasedNeighLim, DensityBasedBisectingNR>;
 
         mode config = DensityBased{};
 
@@ -462,9 +476,13 @@ namespace shammodels::sph {
         void set_density_based_neigh_lim(u32 max_neigh_count) {
             config = DensityBasedNeighLim{max_neigh_count};
         }
+        void set_density_based_bisecting_nr() { config = DensityBasedBisectingNR{}; }
 
         bool is_density_based_neigh_lim() const {
             return std::holds_alternative<DensityBasedNeighLim>(config);
+        }
+        bool is_density_based_bisecting_nr() const {
+            return std::holds_alternative<DensityBasedBisectingNR>(config);
         }
     };
 
@@ -568,6 +586,12 @@ struct shammodels::sph::SolverConfig {
 
     inline void set_particle_tracking(bool state) { track_particles_id = state; }
 
+    /// Skip the ghost interfaces whose sender or receiver patch is empty
+    bool filter_empty_patch_gz = false;
+    inline void set_filter_empty_patch_gz(bool state) { filter_empty_patch_gz = state; }
+
+    inline bool has_filter_empty_patch_gz() { return filter_empty_patch_gz; }
+
     PatchSchedulerConfig scheduler_conf = {};
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -580,37 +604,25 @@ struct shammodels::sph::SolverConfig {
     /// Set the unit system of the simulation
     inline void set_units(shamunits::UnitSystem<Tscal> new_sys) { unit_sys = new_sys; }
 
-    /// Retrieves the value of the constant G based on the unit system.
-    inline Tscal get_constant_G() {
+    /// The unit system of the config, or the default one (SI) if it is not set
+    inline shamunits::UnitSystem<Tscal> get_unit_sys() {
         if (!unit_sys) {
             ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.G();
+            return shamunits::UnitSystem<Tscal>{};
         } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.G();
+            return *unit_sys;
         }
     }
 
+    /// Retrieves the value of the constant G based on the unit system.
+    inline Tscal get_constant_G() { return get_unit_sys().template get<shamunits::constants::G>(); }
+
     /// Retrieves the value of the constant c based on the unit system.
-    inline Tscal get_constant_c() {
-        if (!unit_sys) {
-            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.c();
-        } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.c();
-        }
-    }
+    inline Tscal get_constant_c() { return get_unit_sys().template get<shamunits::constants::c>(); }
 
     /// Retrieves the value of the constant mu_0 based on the unit system.
     inline Tscal get_constant_mu_0() {
-        if (!unit_sys) {
-            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.mu_0();
-        } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.mu_0();
-        }
+        return get_unit_sys().template get<shamunits::constants::mu_0>();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -766,6 +778,9 @@ struct shammodels::sph::SolverConfig {
     inline void set_smoothing_length_density_based_neigh_lim(u32 max_neigh_count) {
         smoothing_length_config.set_density_based_neigh_lim(max_neigh_count);
     }
+    inline void set_smoothing_length_density_based_bisecting_nr() {
+        smoothing_length_config.set_density_based_bisecting_nr();
+    }
 
     bool enable_particle_reordering = false;
     inline void set_enable_particle_reordering(bool enable) { enable_particle_reordering = enable; }
@@ -784,6 +799,10 @@ struct shammodels::sph::SolverConfig {
 
     bool show_ghost_zone_graph = false;
     inline void set_show_ghost_zone_graph(bool enable) { show_ghost_zone_graph = enable; }
+
+    /// Show the ghost particle count (and ratio to the particle count) in the timestep perf report
+    bool show_ghost_stats = false;
+    inline void set_show_ghost_stats(bool enable) { show_ghost_stats = enable; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)
@@ -1304,6 +1323,12 @@ namespace shammodels::sph {
                 {"type", "density_based_neigh_lim"},
                 {"max_neigh_count", conf->max_neigh_count},
             };
+        } else if (
+            const SmoothingLengthConfig::DensityBasedBisectingNR *conf
+            = std::get_if<SmoothingLengthConfig::DensityBasedBisectingNR>(&p.config)) {
+            j = {
+                {"type", "density_based_bisecting_nr"},
+            };
         } else {
             shambase::throw_unimplemented();
         }
@@ -1315,6 +1340,8 @@ namespace shammodels::sph {
         } else if (j.at("type").get<std::string>() == "density_based_neigh_lim") {
             p.config
                 = SmoothingLengthConfig::DensityBasedNeighLim{j.at("max_neigh_count").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "density_based_bisecting_nr") {
+            p.config = SmoothingLengthConfig::DensityBasedBisectingNR{};
         } else {
             shambase::throw_unimplemented();
         }
@@ -1475,6 +1502,7 @@ namespace shammodels::sph {
 
             {"save_dt_to_fields", p.save_dt_to_fields},
             {"show_ghost_zone_graph", p.show_ghost_zone_graph},
+            {"show_ghost_stats", p.show_ghost_stats},
 
             {"eos_config", p.eos_config},
 
@@ -1567,6 +1595,7 @@ namespace shammodels::sph {
         _get_to_if_contains("particle_reordering_step_freq", p.particle_reordering_step_freq);
         _get_to_if_contains("save_dt_to_fields", p.save_dt_to_fields);
         _get_to_if_contains("show_ghost_zone_graph", p.show_ghost_zone_graph);
+        _get_to_if_contains("show_ghost_stats", p.show_ghost_stats);
         _get_to_if_contains("eos_config", p.eos_config);
         _get_to_if_contains("artif_viscosity", p.artif_viscosity);
         _get_to_if_contains("boundary_config", p.boundary_config);

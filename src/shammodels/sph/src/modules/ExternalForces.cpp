@@ -34,7 +34,6 @@
 #include "shamsolvergraph/node/INode.hpp"
 #include "shamsolvergraph/node/NodeSetEdge.hpp"
 #include "shamsolvergraph/node/OperationSequence.hpp"
-#include "shamunits/Constants.hpp"
 
 namespace shambase {
 
@@ -351,19 +350,14 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
         sham::DeviceBuffer<Tvec> &buf_axyz     = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-        sham::EventList depends_list;
-        auto axyz     = buf_axyz.get_write_access(depends_list);
-        auto axyz_ext = buf_axyz_ext.get_read_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(
-                cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
-                    axyz[gid] += axyz_ext[gid];
-                });
-        });
-
-        buf_axyz.complete_event_state(e);
-        buf_axyz_ext.complete_event_state(e);
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_axyz_ext},
+            sham::MultiRef{buf_axyz},
+            pdat.get_obj_cnt(),
+            [](u32 gid, const Tvec *__restrict axyz_ext, Tvec *__restrict axyz) {
+                axyz[gid] += axyz_ext[gid];
+            });
     });
 
     if (solver_config.ext_force_config.ext_forces.empty()) {

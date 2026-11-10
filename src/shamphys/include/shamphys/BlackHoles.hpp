@@ -15,7 +15,8 @@
  * @brief
  */
 
-#include "shamunits/Constants.hpp"
+#include "shamunits/UnitSystem.hpp"
+#include "shamunits/constant_table.hpp"
 
 namespace shamphys {
 
@@ -27,7 +28,9 @@ namespace shamphys {
     template<class T, class Tu>
     T schwarzschild_radius(T M, const shamunits::UnitSystem<Tu> usys = {}) {
         return schwarzschild_radius(
-            M, shamunits::Constants{usys}.G(), shamunits::Constants{usys}.c());
+            M,
+            usys.template get<shamunits::constants::G>(),
+            usys.template get<shamunits::constants::c>());
     }
 
 } // namespace shamphys

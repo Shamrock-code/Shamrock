@@ -302,10 +302,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_boundary_free", &TConfig::set_boundary_free)
         .def("set_boundary_periodic", &TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic", &TConfig::set_boundary_shearing_periodic)
-        .def(
-            "set_boundary_particles",
-            &TConfig::set_boundary_particles,
-            py::arg("enable"))
+        .def("set_boundary_particles", &TConfig::set_boundary_particles, py::arg("enable"))
         .def(
             "set_dust_mode_none",
             [](TConfig &self) {

@@ -22,20 +22,21 @@
 #include "shamrock/patch/PatchDataField.hpp" // IWYU pragma: keep
 
 /**
- * @brief Symmetrized per-pair gate of the smooth positivity limiter.
+ * @brief Symmetrized per-pair (upwind) gate of the smooth positivity limiter.
  *
- * A particle with s_j < 0 does not accept a flux contribution that decreases s_j, and the pair is
- * switched off if either member refuses it:
- *   blocked = (s_a < 0 && f_ab > 0) || (s_b < 0 && f_ba > 0)
- * with f_ab = (m s_b / rho_b) g_ab and f_ba = -(m s_a / rho_a) g_ab (ds_j/dt = -f/2). Only signs
- * are used, so both members of the pair take bitwise the same decision (g_ba = -g_ab exactly).
+ * The flux term of the pair gives ds_a/dt += -(m s_b / 2 rho_b) g_ab and
+ * ds_b/dt += +(m s_a / 2 rho_a) g_ab, so for positive s_j it carries s_j from a to b when
+ * g_ab > 0 and from b to a when g_ab < 0. The pair is switched off when its upwind (donor)
+ * particle has s_j < 0: a particle without dust cannot give dust away.
+ *
+ * Both members of the pair take bitwise the same decision (g_ba = -g_ab exactly), except at
+ * g_ab = +-0 where the flux term is +-0 whatever the gate, so the dust mass flux stays exactly
+ * antisymmetric.
  */
 template<class Tscal>
 inline Tscal monofluid_tva_pair_gate(Tscal s_a, Tscal s_b, Tscal g_ab) {
-    bool f_ab_pos = (s_b > 0 && g_ab > 0) || (s_b < 0 && g_ab < 0);
-    bool f_ba_pos = (s_a > 0 && g_ab < 0) || (s_a < 0 && g_ab > 0);
-    bool blocked  = (s_a < 0 && f_ab_pos) || (s_b < 0 && f_ba_pos);
-    return blocked ? Tscal{0} : Tscal{1};
+    Tscal s_up = (g_ab > 0) ? s_a : s_b; // donor
+    return (s_up < 0) ? Tscal{0} : Tscal{1};
 }
 
 /**
@@ -236,16 +237,16 @@ std::string shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<Tvec, SPHKern
 
     const std::string gate_symbol = pair_gate ? R"tex(G_{j,a,b}\;)tex" : "";
     const std::string gate_def    = pair_gate ? R"tex(
-        Symmetrized per-pair positivity gate, with
+        Symmetrized per-pair (upwind) positivity gate, with
         $g_{j,a,b} = T^{\rm w}_{j,a,b} ({pressure}_a - {pressure}_b) \bar{F}_{a,b} / \lvert \mathbf{r}_{a,b}\rvert$:
-        a particle with ${s_j} < 0$ refuses a flux contribution that decreases its ${s_j}$, and the
-        pair is switched off if either member refuses it:
+        the pair carries ${s_j}$ from $a$ to $b$ if $g_{j,a,b} > 0$ (from $b$ to $a$ otherwise),
+        and is switched off when its upwind (donor) particle has ${s_j} < 0$:
         \begin{align}
         G_{j,a,b} &= \begin{cases}
-            0 & ({s_j}_{j,a} < 0 \land {s_j}_{j,b} g_{j,a,b} > 0)
-                \lor ({s_j}_{j,b} < 0 \land {s_j}_{j,a} g_{j,a,b} < 0) \\
+            0 & {s_j}_{j,\mathrm{up}} < 0 \\
             1 & \text{otherwise}
-        \end{cases}
+        \end{cases},
+        \qquad \mathrm{up} = \begin{cases} a & g_{j,a,b} > 0 \\ b & \text{otherwise} \end{cases}
         \end{align}
     )tex"
                                               : "";

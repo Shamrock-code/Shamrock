@@ -13,8 +13,9 @@
  * @brief Apply beta-cooling (cooling time proportional to the rotation time)
  */
 
-#include "shammodels/ramses/modules/ApplyBetaCooling.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
+#include "shammodels/ramses/modules/ApplyBetaCooling.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
 
@@ -39,12 +40,10 @@ namespace shammodels::basegodunov::modules {
         auto &rhoe_spans        = edges.spans_rhoe.get_spans();
 
         shambase::DistributedData<u32> cell_counts
-            = edges.sizes.indexes.template map<u32>([&](u64 id, u32 block_count) {
+            = edges.sizes.indexes.template map<u32>([&](u64 /*id*/, u32 block_count) {
                   u32 cell_count = block_count * block_size;
                   return cell_count;
               });
-
-        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
         sham::distributed_data_kernel_call(
             shamsys::instance::get_compute_scheduler_ptr(),
@@ -59,14 +58,14 @@ namespace shammodels::basegodunov::modules {
                 Tscal *__restrict rhoe) {
                 Tvec cell_pos = cell_coor[i];
 
-                // compute vector from the centerto the cell
+                // compute vector from the center to the cell
                 Tvec r_vec = cell_pos - center;
                 Tscal x    = r_vec[0];
                 Tscal y    = r_vec[1];
                 Tscal vx   = rhov[i][0] / rho[i];
                 Tscal vy   = rhov[i][1] / rho[i];
 
-                // compute distance to the point mass
+                // compute distance to the center
                 Tscal r_squared = sycl::max(x * x + y * y, 1e-20);
 
                 Tscal omega = (-y * vx + x * vy) / r_squared;
@@ -91,7 +90,7 @@ namespace shammodels::basegodunov::modules {
         Apply $\beta$-cooling
 
         \begin{align}
-        {{rhoe}}_i &= {{rhoe}}_i - e_\mathrm{int,i} + e_\mathrm{int,i} \exp\left(-\frac{ {{dt}} \Omega } {\beta} \right)
+        {{rhoe}}_i &= {{rhoe}}_i - e_\mathrm{int,i} + e_\mathrm{int,i} \exp\left(-\frac{ {{dt}} |\Omega| } {\beta} \right)
         \end{align}
     )tex";
 

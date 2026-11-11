@@ -170,6 +170,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("mu_e"))
+        .def(
+            "set_eos_barotropic",
+            [](TConfig &self, Tscal cs0, Tscal rho0, Tscal gamma0) {
+                self.set_eos_barotropic(cs0, rho0, gamma0);
+            },
+            py::kw_only(),
+            py::arg("cs0"),
+            py::arg("rho0"),
+            py::arg("gamma0") = Tscal{5.0 / 3.0})
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "set_artif_viscosity_Constant",
@@ -318,7 +327,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                bool ensure_s_j_positivity,
                bool smooth_s_positivity_limiter,
                bool dust_corrected_av,
-               std::optional<Tscal> clamp_dust_frac) {
+               std::optional<Tscal> clamp_dust_frac,
+               bool pair_gate_s_positivity_limiter) {
                 self.dust_config.set_monofluid_tva(
                     nvar,
                     pure_diffusion_mode,
@@ -328,18 +338,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     ensure_s_j_positivity,
                     smooth_s_positivity_limiter,
                     dust_corrected_av,
-                    clamp_dust_frac);
+                    clamp_dust_frac,
+                    pair_gate_s_positivity_limiter);
             },
             py::kw_only(),
             py::arg("nvar"),
-            py::arg("pure_diffusion_mode")         = false,
-            py::arg("C_1_fluid")                   = 0.1,
-            py::arg("C_drift")                     = 1.0,
-            py::arg("cfl_density_threshold")       = shambase::get_epsilon<Tscal>(),
-            py::arg("ensure_s_j_positivity")       = true,
-            py::arg("smooth_s_positivity_limiter") = false,
-            py::arg("dust_corrected_av")           = false,
-            py::arg("clamp_dust_frac")             = std::nullopt)
+            py::arg("pure_diffusion_mode")            = false,
+            py::arg("C_1_fluid")                      = 0.1,
+            py::arg("C_drift")                        = 1.0,
+            py::arg("cfl_density_threshold")          = shambase::get_epsilon<Tscal>(),
+            py::arg("ensure_s_j_positivity")          = true,
+            py::arg("smooth_s_positivity_limiter")    = false,
+            py::arg("dust_corrected_av")              = false,
+            py::arg("clamp_dust_frac")                = std::nullopt,
+            py::arg("pair_gate_s_positivity_limiter") = false)
         .def(
             "set_dust_mode_monofluid_complete",
             [](TConfig &self, u32 ndust) {

@@ -19,6 +19,7 @@
 #include "shambase/logs/loglevels.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/numeric_limits.hpp"
+#include "shambase/overloaded.hpp"
 #include "shambase/string.hpp"
 #include "shambase/tabulate.hpp"
 #include "shambase/time.hpp"
@@ -79,6 +80,7 @@
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeConstant.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeEpstein.hpp"
+#include "shammodels/sph/modules/SetWhenMask.hpp"
 #include "shammodels/sph/modules/SinkParticlesAccreteQuantities.hpp"
 #include "shammodels/sph/modules/SinkParticlesEvictAccretedParticles.hpp"
 #include "shammodels/sph/modules/SinkParticlesFlagAccreteHard.hpp"
@@ -1558,36 +1560,16 @@ void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache(Tscal time_val) {
     using InterfaceBuildInfos = typename GhostHandle::InterfaceBuildInfos;
     using InterfaceIdTable    = typename GhostHandle::InterfaceIdTable;
 
+    using BCConfig           = typename Config::BCConfig;
+    using BCFree             = typename BCConfig::Free;
+    using BCPeriodic         = typename BCConfig::Periodic;
+    using BCShearingPeriodic = typename BCConfig::ShearingPeriodic;
+
+    const auto &bc_config = solver_config.boundary_config.config;
+
     // ----------------------------------------------------------------------------------------
     // Generate the ghost handler
     // ----------------------------------------------------------------------------------------
-
-    using CfgClass           = sph::BasicSPHGhostHandlerConfig<Tvec>;
-    using BCConfig           = typename CfgClass::Variant;
-    using BCFree             = typename CfgClass::Free;
-    using BCPeriodic         = typename CfgClass::Periodic;
-    using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
-
-    using SolverConfigBC           = typename Config::BCConfig;
-    using SolverBCFree             = typename SolverConfigBC::Free;
-    using SolverBCPeriodic         = typename SolverConfigBC::Periodic;
-    using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
-
-    // boundary condition selections
-    const auto &solver_bc = solver_config.boundary_config.config;
-
-    BCConfig ghost_config;
-    if (std::holds_alternative<SolverBCFree>(solver_bc)) {
-        ghost_config = BCFree{};
-    } else if (std::holds_alternative<SolverBCPeriodic>(solver_bc)) {
-        ghost_config = BCPeriodic{};
-    } else if (
-        const SolverBCShearingPeriodic *c = std::get_if<SolverBCShearingPeriodic>(&solver_bc)) {
-        ghost_config = BCShearingPeriodic{
-            c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed};
-    } else {
-        shambase::throw_with_loc<std::runtime_error>("SPH: Unsupported boundary condition type.");
-    }
 
     storage.ghost_handler.set(
         GhostHandle{scheduler(), storage.patch_rank_owner, storage.xyzh_ghost_layout});
@@ -1641,39 +1623,45 @@ void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache(Tscal time_val) {
 
     std::vector<std::shared_ptr<INode>> build_ghost_cache_sequence;
 
-    if (const BCPeriodic *cfg = std::get_if<BCPeriodic>(&ghost_config)) {
-        auto node = std::make_shared<modules::FindGhostInterfacesPeriodic<Tvec>>();
-        node->set_edges(
-            sim_box_edge,
-            patch_tree_edge,
-            interact_radius_tree,
-            interact_radius,
-            local_patch_boxes,
-            interface_infos);
-        build_ghost_cache_sequence.push_back(node);
-    } else if (const BCShearingPeriodic *cfg = std::get_if<BCShearingPeriodic>(&ghost_config)) {
-        auto node = std::make_shared<modules::FindGhostInterfacesShearingPeriodic<Tvec>>(
-            cfg->shear_base, cfg->shear_dir, cfg->shear_speed);
-        node->set_edges(
-            sim_box_edge,
-            patch_tree_edge,
-            interact_radius_tree,
-            interact_radius,
-            local_patch_boxes,
-            shear_value,
-            interface_infos);
-        build_ghost_cache_sequence.push_back(node);
-    } else {
-        auto node = std::make_shared<modules::FindGhostInterfacesFree<Tvec>>();
-        node->set_edges(
-            sim_box_edge,
-            patch_tree_edge,
-            interact_radius_tree,
-            interact_radius,
-            local_patch_boxes,
-            interface_infos);
-        build_ghost_cache_sequence.push_back(node);
-    }
+    std::visit(
+        shambase::overloaded{
+            [&](const BCFree &) {
+                auto node = std::make_shared<modules::FindGhostInterfacesFree<Tvec>>();
+                node->set_edges(
+                    sim_box_edge,
+                    patch_tree_edge,
+                    interact_radius_tree,
+                    interact_radius,
+                    local_patch_boxes,
+                    interface_infos);
+                build_ghost_cache_sequence.push_back(node);
+            },
+            [&](const BCPeriodic &) {
+                auto node = std::make_shared<modules::FindGhostInterfacesPeriodic<Tvec>>();
+                node->set_edges(
+                    sim_box_edge,
+                    patch_tree_edge,
+                    interact_radius_tree,
+                    interact_radius,
+                    local_patch_boxes,
+                    interface_infos);
+                build_ghost_cache_sequence.push_back(node);
+            },
+            [&](const BCShearingPeriodic &cfg) {
+                auto node = std::make_shared<modules::FindGhostInterfacesShearingPeriodic<Tvec>>(
+                    cfg.shear_base, cfg.shear_dir, cfg.shear_speed);
+                node->set_edges(
+                    sim_box_edge,
+                    patch_tree_edge,
+                    interact_radius_tree,
+                    interact_radius,
+                    local_patch_boxes,
+                    shear_value,
+                    interface_infos);
+                build_ghost_cache_sequence.push_back(node);
+            },
+        },
+        bc_config);
 
     using GeneratorMap = shambase::DistributedDataShared<InterfaceBuildInfos>;
 
@@ -1737,8 +1725,8 @@ void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache(Tscal time_val) {
         local_patch_boxes->values.add_obj(p.id_patch, patch_coord_transf.to_obj_coord(p));
     });
 
-    if (const BCShearingPeriodic *cfg = std::get_if<BCShearingPeriodic>(&ghost_config)) {
-        shear_value->data = cfg->shear_value;
+    if (const BCShearingPeriodic *cfg = std::get_if<BCShearingPeriodic>(&bc_config)) {
+        shear_value->data = cfg->shear_speed * time_val;
     }
 
     DDPatchDataFieldRef<Tvec> positions_refs = {};

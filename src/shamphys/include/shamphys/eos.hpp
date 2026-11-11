@@ -73,6 +73,36 @@ namespace shamphys {
     };
 
     /**
+     * @brief Barotropic equation of state, isothermal at low density and adiabatic at high
+     * density (e.g. the optically thin to optically thick transition in protostellar collapse)
+     *
+     * Pressure: \f$ P = c_{s,0}^2 \rho \left[1 + \left(\frac{\rho}{\rho_0}\right)^{\gamma_0-1}
+     * \right] \f$
+     *
+     * Sound speed: \f$ c_s = \sqrt{\frac{dP}{d\rho}} = c_{s,0} \sqrt{1 + \gamma_0
+     * \left(\frac{\rho}{\rho_0}\right)^{\gamma_0-1}} \f$
+     *
+     * For \f$ \gamma_0 = 5/3 \f$ this is the equation of state of e.g. Commercon et al (2008),
+     * eq. 3. The same form is used by shammath::FluidStateBarotropic.
+     */
+    template<class T>
+    struct EOS_Barotropic {
+
+        /// \f$ (\rho/\rho_0)^{\gamma_0 - 1} \f$, ratio of the adiabatic to isothermal pressure
+        static constexpr T adiab_ratio(T rho, T rho0, T gamma0) {
+            return sycl::pow(rho / rho0, gamma0 - 1);
+        }
+
+        static constexpr T pressure(T cs0, T rho0, T gamma0, T rho) {
+            return cs0 * cs0 * rho * (1 + adiab_ratio(rho, rho0, gamma0));
+        }
+
+        static constexpr T soundspeed(T cs0, T rho0, T gamma0, T rho) {
+            return cs0 * sycl::sqrt(1 + gamma0 * adiab_ratio(rho, rho0, gamma0));
+        }
+    };
+
+    /**
      * @brief Locally isothermal equation of state with radial dependence
      *
      * Sound speed squared: \f$ c_s^2(R) = c_{s,0}^2 R^{2q} \f$

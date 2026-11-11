@@ -357,6 +357,113 @@ namespace shammodels::common::modules {
 
 #define NODE_EDGES(X_RO, X_RW, X_RO_OPTIONAL, X_RW_OPTIONAL)                                       \
     /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, cs0)                                             \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, rho0)                                            \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, gamma0)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, hfactd)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pmass)                                           \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                             \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_h)                               \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_pressure)                                 \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_soundspeed)
+
+namespace shammodels::common::modules {
+
+    template<class Tvec>
+    class ComputeEOSBarotropic : public shamrock::solvergraph::INode {
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        public:
+        ComputeEOSBarotropic() = default;
+
+        EXPAND_NODE_EDGES_OPTIONAL(NODE_EDGES)
+
+        inline static void internal_eos(
+            const Tscal &cs0,
+            const Tscal &rho0,
+            const Tscal &gamma0,
+            const Tscal &rho,
+            Tscal &pressure,
+            Tscal &soundspeed) noexcept {
+            using EOS  = shamphys::EOS_Barotropic<Tscal>;
+            pressure   = EOS::pressure(cs0, rho0, gamma0, rho);
+            soundspeed = EOS::soundspeed(cs0, rho0, gamma0, rho);
+        }
+
+        inline void _impl_evaluate_internal() {
+
+            __shamrock_stack_entry();
+
+            auto edges = get_edges();
+
+            bool has_rho = edges.spans_rho.has_value();
+            bool has_h   = edges.spans_h.has_value();
+
+            // must have either rho or h
+            if ((has_rho && has_h) || (!has_rho && !has_h)) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "Must have either rho or h");
+            }
+
+            edges.spans_pressure.ensure_sizes(edges.sizes.indexes);
+            edges.spans_soundspeed.ensure_sizes(edges.sizes.indexes);
+
+            Tscal cs0    = edges.cs0.data;
+            Tscal rho0   = edges.rho0.data;
+            Tscal gamma0 = edges.gamma0.data;
+            Tscal pmass  = edges.pmass.data;
+            Tscal hfactd = edges.hfactd.data;
+
+            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+            auto out_refs = sham::DDMultiRef{
+                edges.spans_pressure.get_spans(), edges.spans_soundspeed.get_spans()};
+
+            if (has_rho) {
+                auto &spans_rho = edges.spans_rho.value().get();
+                spans_rho.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_rho.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [cs0, rho0, gamma0](
+                        u32 gid, const Tscal *rho, Tscal *pressure, Tscal *soundspeed) {
+                        internal_eos(cs0, rho0, gamma0, rho[gid], pressure[gid], soundspeed[gid]);
+                    });
+            } else if (has_h) {
+                auto &spans_h = edges.spans_h.value().get();
+                spans_h.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_h.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [cs0, rho0, gamma0, pmass, hfactd](
+                        u32 gid, const Tscal *h, Tscal *pressure, Tscal *soundspeed) {
+                        using namespace shamrock::sph;
+                        Tscal rho = rho_h(pmass, h[gid], hfactd);
+                        internal_eos(cs0, rho0, gamma0, rho, pressure[gid], soundspeed[gid]);
+                    });
+            }
+        }
+
+        inline virtual std::string _impl_get_label() const { return "ComputeEOSBarotropic"; };
+
+        inline virtual std::string _impl_get_tex() const { return "TODO"; };
+    };
+} // namespace shammodels::common::modules
+
+#undef NODE_EDGES
+
+#define NODE_EDGES(X_RO, X_RW, X_RO_OPTIONAL, X_RW_OPTIONAL)                                       \
+    /* ------------------- inputs ------------------- */                                           \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, hfactd)                                          \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pmass)                                           \
     X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                             \
@@ -614,7 +721,8 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
     using SolverEOS_LocallyIsothermalFA2014 = typename SolverConfigEOS::LocallyIsothermalFA2014;
     using SolverEOS_LocallyIsothermalFA2014Extended =
         typename SolverConfigEOS::LocallyIsothermalFA2014Extended;
-    using SolverEOS_Fermi = typename SolverConfigEOS::Fermi;
+    using SolverEOS_Fermi      = typename SolverConfigEOS::Fermi;
+    using SolverEOS_Barotropic = typename SolverConfigEOS::Barotropic;
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
     auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
@@ -1123,6 +1231,30 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
             density_unit,
             pressure_unit,
             velocity_unit,
+            hfactd,
+            pmass,
+            spans_rho,
+            spans_h,
+            sizes,
+            spans_pressure,
+            spans_soundspeed);
+        node.evaluate();
+    } else if (
+        SolverEOS_Barotropic *eos_config
+        = std::get_if<SolverEOS_Barotropic>(&solver_config.eos_config.config)) {
+
+        auto cs0     = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("cs0", "c_{s,0}");
+        auto rho0    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("rho0", "\\rho_0");
+        auto gamma0  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("gamma0", "\\gamma_0");
+        cs0->data    = eos_config->cs0;
+        rho0->data   = eos_config->rho0;
+        gamma0->data = eos_config->gamma0;
+
+        shammodels::common::modules::ComputeEOSBarotropic<Tvec> node;
+        node.set_edges(
+            cs0,
+            rho0,
+            gamma0,
             hfactd,
             pmass,
             spans_rho,

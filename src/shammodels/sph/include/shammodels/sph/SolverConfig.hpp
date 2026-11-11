@@ -22,6 +22,7 @@
 #include "shambase/overloaded.hpp"
 #include "config/AVConfig.hpp"
 #include "config/BCConfig.hpp"
+#include "sham/format/format.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/type_traits.hpp"
@@ -858,6 +859,12 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
+    /// Check if the EOS is a barotropic equation of state
+    inline bool is_eos_barotropic() {
+        using T = typename EOSConfig::Barotropic;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
     /**
      * @brief Set the EOS configuration to an isothermal equation of state
      *
@@ -927,6 +934,20 @@ struct shammodels::sph::SolverConfig {
      * @param mu_e The mean molecular weight
      */
     inline void set_eos_fermi(Tscal mu_e) { eos_config.set_fermi(mu_e); }
+
+    /**
+     * @brief Set the EOS configuration to a barotropic equation of state
+     *
+     * \f$ P = c_{s,0}^2 \rho \left[1 + (\rho / \rho_0)^{\gamma_0 - 1}\right] \f$, with the sound
+     * speed \f$ c_s = \sqrt{dP/d\rho} \f$, see shamphys::EOS_Barotropic.
+     *
+     * @param cs0 Isothermal sound speed of the low density regime
+     * @param rho0 Critical density of the isothermal to adiabatic transition
+     * @param gamma0 Adiabatic index of the high density regime
+     */
+    inline void set_eos_barotropic(Tscal cs0, Tscal rho0, Tscal gamma0) {
+        eos_config.set_barotropic(cs0, rho0, gamma0);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // EOS Config (END)
@@ -1150,11 +1171,11 @@ struct shammodels::sph::SolverConfig {
 
     /// @brief Whether the solver has a field for the particle's uint
     ///
-    /// @note for now, this is always true as
-    inline bool has_field_uint() {
-        // no barotropic for now
-        return true;
-    }
+    /// @note this is always true, even for equations of state where the pressure does not depend on
+    /// uint (isothermal, polytropic, barotropic). In those cases uint is still integrated from
+    /// du/dt (computed with the EOS pressure) but never read back by the EOS, keeping the energy
+    /// conservation check meaningful.
+    inline bool has_field_uint() { return true; }
 
     /// @brief Whether the solver has a field for alpha AV
     inline bool has_field_alphaAV() { return artif_viscosity.has_alphaAV_field(); }
@@ -1236,6 +1257,18 @@ struct shammodels::sph::SolverConfig {
         if (mhd_config.do_nimhd()) {
             shamrock::experimental_feature_check(
                 "Non-ideal MHD is experimental, please enable experimental features to use it");
+        }
+
+        using EOSBarotropic = typename EOSConfig::Barotropic;
+        if (const EOSBarotropic *eos = std::get_if<EOSBarotropic>(&eos_config.config)) {
+            if (!(eos->cs0 > 0) || !(eos->rho0 > 0) || !(eos->gamma0 > 1)) {
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
+                    "barotropic EOS requires cs0 > 0, rho0 > 0 and gamma0 > 1, got cs0 = {}, "
+                    "rho0 = {}, gamma0 = {}",
+                    eos->cs0,
+                    eos->rho0,
+                    eos->gamma0));
+            }
         }
     }
 

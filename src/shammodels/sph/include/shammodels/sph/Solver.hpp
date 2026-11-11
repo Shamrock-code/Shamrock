@@ -33,9 +33,11 @@
 #include "shamtree/TreeTraversalCache.hpp"
 #include <functional>
 #include <limits>
+#include <map>
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <variant>
 #include <vector>
 namespace shammodels::sph {
@@ -203,6 +205,51 @@ namespace shammodels::sph {
         inline void set_next_dt(Tscal dt) { dt_edge_value() = dt; }
         inline Tscal get_cfl_multipler() { return cfl_multiplier_edge_value(); }
         inline void set_cfl_multipler(Tscal lambda) { cfl_multiplier_edge_value() = lambda; }
+
+        /// Name of the synchronized edge holding the last global CFL dt
+        static constexpr const char *cfl_dt_edge_name = "cfl_dt";
+        /// Prefix of the synchronized edges holding the last CFL dt per CFL type
+        static constexpr const char *cfl_dt_detail_edge_prefix = "cfl_dt_";
+
+        /// Check whether a synchronized edge name is one of the last CFL dt edges
+        static inline bool is_cfl_dt_edge_name(const std::string &name) {
+            return name == cfl_dt_edge_name || name.starts_with(cfl_dt_detail_edge_prefix);
+        }
+
+        /**
+         * @brief Store a CFL dt value in a synchronized edge, registering it if missing
+         *
+         * The value must be identical on every rank (i.e. already reduced).
+         */
+        inline void set_cfl_dt_edge_value(const std::string &name, Tscal value) {
+            using Edge = shamrock::solvergraph::IDataEdgeSerializable<Tscal>;
+            auto &sync = scheduler().synchronized_data;
+            if (!sync.has_edge(name)) {
+                sync.register_edge(name, Edge(name, "\\Delta t_{\\rm " + name + "}"));
+            }
+            sync.template get_edge_ref<Edge>(name).data = value;
+        }
+
+        /**
+         * @brief Get the last CFL dt values stored in the synchronized edges
+         *
+         * Returns the global CFL dt (edge "cfl_dt") and, if `show_cfl_detail` was enabled, the
+         * CFL dt per CFL type (edges "cfl_dt_<type>"), keyed by edge name. Edges are kept from
+         * one step to the next, so a type that was not evaluated in the last step keeps the
+         * value from the last step where it was. Empty before the first step.
+         */
+        inline std::map<std::string, Tscal> get_last_cfl_dt() {
+            using Edge = shamrock::solvergraph::IDataEdgeSerializable<Tscal>;
+            auto &sync = scheduler().synchronized_data;
+
+            std::map<std::string, Tscal> ret;
+            for (const std::string &name : sync.get_edge_names()) {
+                if (is_cfl_dt_edge_name(name)) {
+                    ret[name] = sync.template get_edge_ref<Edge>(name).data;
+                }
+            }
+            return ret;
+        }
 
         struct SolverStepCallback {
             std::optional<std::function<void(void)>> step_begin_callback;

@@ -1808,6 +1808,29 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.get_dt_sph();
             })
         .def(
+            "get_last_cfl_dt",
+            [](T &self) {
+                py::dict ret;
+                for (auto &[name, value] : self.solver.get_last_cfl_dt()) {
+                    ret[py::str(name)] = value;
+                }
+                return ret;
+            },
+            R"==(
+    Get the last CFL timesteps stored in the synchronized edges.
+
+    Returns a dict keyed by synchronized edge name:
+
+    - ``"cfl_dt"``: the global CFL timestep of the last step (min over all CFL conditions).
+    - ``"cfl_dt_<type>"`` (e.g. ``"cfl_dt_courant"``, ``"cfl_dt_force"``,
+      ``"cfl_dt_sink_sink"``): the CFL timestep of each condition, only written when
+      ``show_cfl_detail`` is enabled in the solver config.
+
+    Edges are kept from one step to the next, so a condition that was not evaluated during
+    the last step keeps the value of the last step where it was. The dict is empty before
+    the first step.
+)==")
+        .def(
             "set_time",
             [](T &self, Tscal t) {
                 return self.set_time(t);

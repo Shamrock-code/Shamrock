@@ -4071,6 +4071,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             next_cfl = shamalgs::collective::allreduce_min(rank_dt);
 
+            // store the last cfl dt in synchronized edges (values are reduced over all ranks)
+            set_cfl_dt_edge_value(cfl_dt_edge_name, next_cfl);
+            if (show_cfl_detail) {
+                for (auto &[key, value] : cfl_detail) {
+                    set_cfl_dt_edge_value(cfl_dt_detail_edge_prefix + key, value);
+                }
+            }
+
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(
                     "sph::Model", "cfl dt =", next_cfl, "cfl multiplier :", get_cfl_multipler());

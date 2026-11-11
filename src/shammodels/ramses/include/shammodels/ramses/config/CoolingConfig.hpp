@@ -94,8 +94,8 @@ namespace shammodels::basegodunov {
             }
             if (const BetaCooling *cfg = std::get_if<BetaCooling>(&config)) {
                 if (!(cfg->beta > 0.0)) {
-                    shambase::throw_with_loc<std::invalid_argument>(
-                        sham::format("BetaCooling: beta >  0, currently beta = {}", cfg->beta));
+                    shambase::throw_with_loc<std::invalid_argument>(sham::format(
+                        "BetaCooling: beta must be > 0, currently beta = {}", cfg->beta));
                 }
             }
         }

@@ -1947,7 +1947,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                             constant_G->value = solver_config.get_constant_G();
 
                             modules::AddExtForceBurkertProfile<Tvec> node{
-                                AMRBlock::block_size, cfg.rho_0, cfg.r_0, cfg.pos}
+                                AMRBlock::block_size, cfg.rho_0, cfg.r_0, cfg.pos};
 
                             node.set_edges(
                                 storage.block_counts, storage.coordinates, constant_G, a_ext_level);

@@ -2363,15 +2363,27 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         } else {
             using AMRmode_None = typename AMRMode<Tvec, TgridVec>::None;
             if (std::get_if<AMRmode_None>(&solver_config.amr_mode.config) == nullptr) {
-                shamrock::solvergraph::CopyPatchDataField<Tscal> node_cpy_rho_snap{};
-                node_cpy_rho_snap.set_edges(storage.refs_rho, storage.rho_snap);
-                node_cpy_rho_snap.evaluate();
-                shamrock::solvergraph::CopyPatchDataField<Tscal> node_cpy_rhoe_snap{};
-                node_cpy_rhoe_snap.set_edges(storage.refs_rhoe, storage.rhoe_snap);
-                node_cpy_rhoe_snap.evaluate();
-                shamrock::solvergraph::CopyPatchDataField<Tvec> node_cpy_rho_vel_snap{};
-                node_cpy_rho_vel_snap.set_edges(storage.refs_rhov, storage.rho_vel_snap);
-                node_cpy_rho_vel_snap.evaluate();
+                // The refined blocks are interpolated from these snapshots, they must hold the
+                // state at t^{n+1}, i.e. the one of the patch data. storage.refs_rho & co point to
+                // the merged patch data with ghosts built at the beginning of the timestep (state
+                // at t^n): copying them would reset the refined blocks to the state at t^n, losing
+                // the mass that flowed in during the timestep.
+                shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
+                auto snapshot = [&]<class T>(
+                                    const std::string &field_name,
+                                    std::shared_ptr<shamrock::solvergraph::Field<T>> &snap) {
+                    auto refs = std::make_shared<shamrock::solvergraph::FieldRefs<T>>(
+                        field_name + "_current", field_name);
+                    shamrock::solvergraph::GetFieldRefFromLayer<T> attach{pdl, field_name};
+                    attach.set_edges(storage.source_patches, refs);
+                    attach.evaluate();
+                    shamrock::solvergraph::CopyPatchDataField<T> node_cpy_snap{};
+                    node_cpy_snap.set_edges(refs, snap);
+                    node_cpy_snap.evaluate();
+                };
+                snapshot("rho", storage.rho_snap);
+                snapshot("rhoetot", storage.rhoe_snap);
+                snapshot("rhovel", storage.rho_vel_snap);
             }
 
             // Then refinement pass

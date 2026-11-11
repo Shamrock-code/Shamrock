@@ -9,7 +9,7 @@
 
 /**
  * @file SetWhenMask.cpp
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Implementation of the SetWhenMask solver graph node.
  *

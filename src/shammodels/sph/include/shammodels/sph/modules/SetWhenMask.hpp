@@ -11,7 +11,7 @@
 
 /**
  * @file SetWhenMask.hpp
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Solver graph node overwriting a field with a constant value where a mask is set.
  *

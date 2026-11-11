@@ -18,6 +18,9 @@ import numpy as np
 
 import shamrock
 
+# particle tracking is experimental
+shamrock.enable_experimental_features()
+
 # If we use the shamrock executable to run this script instead of the python interpreter,
 # we should not initialize the system as the shamrock executable needs to handle specific MPI logic
 if not shamrock.sys.is_initialized():
@@ -54,6 +57,7 @@ cfg.set_artif_viscosity_VaryingCD10(
 # periodic in y and z, in x the periodic seam lies between the two walls
 cfg.set_boundary_periodic()
 cfg.set_boundary_particles(True)
+cfg.set_particle_tracking(True)
 cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
@@ -88,12 +92,12 @@ model.set_cfl_force(0.1)
 
 
 def get_walls(data):
-    """Return the wall particles sorted by position, so that two states can be compared"""
+    """Return the wall particles sorted by particle id, so that two states can be compared"""
     is_wall = data["freeze_id"] != 0
-    xyz = data["xyz"][is_wall]
-    order = np.lexsort((xyz[:, 2], xyz[:, 1], xyz[:, 0]))
+    order = np.argsort(data["part_id"][is_wall])
     return {
-        "xyz": xyz[order],
+        "part_id": data["part_id"][is_wall][order],
+        "xyz": data["xyz"][is_wall][order],
         "vxyz": data["vxyz"][is_wall][order],
         "uint": data["uint"][is_wall][order],
     }
@@ -108,22 +112,32 @@ assert n_walls > 0 and n_gas > 0
 # the walls must be thicker than the kernel support
 assert xs - x_wall > 3 * 1.2 * dr * fact
 
+walls_setup = get_walls(data_init)
+
 # the first step wraps every position in the periodic box, which may change the last bit of the
-# coordinates once (gas included), so the reference state is taken after it
 model.timestep()
 walls_init = get_walls(ctx.collect_data())
 
 # boundary particles at rest stay at rest
 if not np.all(walls_init["vxyz"] == 0):
     exit("the wall particles have gained some velocity")
+if not np.array_equal(walls_init["part_id"], walls_setup["part_id"]):
+    exit("the set of wall particles changed during the first step")
+if not np.array_equal(walls_init["uint"], walls_setup["uint"]):
+    exit("the wall particles internal energy changed during the first step")
+if not np.allclose(walls_init["xyz"], walls_setup["xyz"], rtol=0, atol=1e-12):
+    exit("the wall particles moved during the first step")
+
+# from now on the walls must stay bit for bit identical to their state after the first step
 
 err_log = ""
 
 
 def check_walls_unchanged(label):
+    """Append to err_log if the wall particles differ from their state after the first step"""
     global err_log
     walls = get_walls(ctx.collect_data())
-    for key in ["xyz", "vxyz", "uint"]:
+    for key in ["part_id", "xyz", "vxyz", "uint"]:
         if walls[key].shape != walls_init[key].shape or not np.array_equal(
             walls[key], walls_init[key]
         ):

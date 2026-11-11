@@ -7,6 +7,12 @@ box) once per positivity limiter (none, Ballabio, smooth, hard), then plot the
 vertical density profiles at the final time and the dust mass conservation
 history of the four runs side by side.
 
+The SPH (TVA) profiles are compared to a reference where the dust settles on a
+gas at rest (dashed black) and to the full gas + dust multifluid equations
+solved with a simple 1D scheme (dashed light blue), which shows how far the TVA
+results are from the non-TVA solution. The multifluid reference is computed
+when plotting, from the midplane density stored by each run.
+
 This merges ``examples/sph/run_dustysettle_tva.py`` (one simulation) and
 ``examples/sph/plot_dustysettle_limiter_compare.py`` (the figure) into a single
 script. The paper figure uses ``LZ=256``; the default ``LZ=64`` runs on a
@@ -150,6 +156,8 @@ max_v_inject_threshold = 3.0  # in units of cs
 reference_tau = 0.025
 reference_Nz = 4000
 reference_zrange = 3.5  # in units of H
+multifluid_Nz = 4000  # cells of the multifluid (non-TVA) reference, must be even
+multifluid_order = 2  # order of the multifluid scheme (1 or 2)
 
 # Paths
 base_folder = f"_to_trash/stable_tva_solver/dusty_settle_lz{lz}/"
@@ -158,6 +166,7 @@ base_folder = f"_to_trash/stable_tva_solver/dusty_settle_lz{lz}/"
 cmap = "plasma"
 dpi = 250
 sz = 1
+multifluid_color = "lightskyblue"
 
 # %%
 # Derived physical scales and lattice geometry
@@ -500,8 +509,264 @@ class ReferenceDustySettleAll:
 
 
 # %%
+# Multifluid (non-TVA) reference solution
+# ------------------------------------------
+#
+# The reference above evolves each dust species on a gas held at rest. To see how far the
+# TVA results are from the general dust-gas problem, we also solve the full 1D multifluid
+# equations: one continuity and one momentum equation for the gas and for each dust species,
+# isothermal gas pressure, vertical gravity, Epstein drag with back-reaction on the gas, and
+# the same velocity dissipation as the SPH run (acting on the barycentric velocity).
+#
+# The scheme is kept simple: staggered grid (densities at cell centres, velocities at faces,
+# closed walls), upwind continuity, upwind velocity advection (Godunov flux of v^2/2), explicit
+# pressure / gravity / dissipation and a drag step solved exactly per face (conserves the
+# momentum and keeps the terminal velocity exact). With ``order=1`` the reconstruction is
+# piecewise constant with semi-implicit Euler + backward-Euler drag; with ``order=2`` it is
+# van Leer limited (MUSCL) with a midpoint predictor-corrector and Crank-Nicolson drag. The gas
+# starts in discrete hydrostatic equilibrium, so it stays at rest without dust.
+
+
+def vertical_gravity(zbar):
+    """Vertical gravity in units of vK * OmegaK (same as in ``S_v``)."""
+    return -zbar / (1 + zbar**2) ** 1.5
+
+
+def van_leer_slope(q):
+    """van Leer limited slope (per cell) along the last axis, zero on the first and last cell."""
+    slope = np.zeros_like(q)
+    prod = (q[..., 1:-1] - q[..., :-2]) * (q[..., 2:] - q[..., 1:-1])
+    sum_ = q[..., 2:] - q[..., :-2]
+    slope[..., 1:-1] = np.where(prod > 0, 2 * prod / np.where(prod > 0, sum_, 1.0), 0.0)
+    return slope
+
+
+def continuity_rate(rho, v, hz, second_order):
+    """-d(rho v)/dz for cell-centred rho, v at faces (zero at the walls), upwind face rho."""
+    slope = van_leer_slope(rho) if second_order else 0 * rho
+    v_in = v[..., 1:-1]
+    rho_l = rho[..., :-1] + 0.5 * slope[..., :-1]
+    rho_r = rho[..., 1:] - 0.5 * slope[..., 1:]
+    flux = np.zeros_like(v)
+    flux[..., 1:-1] = v_in * np.where(v_in > 0, rho_l, rho_r)
+    return -(flux[..., 1:] - flux[..., :-1]) / hz
+
+
+def advection_rate(v, hz, second_order):
+    """v dv/dz = d(v^2/2)/dz on the faces (zero on the walls), Godunov Burgers flux at the
+    cell centres from the velocities of the two neighbouring faces."""
+    slope = van_leer_slope(v) if second_order else 0 * v
+    u_l = v[..., :-1] + 0.5 * slope[..., :-1]
+    u_r = v[..., 1:] - 0.5 * slope[..., 1:]
+    f_shock = 0.5 * np.maximum(u_l**2, u_r**2)
+    f_rarefaction = np.where((u_l < 0) & (u_r > 0), 0.0, 0.5 * np.minimum(u_l**2, u_r**2))
+    f = np.where(u_l > u_r, f_shock, f_rarefaction)
+    adv = np.zeros_like(v)
+    adv[..., 1:-1] = (f[..., 1:] - f[..., :-1]) / hz
+    return adv
+
+
+def to_faces(rho):
+    """Cell-centred to face densities (walls take the adjacent cell)."""
+    rho_f = np.empty(rho.shape[:-1] + (rho.shape[-1] + 1,))
+    rho_f[..., 1:-1] = 0.5 * (rho[..., :-1] + rho[..., 1:])
+    rho_f[..., 0] = rho[..., 0]
+    rho_f[..., -1] = rho[..., -1]
+    return rho_f
+
+
+def drag_solve(r_g, r_d, rho_g_f, rho_d_f, a):
+    """
+    Solve v_d = r_d - a (v_d - v_g) for each species, with the total momentum
+    rho_g v_g + sum rho_d v_d = rho_g r_g + sum rho_d r_d (a = dt / t_j for backward Euler,
+    dt / (2 t_j) for Crank-Nicolson).
+    """
+    w = 1 / (1 + a)
+    mom = rho_g_f * r_g + np.sum(rho_d_f * r_d, axis=0)
+    v_g = (mom - np.sum(rho_d_f * r_d * w, axis=0)) / (rho_g_f + np.sum(rho_d_f * a * w, axis=0))
+    v_d = (r_d + a * v_g[None, :]) * w
+    return v_g, v_d
+
+
+class MultifluidDustySettle:
+    def __init__(self, Nz, cs_bar, eta_bar, inv_ts_coef, dust_to_gas, order=2, cfl=0.4):
+        """
+        Dimensionless units: z / R0, v / vK, t * OmegaK, rho / rho_mid.
+
+        cs_bar      : isothermal sound speed
+        eta_bar     : velocity dissipation rate
+        inv_ts_coef : 1/t_j = inv_ts_coef[j] * rho_g (Epstein drag, gas density)
+        dust_to_gas : initial dust-to-gas ratio of each species (before the mask)
+        order       : 1 or 2, order of the scheme in space and time
+        """
+        if Nz % 2 != 0:
+            raise ValueError("Nz must be even (the midplane is a face)")
+        if order not in (1, 2):
+            raise ValueError("order must be 1 or 2")
+
+        self.cs2 = cs_bar**2
+        self.eta = eta_bar
+        self.inv_ts_coef = np.asarray(inv_ts_coef)
+        self.order = order
+        self.cfl = cfl
+
+        zout = reference_zrange * H / R0
+        self.hz = 2 * zout / Nz
+        self.zf = np.linspace(-zout, zout, Nz + 1)
+        self.zc = 0.5 * (self.zf[:-1] + self.zf[1:])
+        self.g_f = vertical_gravity(self.zf)
+        self.g_f[[0, -1]] = 0
+
+        # discrete hydrostatic equilibrium: cs^2 (ln rho_{i+1} - ln rho_i) / hz = g_{i+1/2}
+        ln_rho = np.zeros(Nz)
+        ln_rho[1:] = np.cumsum(self.hz * self.g_f[1:-1] / self.cs2)
+        ln_rho += -(self.zc[Nz // 2] ** 2) / (2 * self.cs2) - ln_rho[Nz // 2]
+        self.rho_g = np.exp(ln_rho)
+        self.v_g = np.zeros(Nz + 1)
+
+        mask = 1 / (1 + np.exp((np.abs(self.zc) - 1.75 * H / R0) / (H / R0 / 16)))
+        self.rho_d = np.array([dtg * mask * self.rho_g for dtg in dust_to_gas])
+        self.v_d = np.zeros((len(dust_to_gas), Nz + 1))
+
+        self.tbar = 0.0
+
+    def get_dt(self):
+        vmax = max(self.cs2**0.5 + np.abs(self.v_g).max(), np.abs(self.v_d).max())
+        return self.cfl * self.hz / vmax
+
+    def density_rates(self, rho_g, v_g, rho_d, v_d):
+        second_order = self.order == 2
+        drho_g = continuity_rate(rho_g, v_g, self.hz, second_order)
+        drho_d = continuity_rate(rho_d, v_d, self.hz, second_order)
+        return drho_g, drho_d
+
+    def accelerations(self, rho_g, v_g, rho_d, v_d):
+        """Accelerations other than the drag."""
+        hz = self.hz
+        second_order = self.order == 2
+
+        rho_g_f = to_faces(rho_g)
+        rho_d_f = to_faces(rho_d)
+        mom = rho_g_f * v_g + np.sum(rho_d_f * v_d, axis=0)
+        v_bary = mom / (rho_g_f + np.sum(rho_d_f, axis=0))
+
+        grad_P_over_rho = np.zeros_like(v_g)
+        grad_P_over_rho[1:-1] = self.cs2 * np.diff(np.log(rho_g)) / hz
+
+        acc_g = -advection_rate(v_g, hz, second_order) - grad_P_over_rho + self.g_f
+        acc_d = -advection_rate(v_d, hz, second_order) + self.g_f
+        return acc_g - self.eta * v_bary, acc_d - self.eta * v_bary
+
+    def euler_step(self, dt):
+        """
+        Semi-implicit Euler step, returns the new state: densities first, then the velocities
+        with the forces of the new densities (stable for sound waves) and backward-Euler drag.
+        """
+        drho_g, drho_d = self.density_rates(self.rho_g, self.v_g, self.rho_d, self.v_d)
+        rho_g = self.rho_g + dt * drho_g
+        rho_d = self.rho_d + dt * drho_d
+        acc_g, acc_d = self.accelerations(rho_g, self.v_g, rho_d, self.v_d)
+        rho_g_f = to_faces(rho_g)
+        a = dt * self.inv_ts_coef[:, None] * rho_g_f[None, :]
+        v_g, v_d = drag_solve(
+            self.v_g + dt * acc_g, self.v_d + dt * acc_d, rho_g_f, to_faces(rho_d), a
+        )
+        return rho_g, v_g, rho_d, v_d
+
+    def midpoint_step(self, dt):
+        """
+        Predictor (half semi-implicit Euler step) - corrector (rates at mid step, Crank-Nicolson
+        drag). With this predictor the step conserves the energy of sound waves (no growth).
+        """
+        half = self.euler_step(0.5 * dt)
+        drho_g, drho_d = self.density_rates(*half)
+        acc_g, acc_d = self.accelerations(*half)
+        rho_g_h, rho_d_h = half[0], half[2]
+
+        rho_g_f = to_faces(rho_g_h)
+        rho_d_f = to_faces(rho_d_h)
+        a = 0.5 * dt * self.inv_ts_coef[:, None] * rho_g_f[None, :]
+
+        # explicit half of the drag at t^n
+        drag_d = -a * (self.v_d - self.v_g[None, :])
+        drag_g = -np.sum(rho_d_f * drag_d, axis=0) / rho_g_f
+
+        v_g, v_d = drag_solve(
+            self.v_g + dt * acc_g + drag_g,
+            self.v_d + dt * acc_d + drag_d,
+            rho_g_f,
+            rho_d_f,
+            a,
+        )
+        return self.rho_g + dt * drho_g, v_g, self.rho_d + dt * drho_d, v_d
+
+    def advance(self, dt):
+        if self.order == 1:
+            rho_g, v_g, rho_d, v_d = self.euler_step(dt)
+        else:
+            rho_g, v_g, rho_d, v_d = self.midpoint_step(dt)
+
+        v_g[[0, -1]] = 0
+        v_d[:, [0, -1]] = 0
+
+        self.rho_g, self.v_g, self.rho_d, self.v_d = rho_g, v_g, rho_d, v_d
+        self.tbar += dt
+
+    def advance_until(self, tfinal):
+        while tfinal - self.tbar > 1e-12:
+            self.advance(min(self.get_dt(), tfinal - self.tbar))
+
+    def epsilon(self):
+        """Dust fraction of each species rho_j / rho, cell centred."""
+        return self.rho_d / (self.rho_g + np.sum(self.rho_d, axis=0))
+
+
+class MultifluidDustySettleAll:
+    def __init__(self, rhomid):
+        self.rhomid = rhomid
+
+        self.vK = kep_profile(R0) * codeu.to("m") / codeu.to("s")
+        self.OmegaK = omega_k(R0) * codeu.to("s") ** -1
+        self.tK = 1 / self.OmegaK
+
+        self.rscale = R0
+        self.rhoscale = self.rhomid
+        self.vscale = self.vK
+        self.tscale = self.tK
+
+        self.cs = cs * codeu.to("m") / codeu.to("s")
+
+        inv_ts_coef = []
+        dust_to_gas = []
+        for j in range(ndust):
+            eps_j = mrn_distribution.mrn_weight[j] * epsilon_base
+            dust_to_gas.append(eps_j / (1 - epsilon_base))
+
+            rhoeff = mrn_distribution.rho_grains_si_edges[j] * np.sqrt(np.pi * gamma / 8)
+            s_j = mrn_distribution.grain_size_si[j]
+            inv_ts_coef.append(self.cs * self.rhoscale / (rhoeff * s_j * self.OmegaK))
+
+        self.sol = MultifluidDustySettle(
+            multifluid_Nz,
+            cs_bar=self.cs / self.vK,
+            eta_bar=vel_dissipation_eta / omega_k(R0),
+            inv_ts_coef=inv_ts_coef,
+            dust_to_gas=dust_to_gas,
+            order=multifluid_order,
+        )
+
+    def evolve_until(self, t):
+        self.sol.advance_until(t * codeu.to("s") / self.tscale)
+
+
+# %%
 # Simulation
 # ------------------------------------------
+
+
+def load_rhomid(dump_folder):
+    with open(dump_folder + "reference_rhomid.json", "r") as fp:
+        return json.load(fp)["rhomid"]
 
 
 def write_json(filepath, data):
@@ -549,8 +814,7 @@ class DustySettleSimulation(SimulationRunner):
         if self.reference is None:
             filepath = self.dump_folder + "reference_rhomid.json"
             if os.path.exists(filepath):
-                with open(filepath, "r") as fp:
-                    rhomid = json.load(fp)["rhomid"]
+                rhomid = load_rhomid(self.dump_folder)
             else:
                 _, rho = self.collect_rho_z()
                 rhomid = float(rho.max() * to_dens)
@@ -596,7 +860,10 @@ class DustySettleSimulation(SimulationRunner):
             )
         elif self.limiter == DustLimiter.SMOOTH:
             cfg.set_dust_mode_monofluid_tva(
-                **common_kwargs, ensure_s_j_positivity=False, smooth_s_positivity_limiter=True
+                **common_kwargs,
+                ensure_s_j_positivity=False,
+                smooth_s_positivity_limiter=True,
+                pair_gate_s_positivity_limiter=True,
             )
         elif self.limiter == DustLimiter.BALLABIO:
             cfg.set_dust_mode_monofluid_tva(
@@ -754,7 +1021,35 @@ def load_dust_mass(dump_folder):
     return t, values
 
 
-def plot_rho(ax, snapshot_data, dust_colors):
+def compute_multifluid_plots(rhomid, snapshot_index, time):
+    """
+    Multifluid (non-TVA) reference at ``time`` after the injection, normalised by
+    the midplane density ``rhomid`` (same as the gas-at-rest reference).
+
+    It does not depend on the limiter, so it is computed once for all the panels.
+    It takes about a minute, so the result is cached in ``base_folder`` and only
+    recomputed when its inputs change.
+    """
+    key = {"rhomid": rhomid, "time": time, "Nz": multifluid_Nz, "order": multifluid_order}
+
+    cache_path = base_folder + f"multifluid_reference_{snapshot_index:04d}.npy"
+    if os.path.exists(cache_path):
+        cached = load_snapshot(cache_path)
+        if cached["key"] == key:
+            return cached["plots"]
+
+    multifluid = MultifluidDustySettleAll(rhomid)
+    multifluid.evolve_until(time)
+    mf = multifluid.sol
+    plots = [
+        {"z": mf.zc * multifluid.rscale, "rho": mf.rho_d[i] * multifluid.rhoscale}
+        for i in range(ndust)
+    ]
+    np.save(cache_path, {"key": key, "plots": plots})
+    return plots
+
+
+def plot_rho(ax, snapshot_data, multifluid_plots, dust_colors):
     z = snapshot_data["z"]
     s_j = snapshot_data["s_j"]
     rho = snapshot_data["rho"]
@@ -775,6 +1070,15 @@ def plot_rho(ax, snapshot_data, dust_colors):
                 color="0.0",
                 alpha=0.7,
             )
+
+        ax.plot(
+            multifluid_plots[i]["z"],
+            multifluid_plots[i]["rho"],
+            "--",
+            linewidth=1,
+            color=multifluid_color,
+            zorder=1.9,  # below the reference lines (zorder 2), above the particles (zorder 1)
+        )
 
     ax.scatter(
         z, rho * to_dens - rho_dust_all, s=sz, color="0.0", edgecolors="none", rasterized=True
@@ -817,13 +1121,19 @@ def plot_limiter_comparison(snapshot_index):
     mass_histories = []
     for limiter, label in limiter_panels:
         dump_folder = dump_folders[limiter]
-        snapshots.append(
-            (label, load_snapshot(dump_folder + f"snapshot_data_{snapshot_index:04d}.npy"))
-        )
+        snapshot_data = load_snapshot(dump_folder + f"snapshot_data_{snapshot_index:04d}.npy")
+        snapshots.append((label, snapshot_data))
         mass_histories.append(load_dust_mass(dump_folder))
 
     grain_size_si = snapshots[0][1]["grain_size_si"]
     time = snapshots[0][1]["time"]
+
+    # same multifluid reference for all the panels, normalised by the midplane
+    # density of the first run
+    print("computing the multifluid reference")
+    multifluid_plots = compute_multifluid_plots(
+        load_rhomid(dump_folders[limiter_panels[0][0]]), snapshot_index, time
+    )
 
     dust_cmap = plt.colormaps[cmap]
     dust_norm = mcolors.LogNorm(vmin=grain_size_si.min(), vmax=grain_size_si.max() * 10)
@@ -845,7 +1155,7 @@ def plot_limiter_comparison(snapshot_index):
     fig.subplots_adjust(left=0.12, right=1.05, top=0.90, bottom=0.10)
 
     for ax, (label, snapshot_data) in zip(axes_rho, snapshots):
-        plot_rho(ax, snapshot_data, dust_colors)
+        plot_rho(ax, snapshot_data, multifluid_plots, dust_colors)
         ax.set_title(label)
 
     axes_rho[0].set_ylabel(r"$\rho$ [kg/m$^3$]")
@@ -887,8 +1197,17 @@ def plot_limiter_comparison(snapshot_index):
         alpha=0.7,
         label="reference",
     )
+    multifluid_handle = Line2D(
+        [0],
+        [0],
+        linestyle="--",
+        color=multifluid_color,
+        label="multifluid (non-TVA)",
+    )
     axes_rho[-1].legend(
-        handles=[gas_handle, dust_handle, analytic_handle], loc="upper right", fontsize=6
+        handles=[gas_handle, dust_handle, analytic_handle, multifluid_handle],
+        loc="upper right",
+        fontsize=6,
     )
 
     total_handle = Line2D(

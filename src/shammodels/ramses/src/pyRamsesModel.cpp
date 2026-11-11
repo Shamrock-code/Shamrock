@@ -162,11 +162,7 @@ namespace shammodels::basegodunov {
                 },
                 py::arg("mode"),
                 R"==(
-    Set the beta cooling.
-
-    Cooling time proportional to the rotation time.
-
-    :math:`e_\mathrm{int} = e_\mathrm{int,i} \exp\left(-\frac{ {{dt}} \Omega } {\beta} \right)`
+    Set the beta cooling (Gammie 2001), see :py:class:`BetaCooling`.
 
     Usage
     -----

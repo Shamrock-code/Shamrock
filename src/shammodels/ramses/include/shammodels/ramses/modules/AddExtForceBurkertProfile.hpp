@@ -27,6 +27,7 @@
     X_RO(                                                                                          \
         shamrock::solvergraph::IFieldSpan<Tvec>,                                                   \
         spans_coordinates) /* center coordinates of each cell */                                   \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, constant_G) /* Grav Constant*/                  \
                                                                                                    \
     /* ------------------- outputs ------------------- */                                          \
     X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_a_ext)
@@ -44,11 +45,10 @@ namespace shammodels::basegodunov::modules {
         Tscal rho_0;
         Tscal r_0;
         Tvec pos;
-        Tscal const_G;
 
         public:
-        AddExtForceBurkertProfile(u32 block_size, Tscal rho_0, Tscal r_0, Tvec pos, Tscal const_G)
-            : block_size(block_size), rho_0(rho_0), r_0(r_0), pos(pos), const_G(const_G) {}
+        AddExtForceBurkertProfile(u32 block_size, Tscal rho_0, Tscal r_0, Tvec pos)
+            : block_size(block_size), rho_0(rho_0), r_0(r_0), pos(pos) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 

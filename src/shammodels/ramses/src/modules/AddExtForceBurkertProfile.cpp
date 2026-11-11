@@ -35,6 +35,8 @@ namespace shammodels::basegodunov::modules {
         auto &coordinates_spans = edges.spans_coordinates.get_spans();
         auto &a_ext_spans       = edges.spans_a_ext.get_spans();
 
+        const Tscal const_G = edges.constant_G.value;
+
         shambase::DistributedData<u32> cell_counts
             = edges.sizes.indexes.template map<u32>([&](u64 id, u32 block_count) {
                   u32 cell_count = block_count * block_size;

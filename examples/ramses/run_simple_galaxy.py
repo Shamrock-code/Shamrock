@@ -4,8 +4,33 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import i0, i1, kn
-from shamrock.model_ramses import ExtForceCoupling
+from shamrock.model_ramses import ExtForceCoupling, InstantBarotropic, Rusanov
 from shamrock.utils.numba_helper import maybe_njit
+
+HAS_NUMBA = 1
+if HAS_NUMBA:
+    import ctypes
+
+    from numba.extending import get_cython_function_address
+
+    def scipy_special_cfunc(name):
+        # C implementation of a scipy.special function, as double f(double x, int skip_dispatch),
+        # which numba can call from compiled code
+        addr = get_cython_function_address("scipy.special.cython_special", name)
+        return ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double, ctypes.c_int)(addr)
+
+    c_i0, c_i1, c_k0, c_k1 = (scipy_special_cfunc(f) for f in ("i0", "i1", "k0", "k1"))
+
+    @maybe_njit
+    def freeman_bessel(y):
+        return c_i0(y, 0) * c_k0(y, 0) - c_i1(y, 0) * c_k1(y, 0)
+
+else:
+    from scipy.special import i0, i1, k0, k1
+
+    def freeman_bessel(y):
+        return i0(y) * k0(y) - i1(y) * k1(y)
+
 
 import shamrock
 
@@ -21,9 +46,9 @@ si = shamrock.UnitSystem()
 SI_units = shamrock.Constants(si)
 G_SI = SI_units.G()
 
-code_t = 1e6 * SI_units.year()
-code_l = SI_units.parsec()
-code_m = code_l**3 / (code_t**2 * G_SI)
+code_t = 1e6 * SI_units.year()  # Myr
+code_l = SI_units.parsec()  # pc
+code_m = code_l**3 / (code_t**2 * G_SI)  # so that G = 1
 units = shamrock.UnitSystem(unit_time=code_t, unit_length=code_l, unit_mass=code_m)
 
 kms_code = 1 / (1e3 * units.get("m") / units.get("s"))
@@ -112,6 +137,7 @@ def rho_map(rmin, rmax):
     return np.maximum(rho, smallr)
 
 
+@maybe_njit
 def rhovel_map(rmin, rmax):
 
     rho = rho_map(rmin, rmax)
@@ -121,7 +147,6 @@ def rhovel_map(rmin, rmax):
     x, y, z = (rmin + rmax) / 2
 
     r_c = np.sqrt(x * x + y * y)
-    rho = rho_gas(r_c, z, cs, h, rho_c)
 
     ## circular velocity DM
     r_norm = r_c / r_0
@@ -135,36 +160,28 @@ def rhovel_map(rmin, rmax):
     z_0 = cs / np.sqrt(2 * np.pi * G_code * rho_c)  # z_0 at r = 0
     Sigma_0 = 2 * rho_c * z_0
     vc_gas = np.sqrt(
-        4
-        * np.pi
-        * G_code
-        * Sigma_0
-        * h
-        * r_c**2
-        / (2 * h) ** 2
-        * (i0(r_c / (2 * h)) * kn(0, r_c / (2 * h)) - i1(r_c / (2 * h)) * kn(1, r_c / (2 * h)))
+        4 * np.pi * G_code * Sigma_0 * h * r_c**2 / (2 * h) ** 2 * freeman_bessel(r_c / (2 * h))
     )
 
     ## circular velocity pressure gradient
-    z_0_r = cs / np.sqrt(2 * np.pi * G_code * rho_gas(r_c, 0))
+
+    z_0_r = cs / np.sqrt(2 * np.pi * G_code * rho_gas(r_c, 0, cs, h, rho_c))
     vc_grad_p_squared = 2 * r_c * cs**2 / h * (1 - (z / z_0_r) * np.tanh(z / z_0_r))
 
     vc = np.sqrt(max(vc_DM_squared + vc_gas**2 - vc_grad_p_squared, 0))
-    vc = np.array(vc)
 
     # Background (outside the disc or below the floor) is at rest
-    vc[(r_c > Rd) | (rho <= smallr)] = 0.0
+    if r_c > Rd or rho <= smallr:
+        vc = 0.0
 
     vx = -vc * y / r_c
     vy = vc * x / r_c
     vz = 0.0
 
-    if np.any(np.isnan(vx + vy)):
-        raise RuntimeError(f"nan at r={rmin, rmax}")
-
     return (rho * vx, rho * vy, rho * vz)
 
 
+@maybe_njit
 def rhoe_map(rmin, rmax):
 
     rho = rho_map(rmin, rmax)
@@ -261,13 +278,13 @@ cfg = model.gen_default_config()
 
 scale_fact = boxlen / (cell_size * base)
 cfg.set_scale_factor(scale_fact)
-cfg.set_eos_reset_barotropic(rho_crit=rho_floor, cs0=cs, gamma_baro=2.0, gamma=gamma0)
+cfg.set_cooling_mode(InstantBarotropic(rho_crit=rho_floor, cs0=cs, gamma_baro=2.0, gamma=gamma0))
 cfg.set_Csafe(0.8)
 
 cfg.set_amr_mode_old(False)
 cfg.set_amr_mode_jeans_length_based(N_jeans=N_J)
 
-cfg.set_riemann_solver_rusanov()  # Equivalent of Lax-Friedrichs
+cfg.set_riemann_mode(Rusanov)  # Equivalent of Lax-Friedrichs
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
 cfg.set_units(units)
@@ -293,15 +310,24 @@ def set_initial_conditions():
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
     print("initial total energy...", flush=True)
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)
-    print("initialisation done, plotting initial conditions...", flush=True)
+    print("initialisation done", flush=True)
+
+
+def refine():
+    for i in range(3):
+        print(f"Refine iteration {i}", flush=True)
+        set_initial_conditions()
+        model.set_next_dt(1e-6)
+        model.timestep()
 
 
 def launch_sim():
 
+    refine()
     set_initial_conditions()
 
-    dt = 10
-    for i in range(51):
+    dt = 1
+    for i in range(501):
         t = dt * i
         model.evolve_until(dt * i)
         d = ctx.collect_data()
@@ -316,11 +342,10 @@ def launch_sim():
         )
         plot(t, i)
 
-    plot(dt * (i + 1), i)
-
 
 # %%
 # Run the simulation
 # ^^^^^^^^^^^^^^^^^^
+
 
 launch_sim()

@@ -25,6 +25,7 @@
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
+#include "shammodels/ramses/modules/AddExtForceBurkertProfile.hpp"
 #include "shammodels/ramses/modules/AddExtForceConstantGravity.hpp"
 #include "shammodels/ramses/modules/AddExtForceField.hpp"
 #include "shammodels/ramses/modules/AddExtForcePointMassGravity.hpp"
@@ -1601,6 +1602,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         using ExtForceConfig   = typename Config::ExtForceConfig;
         using ConstantGravity  = typename ExtForceConfig::ConstantGravity;
         using PointMassGravity = typename ExtForceConfig::PointMassGravity;
+        using BurkertProfile   = typename ExtForceConfig::BurkertProfile;
 
         const bool trapezoidal
             = solver_config.ext_force_config.coupling == ExtForceCoupling::Trapezoidal;
@@ -1935,6 +1937,24 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                                 std::make_shared<decltype(node)>(std::move(node)));
                         }
                     },
+                    [&](const BurkertProfile &cfg) {
+                        for (auto &[a_ext_level, dt_level] : a_ext_levels) {
+
+                            // retrieve the value of G
+                            auto constant_G
+                                = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
+                                    "G", "G");
+                            constant_G->value = solver_config.get_constant_G();
+
+                            modules::AddExtForceBurkertProfile<Tvec> node{
+                                AMRBlock::block_size, cfg.rho_0, cfg.r_0, cfg.pos};
+
+                            node.set_edges(
+                                storage.block_counts, storage.coordinates, constant_G, a_ext_level);
+                            ext_force_sequence.push_back(
+                                std::make_shared<decltype(node)>(std::move(node)));
+                        }
+                    },
                 },
                 var_force);
         }
@@ -2033,8 +2053,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             sequence.push_back(std::make_shared<decltype(attach)>(std::move(attach)));
         };
 
-        // U^{n+1} without drag starts as a copy of the state at t^n (patch data without ghosts),
-        // then gets the forward Euler update in place
+        // U^{n+1} without drag starts as a copy of the state at t^n (patch data without
+        // ghosts), then gets the forward Euler update in place
         auto add_forward_euler_before_drag = [&]() {
             const u32 ndust = solver_config.dust_config.ndust;
 
@@ -2379,9 +2399,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         }
     }
 
-    // InstantBarotropic cooling: project the state onto the barotrope before the CFL. Done outside
-    // of the dt_input > 0 branch so that the first step (dt_input = 0) also resets the initial
-    // state
+    // InstantBarotropic cooling: project the state onto the barotrope before the CFL. Done
+    // outside of the dt_input > 0 branch so that the first step (dt_input = 0) also resets the
+    // initial state
     if (std::holds_alternative<typename CoolingConfig<Tvec>::InstantBarotropic>(
             solver_config.cooling_config.config)) {
         modules::BarotropicEnergyReset energy_reset(context, solver_config, storage);

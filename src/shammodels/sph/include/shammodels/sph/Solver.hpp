@@ -237,7 +237,7 @@ namespace shammodels::sph {
          * before the first step. An edge whose CFL type was not evaluated in the last step
          * (e.g. "cfl_dt_sink_sink" with no sinks) keeps its previous value.
          */
-        inline std::map<std::string, Tscal> get_last_cfl_dt() {
+        inline std::map<std::string, Tscal> get_last_cfl_dts() {
             using Edge = shamrock::solvergraph::IDataEdgeSerializable<Tscal>;
             auto &sync = scheduler().synchronized_data;
 

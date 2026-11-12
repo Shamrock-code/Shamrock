@@ -3,7 +3,7 @@ CI test: last CFL dt stored in synchronized edges
 =================================================
 
 Checks that the SPH solver stores the last CFL timestep in the synchronized
-edges and that ``model.get_last_cfl_dt()`` exposes it:
+edges and that ``model.get_last_cfl_dts()`` exposes it:
 
 - without CFL detail, only the global ``"cfl_dt"`` edge exists,
 - with CFL detail, one ``"cfl_dt_<type>"`` edge per enabled CFL condition
@@ -61,14 +61,14 @@ def check_in_sync(cfl):
 def check_detail_off():
     ctx, model = build_model(show_cfl_detail=False)
 
-    cfl = model.get_last_cfl_dt()
+    cfl = model.get_last_cfl_dts()
     if cfl != {"cfl_dt": 0.0}:
         raise RuntimeError(f"expected only 'cfl_dt' = 0 before the first step, got {cfl}")
 
     model.timestep()  # first step only computes the initial dt
     model.timestep()
 
-    cfl = model.get_last_cfl_dt()
+    cfl = model.get_last_cfl_dts()
     if shamrock.sys.world_rank() == 0:
         print("last cfl dt (detail off):", cfl)
 
@@ -85,14 +85,14 @@ def check_detail_on():
 
     expected = {"cfl_dt", "cfl_dt_courant", "cfl_dt_force", "cfl_dt_sink_sink"}
 
-    cfl = model.get_last_cfl_dt()
+    cfl = model.get_last_cfl_dts()
     if cfl != {k: 0.0 for k in expected}:
         raise RuntimeError(f"expected {sorted(expected)} = 0 before the first step, got {cfl}")
 
     model.timestep()
     model.timestep()
 
-    cfl = model.get_last_cfl_dt()
+    cfl = model.get_last_cfl_dts()
     if shamrock.sys.world_rank() == 0:
         print("last cfl dt (detail on):", cfl)
 
@@ -117,7 +117,7 @@ def check_detail_on():
     model2 = shamrock.get_Model_SPH(context=ctx2, vector_type="f64_3", sph_kernel="M4")
     model2.load_from_dump(DUMP_NAME)
 
-    cfl_reload = model2.get_last_cfl_dt()
+    cfl_reload = model2.get_last_cfl_dts()
     if cfl_reload != cfl:
         raise RuntimeError(
             f"last cfl dt changed across dump/reload:\n  before={cfl}\n  after ={cfl_reload}"

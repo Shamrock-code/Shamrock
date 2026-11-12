@@ -1808,10 +1808,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.get_dt_sph();
             })
         .def(
-            "get_last_cfl_dt",
+            "get_last_cfl_dts",
             [](T &self) {
                 py::dict ret;
-                for (auto &[name, value] : self.solver.get_last_cfl_dt()) {
+                for (auto &[name, value] : self.solver.get_last_cfl_dts()) {
                     ret[py::str(name)] = value;
                 }
                 return ret;

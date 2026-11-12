@@ -110,7 +110,7 @@ class DustLimiter(Enum):
 limiter_panels = [
     (DustLimiter.NONE, "none"),
     (DustLimiter.BALLABIO, "Ballabio"),
-    (DustLimiter.SMOOTH, "smooth"),
+    (DustLimiter.SMOOTH, "EoM"),
     (DustLimiter.HARD, "hard"),
 ]
 

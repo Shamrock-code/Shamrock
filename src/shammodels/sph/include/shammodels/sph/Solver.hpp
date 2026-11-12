@@ -217,26 +217,25 @@ namespace shammodels::sph {
         }
 
         /**
-         * @brief Store a CFL dt value in a synchronized edge, registering it if missing
+         * @brief Store a CFL dt value in its synchronized edge
          *
-         * The value must be identical on every rank (i.e. already reduced).
+         * The edge must already exist (registered by init_solver_graph). The value must be
+         * identical on every rank (i.e. already reduced).
          */
         inline void set_cfl_dt_edge_value(const std::string &name, Tscal value) {
-            using Edge = shamrock::solvergraph::IDataEdgeSerializable<Tscal>;
-            auto &sync = scheduler().synchronized_data;
-            if (!sync.has_edge(name)) {
-                sync.register_edge(name, Edge(name, "\\Delta t_{\\rm " + name + "}"));
-            }
-            sync.template get_edge_ref<Edge>(name).data = value;
+            scheduler()
+                .synchronized_data
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>(name)
+                .data = value;
         }
 
         /**
          * @brief Get the last CFL dt values stored in the synchronized edges
          *
-         * Returns the global CFL dt (edge "cfl_dt") and, if `show_cfl_detail` was enabled, the
-         * CFL dt per CFL type (edges "cfl_dt_<type>"), keyed by edge name. Edges are kept from
-         * one step to the next, so a type that was not evaluated in the last step keeps the
-         * value from the last step where it was. Empty before the first step.
+         * Returns the global CFL dt (edge "cfl_dt") and, if `show_cfl_detail` is enabled, the
+         * CFL dt per CFL type (edges "cfl_dt_<type>"), keyed by edge name. All values are 0
+         * before the first step. An edge whose CFL type was not evaluated in the last step
+         * (e.g. "cfl_dt_sink_sink" with no sinks) keeps its previous value.
          */
         inline std::map<std::string, Tscal> get_last_cfl_dt() {
             using Edge = shamrock::solvergraph::IDataEdgeSerializable<Tscal>;

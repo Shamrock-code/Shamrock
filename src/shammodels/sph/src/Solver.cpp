@@ -302,6 +302,32 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     ensure_sync_edge("dt", "dt", Tscal{0});
     ensure_sync_edge("cfl_multiplier", "C_{\\rm CFL}", Tscal{1e-2});
 
+    // last cfl dt, plus one edge per cfl type if cfl detail is on
+    // (the types must match the ones evaluated in evolve_once)
+    ensure_sync_edge(cfl_dt_edge_name, "\\Delta t_{\\rm cfl}", Tscal{0});
+    if (solver_config.show_cfl_detail) {
+        auto ensure_cfl_detail_edge = [&](const std::string &type, const std::string &tex_type) {
+            ensure_sync_edge(
+                cfl_dt_detail_edge_prefix + type,
+                "\\Delta t_{\\rm cfl, " + tex_type + "}",
+                Tscal{0});
+        };
+        ensure_cfl_detail_edge("courant", "courant");
+        ensure_cfl_detail_edge("force", "force");
+        if (solver_config.do_nimhd()) {
+            ensure_cfl_detail_edge("NIMHD", "NIMHD");
+        }
+        if (has_psi_field) {
+            ensure_cfl_detail_edge("divB_cleaning", "\\nabla \\cdot B\\ cleaning");
+        }
+        if (has_s_j_field) {
+            ensure_cfl_detail_edge("dust1_fluid", "dust\\ 1\\ fluid");
+            ensure_cfl_detail_edge("dust_drift", "dust\\ drift");
+        }
+        // sinks can be added at any time, so this edge is always registered
+        ensure_cfl_detail_edge("sink_sink", "sink-sink");
+    }
+
     ensure_sync_edge("sink_pos", "\\bf{r}_{\\mathrm{sink}}", std::vector<Tvec>{});
     ensure_sync_edge("sink_vel", "\\bf{v}_{\\mathrm{sink}}", std::vector<Tvec>{});
     ensure_sync_edge("sink_acc_sph", "\\bf{a}_{\\mathrm{sink, sph}}", std::vector<Tvec>{});

@@ -1219,10 +1219,26 @@ def plot_limiter_comparison(snapshot_index):
     )
     axes_mass[-1].legend(handles=[total_handle], loc="upper right", fontsize=6)
 
-    dust_sm = cm.ScalarMappable(cmap=dust_cmap, norm=dust_norm)
+    # Discrete colour bar: one block per dust species, labelled with its grain size
+    dust_sm = cm.ScalarMappable(
+        cmap=mcolors.ListedColormap(dust_colors),
+        norm=mcolors.BoundaryNorm(np.arange(ndust + 1), ndust),
+    )
     dust_sm.set_array([])
-    cbar = fig.colorbar(dust_sm, ax=axes_rho + axes_mass, pad=0.01, shrink=0.95, aspect=40)
-    cbar.set_label(r"grain size $s$ [m]")
+    cbar = fig.colorbar(
+        dust_sm,
+        ax=axes_rho + axes_mass,
+        pad=0.01,
+        shrink=0.95,
+        aspect=40,
+        ticks=np.arange(ndust) + 0.5,
+        drawedges=True,
+    )
+    cbar.ax.set_yticklabels([f"{s * 1e6:.3g}" for s in grain_size_si])
+    cbar.ax.minorticks_off()
+    # no tick marks, they could be mistaken for the divisions between the colours
+    cbar.ax.tick_params(length=0)
+    cbar.set_label(r"grain size $s$ [$\mu$m]")
 
     out_path = base_folder + f"dustysettle_rho_limiters_{snapshot_index:04d}.pdf"
     fig.savefig(out_path)

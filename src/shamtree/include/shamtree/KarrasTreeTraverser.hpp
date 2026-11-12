@@ -134,6 +134,92 @@ struct shamtree::KarrasTreeTraverserAccessed {
             std::forward<Functor3>(on_excluded_node));
     }
 
+    /**
+     * @brief Stack based tree traversal in "while-while" form
+     *
+     * Same visiting order as stack_based_traversal, but the internal nodes are traversed in an
+     * inner loop that only exits once a leaf satisfying the criteria is found (or the stack is
+     * empty). The threads of a warp therefore reconverge before processing their leaves, instead
+     * of processing them at different iterations of a single loop (see Aila & Laine 2009).
+     */
+    template<u32 tree_depth, class Functor1, class Functor2, class Functor3>
+    inline void stack_based_traversal_while_while(
+        u32 root_node,
+        Functor1 &&traverse_condition,
+        Functor2 &&on_found_leaf,
+        Functor3 &&on_excluded_node) const {
+
+        static constexpr u32 _nindex = 4294967295;
+
+        // Init the stack state
+        std::array<u32, tree_depth> id_stack;
+
+        u32 stack_cursor       = tree_depth - 1;
+        id_stack[stack_cursor] = root_node;
+
+        // until the stack is empty
+        while (stack_cursor < tree_depth) {
+
+            u32 found_leaf = _nindex;
+
+            // traverse the internal nodes until a leaf is found
+            while (stack_cursor < tree_depth) {
+
+                // Pop the top of the stack
+                u32 current_node_id    = id_stack[stack_cursor];
+                id_stack[stack_cursor] = _nindex;
+                stack_cursor++;
+
+                // check iteraction creteria
+                bool cur_id_valid = traverse_condition(current_node_id);
+
+                if (cur_id_valid) { // leaf or cell satisfies the criteria
+
+                    if (is_id_leaf(current_node_id)) { // I found a leaf !!!!!
+
+                        found_leaf = current_node_id;
+                        break;
+
+                    } else { // it can interact & not leaf => stack
+
+                        u32 lid = get_left_child(current_node_id);
+                        u32 rid = get_right_child(current_node_id);
+
+                        id_stack[stack_cursor - 1] = rid;
+                        stack_cursor--;
+
+                        id_stack[stack_cursor - 1] = lid;
+                        stack_cursor--;
+                    }
+                } else {
+                    // This does not satisfy the criteria => excluded case (gravity for ex.)
+                    on_excluded_node(current_node_id);
+                }
+            }
+
+            if (found_leaf != _nindex) {
+                on_found_leaf(found_leaf);
+            }
+        }
+    }
+
+    /// "while-while" variant of the stack based tree traversal (root = 0)
+    template<u32 tree_depth, class Functor1, class Functor2, class Functor3>
+    inline void stack_based_traversal_while_while(
+        Functor1 &&traverse_condition,
+        Functor2 &&on_found_leaf,
+        Functor3 &&on_excluded_node) const {
+
+        // On a Karras tree, the root is always 0
+        u32 root_node = 0;
+
+        stack_based_traversal_while_while<tree_depth>(
+            root_node,
+            std::forward<Functor1>(traverse_condition),
+            std::forward<Functor2>(on_found_leaf),
+            std::forward<Functor3>(on_excluded_node));
+    }
+
     /// stack based tree traversal using a stack supplied by the caller instead of an
     /// internal std::array (e.g. a slice of a local_accessor for shared memory offload).
     /// `stack` is a functor `(u32 id) -> u32 &` giving access to the entry `id` of the stack.

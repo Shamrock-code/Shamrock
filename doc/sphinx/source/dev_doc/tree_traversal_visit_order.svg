@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="tt-diagram" width="720" height="190" viewBox="0 0 720 190" role="img" aria-label="A small tree whose four leaves are processed in the same order L1, L2, L3, L4 by both traversal loops.">
+  <title>Both traversal loops visit the leaves in the same order</title>
+  <style>
+    /* Colours follow the pydata-sphinx-theme variables (and so the light/dark switch) when the
+       SVG is inlined in the doc; the fallbacks are used when the file is viewed on its own. */
+    .tt-diagram {
+      --tt-ink: var(--pst-color-text-base, #19211e);
+      --tt-mut: var(--pst-color-text-muted, #5b6763);
+      --tt-line: var(--pst-color-border, #c6cec9);
+      --tt-surface: var(--pst-color-background, #fcfcfb);
+      --tt-faint: var(--pst-color-surface, #e7ece8);
+      --tt-hot: var(--pst-color-warning, #b8641b);
+      --tt-hot-soft: var(--pst-color-warning-bg, #f3e4d6);
+      --tt-display: var(--pst-font-family-base, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif);
+      --tt-mono: var(--pst-font-family-monospace, ui-monospace, Menlo, monospace);
+      color: var(--tt-ink);
+      max-width: 100%;
+      height: auto;
+    }
+    .tt-diagram .tt-lbl { font: 500 12.5px var(--tt-display); fill: currentColor; }
+    .tt-diagram .tt-small { font: 400 11.5px var(--tt-display); fill: currentColor; }
+    .tt-diagram .tt-b { font-weight: 700; }
+    .tt-diagram .tt-tick { font: 400 10.5px var(--tt-mono); fill: var(--tt-mut); }
+    .tt-diagram .tt-val { font: 500 11.5px var(--tt-mono); fill: currentColor; }
+    .tt-diagram .tt-mono { font: 12px var(--tt-mono); fill: currentColor; }
+    .tt-diagram .tt-mut { fill: var(--tt-mut); }
+    .tt-diagram .tt-ln { stroke: currentColor; stroke-width: 1.4; fill: none; }
+    .tt-diagram .tt-dash { stroke-dasharray: 4 3; }
+    .tt-diagram .tt-grid { stroke: var(--tt-line); stroke-width: 1; }
+    .tt-diagram .tt-box { fill: var(--tt-surface); stroke: currentColor; stroke-width: 1.2; }
+    .tt-diagram .tt-box.tt-hotB { fill: var(--tt-hot-soft); stroke: var(--tt-hot); }
+    .tt-diagram .tt-cell { fill: var(--tt-faint); stroke: var(--tt-line); stroke-width: 1; }
+    .tt-diagram .tt-hotF, .tt-diagram .tt-cell.tt-hotF { fill: var(--tt-hot); stroke: none; }
+    .tt-diagram .tt-cell.tt-idle { fill: none; stroke: var(--tt-line); stroke-dasharray: 2 2; }
+    .tt-diagram .tt-track { fill: var(--tt-faint); stroke: none; }
+    .tt-diagram .tt-nodeC { fill: var(--tt-surface); stroke: currentColor; stroke-width: 1.2; }
+  </style>
+<defs>
+<marker id="tt-order-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+</defs>
+<line x1="200" y1="40" x2="110" y2="70" class="tt-ln" />
+<line x1="200" y1="40" x2="290" y2="70" class="tt-ln" />
+<line x1="110" y1="90" x2="65" y2="120" class="tt-ln" />
+<line x1="110" y1="90" x2="155" y2="120" class="tt-ln" />
+<line x1="290" y1="90" x2="245" y2="120" class="tt-ln" />
+<line x1="290" y1="90" x2="335" y2="120" class="tt-ln" />
+<circle cx="200" cy="30" r="10" class="tt-nodeC" />
+<circle cx="110" cy="80" r="10" class="tt-nodeC" />
+<circle cx="290" cy="80" r="10" class="tt-nodeC" />
+<rect x="47" y="119" width="36" height="22" rx="3" class="tt-box tt-hotB" />
+<text x="65" y="134" class="tt-small tt-b" text-anchor="middle" >L1</text>
+<rect x="137" y="119" width="36" height="22" rx="3" class="tt-box tt-hotB" />
+<text x="155" y="134" class="tt-small tt-b" text-anchor="middle" >L2</text>
+<rect x="227" y="119" width="36" height="22" rx="3" class="tt-box tt-hotB" />
+<text x="245" y="134" class="tt-small tt-b" text-anchor="middle" >L3</text>
+<rect x="317" y="119" width="36" height="22" rx="3" class="tt-box tt-hotB" />
+<text x="335" y="134" class="tt-small tt-b" text-anchor="middle" >L4</text>
+<text x="200" y="172" class="tt-small tt-mut" text-anchor="middle" >stack pops left child first</text>
+<text x="410" y="40" class="tt-small" text-anchor="start" >leaves processed, single loop:</text>
+<text x="410" y="62" class="tt-mono" text-anchor="start" >L1 → L2 → L3 → L4</text>
+<text x="410" y="100" class="tt-small" text-anchor="start" >leaves processed, while-while:</text>
+<text x="410" y="122" class="tt-mono" text-anchor="start" >L1 → L2 → L3 → L4</text>
+<text x="410" y="156" class="tt-small tt-mut" text-anchor="start" >same pops, same pushes: only the moment</text>
+<text x="410" y="172" class="tt-small tt-mut" text-anchor="start" >a leaf is processed changes, not its rank</text>
+</svg>

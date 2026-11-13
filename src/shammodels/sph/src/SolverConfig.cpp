@@ -28,7 +28,8 @@ namespace shammodels::sph {
         pdl.add_field<Tvec>("axyz_ext", 1);
         pdl.add_field<Tscal>("hpart", 1);
 
-        if (track_particles_id) {
+        // the injected particles are tagged in their id
+        if (track_particles_id || particle_injection.has_injectors()) {
             pdl.add_field<u64>("part_id", 1);
         }
 

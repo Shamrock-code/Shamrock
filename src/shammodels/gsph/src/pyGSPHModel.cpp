@@ -29,6 +29,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/injection/py_particle_injection.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/gsph/Model.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -51,6 +52,7 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     py::class_<TConfig> config_cls(m, name_config.c_str());
 
     shammodels::common::add_json_defs<TConfig>(config_cls);
+    shammodels::common::injection::add_particle_injection_defs<Tvec>(config_cls);
 
     config_cls.def("print_status", &TConfig::print_status)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)

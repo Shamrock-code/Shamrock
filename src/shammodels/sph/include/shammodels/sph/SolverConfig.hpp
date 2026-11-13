@@ -32,6 +32,7 @@
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
 #include "shammodels/common/config/enum_NeighCacheStrategy.hpp"
+#include "shammodels/common/injection/ParticleInjectionConfig.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/json_print_diff.hpp"
@@ -651,6 +652,16 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
+    // Particle injection config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    shammodels::common::injection::ParticleInjectionConfig<Tvec> particle_injection;
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Particle injection config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
     // CFL Configuration (config)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1240,9 +1251,9 @@ struct shammodels::sph::SolverConfig {
         dust_config.check_config();
         mhd_config.check_config();
 
-        if (track_particles_id && false /*particle injection when added*/) {
-            shamrock::experimental_feature_check(
-                "particle injection is not yet compatible with particle id tracking");
+        if (particle_injection.has_injectors()) {
+            particle_injection.check_config();
+            shamrock::experimental_feature_check("Particle injection is experimental");
         }
 
         if (track_particles_id) {
@@ -1550,6 +1561,8 @@ namespace shammodels::sph {
             {"debug_dump_filename", p.debug_dump_filename},
             // particle killing config
             {"particle_killing", p.particle_killing},
+            // particle injection config
+            {"particle_injection", p.particle_injection},
         };
     }
 
@@ -1639,6 +1652,7 @@ namespace shammodels::sph {
         _get_to_if_contains("do_debug_dump", p.do_debug_dump);
         _get_to_if_contains("debug_dump_filename", p.debug_dump_filename);
         _get_to_if_contains("particle_killing", p.particle_killing);
+        _get_to_if_contains("particle_injection", p.particle_injection);
 
         if (has_used_defaults || has_updated_config) {
             if (shamcomm::world_rank() == 0) {

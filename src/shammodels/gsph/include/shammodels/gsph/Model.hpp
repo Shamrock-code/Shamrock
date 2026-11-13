@@ -362,6 +362,9 @@ namespace shammodels::gsph {
             nlohmann::json j = nlohmann::json::parse(metadata_user);
             j.at("solver_config").get_to(solver.solver_config);
 
+            // recreated from the loaded config by the next injection step
+            solver.storage.particle_injector.reset();
+
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
             // Migrate old dumps that stored time/dt in solver_config.time_state (before PR #1933)

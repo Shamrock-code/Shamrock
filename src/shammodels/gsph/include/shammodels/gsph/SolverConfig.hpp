@@ -36,10 +36,12 @@
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
 #include "shammodels/common/config/enum_NeighCacheStrategy.hpp"
+#include "shammodels/common/injection/ParticleInjectionConfig.hpp"
 #include "shammodels/gsph/config/ForceFormulationConfig.hpp"
 #include "shammodels/gsph/config/ReconstructConfig.hpp"
 #include "shammodels/gsph/config/RiemannConfig.hpp"
 #include "shammodels/sph/config/BCConfig.hpp" // Reuse boundary conditions from SPH
+#include "shamrock/experimental_features.hpp"
 #include "shamrock/io/json_std_optional.hpp"
 #include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
@@ -283,6 +285,16 @@ struct shammodels::gsph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
+    // Particle injection config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    shammodels::common::injection::ParticleInjectionConfig<Tvec> particle_injection;
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Particle injection config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -391,6 +403,11 @@ struct shammodels::gsph::SolverConfig {
                 "InutsukaV2 force formulation is not yet supported with the HLLC Riemann "
                 "solver. Use set_riemann_iterative() or set_riemann_exact() instead.");
         }
+
+        if (particle_injection.has_injectors()) {
+            particle_injection.check_config();
+            shamrock::experimental_feature_check("Particle injection is experimental");
+        }
     }
 
     inline void check_config_runtime() const {
@@ -487,6 +504,7 @@ namespace shammodels::gsph {
             {"particle_reordering_step_freq", p.particle_reordering_step_freq},
             {"set_save_dt_to_fields", p.save_dt_to_fields},
             {"show_ghost_zone_graph", p.show_ghost_zone_graph},
+            {"particle_injection", p.particle_injection},
         };
     }
 
@@ -534,6 +552,7 @@ namespace shammodels::gsph {
         _get_to_if_contains("epsilon_h", p.epsilon_h);
         _get_to_if_contains("h_iter_per_subcycles", p.h_iter_per_subcycles);
         _get_to_if_contains("h_max_subcycles_count", p.h_max_subcycles_count);
+        _get_to_if_contains("particle_injection", p.particle_injection);
 
         if (has_used_defaults || has_updated_config) {
             if (shamcomm::world_rank() == 0) {

@@ -147,6 +147,13 @@ namespace shammodels::gsph {
 
         void do_predictor_leapfrog(Tscal dt);
 
+        /// Inject the particles born during (t_old, t_new] and re-create the boundary particles
+        /// of the injectors at t_new
+        void inject_particles(Tscal t_old, Tscal t_new);
+
+        /// Runtime state of the particle injectors, created from the solver config on first use
+        shammodels::common::injection::ParticleInjector<Tvec> &get_particle_injector();
+
         void init_ghost_layout();
 
         void communicate_merge_ghosts_fields();

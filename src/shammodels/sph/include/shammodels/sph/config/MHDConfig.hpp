@@ -18,6 +18,7 @@
  */
 
 #include "shambackends/vec.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
@@ -48,6 +49,11 @@ struct shammodels::sph::MHDConfig {
         Tscal etaO      = 1.;
         Tscal etaH      = 1.;
         Tscal etaAD     = 1.;
+        bool eta_fields = false;
+        /// If true, etaO/etaH/etaAD are the coefficients C_O/C_H/C_AD of the semi-constant
+        /// prescription (Wurster, Price & Bate 2016, NICIL `icnstsemi`), and the per-particle
+        /// fields are recomputed every step.
+        bool eta_semi_constant = false;
     };
 
     // how to set a new state of a variant as a dummy:
@@ -92,6 +98,16 @@ struct shammodels::sph::MHDConfig {
         return is_dtdivB;
     }
 
+    inline bool has_field_eta() {
+        NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD);
+        return v && (v->eta_fields || v->eta_semi_constant);
+    }
+
+    inline bool has_eta_semi_constant() {
+        NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD);
+        return v && v->eta_semi_constant;
+    }
+
     inline void print_status() {
         logger::raw_ln("--- MHD configMHD");
 
@@ -107,9 +123,18 @@ struct shammodels::sph::MHDConfig {
             logger::raw_ln("  Config MHD Type : Non Ideal MHD");
             logger::raw_ln("  sigma_mhd   =", v->sigma_mhd);
             logger::raw_ln("  alpha_B     =", v->alpha_B);
-            logger::raw_ln("  etaO        =", v->etaO);
-            logger::raw_ln("  etaH        =", v->etaH);
-            logger::raw_ln("  etaAD       =", v->etaAD);
+            if (v->eta_semi_constant) {
+                logger::raw_ln("  etaO/etaH/etaAD : semi-constant, recomputed every step");
+                logger::raw_ln("  C_O         =", v->etaO);
+                logger::raw_ln("  C_H         =", v->etaH);
+                logger::raw_ln("  C_AD        =", v->etaAD);
+            } else if (v->eta_fields) {
+                logger::raw_ln("  etaO/etaH/etaAD : set per-particle (eta_o/eta_h/eta_ad fields)");
+            } else {
+                logger::raw_ln("  etaO        =", v->etaO);
+                logger::raw_ln("  etaH        =", v->etaH);
+                logger::raw_ln("  etaAD       =", v->etaAD);
+            }
         } else {
             shambase::throw_unimplemented();
         }
@@ -125,6 +150,23 @@ struct shammodels::sph::MHDConfig {
 
             if (!shamrock::are_experimental_features_allowed()) {
                 shambase::throw_with_loc<std::runtime_error>("Non Ideal MHD is experimental");
+            }
+
+            NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD);
+            if (v->eta_fields && v->eta_semi_constant) {
+                ON_RANK_0(
+                    logger::warn_ln(
+                        "SPH::config",
+                        "eta_fields and eta_semi_constant are both set: the semi-constant "
+                        "prescription recomputes the eta_o/eta_h/eta_ad fields every step and "
+                        "overwrites any user-set values"));
+            } else if (v->eta_fields) {
+                ON_RANK_0(
+                    logger::warn_ln(
+                        "SPH::config",
+                        "eta_fields is set: the eta_o/eta_h/eta_ad fields must be filled by the "
+                        "user (also after a restart), they default to 0 which disables the "
+                        "non-ideal terms and the non-ideal MHD timestep limit"));
             }
         }
     }
@@ -166,6 +208,8 @@ namespace shammodels::sph {
                 {"etaO", v->etaO},
                 {"etaH", v->etaH},
                 {"etaAD", v->etaAD},
+                {"eta_fields", v->eta_fields},
+                {"eta_semi_constant", v->eta_semi_constant},
             };
         } else {
             shambase::throw_unimplemented();
@@ -220,6 +264,8 @@ namespace shammodels::sph {
                     j.value("etaO", def.etaO),
                     j.value("etaH", def.etaH),
                     j.value("etaAD", def.etaAD),
+                    j.value("eta_fields", def.eta_fields),
+                    j.value("eta_semi_constant", def.eta_semi_constant),
                 });
         } else {
             shambase::throw_unimplemented("wtf !");

@@ -282,6 +282,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     bool has_epsilon_field                     = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field                      = solver_config.dust_config.has_deltav_field();
     bool has_s_j_field                         = solver_config.dust_config.has_s_j_field();
+    bool has_freeze_id_field                   = solver_config.has_field_freeze_id();
 
     using namespace shamrock::solvergraph;
 
@@ -380,6 +381,9 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
         u32 ndust = solver_config.dust_config.get_dust_nvar();
         solver_graph.register_edge("Ts_j", Field<Tscal>(ndust, "Ts_j", "Ts_j"));
+    }
+    if (has_freeze_id_field) {
+        solver_graph.register_edge("freeze_id", FieldRefs<u32>("freeze_id", "f_{\\rm freeze}"));
     }
 
     {
@@ -582,9 +586,68 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                     solver_graph.get_edge_ptr<FieldRefs<Tscal>>("ds_j_dt"));
             attach_field_sequence.push_back(attach_ds_j_dt);
         }
+        if (has_freeze_id_field) {
+            auto attach_freeze_id = solver_graph.register_node(
+                "attach_freeze_id", GetFieldRefFromLayer<u32>(pdl, "freeze_id"));
+            shambase::get_check_ref(attach_freeze_id)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<u32>>("freeze_id"));
+            attach_field_sequence.push_back(attach_freeze_id);
+        }
+
         solver_graph.register_node(
             "attach fields to scheduler",
             OperationSequence("attach fields", std::move(attach_field_sequence)));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // freeze boundary particles
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    if (has_freeze_id_field) {
+        // Boundary particles (freeze_id != 0) keep all their evolved quantities: every time
+        // derivative is set to zero, so that the leapfrog kicks and the corrector leave them
+        // unchanged, while the drift moves them at their constant velocity.
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> freeze_sequence;
+
+        auto add_freeze_node = [&](const std::string &edge_name, auto zero, u32 nvar) {
+            using T   = decltype(zero);
+            auto node = solver_graph.register_node(
+                "freeze_" + edge_name, modules::SetWhenMask<T>(zero, nvar));
+            shambase::get_check_ref(node).set_edges(
+                solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                solver_graph.get_edge_ptr<FieldRefs<u32>>("freeze_id"),
+                solver_graph.get_edge_ptr<FieldRefs<T>>(edge_name));
+            freeze_sequence.push_back(node);
+        };
+
+        add_freeze_node("axyz", Tvec{0, 0, 0}, 1);
+        add_freeze_node("duint", Tscal{0}, 1);
+
+        if (has_b_field) {
+            add_freeze_node("dB/rho", Tvec{0, 0, 0}, 1);
+        }
+        if (has_psi_field) {
+            add_freeze_node("dpsi/ch", Tscal{0}, 1);
+        }
+
+        if (has_epsilon_field) {
+            u32 ndust = solver_config.dust_config.get_dust_nvar();
+            add_freeze_node("dtepsilon", Tscal{0}, ndust);
+        }
+        if (has_deltav_field) {
+            u32 ndust = solver_config.dust_config.get_dust_nvar();
+            add_freeze_node("dtdeltav", Tvec{0, 0, 0}, ndust);
+        }
+        if (has_s_j_field) {
+            u32 ndust = solver_config.dust_config.get_dust_nvar();
+            add_freeze_node("ds_j_dt", Tscal{0}, ndust);
+        }
+
+        solver_graph.register_node(
+            "freeze boundary particles",
+            OperationSequence("freeze boundary particles", std::move(freeze_sequence)));
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -1251,6 +1314,11 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         seq.push_back(solver_graph.get_node_ptr_base("dt_to_half_dt"));
         seq.push_back(solver_graph.get_node_ptr_base("set_gpart_mass"));
         seq.push_back(solver_graph.get_node_ptr_base("attach fields to scheduler"));
+        if (has_freeze_id_field) {
+            // the derivatives may come from a dump or a setup, ensure that the predictor kicks
+            // nothing on the boundary particles
+            seq.push_back(solver_graph.get_node_ptr_base("freeze boundary particles"));
+        }
         seq.push_back(solver_graph.get_node_ptr_base("leapfrog predictor"));
         if (do_part_killing_step) {
             seq.push_back(solver_graph.get_node_ptr_base("part killing step"));
@@ -2832,6 +2900,11 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
 
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
     ext_forces.add_ext_forces();
+
+    if (solver_config.has_field_freeze_id()) {
+        // must come after every contribution to the derivatives (hydro, MHD, dust, ext forces)
+        storage.solver_graph.get_node_ref_base("freeze boundary particles").evaluate();
+    }
 }
 
 template<class Tvec, template<class> class Kern>

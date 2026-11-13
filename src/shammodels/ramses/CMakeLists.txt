@@ -28,6 +28,7 @@ set(Sources
     src/modules/ApplyExtForceGasTrapezoidal.cpp
     src/modules/ApplyExtForceDustTrapezoidal.cpp
     src/modules/BarotropicEnergyReset.cpp
+    src/modules/ApplyBetaCooling.cpp
     src/modules/AMRGridRefinementHandler.cpp
     src/modules/AnalysisSodTube.cpp
     src/modules/AMRSetup.cpp

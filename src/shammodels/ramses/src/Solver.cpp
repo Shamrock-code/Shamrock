@@ -28,6 +28,7 @@
 #include "shammodels/ramses/modules/AddExtForceConstantGravity.hpp"
 #include "shammodels/ramses/modules/AddExtForceField.hpp"
 #include "shammodels/ramses/modules/AddExtForcePointMassGravity.hpp"
+#include "shammodels/ramses/modules/ApplyBetaCooling.hpp"
 #include "shammodels/ramses/modules/ApplyDragExpo.hpp"
 #include "shammodels/ramses/modules/ApplyDragIRK1.hpp"
 #include "shammodels/ramses/modules/ApplyExtForceDust.hpp"
@@ -2222,6 +2223,42 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         } else {
             shambase::throw_unimplemented();
         }
+    }
+
+    if (auto *cfg = std::get_if<typename CoolingConfig<Tvec>::BetaCooling>(
+            &solver_config.cooling_config.config)) { // Cooling
+
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> cooling_sequence;
+
+        shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
+
+        // refs to the fields of the patch data without ghosts (the ones that are integrated)
+        auto attach_source_field = [&]<class T>(
+                                       std::shared_ptr<shamrock::solvergraph::FieldRefs<T>> &refs,
+                                       const std::string &field_name) {
+            shamrock::solvergraph::GetFieldRefFromLayer<T> attach{pdl, field_name};
+            attach.set_edges(storage.source_patches, refs);
+            cooling_sequence.push_back(std::make_shared<decltype(attach)>(std::move(attach)));
+        };
+
+        auto refs_rho
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("rho_source", "\\rho");
+        auto refs_rhov = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
+            "rhovel_source", "(\\rho \\mathbf{v})");
+        auto refs_rhoe = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+            "rhoetot_source", "(\\rho E)");
+
+        attach_source_field(refs_rho, "rho");
+        attach_source_field(refs_rhov, "rhovel");
+        attach_source_field(refs_rhoe, "rhoetot");
+
+        modules::ApplyBetaCooling<Tvec> node{AMRBlock::block_size, cfg->beta, cfg->center};
+        node.set_edges(
+            storage.dt, storage.block_counts, refs_rho, refs_rhov, storage.coordinates, refs_rhoe);
+        cooling_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+
+        shamrock::solvergraph::OperationSequence seq("Cooling", std::move(cooling_sequence));
+        solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
     }
 
     shamrock::solvergraph::OperationSequence seq("Solver", std::move(solver_sequence));

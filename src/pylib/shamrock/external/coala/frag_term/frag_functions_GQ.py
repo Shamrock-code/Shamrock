@@ -1,14 +1,14 @@
 import sys
 
 import numpy as np
-from numba import jit, njit, prange
 from scipy.special import legendre
+from shamrock.utils.numba_helper import maybe_njit
 
 from ..kernel_collision import *
 from ..utils_polynomials import *
 
 
-@njit
+@maybe_njit
 def int_distrib_frag_generic(frac_mass_fragments, beta, xmin, x, u, v):
     """
     Function to evaluate the analytic integral on mass fragment of the distribution of fragment
@@ -370,7 +370,7 @@ def fragfluxfunction_T2(
     return res
 
 
-@njit
+@maybe_njit
 def func_frag_flux_numba(kernel, K0, ai, aip, frac_mass_fragments, beta, xmin, x, u, v, xilp, xil):
     """
     Function to evaluate the integrand of the fragmentation flux, i.e. integrand of the double integral
@@ -418,7 +418,7 @@ def func_frag_flux_numba(kernel, K0, ai, aip, frac_mass_fragments, beta, xmin, x
     )
 
 
-@njit
+@maybe_njit
 def fragfluxfunction_T1_numba(
     kernel,
     K0,
@@ -551,7 +551,7 @@ def fragfluxfunction_T1_numba(
     return res
 
 
-@njit
+@maybe_njit
 def fragfluxfunction_T2_numba(
     kernel,
     K0,

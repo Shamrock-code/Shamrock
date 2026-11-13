@@ -3,7 +3,7 @@ import sys
 import numpy as np
 
 # from progressbar import  Bar,Percentage,ProgressBar
-from numba import jit, njit, prange
+from shamrock.utils.numba_helper import maybe_njit
 
 from .coag_term.coag_functions_GQ import *
 from .frag_term.frag_functions_GQ import *
@@ -79,7 +79,7 @@ def compute_coagtabflux_k0(
     # bar.finish()
 
 
-@njit
+@maybe_njit
 def compute_coagtabflux_k0_numba(
     kernel, K0, Q, vecnodes, vecweights, nbins, massgrid, mat_coeffs_leg, tensor_tabflux_coag
 ):  # ,progress):
@@ -550,7 +550,7 @@ def compute_fragtabflux_k0(
     # bar.finish()
 
 
-@njit
+@maybe_njit
 def compute_fragtabflux_k0_numba(
     kernel,
     K0,

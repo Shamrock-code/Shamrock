@@ -1,6 +1,7 @@
 import numpy as np
-from numba import njit
 from scipy.special import legendre
+
+from shamrock.utils.numba_helper import maybe_njit
 
 
 def legendre_coeffs(kpol):
@@ -24,7 +25,7 @@ def legendre_coeffs(kpol):
     return mat_coeffs_leg
 
 
-@njit
+@maybe_njit
 def phi_pol(pol_coeffs, x):
     """
     Evaluate polynomial sum_{i=0}^{k} a_i x^i by Horner's method
@@ -50,7 +51,7 @@ def phi_pol(pol_coeffs, x):
     return result
 
 
-@njit
+@maybe_njit
 def polynomial_derivative_coeffs(k, pol_coeffs):
     """
     Compute coefficients for the derivative of polynomial with coeff pol_coeffs.

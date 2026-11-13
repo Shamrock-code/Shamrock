@@ -1,8 +1,8 @@
 import sys
 
 import numpy as np
-from numba import jit, njit, prange
 from scipy.special import legendre
+from shamrock.utils.numba_helper import maybe_njit
 
 from ..kernel_collision import *
 from ..utils_polynomials import *
@@ -137,7 +137,7 @@ def coagfluxfunction(
     return res
 
 
-@njit
+@maybe_njit
 def func_coag_flux_numba(kernel, K0, ai, aip, u, v, xilp, xil):
     """
     Function to evaluate the integrand of the coagulation flux, i.e. integrand of the double integral
@@ -172,7 +172,7 @@ def func_coag_flux_numba(kernel, K0, ai, aip, u, v, xilp, xil):
     return func_kernel_numba(kernel, K0, u, v) * phi_pol(aip, xilp) * phi_pol(ai, xil) / v
 
 
-@njit
+@maybe_njit
 def coagfluxfunction_numba(
     kernel, K0, Q, vecnodes, vecweights, nbins, massgrid, mat_coeffs_leg, j, lp, l, ip, i
 ):
@@ -270,7 +270,7 @@ def coagfluxfunction_numba(
     return res
 
 
-@njit
+@maybe_njit
 def coagfluxfunction_fixed_numba(
     kernel, K0, Q, vecnodes, vecweights, nbins, massgrid, mat_coeffs_leg, j, lp, l, ip, i
 ):
@@ -540,7 +540,7 @@ def coagintfluxfunction(
     return res
 
 
-@njit
+@maybe_njit
 def func_coag_intflux_numba(kernel, K0, ak, ai, aip, hj, u, v, xij, xilp, xil):
     dphik_val = dphik(ak, hj, xij)
     kernel_val = func_kernel_numba(kernel, K0, u, v)
@@ -550,7 +550,7 @@ def func_coag_intflux_numba(kernel, K0, ak, ai, aip, hj, u, v, xij, xilp, xil):
     return dphik_val * kernel_val * phi_aip_val * phi_ai_val / v
 
 
-@njit
+@maybe_njit
 def coagintfluxfunction_numba(
     kernel, K0, Q, vecnodes, vecweights, nbins, massgrid, mat_coeffs_leg, j, k, lp, l, ip, i
 ):

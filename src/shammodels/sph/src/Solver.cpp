@@ -3833,8 +3833,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 });
             };
 
-            Tscal C_cour  = solver_config.cfl_config.cfl_cour * get_cfl_multipler();
-            Tscal C_force = solver_config.cfl_config.cfl_force * get_cfl_multipler();
+            Tscal C_cour  = solver_config.cfl_config.cfl_cour;
+            Tscal C_force = solver_config.cfl_config.cfl_force;
             Tscal eta_phi = solver_config.cfl_config.eta_sink;
 
             std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> C_cour_edge
@@ -3861,7 +3861,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             if (do_nimhd) {
                 compute_cfl_NIMHD = std::make_shared<ComputeCFLNIMHD<Tvec>>();
 
-                Tscal C_NIMHD   = solver_config.cfl_config.cfl_NIMHD * get_cfl_multipler();
+                Tscal C_NIMHD   = solver_config.cfl_config.cfl_NIMHD;
                 Cfg_MHD cfg_mhd = solver_config.mhd_config;
                 auto *nimhd     = std::get_if<typename Cfg_MHD::NonIdealMHD>(&cfg_mhd.configMHD);
 
@@ -3927,8 +3927,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> C_1fluid_edge
                     = shamrock::solvergraph::IDataEdge<Tscal>::make_shared(
                         "C_1fluid", "C_{1fluid}");
-                C_1fluid_edge->data
-                    = solver_config.dust_config.get_monofluid_tva().C_1_fluid * get_cfl_multipler();
+                C_1fluid_edge->data = solver_config.dust_config.get_monofluid_tva().C_1_fluid;
 
                 compute_cfl_dust1_fluid->set_edges(
                     storage.part_counts,
@@ -3961,7 +3960,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 C_drift_edge
                     = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("C_drift", "C_{drift}");
-                C_drift_edge->data = cfg_monofluid_tva.C_drift * get_cfl_multipler();
+                C_drift_edge->data = cfg_monofluid_tva.C_drift;
 
                 cfl_density_threshold_edge = shamrock::solvergraph::IDataEdge<Tscal>::make_shared(
                     "cfl_density_threshold", "cfl_density_threshold");
@@ -4083,9 +4082,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 }
             }
 
-            next_cfl = shamalgs::collective::allreduce_min(rank_dt);
+            // The per-condition CFL dts above do not include the CFL multiplier, it is applied
+            // only on the global CFL dt (all the conditions are linear in their C coefficient).
+            next_cfl = shamalgs::collective::allreduce_min(rank_dt) * get_cfl_multipler();
 
             // store the last cfl dt in synchronized edges (values are reduced over all ranks)
+            // "cfl_dt" includes the CFL multiplier, the "cfl_dt_<type>" do not
             set_cfl_dt_edge_value(cfl_dt_edge_name, next_cfl);
             if (show_cfl_detail) {
                 for (auto &[key, value] : cfl_detail) {

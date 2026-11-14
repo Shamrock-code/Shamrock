@@ -191,28 +191,28 @@ for c in configs:
             "cfl_density_threshold": 1e-20 * codeu.get("kg") * codeu.get("m") ** -3,
         }
 
-        if self.limiter == DustLimiter.NONE:
+        if limiter == DustLimiter.NONE:
             cfg.set_dust_mode_monofluid_tva(
                 **common_kwargs, ensure_s_j_positivity=False, smooth_s_positivity_limiter=False
             )
-        elif self.limiter == DustLimiter.SMOOTH:
+        elif limiter == DustLimiter.SMOOTH:
             cfg.set_dust_mode_monofluid_tva(
                 **common_kwargs,
                 ensure_s_j_positivity=False,
                 smooth_s_positivity_limiter=True,
                 pair_gate_s_positivity_limiter=True,
             )
-        elif self.limiter == DustLimiter.BALLABIO:
+        elif limiter == DustLimiter.BALLABIO:
             cfg.set_dust_mode_monofluid_tva(
                 **common_kwargs, ensure_s_j_positivity=False, smooth_s_positivity_limiter=False
             )
             cfg.set_dust_ballabio_ts_limiter(True)
-        elif self.limiter == DustLimiter.HARD:
+        elif limiter == DustLimiter.HARD:
             cfg.set_dust_mode_monofluid_tva(
                 **common_kwargs, ensure_s_j_positivity=True, smooth_s_positivity_limiter=False
             )
         else:
-            raise ValueError(f"Invalid dust limiter: {self.limiter}")
+            raise ValueError(f"Invalid dust limiter: {limiter}")
 
     cfg.add_kill_sphere(center=(0, 0, 0), radius=bsize)  # kill particles outside the simulation box
 

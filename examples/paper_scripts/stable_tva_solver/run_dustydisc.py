@@ -709,7 +709,7 @@ class DustMassAnalysis:
             plt.figure(dpi=250)
             plt.plot(t, dust_mass[:, k])
             plt.xlabel("t")
-            plt.ylabel(f"M_{{dust,{k}}} [M_sol]")
+            plt.ylabel(f"$M_{{dust,{k}}}$ [M_sol]")
             plt.title(f"s = {mrn_distribution.grain_size_si[k]:.1e} [m]")
             plt.tight_layout()
             plt.savefig(os.path.join(plot_folder, f"dust_history_dust_{k}.png"))

@@ -40,7 +40,8 @@
  *
  * For each sink i with a non-zero external acceleration f_i, and each other sink j:
  * dt_ij = C_force * eta_phi * sqrt(|phi_ij| / |f_i|^2), with phi_ij = G * m_j / |r_ij|.
- * The result is the minimum over all pairs (infinity if no pair contributes).
+ * The result is the minimum over all pairs (the largest finite Tscal if no pair contributes, so that
+ * the value stays JSON-serializable in dumps).
  *
  * @tparam Tvec The sink position vector type
  */
@@ -67,10 +68,10 @@ class ComputeCFLSinkSink : public shamrock::solvergraph::INode {
         const std::vector<Tscal> &mass   = edges.masses.data;
         const std::vector<Tvec> &acc_ext = edges.acc_ext.data;
 
-        Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
+        Tscal sink_sink_cfl = shambase::get_max<Tscal>();
 
         for (u32 i = 0; i < pos.size(); i++) {
-            Tscal sink_sink_cfl_i = shambase::get_infty<Tscal>();
+            Tscal sink_sink_cfl_i = shambase::get_max<Tscal>();
 
             Tvec f_i = acc_ext[i];
 

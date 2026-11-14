@@ -719,6 +719,72 @@ class DustMassAnalysis:
 dust_mass_analysis = DustMassAnalysis(model, analysis_folder, "dust_mass")
 
 
+class CFLHistoryAnalysis:
+    # Plot labels for the CFL edge names (unlisted names are shown as-is)
+    labels = {
+        "cfl_dt": "$\\Delta t_{\\rm all}$",
+        "cfl_dt_courant": "$\\Delta t_{\\rm cour}$",
+        "cfl_dt_force": "$\\Delta t_{\\rm force}$",
+        "cfl_dt_dust1_fluid": "$\\Delta t_{\\rm 1-fluid}$",
+        "cfl_dt_dust_drift": "$\\Delta t_{\\rm drift}$",
+    }
+
+    def __init__(self, model, analysis_folder, analysis_prefix):
+        self.model = model
+        self.analysis_helper = AnalysisHelper(analysis_folder, analysis_prefix)
+        self.render_args = {}
+
+    def analysis_save(self, ianalysis):
+        self.analysis_helper.analysis_save(
+            ianalysis,
+            {"time": self.model.get_time(), "cfl_dts": dict(self.model.get_last_cfl_dts())},
+        )
+
+    def render(self):
+        ids = self.analysis_helper.get_list_analysis_id()
+
+        t = []
+        cfl_dts = {}
+        for i, ianalysis in enumerate(ids):
+            ld = self.analysis_helper.load_analysis(ianalysis).item()
+            t.append(ld["time"])
+            for name, value in ld["cfl_dts"].items():
+                cfl_dts.setdefault(name, [np.nan] * i).append(value)
+            # pad conditions missing from this record
+            for values in cfl_dts.values():
+                if len(values) < len(t):
+                    values.append(np.nan)
+
+        t = np.array(t)
+
+        plt.figure(dpi=250)
+        for name in sorted(cfl_dts):
+            values = np.array(cfl_dts[name], dtype=float)
+            # hide unset (0 before the first step) and "no constraint" (f64_max) values
+            values[(values <= 0) | (values > 1e300) | ~np.isfinite(values)] = np.nan
+            if np.all(np.isnan(values)):
+                continue
+            plt.plot(
+                t,
+                values,
+                label=self.labels.get(name, name),
+                color="black" if name == "cfl_dt" else None,
+                linestyle="--" if name == "cfl_dt" else "-",
+            )
+
+        plt.xlabel("t [yr]")
+        plt.ylabel("$\\Delta t$ [yr]")
+        plt.yscale("log")
+        plt.title("CFL timesteps")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(plot_folder, "cfl_history.png"))
+        plt.close()
+
+
+cfl_history_analysis = CFLHistoryAnalysis(model, analysis_folder, "cfl_history")
+
+
 # %%
 # Run the simulation
 
@@ -735,6 +801,7 @@ if ndust > 0:
 
 sim.high_freq_analysis_modules = [
     perf_analysis,
+    cfl_history_analysis,
 ]
 
 if ndust > 0:

@@ -186,23 +186,33 @@ for c in configs:
     if ndust > 0:
         cfg.set_dust_drag_epstein(gamma, grain_size, rho_grains)
 
-        if limiter == DustLimiter.NONE:
+        common_kwargs = {
+            "nvar": ndust,
+            "cfl_density_threshold": 1e-20 * codeu.get("kg") * codeu.get("m") ** -3,
+        }
+
+        if self.limiter == DustLimiter.NONE:
             cfg.set_dust_mode_monofluid_tva(
-                nvar=ndust, ensure_s_j_positivity=False, smooth_s_positivity_limiter=False
+                **common_kwargs, ensure_s_j_positivity=False, smooth_s_positivity_limiter=False
             )
-        elif limiter == DustLimiter.SMOOTH:
+        elif self.limiter == DustLimiter.SMOOTH:
             cfg.set_dust_mode_monofluid_tva(
-                nvar=ndust, ensure_s_j_positivity=False, smooth_s_positivity_limiter=True
+                **common_kwargs,
+                ensure_s_j_positivity=False,
+                smooth_s_positivity_limiter=True,
+                pair_gate_s_positivity_limiter=True,
             )
-        elif limiter == DustLimiter.BALLABIO:
+        elif self.limiter == DustLimiter.BALLABIO:
             cfg.set_dust_mode_monofluid_tva(
-                nvar=ndust, ensure_s_j_positivity=False, smooth_s_positivity_limiter=False
+                **common_kwargs, ensure_s_j_positivity=False, smooth_s_positivity_limiter=False
             )
             cfg.set_dust_ballabio_ts_limiter(True)
-        elif limiter == DustLimiter.HARD:
+        elif self.limiter == DustLimiter.HARD:
             cfg.set_dust_mode_monofluid_tva(
-                nvar=ndust, ensure_s_j_positivity=True, smooth_s_positivity_limiter=False
+                **common_kwargs, ensure_s_j_positivity=True, smooth_s_positivity_limiter=False
             )
+        else:
+            raise ValueError(f"Invalid dust limiter: {self.limiter}")
 
     cfg.add_kill_sphere(center=(0, 0, 0), radius=bsize)  # kill particles outside the simulation box
 

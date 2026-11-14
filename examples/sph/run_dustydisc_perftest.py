@@ -52,7 +52,7 @@ for c in configs:
     ucte = shamrock.Constants(codeu)
 
     # Resolution
-    Npart = int(os.environ.get("NPART", 100000))
+    Npart = int(os.environ.get("NPART", "100000"))
     print(f"Npart = {Npart} (NPART={os.environ.get('NPART', 'not set')!r})")
 
     # Domain decomposition parameters

@@ -1833,10 +1833,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     Returns a dict keyed by synchronized edge name:
 
-    - ``"cfl_dt"``: the global CFL timestep of the last step (min over all CFL conditions).
+    - ``"cfl_dt"``: the global CFL timestep of the last step (min over all CFL conditions,
+      times the CFL multiplier).
     - ``"cfl_dt_<type>"`` (e.g. ``"cfl_dt_courant"``, ``"cfl_dt_force"``,
       ``"cfl_dt_sink_sink"``): the CFL timestep of each condition enabled in the solver
-      config, only present when ``show_cfl_detail`` is enabled.
+      config, without the CFL multiplier, only present when ``show_cfl_detail`` is enabled.
 
     All values are 0 before the first step. A condition that was not evaluated during the
     last step (e.g. ``"cfl_dt_sink_sink"`` with no sinks) keeps its previous value.

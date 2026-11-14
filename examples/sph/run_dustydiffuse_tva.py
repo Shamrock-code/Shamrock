@@ -225,7 +225,7 @@ def analytic_dsdt(t):
 # %%
 # Perform the simulation
 os.makedirs("_to_trash", exist_ok=True)
-for t in [0.1 * i for i in range(20)]:
+for t in [0.1 * i for i in range(31)]:
     model.evolve_until(t)
     r_data, rho_data, rho_g_data, rho_d_data, dsdt_data = get_field_results(model)
     eps = rho_d_data / rho_data
@@ -257,6 +257,7 @@ for t in [0.1 * i for i in range(20)]:
     axs[1].set_ylim(-0.16, 0.4)
     plt.tight_layout()
     plt.savefig(f"_to_trash/dump_dustydiffuse_tva_{t:.2f}.png")
+    plt.savefig(f"_to_trash/dump_dustydiffuse_tva_{t:.2f}.pdf")
     plt.close()
 
 ####################################################
@@ -294,7 +295,11 @@ if shamrock.sys.world_rank() == 0:
 # PL15 like figure
 ####################################################
 
-plt.figure()
+plt.figure(dpi=250)
+
+for i, (t, r_data, eps) in enumerate(snapshots):
+    plt.plot(r_data, eps, ".", label=f"t = {t:.2f}", rasterized=True)
+
 for i, (t, r_data, eps) in enumerate(snapshots):
     plt.plot(
         r_ana,
@@ -303,7 +308,6 @@ for i, (t, r_data, eps) in enumerate(snapshots):
         color="black",
         label="analytic" if i == 0 else "_nolegend_",
     )
-    plt.plot(r_data, eps, ".", label=f"t = {t:.2f}")
 
 
 plt.xlabel(r"$r$")
@@ -311,4 +315,6 @@ plt.ylabel(r"$\epsilon$")
 plt.xlim(0, 0.5)
 plt.ylim(0, 0.11)
 plt.legend()
-plt.show()
+plt.savefig("_to_trash/dump_dustydiffuse_tva.png")
+plt.savefig("_to_trash/dump_dustydiffuse_tva.pdf")
+plt.close()

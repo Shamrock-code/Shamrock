@@ -5,6 +5,7 @@ import numpy as np
 import json
 import os
 from matplotlib.lines import Line2D
+from matplotlib.ticker import LogLocator, NullFormatter
 
 from settling_reference_1d import GasAtRestSettle, MultifluidSettle
 
@@ -218,14 +219,30 @@ def plot_reference_panel(ax, refs, title):
 
     ax.axhline(Z_TOP[0], color="grey", linestyle="--", linewidth=0.8)
     ax.set_xscale("log")
-    ax.set_xlim(1e-18, 1e-11)
+    ax.set_xlim(1e-15, 1e-10)
     ax.set_xlabel(r"$\rho_{\mathrm{d},j}$ [kg m$^{-3}$]")
 
     ax_st.set_xscale("log")
     ax_st.set_xlim(*ST_XLIM)
     ax_st.set_xlabel("St", color=REF_ST_COLOR)
     ax_st.tick_params(axis="x", colors=REF_ST_COLOR, which="both")
-    ax.set_title(title)
+
+    # minor ticks on both log axes: every 1..9 x 10^k (the unlabeled decades included)
+    for axis in (ax.xaxis, ax_st.xaxis):
+        axis.set_minor_locator(LogLocator(base=10, subs=np.arange(1, 10), numticks=100))
+        axis.set_minor_formatter(NullFormatter())
+
+    ax.text(
+        0.04,
+        0.03,
+        title,
+        transform=ax.transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=7,
+        zorder=12,
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.3", linewidth=0.6),
+    )
 
     ax.legend(
         handles=[
@@ -452,33 +469,51 @@ refs = compute_settling_references(rho_mid_tot * (1 - disc_eps_base), ref_time)
 
 # --- make figure ---
 
-fig = plt.figure(dpi=250,figsize=(13.5, 5))
+# Horizontal layout in inches, with gaps only as wide as the labels that overhang them
+# (no white space between the columns). Columns: strip | z label & ticks | time panels
+# | reference panel | colorbar.
+PANEL_W = 1.745  # time panel
+REF_W = 0.96 * PANEL_W  # minimum width showing the 4 St labels (10^-2 ... 10^1)
+STRIP_W = 0.49
+YLABEL_W = 0.56  # z label + z tick labels of the first panel
+GAP_PANELS = 0.11  # the "40" x tick label of the next panel overhangs by ~0.09 in
+GAP_REF = 0.21  # the "10^-18" x tick label of the reference panel overhangs by ~0.19 in
+GAP_CBAR = 0.08
+CBAR_W = 0.087
+LEFT_PAD = 0.01
+RIGHT_PAD = 0.73  # colorbar tick labels + label
+FIG_H = 5
 
-gs = GridSpec(
-    1, len(times) + 4,
-    width_ratios=[0.35, 0.08] + [1] * len(times) + [1, 0.05],
-    wspace=0.15,
-)
+col_widths = [STRIP_W, YLABEL_W]
+for i in range(len(times)):
+    col_widths += [PANEL_W] if i == 0 else [GAP_PANELS, PANEL_W]
+col_widths += [GAP_REF, REF_W, GAP_CBAR, CBAR_W]
+col_panel = [2 + 2 * i for i in range(len(times))]
+col_ref = col_panel[-1] + 2
+col_cbar = col_ref + 2
+
+fig_w = LEFT_PAD + sum(col_widths) + RIGHT_PAD
+fig = plt.figure(dpi=250, figsize=(fig_w, FIG_H))
+
+gs = GridSpec(1, len(col_widths), width_ratios=col_widths, wspace=0)
 
 
 # -----------------------
 # left colored strip
 # -----------------------
 ax_strip = fig.add_subplot(gs[0, 0])
-fig.add_subplot(gs[0, 1]).axis("off")
 ax_strip.axis('off')
 ax_strip.set_xlim(0, 1)
 ax_strip.set_ylim(0, 1)
 
 # colored regions
-ax_strip.fill_between([0, 0.8], 0.5, 1, color="#e8b6b6")
-ax_strip.fill_between([0, 0.8], 0, 0.5, color="#d6cfe3")
+ax_strip.fill_between([0, 1], 0.5, 1, color="#e8b6b6")
+ax_strip.fill_between([0, 1], 0, 0.5, color="#d6cfe3")
 
-# labels (shifted right to avoid overlap)
 for y, dust_idx, color in ((0.75, 1, "r"), (0.25, 0, "purple")):
     dust_id = dust_ids[dust_idx]
     ax_strip.text(
-        0.45,
+        0.5,
         y,
         rf"$j={dust_id}$" + "\n $s=$" + grain_label[dust_idx],
         ha="center",
@@ -492,9 +527,9 @@ for y, dust_idx, color in ((0.75, 1, "r"), (0.25, 0, "purple")):
 axs = []
 for i, t in enumerate(times):
     if i == 0:
-        ax = fig.add_subplot(gs[0, i + 2])
+        ax = fig.add_subplot(gs[0, col_panel[i]])
     else:
-        ax = fig.add_subplot(gs[0, i + 2], sharex=axs[0], sharey=axs[0])
+        ax = fig.add_subplot(gs[0, col_panel[i]], sharex=axs[0], sharey=axs[0])
     ax.set_title(f"t = {t:.2f}")
     axs.append(ax)
 
@@ -527,15 +562,15 @@ for j, (label, _) in enumerate(sims):
     )
 
 # --- 1D references panel (z vertical, same z layout as the slices) ---
-ax_ref = fig.add_subplot(gs[0, len(times) + 2], sharey=axs[0])
+ax_ref = fig.add_subplot(gs[0, col_ref], sharey=axs[0])
 ax_ref.tick_params(left=False, labelleft=False)
 plot_reference_panel(ax_ref, refs, rf"R={REF_R:.0f}au t={ref_time:.0f}yr")
 
-ax_cbar = fig.add_subplot(gs[0, len(times) + 3])
+ax_cbar = fig.add_subplot(gs[0, col_cbar])
 cbar = fig.colorbar(ims[-1], cax=ax_cbar)
 cbar.set_label(r"$rho_{\mathrm{d},j}$ [kg m$^{-3}$]")
 
-plt.tight_layout()
-fig.subplots_adjust(left=0.1, right=0.9)
-plt.savefig("thefig.pdf", dpi=200, bbox_inches="tight", pad_inches=0.05)
+plt.tight_layout()  # vertical margins
+fig.subplots_adjust(left=LEFT_PAD / fig_w, right=1 - RIGHT_PAD / fig_w, wspace=0)
+plt.savefig("thefig.pdf", dpi=200, bbox_inches="tight", pad_inches=0.01)
 plt.show()

@@ -127,6 +127,16 @@ REF_TVA_COLOR = "0.0"
 REF_MF_COLOR = "lightskyblue"
 REF_ST_COLOR = "tab:green"
 ST_XLIM = (1e-2, 10)
+# SPH vertical profiles at REF_R shown in the reference panel (simulation label -> color),
+# averaged over |x - REF_R| <= PROFILE_DX to smooth the particle noise of the slice
+# EoM and hard are nearly identical above 1e-15 kg/m^3, so EoM is drawn wide underneath
+# and hard thin and dashed on top to keep both visible
+SIM_PROFILE_STYLES = {
+    "Ballabio": dict(color="tab:orange", linestyle="-", linewidth=0.8, zorder=3),
+    "EoM": dict(color="tab:red", linestyle="-", linewidth=2.0, alpha=0.6, zorder=3),
+    "hard": dict(color="tab:purple", linestyle=(0, (3, 1.5)), linewidth=0.8, zorder=4),
+}
+PROFILE_DX = 1.0  # au
 
 
 def disc_mrn_weights():
@@ -199,11 +209,38 @@ def z_to_axis(z, extent, z_bottom, z_top):
     return z_bottom + (np.asarray(z) - z0) / (z1 - z0) * (z_top - z_bottom)
 
 
+def slice_column_profile(data, meta, r, dx):
+    """Vertical profile of a density slice, averaged over |x - r| <= dx: (z, rho)."""
+    x0, x1, z0, z1 = meta["extent"]
+    ny, nx = data.shape
+    xs = x0 + (np.arange(nx) + 0.5) * (x1 - x0) / nx
+    zs = z0 + (np.arange(ny) + 0.5) * (z1 - z0) / ny
+    cols = data[:, np.abs(xs - r) <= dx]
+    with np.errstate(all="ignore"):
+        rho = np.where(np.isnan(cols).all(axis=1), np.nan, np.nanmean(cols, axis=1))
+    return zs, rho
+
+
 def plot_reference_panel(ax, refs, title):
     ax_st = ax.twiny()
     for dust_idx, z_bottom, z_top in ((1, *Z_TOP), (0, *Z_BOTTOM)):
         ref = refs[dust_ids[dust_idx]]
         extent = all_meta[dust_idx][-1][0]["extent"]
+
+        # SPH profiles at REF_R at the last time (same time as the references)
+        for j, (label, _) in enumerate(sims):
+            if label not in SIM_PROFILE_STYLES:
+                continue
+            data = all_data[dust_idx][-1][j]
+            if np.isnan(data).all():  # did not reach this time
+                continue
+            meta = all_meta[dust_idx][-1][j]
+            z, rho = slice_column_profile(data, meta, REF_R, PROFILE_DX)
+            ax.plot(
+                rho * codeu_to_kg_m3, z_to_axis(z, meta["extent"], z_bottom, z_top),
+                **SIM_PROFILE_STYLES[label],
+            )
+
         ax.plot(
             ref["rho_tva"], z_to_axis(ref["z"], extent, z_bottom, z_top),
             "--", color=REF_TVA_COLOR, alpha=0.7, linewidth=1,
@@ -219,7 +256,7 @@ def plot_reference_panel(ax, refs, title):
 
     ax.axhline(Z_TOP[0], color="grey", linestyle="--", linewidth=0.8)
     ax.set_xscale("log")
-    ax.set_xlim(1e-15, 1e-10)
+    ax.set_xlim(1e-20, 1e-10)
     ax.set_xlabel(r"$\rho_{\mathrm{d},j}$ [kg m$^{-3}$]")
 
     ax_st.set_xscale("log")
@@ -249,6 +286,10 @@ def plot_reference_panel(ax, refs, title):
             Line2D([0], [0], linestyle="--", color=REF_TVA_COLOR, alpha=0.7, label="reference"),
             Line2D([0], [0], linestyle="--", color=REF_MF_COLOR, label="multifluid (non-TVA)"),
             Line2D([0], [0], linestyle="-", color=REF_ST_COLOR, label="St"),
+        ]
+        + [
+            Line2D([0], [0], label=label, **style)
+            for label, style in SIM_PROFILE_STYLES.items()
         ],
         loc="upper left",
         fontsize=5,

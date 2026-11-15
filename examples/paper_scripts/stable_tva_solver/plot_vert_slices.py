@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
+from matplotlib.colors import BoundaryNorm, ListedColormap, LogNorm
 from matplotlib.gridspec import GridSpec
 import numpy as np
 import json
 import os
 from matplotlib.lines import Line2D
-from matplotlib.ticker import LogLocator, MaxNLocator, NullFormatter
+from matplotlib.ticker import AutoMinorLocator, LogLocator, MaxNLocator, NullFormatter
 
 from settling_reference_1d import GasAtRestSettle, MultifluidSettle
 
@@ -334,8 +334,9 @@ def plot_reference_panel(ax, refs, title):
 
     # species of each half (same colors as the left strip of the main figure): top right of
     # the top half, bottom right of the bottom half
+    species_boxes = []
     for dust_idx, y, va, color in ((1, 0.97, "top", "r"), (0, 0.03, "bottom", "purple")):
-        ax.text(
+        species_boxes.append(ax.text(
             0.96,
             y,
             rf"$j={dust_ids[dust_idx]}$, $s=$" + grain_label[dust_idx],
@@ -348,13 +349,13 @@ def plot_reference_panel(ax, refs, title):
             bbox=dict(
                 boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.3", linewidth=0.6
             ),
-        )
+        ))
 
-    ax.legend(
+    # density curves (bottom axis)
+    leg_rho = ax.legend(
         handles=[
             Line2D([0], [0], linestyle="--", color=REF_TVA_COLOR, alpha=0.7, label="reference"),
             Line2D([0], [0], linestyle="--", color=REF_MF_COLOR, label="multifluid (non-TVA)"),
-            Line2D([0], [0], linestyle="-", color=REF_ST_COLOR, label="St"),
         ]
         + [
             Line2D([0], [0], label=label, **style)
@@ -363,6 +364,20 @@ def plot_reference_panel(ax, refs, title):
         loc="upper left",
         fontsize=5,
     )
+    ax.add_artist(leg_rho)
+    # Stokes number (top axis) in its own box, right-aligned under the j = 3 species box
+    ax.figure.canvas.draw()
+    box = species_boxes[0].get_bbox_patch().get_window_extent()
+    box_ax = ax.transAxes.inverted().transform(box)
+    leg_st = ax.legend(
+        handles=[Line2D([0], [0], linestyle="-", color=REF_ST_COLOR, label="St (top axis)")],
+        loc="upper right",
+        bbox_to_anchor=(box_ax[1, 0], box_ax[0, 1] - 0.01),
+        borderaxespad=0.0,
+        fontsize=5,
+    )
+    for text in leg_st.get_texts():
+        text.set_color(REF_ST_COLOR)
 
 
 def set_z_axis(ax, z_half=Z_TICKS[-1], step=Z_TICKS[1] - Z_TICKS[0]):
@@ -764,6 +779,7 @@ fig_ref.savefig("thefig_ref.pdf", dpi=200)
 FUSED_T_MIN = 0.1  # yr, lower limit of the log time axis (first record after t = 0)
 FUSED_T_MAX = 100.0  # yr
 FUSED_XTICKS = [0.1, 1.0, 10.0, 100.0]  # labelled on the first panel only
+FUSED_LINEAR_XTICKS = [0, 50, 100]  # same, for a linear time axis
 FUSED_FIGSIZE = (3.4, 2.4)  # in, same width as thefig_ref.pdf
 # box of the 4 panels in the figure (in): left, bottom, width, height
 FUSED_PANELS_BOX = (0.603, 0.393, 2.694, 1.601)
@@ -779,18 +795,24 @@ def load_records(sim, prefix):
     return [np.load(os.path.join(folder, f), allow_pickle=True).item() for f in files]
 
 
-def make_fused_axes():
-    """Figure with the 4 fused panels (shared x and y), returns (fig, axs, x range of the box)."""
-    fig = plt.figure(figsize=FUSED_FIGSIZE, dpi=250)
+def make_fused_axes(fig_h=FUSED_FIGSIZE[1], fig_w=FUSED_FIGSIZE[0], y_offset=0.0):
+    """
+    Figure with the 4 fused panels (shared x and y), returns (fig, axs, x range of the box).
+    fig_h > FUSED_FIGSIZE[1] (fig_w > FUSED_FIGSIZE[0]) adds room on top (on the right): the
+    panels keep their size and position from the bottom left, in inches. y_offset (in) moves
+    the panels up, to make room below them.
+    """
+    fig = plt.figure(figsize=(fig_w, fig_h), dpi=250)
     bx, by, bw, bh = FUSED_PANELS_BOX
-    box_x = (bx / FUSED_FIGSIZE[0], (bx + bw) / FUSED_FIGSIZE[0])
+    by += y_offset
+    box_x = (bx / fig_w, (bx + bw) / fig_w)
     gs = fig.add_gridspec(
         1,
         len(sims),
         left=box_x[0],
         right=box_x[1],
-        bottom=by / FUSED_FIGSIZE[1],
-        top=(by + bh) / FUSED_FIGSIZE[1],
+        bottom=by / fig_h,
+        top=(by + bh) / fig_h,
         wspace=0,
     )
     axs = [fig.add_subplot(gs[0, 0])]
@@ -805,11 +827,11 @@ def fused_time_window(t):
     return sel, sel & (t >= FUSED_T_MIN)
 
 
-def add_fused_dnf(ax, t_end):
+def add_fused_dnf(ax, t_end, log_time=True):
     """Mark a run that stopped before FUSED_T_MAX (middle of the missing range)."""
     if t_end < FUSED_T_MAX * (1 - 1e-3):
         ax.text(
-            np.sqrt(t_end * FUSED_T_MAX),
+            np.sqrt(t_end * FUSED_T_MAX) if log_time else 0.5 * (t_end + FUSED_T_MAX),
             0.5,
             "DNF",
             transform=ax.get_xaxis_transform(),
@@ -833,14 +855,22 @@ def decade_limits(values, linthresh=0.0):
     return lo, hi
 
 
-def finish_fused_figure(fig, axs, box_x, ylabel, legend_handles, ncol=3):
-    """Time axis, run names, y label, x label under the panels and legend above them."""
+def finish_fused_figure(fig, axs, box_x, ylabel, legend_handles, ncol=3, log_time=True):
+    """
+    Time axis (log from FUSED_T_MIN, or linear from 0 with FUSED_LINEAR_XTICKS), run names,
+    y label, x label under the panels and legend above them.
+    """
     ax0 = axs[0]
-    ax0.set_xscale("log")
-    ax0.set_xlim(FUSED_T_MIN, FUSED_T_MAX)
-    ax0.set_xticks(FUSED_XTICKS)
-    ax0.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(1, 10), numticks=100))
-    ax0.xaxis.set_minor_formatter(NullFormatter())
+    if log_time:
+        ax0.set_xscale("log")
+        ax0.set_xlim(FUSED_T_MIN, FUSED_T_MAX)
+        ax0.set_xticks(FUSED_XTICKS)
+        ax0.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(1, 10), numticks=100))
+        ax0.xaxis.set_minor_formatter(NullFormatter())
+    else:
+        ax0.set_xlim(0, FUSED_T_MAX)
+        ax0.set_xticks(FUSED_LINEAR_XTICKS)
+        ax0.xaxis.set_minor_locator(AutoMinorLocator())
     ax0.set_ylabel(ylabel)
     for ax, (label, _) in zip(axs, sims):
         ax.set_title(label, fontsize=plt.rcParams["font.size"], pad=2)
@@ -856,6 +886,8 @@ def finish_fused_figure(fig, axs, box_x, ylabel, legend_handles, ncol=3):
         0.5 * (box_x[0] + box_x[1]), ticks_bottom, r"$t$ [yr]", ha="center", va="top",
         fontsize=plt.rcParams["font.size"],
     )
+    if legend_handles is None:
+        return
     # legend above the run names
     titles_top = max(to_fig.transform((0, ax.title.get_window_extent(renderer).y1))[1] for ax in axs)
     fig.legend(
@@ -1025,5 +1057,172 @@ with plt.rc_context({"font.size": plt.rcParams["font.size"] * REF_FONT_SCALE}):
         ],
     )
     fig_cf.savefig("thefig_cfl_fused.pdf", dpi=200, bbox_inches="tight", pad_inches=0.01)
+
+
+# ==========================================================================================
+# ==========================================================================================
+# Dust surface density at R = REF_R per Stokes number bin, for the 4 simulations
+# ==========================================================================================
+# ==========================================================================================
+# From the vertical density slices (every 2.5 yr, hence the linear time axis): in the
+# columns |x - REF_R| <= PROFILE_DX, each pixel of each dust species is put in the bin of its
+# local Stokes number (same St as the contours: Epstein stopping time with the total density
+# of the gas slice, LP07 sound speed), and Sigma_bin = sum over the column of rho_d dz, summed
+# over the species and averaged over the columns. The dashed grey line is the total.
+
+ST_BIN_EDGES = [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 0.2, 0.5, 1.0, np.inf]
+ST_BINS_YMIN = 1e-4  # kg m^-2, lower y limit
+# horizontal discrete colour bar below the panels (in): gap below the x label, thickness
+ST_CBAR_GAP = 0.08
+ST_CBAR_H = 0.08
+# right hand axis on the last panel: the same Sigma converted to the dust momentum per unit
+# area Sigma v_K, assuming Keplerian dust (the slices hold no velocities). At fixed R it is a
+# rescaling of Sigma, so the curves read both ways.
+ST_BINS_MOMENTUM_AXIS = False
+st_bin_colors = plt.colormaps["viridis"](np.linspace(0, 0.95, len(ST_BIN_EDGES) - 1))
+# colour bar tick labels at the finite bin edges; the last bin (St > 1) is the end triangle
+st_edge_labels = [
+    rf"$10^{{{np.log10(e):.0f}}}$" if np.log10(e) == np.round(np.log10(e)) and e < 1 else f"{e:g}"
+    for e in ST_BIN_EDGES[:-1]
+]
+
+
+def sigma_per_st_bin(sim):
+    """time [yr] and Sigma [kg m^-2] of the dust in each St bin, at R = REF_R."""
+    times, sigmas = [], []
+    for dump in range(10000):
+        gas_prefix = os.path.join(base, sim, "analysis/plots", f"rho_slice_gas_{dump:07d}")
+        if not os.path.exists(gas_prefix + ".npy"):
+            break
+        rho = np.load(gas_prefix + ".npy")
+        with open(gas_prefix + ".json") as f:
+            meta = json.load(f)
+        if meta["time"] > FUSED_T_MAX * (1 + 1e-6):
+            break
+        x0, x1, z0, z1 = meta["extent"]
+        ny, nx = rho.shape
+        xs = x0 + (np.arange(nx) + 0.5) * (x1 - x0) / nx
+        zs = z0 + (np.arange(ny) + 0.5) * (z1 - z0) / ny
+        cols = np.abs(xs - REF_R) <= PROFILE_DX
+        X, Z = np.meshgrid(xs[cols], zs)
+        rho = rho[:, cols]
+        omega_k = np.sqrt(G_code * center_mass / X**3)
+        cs = cs0_code * (np.sqrt(X**2 + Z**2) / disc_r0) ** (-disc_q)
+        dz_m = (z1 - z0) / ny * au_m
+
+        sigma = np.zeros(len(ST_BIN_EDGES) - 1)
+        for j in range(disc_ndust):
+            rho_d = np.load(
+                os.path.join(base, sim, "analysis/plots", f"rho_slice_dust_{j}_{dump:07d}.npy")
+            )[:, cols]
+            rho_d = np.nan_to_num(rho_d, nan=0.0) * codeu_to_kg_m3
+            with np.errstate(all="ignore"):
+                st = (
+                    rho_grain_si / codeu_to_kg_m3 * grain_size_au(j) / (rho * cs)
+                    * np.sqrt(np.pi * gamma_ad / 8) * omega_k
+                )
+            st = np.where(np.isfinite(st), st, np.inf)  # no gas: St -> infinity
+            if np.any((st < ST_BIN_EDGES[0]) & (rho_d > 0)):
+                print(f"warning: {sim} t={meta['time']} dust {j} has St < {ST_BIN_EDGES[0]}")
+            ibin = np.clip(np.searchsorted(ST_BIN_EDGES, st, side="right") - 1, 0, len(sigma) - 1)
+            for b in range(len(sigma)):
+                # column integral, averaged over the columns
+                sigma[b] += (rho_d * (ibin == b)).sum(axis=0).mean() * dz_m
+        times.append(meta["time"])
+        sigmas.append(sigma)
+    return np.array(times), np.array(sigmas)
+
+
+st_bin_data = [sigma_per_st_bin(sim) for _, sim in sims]
+
+
+def make_st_bins_figure(fig_h, fig_w, y_offset):
+    fig_sb, axs_sb, box_x = make_fused_axes(fig_h, fig_w, y_offset)
+
+    sig_all = []
+    for ax, (t, sig) in zip(axs_sb, st_bin_data):
+        for b in range(sig.shape[1]):
+            ax.plot(t, sig[:, b], color=st_bin_colors[b], linewidth=FUSED_LW)
+        ax.plot(t, sig.sum(axis=1), color="grey", linestyle="--", linewidth=FUSED_LW)
+        sig_all += [sig[sig > 0], sig.sum(axis=1)]
+        add_fused_dnf(ax, t[-1], log_time=False)
+
+    ax0 = axs_sb[0]
+    ax0.set_yscale("log")
+    ax0.set_ylim(ST_BINS_YMIN, decade_limits(np.concatenate(sig_all))[1])
+    if ST_BINS_MOMENTUM_AXIS:
+        v_k = np.sqrt(G_code * center_mass / REF_R) * au_m / yr_s  # m s^-1
+        sec = axs_sb[-1].secondary_yaxis(
+            "right", functions=(lambda y: y * v_k, lambda y: y / v_k)
+        )
+        sec.set_ylabel(r"$\Sigma_{\mathrm{d}} v_{\mathrm{K}}$ [kg m$^{-1}$ s$^{-1}$]")
+
+    finish_fused_figure(
+        fig_sb,
+        axs_sb,
+        box_x,
+        rf"$\Sigma_{{\mathrm{{d}}}}(R={REF_R:.0f}\,\mathrm{{au}})$ [kg m$^{{-2}}$]",
+        None,
+        log_time=False,
+    )
+    # "total" in a box inside the first panel, in the empty area below the curves
+    ax0.legend(
+        handles=[Line2D([0], [0], color="grey", linestyle="--", linewidth=1, label="total")],
+        loc="lower left",
+        fontsize=plt.rcParams["font.size"],
+        handlelength=1.5,
+        handletextpad=0.5,
+        borderaxespad=0.4,
+    )
+
+    # horizontal discrete colour bar below the x label, one block per St bin (as in
+    # dustysettle_limiters.py), the open last bin (St > 1) drawn as the triangular end
+    renderer = fig_sb.canvas.get_renderer()
+    labels_bottom = min(t.get_window_extent(renderer).y0 for t in fig_sb.texts) / fig_sb.dpi
+    bx, by, bw, bh = FUSED_PANELS_BOX
+    cax = fig_sb.add_axes(
+        [
+            bx / fig_w,
+            (labels_bottom - ST_CBAR_GAP - ST_CBAR_H) / fig_h,
+            bw / fig_w,
+            ST_CBAR_H / fig_h,
+        ]
+    )
+    cmap = ListedColormap(st_bin_colors[:-1])
+    cmap.set_over(st_bin_colors[-1])
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=BoundaryNorm(ST_BIN_EDGES[:-1], cmap.N))
+    cbar = fig_sb.colorbar(
+        sm,
+        cax=cax,
+        orientation="horizontal",
+        extend="max",
+        spacing="uniform",
+        drawedges=True,
+        ticks=ST_BIN_EDGES[:-1],
+    )
+    cbar.ax.set_xticklabels(st_edge_labels)
+    cbar.ax.minorticks_off()
+    cbar.set_label("St")
+    return fig_sb
+
+
+with plt.rc_context({"font.size": plt.rcParams["font.size"] * REF_FONT_SCALE}):
+    # build once with a guess of the room below the panels, then redo the figure so that
+    # what overflows (colour bar below, labels on the right) fits and the margins below and on
+    # top are only `pad`, also in the window
+    y_off, fig_h, fig_w = 0.6, FUSED_FIGSIZE[1] + 0.6, FUSED_FIGSIZE[0]
+    for _ in range(3):
+        fig_sb = make_st_bins_figure(fig_h, fig_w, y_off)
+        fig_sb.canvas.draw()
+        bb = fig_sb.get_tightbbox(fig_sb.canvas.get_renderer())  # in
+        pad = 0.02
+        d_bottom, d_top, d_right = pad - bb.y0, bb.y1 + pad - fig_h, bb.x1 + pad - fig_w
+        if max(abs(d_bottom), abs(d_top), max(d_right, 0)) < 1e-3:
+            break
+        plt.close(fig_sb)
+        y_off += d_bottom
+        fig_h += d_bottom + d_top  # also removes empty room on top
+        fig_w += max(d_right, 0)
+    fig_sb.savefig("thefig_st_bins_fused.pdf", dpi=200, bbox_inches="tight", pad_inches=0.01)
 
 plt.show()

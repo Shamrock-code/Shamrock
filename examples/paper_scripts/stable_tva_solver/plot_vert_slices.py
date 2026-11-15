@@ -5,7 +5,7 @@ import numpy as np
 import json
 import os
 from matplotlib.lines import Line2D
-from matplotlib.ticker import LogLocator, NullFormatter
+from matplotlib.ticker import LogLocator, MaxNLocator, NullFormatter
 
 from settling_reference_1d import GasAtRestSettle, MultifluidSettle
 
@@ -54,6 +54,12 @@ Z_TICKS = [-40, -20, 0, 20, 40]
 Z_SPAN = Z_TICKS[-1] - Z_TICKS[0]
 Z_BOTTOM = (Z_TICKS[0], Z_TICKS[-1])
 Z_TOP = (Z_TICKS[-1], Z_TICKS[-1] + Z_SPAN)
+
+# z layout of the reference figure: each half shows |z| <= REF_Z_HALF in true z (au)
+REF_Z_HALF = 30
+REF_Z_STEP = 10
+REF_Z_BOTTOM = (-REF_Z_HALF, REF_Z_HALF)
+REF_Z_TOP = (REF_Z_HALF, 3 * REF_Z_HALF)
 
 codeu_to_kg_m3 = 0.0005939403178403637
 
@@ -137,6 +143,12 @@ SIM_PROFILE_STYLES = {
     "hard": dict(color="tab:purple", linestyle=(0, (3, 1.5)), linewidth=0.8, zorder=4),
 }
 PROFILE_DX = 1.0  # au
+# inset zoom on the j = 4 peak in the reference panel
+SHOW_INSET = False
+INSET_XLIM = (1e-13, 1e-11)  # kg m^-3
+INSET_Z_MARGIN = 1.5  # z range: +- this factor times the edge of the reference distribution
+INSET_OFF = 0.12
+INSET_BOUNDS = [0.35, 0.325 + INSET_OFF, 0.62, 0.155]  # in reference panel axes fraction (x0, y0, w, h)
 
 
 def disc_mrn_weights():
@@ -203,10 +215,14 @@ def compute_settling_references(rho_mid, t_yr):
     return refs
 
 
-def z_to_axis(z, extent, z_bottom, z_top):
-    """Same z mapping as the images: the slice z range goes to [z_bottom, z_top]."""
-    z0, z1 = extent[2], extent[3]
-    return z_bottom + (np.asarray(z) - z0) / (z1 - z0) * (z_top - z_bottom)
+def z_to_axis(z, z_bottom, z_top):
+    """
+    True z (au) to the axis coordinate of the half [z_bottom, z_top] (z = 0 at its centre);
+    nan outside the half, so that the curves stop at its edges.
+    """
+    z = np.asarray(z, dtype=float)
+    half = 0.5 * (z_top - z_bottom)
+    return np.where(np.abs(z) <= half, z + 0.5 * (z_bottom + z_top), np.nan)
 
 
 def slice_column_profile(data, meta, r, dx):
@@ -221,40 +237,71 @@ def slice_column_profile(data, meta, r, dx):
     return zs, rho
 
 
+def draw_density_profiles(ax, refs, dust_idx, z_bottom, z_top):
+    """SPH profiles at REF_R (last time) + the two 1D references, for one dust species."""
+    ref = refs[dust_ids[dust_idx]]
+
+    for j, (label, _) in enumerate(sims):
+        if label not in SIM_PROFILE_STYLES:
+            continue
+        data = all_data[dust_idx][-1][j]
+        if np.isnan(data).all():  # did not reach this time
+            continue
+        meta = all_meta[dust_idx][-1][j]
+        z, rho = slice_column_profile(data, meta, REF_R, PROFILE_DX)
+        ax.plot(
+            rho * codeu_to_kg_m3, z_to_axis(z, z_bottom, z_top),
+            **SIM_PROFILE_STYLES[label],
+        )
+
+    ax.plot(
+        ref["rho_tva"], z_to_axis(ref["z"], z_bottom, z_top),
+        "--", color=REF_TVA_COLOR, alpha=0.7, linewidth=1,
+    )
+    ax.plot(
+        ref["rho_mf"], z_to_axis(ref["z_mf"], z_bottom, z_top),
+        "--", color=REF_MF_COLOR, linewidth=1,
+    )
+
+
+def add_peak_inset(ax, refs, dust_idx, z_bottom, z_top):
+    """
+    Zoom on the peak of one dust species: INSET_XLIM in density and, in z, both sides of
+    the midplane up to just beyond the edges of the (gas-at-rest) reference distribution.
+    """
+    ref = refs[dust_ids[dust_idx]]
+    z_front = np.abs(ref["z"][ref["rho_tva"] > INSET_XLIM[0]]).max()
+    z_max = INSET_Z_MARGIN * z_front
+    ylim = z_to_axis(np.array([-z_max, z_max]), z_bottom, z_top)
+
+    axins = ax.inset_axes(INSET_BOUNDS, xlim=INSET_XLIM, ylim=tuple(ylim))
+    draw_density_profiles(axins, refs, dust_idx, z_bottom, z_top)
+    axins.set_xscale("log")
+    axins.set_xlim(*INSET_XLIM)
+    axins.set_ylim(*ylim)
+    axins.tick_params(labelsize=5, length=2, pad=1)
+    axins.tick_params(which="minor", length=1)
+    # z ticks on round values in au, placed with the panel z mapping
+    z_ticks = MaxNLocator(nbins=4, integer=True, symmetric=True).tick_values(-z_max, z_max)
+    z_ticks = z_ticks[np.abs(z_ticks) <= z_max]
+    axins.set_yticks(z_to_axis(z_ticks, z_bottom, z_top))
+    axins.set_yticklabels([f"{z:g}" for z in z_ticks])
+    ax.indicate_inset_zoom(axins, edgecolor="0.3", linewidth=0.6)
+    return axins
+
+
 def plot_reference_panel(ax, refs, title):
     ax_st = ax.twiny()
-    for dust_idx, z_bottom, z_top in ((1, *Z_TOP), (0, *Z_BOTTOM)):
+    for dust_idx, z_bottom, z_top in ((1, *REF_Z_TOP), (0, *REF_Z_BOTTOM)):
         ref = refs[dust_ids[dust_idx]]
-        extent = all_meta[dust_idx][-1][0]["extent"]
 
-        # SPH profiles at REF_R at the last time (same time as the references)
-        for j, (label, _) in enumerate(sims):
-            if label not in SIM_PROFILE_STYLES:
-                continue
-            data = all_data[dust_idx][-1][j]
-            if np.isnan(data).all():  # did not reach this time
-                continue
-            meta = all_meta[dust_idx][-1][j]
-            z, rho = slice_column_profile(data, meta, REF_R, PROFILE_DX)
-            ax.plot(
-                rho * codeu_to_kg_m3, z_to_axis(z, meta["extent"], z_bottom, z_top),
-                **SIM_PROFILE_STYLES[label],
-            )
-
-        ax.plot(
-            ref["rho_tva"], z_to_axis(ref["z"], extent, z_bottom, z_top),
-            "--", color=REF_TVA_COLOR, alpha=0.7, linewidth=1,
-        )
-        ax.plot(
-            ref["rho_mf"], z_to_axis(ref["z_mf"], extent, z_bottom, z_top),
-            "--", color=REF_MF_COLOR, linewidth=1,
-        )
+        draw_density_profiles(ax, refs, dust_idx, z_bottom, z_top)
         ax_st.plot(
-            ref["St"], z_to_axis(ref["z"], extent, z_bottom, z_top),
+            ref["St"], z_to_axis(ref["z"], z_bottom, z_top),
             "-", color=REF_ST_COLOR, linewidth=1,
         )
 
-    ax.axhline(Z_TOP[0], color="grey", linestyle="--", linewidth=0.8)
+    ax.axhline(REF_Z_TOP[0], color="grey", linestyle="--", linewidth=0.8)
     ax.set_xscale("log")
     ax.set_xlim(1e-20, 1e-10)
     ax.set_xlabel(r"$\rho_{\mathrm{d},j}$ [kg m$^{-3}$]")
@@ -269,6 +316,10 @@ def plot_reference_panel(ax, refs, title):
         axis.set_minor_locator(LogLocator(base=10, subs=np.arange(1, 10), numticks=100))
         axis.set_minor_formatter(NullFormatter())
 
+    # zoom on the peak of the j = 4 distribution (bottom half)
+    if SHOW_INSET:
+        add_peak_inset(ax, refs, 0, *REF_Z_BOTTOM)
+
     ax.text(
         0.04,
         0.03,
@@ -280,6 +331,24 @@ def plot_reference_panel(ax, refs, title):
         zorder=12,
         bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.3", linewidth=0.6),
     )
+
+    # species of each half (same colors as the left strip of the main figure): top right of
+    # the top half, bottom right of the bottom half
+    for dust_idx, y, va, color in ((1, 0.97, "top", "r"), (0, 0.03, "bottom", "purple")):
+        ax.text(
+            0.96,
+            y,
+            rf"$j={dust_ids[dust_idx]}$, $s=$" + grain_label[dust_idx],
+            transform=ax.transAxes,
+            ha="right",
+            va=va,
+            fontsize=7,
+            color=color,
+            zorder=12,
+            bbox=dict(
+                boxstyle="round,pad=0.3", facecolor="white", edgecolor="0.3", linewidth=0.6
+            ),
+        )
 
     ax.legend(
         handles=[
@@ -294,6 +363,21 @@ def plot_reference_panel(ax, refs, title):
         loc="upper left",
         fontsize=5,
     )
+
+
+def set_z_axis(ax, z_half=Z_TICKS[-1], step=Z_TICKS[1] - Z_TICKS[0]):
+    """
+    z limits and ticks of the stacked layout (top half j = 3, bottom half j = 4), each half
+    spanning [-z_half, z_half] with ticks every step.
+    """
+    ticks = list(range(-z_half, z_half + 1, step))
+    ax.set_ylim(-z_half, 3 * z_half)
+    tick_positions = ticks + [t + 2 * z_half for t in ticks[1:]]
+    tick_labels = (
+        [str(t) for t in ticks[:-1]] + [f"{-z_half}\n{z_half}"] + [str(t) for t in ticks[1:]]
+    )
+    ax.set_yticks(tick_positions)
+    ax.set_yticklabels(tick_labels)
 
 
 def plot_dust_panels(ax, time_idx, xlim=(40, 60)):
@@ -349,11 +433,7 @@ def plot_dust_panels(ax, time_idx, xlim=(40, 60)):
                 )
 
     ax.set_xlim(x_min_ax, x_max_ax)
-    ax.set_ylim(Z_BOTTOM[0], Z_TOP[1])
-    tick_positions = Z_TICKS + [t + Z_SPAN for t in Z_TICKS[1:]]
-    tick_labels = [str(t) for t in Z_TICKS[:-1]] + ["-40\n40"] + [str(t) for t in Z_TICKS[1:]]
-    ax.set_yticks(tick_positions)
-    ax.set_yticklabels(tick_labels)
+    set_z_axis(ax)
 
     x_tick_positions = [xmin + j * section_w for j in range(2)]
     x_tick_labels = [str(xmin)] + [str(xmax)] 
@@ -512,13 +592,12 @@ refs = compute_settling_references(rho_mid_tot * (1 - disc_eps_base), ref_time)
 
 # Horizontal layout in inches, with gaps only as wide as the labels that overhang them
 # (no white space between the columns). Columns: strip | z label & ticks | time panels
-# | reference panel | colorbar.
+# | colorbar. The reference panel is a separate figure (see below).
 PANEL_W = 1.745  # time panel
 REF_W = 0.96 * PANEL_W  # minimum width showing the 4 St labels (10^-2 ... 10^1)
 STRIP_W = 0.49
 YLABEL_W = 0.56  # z label + z tick labels of the first panel
 GAP_PANELS = 0.11  # the "40" x tick label of the next panel overhangs by ~0.09 in
-GAP_REF = 0.21  # the "10^-18" x tick label of the reference panel overhangs by ~0.19 in
 GAP_CBAR = 0.08
 CBAR_W = 0.087
 LEFT_PAD = 0.01
@@ -528,10 +607,9 @@ FIG_H = 5
 col_widths = [STRIP_W, YLABEL_W]
 for i in range(len(times)):
     col_widths += [PANEL_W] if i == 0 else [GAP_PANELS, PANEL_W]
-col_widths += [GAP_REF, REF_W, GAP_CBAR, CBAR_W]
+col_widths += [GAP_CBAR, CBAR_W]
 col_panel = [2 + 2 * i for i in range(len(times))]
-col_ref = col_panel[-1] + 2
-col_cbar = col_ref + 2
+col_cbar = col_panel[-1] + 2
 
 fig_w = LEFT_PAD + sum(col_widths) + RIGHT_PAD
 fig = plt.figure(dpi=250, figsize=(fig_w, FIG_H))
@@ -602,16 +680,350 @@ for j, (label, _) in enumerate(sims):
         zorder=11,
     )
 
-# --- 1D references panel (z vertical, same z layout as the slices) ---
-ax_ref = fig.add_subplot(gs[0, col_ref], sharey=axs[0])
-ax_ref.tick_params(left=False, labelleft=False)
-plot_reference_panel(ax_ref, refs, rf"R={REF_R:.0f}au t={ref_time:.0f}yr")
-
 ax_cbar = fig.add_subplot(gs[0, col_cbar])
 cbar = fig.colorbar(ims[-1], cax=ax_cbar)
 cbar.set_label(r"$rho_{\mathrm{d},j}$ [kg m$^{-3}$]")
 
 plt.tight_layout()  # vertical margins
 fig.subplots_adjust(left=LEFT_PAD / fig_w, right=1 - RIGHT_PAD / fig_w, wspace=0)
-plt.savefig("thefig.pdf", dpi=200, bbox_inches="tight", pad_inches=0.01)
+fig.savefig("thefig.pdf", dpi=200, bbox_inches="tight", pad_inches=0.01)
+
+# --- 1D references panel (z vertical, same z layout as the slices), separate figure ---
+def limiters_column_box():
+    """
+    Box (x0, y0, width, height, fig_height, in inches) of one column of the figure of
+    dustysettle_limiters.py: from the bottom of the dust mass panel to the top of the
+    density panel. Rebuilds the same (empty) layout as ``plot_limiter_comparison`` there.
+    """
+    fig = plt.figure(figsize=(9 * 1.2, 5 * 1.2))
+    gs = fig.add_gridspec(2, 4, wspace=0.12, hspace=0.25, height_ratios=[1.8, 1])
+    axes = [fig.add_subplot(gs[r, c]) for r in range(2) for c in range(4)]
+    fig.subplots_adjust(left=0.12, right=1.05, top=0.90, bottom=0.10)
+    sm = plt.cm.ScalarMappable()
+    sm.set_array([])
+    fig.colorbar(sm, ax=axes, pad=0.01, shrink=0.95, aspect=40)
+    top, bottom = axes[0].get_position(), axes[4].get_position()
+    fig_w, fig_h = fig.get_size_inches()
+    plt.close(fig)
+    return (
+        top.x0 * fig_w,
+        bottom.y0 * fig_h,
+        top.width * fig_w,
+        (top.y1 - bottom.y0) * fig_h,
+        fig_h,
+    )
+
+
+# Panel with the height of one (density + dust mass) column of the dustysettle_limiters.py
+# figure and REF_WIDEN times its width. The figure is fitted to the panel and its labels
+# (no white margin, nothing cut).
+# The figure goes in a single column of the paper: the default font size is reduced by
+# REF_FONT_SCALE (ticks, axis labels); the legend, inset ticks and title box keep their
+# explicit sizes.
+REF_FONT_SCALE = 0.75
+REF_WIDEN = 1.2 * 1.2  # panel width relative to a limiters-figure column (height unchanged)
+REF_PAD = 0.02  # in, white margin around the labels
+_, _, panel_w, panel_h, _ = limiters_column_box()
+panel_w *= REF_WIDEN
+
+# first layout with 1 in around the panel, enough for any label
+with plt.rc_context({"font.size": plt.rcParams["font.size"] * REF_FONT_SCALE}):
+    fig_ref = plt.figure(dpi=250, figsize=(panel_w + 2, panel_h + 2))
+    ax_ref = fig_ref.add_axes(
+        [1 / (panel_w + 2), 1 / (panel_h + 2), panel_w / (panel_w + 2), panel_h / (panel_h + 2)]
+    )
+    set_z_axis(ax_ref, REF_Z_HALF, REF_Z_STEP)
+    ax_ref.set_ylabel(r"$z$ [au]")
+    plot_reference_panel(ax_ref, refs, rf"R={REF_R:.0f}au t={ref_time:.0f}yr")
+
+# measure how far the labels extend around the panel (inches), then fit the figure to it
+fig_ref.canvas.draw()
+bb = fig_ref.get_tightbbox(fig_ref.canvas.get_renderer())  # inches
+pad_l = 1 - bb.x0 + REF_PAD
+pad_r = bb.x1 - (1 + panel_w) + REF_PAD
+pad_b = 1 - bb.y0 + REF_PAD
+pad_t = bb.y1 - (1 + panel_h) + REF_PAD
+fig_ref_w = pad_l + panel_w + pad_r
+fig_ref_h = pad_b + panel_h + pad_t
+fig_ref.set_size_inches(fig_ref_w, fig_ref_h)
+ax_ref.set_position(
+    [pad_l / fig_ref_w, pad_b / fig_ref_h, panel_w / fig_ref_w, panel_h / fig_ref_h]
+)
+fig_ref.savefig("thefig_ref.pdf", dpi=200)
+
+
+# ==========================================================================================
+# ==========================================================================================
+# Fused 4-panel time history figures (single column of the paper)
+# ==========================================================================================
+# ==========================================================================================
+# One panel per run, the 4 panels fused without gaps (shared axes) like the time panels of
+# the vertical slices figure, log time axis, run names above the panels and the legend above
+# them. Used by the dust mass conservation and the CFL timestep figures below.
+
+FUSED_T_MIN = 0.1  # yr, lower limit of the log time axis (first record after t = 0)
+FUSED_T_MAX = 100.0  # yr
+FUSED_XTICKS = [0.1, 1.0, 10.0, 100.0]  # labelled on the first panel only
+FUSED_FIGSIZE = (3.4, 2.4)  # in, same width as thefig_ref.pdf
+# box of the 4 panels in the figure (in): left, bottom, width, height
+FUSED_PANELS_BOX = (0.603, 0.393, 2.694, 1.601)
+FUSED_LW = 0.8
+
+
+def load_records(sim, prefix):
+    """All the analysis records <prefix>_*.npy of a run, in order."""
+    folder = os.path.join(base, sim, "analysis")
+    files = sorted(
+        f for f in os.listdir(folder) if f.startswith(prefix + "_") and f.endswith(".npy")
+    )
+    return [np.load(os.path.join(folder, f), allow_pickle=True).item() for f in files]
+
+
+def make_fused_axes():
+    """Figure with the 4 fused panels (shared x and y), returns (fig, axs, x range of the box)."""
+    fig = plt.figure(figsize=FUSED_FIGSIZE, dpi=250)
+    bx, by, bw, bh = FUSED_PANELS_BOX
+    box_x = (bx / FUSED_FIGSIZE[0], (bx + bw) / FUSED_FIGSIZE[0])
+    gs = fig.add_gridspec(
+        1,
+        len(sims),
+        left=box_x[0],
+        right=box_x[1],
+        bottom=by / FUSED_FIGSIZE[1],
+        top=(by + bh) / FUSED_FIGSIZE[1],
+        wspace=0,
+    )
+    axs = [fig.add_subplot(gs[0, 0])]
+    for i in range(1, len(sims)):
+        axs.append(fig.add_subplot(gs[0, i], sharex=axs[0], sharey=axs[0]))
+    return fig, axs, box_x
+
+
+def fused_time_window(t):
+    """(plotted, shown): records up to FUSED_T_MAX, and those inside the log time axis."""
+    sel = (t >= 0) & (t <= FUSED_T_MAX)
+    return sel, sel & (t >= FUSED_T_MIN)
+
+
+def add_fused_dnf(ax, t_end):
+    """Mark a run that stopped before FUSED_T_MAX (middle of the missing range)."""
+    if t_end < FUSED_T_MAX * (1 - 1e-3):
+        ax.text(
+            np.sqrt(t_end * FUSED_T_MAX),
+            0.5,
+            "DNF",
+            transform=ax.get_xaxis_transform(),
+            rotation=90,
+            ha="center",
+            va="center",
+            fontsize=plt.rcParams["font.size"],
+            color="red",
+        )
+
+
+def decade_limits(values, linthresh=0.0):
+    """Data range extended to the next decades (symmetric for negative values)."""
+    lo, hi = np.nanmin(values), np.nanmax(values)
+    if lo < -linthresh:
+        lo = -(10.0 ** np.ceil(np.log10(-lo)))
+    elif lo > linthresh:
+        lo = 10.0 ** np.floor(np.log10(lo))
+    if hi > linthresh:
+        hi = 10.0 ** np.ceil(np.log10(hi))
+    return lo, hi
+
+
+def finish_fused_figure(fig, axs, box_x, ylabel, legend_handles, ncol=3):
+    """Time axis, run names, y label, x label under the panels and legend above them."""
+    ax0 = axs[0]
+    ax0.set_xscale("log")
+    ax0.set_xlim(FUSED_T_MIN, FUSED_T_MAX)
+    ax0.set_xticks(FUSED_XTICKS)
+    ax0.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(1, 10), numticks=100))
+    ax0.xaxis.set_minor_formatter(NullFormatter())
+    ax0.set_ylabel(ylabel)
+    for ax, (label, _) in zip(axs, sims):
+        ax.set_title(label, fontsize=plt.rcParams["font.size"], pad=2)
+    for ax in axs[1:]:
+        ax.tick_params(labelleft=False, labelbottom=False)
+
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    to_fig = fig.transFigure.inverted()
+    # one x label centred under the 4 panels, below the tick labels
+    ticks_bottom = min(to_fig.transform((0, ax.get_tightbbox(renderer).y0))[1] for ax in axs)
+    fig.text(
+        0.5 * (box_x[0] + box_x[1]), ticks_bottom, r"$t$ [yr]", ha="center", va="top",
+        fontsize=plt.rcParams["font.size"],
+    )
+    # legend above the run names
+    titles_top = max(to_fig.transform((0, ax.title.get_window_extent(renderer).y1))[1] for ax in axs)
+    fig.legend(
+        handles=legend_handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5 * (box_x[0] + box_x[1]), titles_top),
+        ncol=ncol,
+        fontsize=plt.rcParams["font.size"],  # same as the axis labels
+        frameon=False,
+        labelspacing=0.25,
+        handlelength=2.2,
+        columnspacing=1.0,
+        borderaxespad=0.2,
+    )
+
+
+# ==========================================================================================
+# ==========================================================================================
+# Dust mass conservation of the 4 simulations (disc + dust accreted by the sinks)
+# ==========================================================================================
+# ==========================================================================================
+# Same quantity as the "dust_mass_history.png" plot of run_dustydisc.py (DustMassAnalysis):
+# relative variation, since the injection, of the dust mass of each species in the disc plus
+# the dust mass of that species accreted by the sinks (one colour per grain size), and of the
+# total (dashed grey).
+
+MASS_LINTHRESH = 1e-8  # linear range of the symlog y axis
+MASS_TICK_DECADES = range(-8, 1, 2)  # labelled y ticks at +- 10^k
+# grain size of each species (geometric centre of the bins of run_dustydisc.py)
+mass_grain_size_si = 10.0 ** (np.arange(disc_ndust) - 6.0)  # 1 um ... 1 cm
+mass_cmap = plt.colormaps["plasma"]
+mass_norm = LogNorm(vmin=mass_grain_size_si.min(), vmax=mass_grain_size_si.max() * 10)
+mass_colors = mass_cmap(mass_norm(mass_grain_size_si))
+mass_ticks = sorted([0.0] + [sgn * 10.0**k for k in MASS_TICK_DECADES for sgn in (-1, 1)])
+
+
+def load_dust_mass_history(sim):
+    """time, dust mass in the disc and dust mass accreted by the sinks (per species)."""
+    recs = load_records(sim, "dust_mass")
+    return (
+        np.array([r["time"] for r in recs]),
+        np.array([r["dust_mass"] for r in recs], dtype=float),
+        # records written before the sink quantities were added have none
+        np.array([r.get("sink_dust_mass", [np.nan] * disc_ndust) for r in recs], dtype=float),
+    )
+
+
+with plt.rc_context({"font.size": plt.rcParams["font.size"] * REF_FONT_SCALE}):
+    fig_mf, axs_mf, box_x = make_fused_axes()
+
+    d_all = []  # all plotted values, for the y limits
+    for ax, (label, sim) in zip(axs_mf, sims):
+        t, dust_mass, sink_dust_mass = load_dust_mass_history(sim)
+        m = dust_mass + np.nan_to_num(sink_dust_mass, nan=0.0)
+        i0 = np.argmax(~np.isnan(dust_mass)[:, 0])
+        t = t - t[i0]
+        sel, shown = fused_time_window(t)
+
+        for k in range(disc_ndust):
+            d_k = m[:, k] / m[i0, k] - 1
+            ax.plot(t[sel], d_k[sel], color=mass_colors[k], linewidth=FUSED_LW)
+            d_all.append(d_k[shown])
+        m_tot = m.sum(axis=1)
+        d_tot = m_tot / m_tot[i0] - 1
+        ax.plot(t[sel], d_tot[sel], color="grey", linestyle="--", linewidth=FUSED_LW)
+        d_all.append(d_tot[shown])
+        ax.axhline(0, color="0.5", linewidth=0.5, zorder=0)
+        add_fused_dnf(ax, t[sel][-1])
+
+    ax0 = axs_mf[0]
+    ax0.set_yscale("symlog", linthresh=MASS_LINTHRESH)
+    ylo, yhi = decade_limits(np.concatenate(d_all), MASS_LINTHRESH)
+    ax0.set_yticks([y for y in mass_ticks if ylo <= y <= yhi])
+    ax0.set_ylim(ylo, yhi)
+    ax0.yaxis.set_minor_locator(plt.NullLocator())
+
+    finish_fused_figure(
+        fig_mf,
+        axs_mf,
+        box_x,
+        r"$\delta M_{\mathrm{dust}} / M_{\mathrm{dust},0}$",
+        [
+            Line2D(
+                [0], [0], color=mass_colors[k], linewidth=1,
+                label=rf"$s=10^{{{np.log10(s):.0f}}}$ m",
+            )
+            for k, s in enumerate(mass_grain_size_si)
+        ]
+        + [Line2D([0], [0], color="grey", linestyle="--", linewidth=1, label="total")],
+    )
+    fig_mf.savefig("thefig_mass_fused.pdf", dpi=200, bbox_inches="tight", pad_inches=0.01)
+
+
+# ==========================================================================================
+# ==========================================================================================
+# CFL timesteps of the 4 simulations
+# ==========================================================================================
+# ==========================================================================================
+# Same quantities as the "cfl_history.png" plot of run_dustydisc.py (CFLHistoryAnalysis):
+# the timestep of each CFL condition (without the CFL multiplier) and the global timestep
+# (min of the conditions times the multiplier, dashed black). Conditions that never constrain
+# the step (f64_max, e.g. sink-sink without sink pairs) are not shown.
+
+# condition -> (label, colour), in the legend order
+CFL_STYLES = {
+    "cfl_dt": (r"$\Delta t_{\rm all}$", "black"),
+    "cfl_dt_courant": (r"$\Delta t_{\rm cour}$", "tab:blue"),
+    "cfl_dt_force": (r"$\Delta t_{\rm force}$", "tab:green"),
+    "cfl_dt_dust1_fluid": (r"$\Delta t_{\rm 1-fluid}$", "tab:orange"),
+    "cfl_dt_dust_drift": (r"$\Delta t_{\rm drift}$", "tab:red"),
+    "cfl_dt_sink_sink": (r"$\Delta t_{\rm sink-sink}$", "tab:brown"),
+}
+
+
+def load_cfl_history(sim):
+    """time and {condition: timesteps}, nan where unset (<= 0) or not constraining (f64_max)."""
+    recs = load_records(sim, "cfl_history")
+    t = np.array([r["time"] for r in recs])
+    names = sorted({name for r in recs for name in r["cfl_dts"]})
+    dts = {}
+    for name in names:
+        v = np.array([r["cfl_dts"].get(name, np.nan) for r in recs], dtype=float)
+        v[(v <= 0) | (v > 1e300) | ~np.isfinite(v)] = np.nan
+        dts[name] = v
+    return t, dts
+
+
+with plt.rc_context({"font.size": plt.rcParams["font.size"] * REF_FONT_SCALE}):
+    fig_cf, axs_cf, box_x = make_fused_axes()
+
+    dt_all = []  # all plotted values, for the y limits
+    shown_names = set()
+    for ax, (label, sim) in zip(axs_cf, sims):
+        t, dts = load_cfl_history(sim)
+        sel, shown = fused_time_window(t)
+        # global timestep last, on top
+        for name in sorted(dts, key=lambda n: n == "cfl_dt"):
+            v = dts[name]
+            if np.all(np.isnan(v[shown])):
+                continue
+            lab, color = CFL_STYLES.get(name, (name, None))
+            is_all = name == "cfl_dt"
+            ax.plot(
+                t[sel], v[sel], color=color, linewidth=FUSED_LW,
+                linestyle="--" if is_all else "-", zorder=3 if is_all else 2,
+            )
+            dt_all.append(v[shown])
+            shown_names.add(name)
+        add_fused_dnf(ax, t[sel][-1])
+
+    ax0 = axs_cf[0]
+    ax0.set_yscale("log")
+    ax0.set_ylim(*decade_limits(np.concatenate(dt_all)))
+
+    ordered = [n for n in CFL_STYLES if n in shown_names] + sorted(shown_names - set(CFL_STYLES))
+    finish_fused_figure(
+        fig_cf,
+        axs_cf,
+        box_x,
+        r"$\Delta t$ [yr]",
+        [
+            Line2D(
+                [0], [0], color=CFL_STYLES.get(n, (n, None))[1], linewidth=1,
+                linestyle="--" if n == "cfl_dt" else "-", label=CFL_STYLES.get(n, (n,))[0],
+            )
+            for n in ordered
+        ],
+    )
+    fig_cf.savefig("thefig_cfl_fused.pdf", dpi=200, bbox_inches="tight", pad_inches=0.01)
+
 plt.show()

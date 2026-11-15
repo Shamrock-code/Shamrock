@@ -363,6 +363,12 @@ def plot_reference_panel(ax, refs, title):
         ],
         loc="upper left",
         fontsize=5,
+        ncol=2,  # 3 rows: stays above the curves in the shorter panel
+        labelspacing=0.3,
+        handlelength=1.6,
+        handletextpad=0.5,
+        columnspacing=0.8,
+        borderpad=0.4,
     )
     ax.add_artist(leg_rho)
     # Stokes number (top axis) in its own box, right-aligned under the j = 3 species box
@@ -704,42 +710,21 @@ fig.subplots_adjust(left=LEFT_PAD / fig_w, right=1 - RIGHT_PAD / fig_w, wspace=0
 fig.savefig("thefig.pdf", dpi=200, bbox_inches="tight", pad_inches=0.01)
 
 # --- 1D references panel (z vertical, same z layout as the slices), separate figure ---
-def limiters_column_box():
-    """
-    Box (x0, y0, width, height, fig_height, in inches) of one column of the figure of
-    dustysettle_limiters.py: from the bottom of the dust mass panel to the top of the
-    density panel. Rebuilds the same (empty) layout as ``plot_limiter_comparison`` there.
-    """
-    fig = plt.figure(figsize=(9 * 1.2, 5 * 1.2))
-    gs = fig.add_gridspec(2, 4, wspace=0.12, hspace=0.25, height_ratios=[1.8, 1])
-    axes = [fig.add_subplot(gs[r, c]) for r in range(2) for c in range(4)]
-    fig.subplots_adjust(left=0.12, right=1.05, top=0.90, bottom=0.10)
-    sm = plt.cm.ScalarMappable()
-    sm.set_array([])
-    fig.colorbar(sm, ax=axes, pad=0.01, shrink=0.95, aspect=40)
-    top, bottom = axes[0].get_position(), axes[4].get_position()
-    fig_w, fig_h = fig.get_size_inches()
-    plt.close(fig)
-    return (
-        top.x0 * fig_w,
-        bottom.y0 * fig_h,
-        top.width * fig_w,
-        (top.y1 - bottom.y0) * fig_h,
-        fig_h,
-    )
-
-
-# Panel with the height of one (density + dust mass) column of the dustysettle_limiters.py
-# figure and REF_WIDEN times its width. The figure is fitted to the panel and its labels
-# (no white margin, nothing cut).
-# The figure goes in a single column of the paper: the default font size is reduced by
-# REF_FONT_SCALE (ticks, axis labels); the legend, inset ticks and title box keep their
-# explicit sizes.
+# Single column figures of the paper (this one and the fused 4-panel figures below) share
+# the same format: figure width, box of the panels (in) and fonts reduced by REF_FONT_SCALE
+# (ticks, axis labels).
+FUSED_FIGSIZE = (3.4, 2.4)  # in
+# box of the panels in the figure (in): left, bottom, width, height
+FUSED_PANELS_BOX = (0.603, 0.393, 2.694, 1.601)
 REF_FONT_SCALE = 0.75
-REF_WIDEN = 1.2 * 1.2  # panel width relative to a limiters-figure column (height unchanged)
+
+# Reference panel: the width of the fused panels box and twice its height (one fused panel
+# height per half, j = 3 on top and j = 4 below), at the same position from the left so that
+# the figures align in the column. The height is fitted to the panel and its labels (no white
+# margin, nothing cut). The legend, inset ticks and title box keep their explicit sizes.
 REF_PAD = 0.02  # in, white margin around the labels
-_, _, panel_w, panel_h, _ = limiters_column_box()
-panel_w *= REF_WIDEN
+panel_w = FUSED_PANELS_BOX[2]
+panel_h = 2 * FUSED_PANELS_BOX[3]
 
 # first layout with 1 in around the panel, enough for any label
 with plt.rc_context({"font.size": plt.rcParams["font.size"] * REF_FONT_SCALE}):
@@ -751,11 +736,14 @@ with plt.rc_context({"font.size": plt.rcParams["font.size"] * REF_FONT_SCALE}):
     ax_ref.set_ylabel(r"$z$ [au]")
     plot_reference_panel(ax_ref, refs, rf"R={REF_R:.0f}au t={ref_time:.0f}yr")
 
-# measure how far the labels extend around the panel (inches), then fit the figure to it
+# measure how far the labels extend around the panel (inches), then fit the figure to it:
+# panel at the left offset of the fused figures and at least their width, height fitted
 fig_ref.canvas.draw()
 bb = fig_ref.get_tightbbox(fig_ref.canvas.get_renderer())  # inches
-pad_l = 1 - bb.x0 + REF_PAD
-pad_r = bb.x1 - (1 + panel_w) + REF_PAD
+pad_l = FUSED_PANELS_BOX[0]
+if 1 - bb.x0 + REF_PAD > pad_l:
+    print("warning: the reference panel labels do not fit in the left margin of the fused figures")
+pad_r = max(bb.x1 - (1 + panel_w) + REF_PAD, FUSED_FIGSIZE[0] - pad_l - panel_w)
 pad_b = 1 - bb.y0 + REF_PAD
 pad_t = bb.y1 - (1 + panel_h) + REF_PAD
 fig_ref_w = pad_l + panel_w + pad_r
@@ -780,9 +768,6 @@ FUSED_T_MIN = 0.1  # yr, lower limit of the log time axis (first record after t 
 FUSED_T_MAX = 100.0  # yr
 FUSED_XTICKS = [0.1, 1.0, 10.0, 100.0]  # labelled on the first panel only
 FUSED_LINEAR_XTICKS = [0, 50, 100]  # same, for a linear time axis
-FUSED_FIGSIZE = (3.4, 2.4)  # in, same width as thefig_ref.pdf
-# box of the 4 panels in the figure (in): left, bottom, width, height
-FUSED_PANELS_BOX = (0.603, 0.393, 2.694, 1.601)
 FUSED_LW = 0.8
 
 

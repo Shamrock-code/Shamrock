@@ -351,39 +351,42 @@ def plot_reference_panel(ax, refs, title):
             ),
         ))
 
-    # density curves (bottom axis)
-    leg_rho = ax.legend(
-        handles=[
-            Line2D([0], [0], linestyle="--", color=REF_TVA_COLOR, alpha=0.7, label="reference"),
-            Line2D([0], [0], linestyle="--", color=REF_MF_COLOR, label="multifluid (non-TVA)"),
-        ]
-        + [
-            Line2D([0], [0], label=label, **style)
-            for label, style in SIM_PROFILE_STYLES.items()
-        ],
+    # density curves (bottom axis) in 2 columns (stays above the curves), then the Stokes
+    # number (top axis, green label) as the last entry. The legend is filled column by column:
+    # invisible entries pad the columns if needed.
+    rho_handles = [
+        Line2D([0], [0], linestyle="--", color=REF_TVA_COLOR, alpha=0.7, label="reference"),
+        Line2D([0], [0], linestyle="--", color=REF_MF_COLOR, label="multifluid (non-TVA)"),
+    ] + [Line2D([0], [0], label=label, **style) for label, style in SIM_PROFILE_STYLES.items()]
+    st_handle = Line2D([0], [0], linestyle="-", color=REF_ST_COLOR, label="St (top axis)")
+
+    def blank():
+        return Line2D([0], [0], linestyle="none", label=" ")
+
+    # column 1: first half of the density entries; column 2: the rest, then St
+    n_rows = (len(rho_handles) + 2) // 2
+    col1 = rho_handles[:n_rows]
+    col2 = rho_handles[n_rows:] + [st_handle]
+    col1 += [blank() for _ in range(len(col2) - len(col1))]
+    col2 += [blank() for _ in range(len(col1) - len(col2))]
+    leg = ax.legend(
+        handles=col1 + col2,
         loc="upper left",
         fontsize=5,
-        ncol=2,  # 3 rows: stays above the curves in the shorter panel
+        ncol=2,
         labelspacing=0.3,
         handlelength=1.6,
         handletextpad=0.5,
         columnspacing=0.8,
         borderpad=0.4,
     )
-    ax.add_artist(leg_rho)
-    # Stokes number (top axis) in its own box, right-aligned under the j = 3 species box
-    ax.figure.canvas.draw()
-    box = species_boxes[0].get_bbox_patch().get_window_extent()
-    box_ax = ax.transAxes.inverted().transform(box)
-    leg_st = ax.legend(
-        handles=[Line2D([0], [0], linestyle="-", color=REF_ST_COLOR, label="St (top axis)")],
-        loc="upper right",
-        bbox_to_anchor=(box_ax[1, 0], box_ax[0, 1] - 0.01),
-        borderaxespad=0.0,
-        fontsize=5,
-    )
-    for text in leg_st.get_texts():
-        text.set_color(REF_ST_COLOR)
+    # the blank entries are short gaps, not full lines
+    for text in leg.get_texts():
+        if text.get_text() == " ":
+            text.set_fontsize(2)
+    for text in leg.get_texts():
+        if text.get_text() == "St (top axis)":
+            text.set_color(REF_ST_COLOR)
 
 
 def set_z_axis(ax, z_half=Z_TICKS[-1], step=Z_TICKS[1] - Z_TICKS[0]):

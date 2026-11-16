@@ -12,6 +12,8 @@
 
 \definecolor{newc}{RGB}{30,140,60}
 \definecolor{newfill}{RGB}{225,245,228}
+\definecolor{modc}{RGB}{225,120,0}
+\definecolor{modfill}{RGB}{255,238,215}
 \definecolor{remc}{RGB}{190,40,40}
 \definecolor{remfill}{RGB}{250,228,228}
 \definecolor{syncfill}{RGB}{225,235,250}
@@ -32,18 +34,22 @@
     % anything added by the change
     new/.style={draw=newc, dashed, very thick, fill=newfill},
     % existing thing whose behaviour or interface is changed
-    modified/.style={draw=newc, solid, very thick},
+    modified/.style={draw=modc, solid, very thick, fill=modfill},
     % anything removed by the change
     removed/.style={draw=remc, dashed, very thick, fill=remfill, text=gray!70!black},
     % execution sequence boxes
     seq/.style={draw, fill=nodefill, minimum width=27mm, minimum height=7mm,
       font=\sffamily\scriptsize\ttfamily},
-    ro/.style={->, thick, gray!70!black},
-    rw/.style={<->, thick, gray!70!black},
-    ronew/.style={->, thick, newc},
-    rwnew/.style={<->, thick, newc},
-    roremoved/.style={->, thick, remc, dashed},
-    rwremoved/.style={<->, thick, remc, dashed},
+    % connections: colour (+ dashes) = diff state, line width = access
+    % (read only: thin, read / write: thick)
+    ro/.style={->, semithick, gray!70!black},
+    rw/.style={<->, line width=2.2pt, gray!70!black},
+    ronew/.style={->, semithick, newc, dash pattern=on 4pt off 2pt},
+    rwnew/.style={<->, line width=2.2pt, newc, dash pattern=on 4pt off 2pt},
+    romodified/.style={->, semithick, modc},
+    rwmodified/.style={<->, line width=2.2pt, modc},
+    roremoved/.style={->, semithick, remc, dash pattern=on 4pt off 2pt},
+    rwremoved/.style={<->, line width=2.2pt, remc, dash pattern=on 4pt off 2pt},
     flow/.style={->, thick},
   ]
 
@@ -57,13 +63,13 @@
   % --- top level of "sink accretion"
   \node[seq] (t1) at (0, 6.4) {set\_has\_sinks};
   \node[seq, modified, align=center, minimum height=9mm] (t2) at (8, 6.4)
-    {if\_has\_sinks\\[-1pt]{\rmfamily\color{newc}\texttt{OperationSequence} $\to$
+    {if\_has\_sinks\\[-1pt]{\rmfamily\color{modc}\texttt{OperationSequence} $\to$
      \texttt{OperationIf}}};
   \node[gedge, minimum width=22mm] (has_sinks) at (4, 7.5) {has\_sinks};
   \draw[flow] (t1) -- (t2);
   \draw[rw, rounded corners=6pt] (t1.north) |- (has_sinks.west);
   \draw[ronew, rounded corners=6pt] (has_sinks.east) -| (t2.north);
-  \node[font=\sffamily\scriptsize, text=newc, anchor=west, align=left]
+  \node[font=\sffamily\scriptsize, text=modc, anchor=west, align=left]
     at ($(t2.east)+(2mm,0)$)
     {was an \texttt{OperationSequence} holding the steps below;\\
      now an \texttt{OperationIf} on the existing \texttt{has\_sinks} edge (new connection),\\
@@ -103,7 +109,7 @@
   \node[font=\sffamily\scriptsize, text=newc, anchor=north, align=center] (n2)
     at ($(s15.south)!0.5!(s16.south)+(0,-1mm)$)
     {new \texttt{NodeFreeAlloc} on \texttt{hpart} / \texttt{s\_j}};
-  \node[font=\sffamily\scriptsize, text=newc, anchor=north, align=center] (n3)
+  \node[font=\sffamily\scriptsize, text=modc, anchor=north, align=center] (n3)
     at ($(s10.south)+(0,-1mm)$)
     {also accretes the dust mass};
 
@@ -133,9 +139,9 @@
   \node[gnode, modified, minimum height=16mm] (qty) at (11, -5.6)
     {SinkParticles\\AccreteQuantities\\[-1pt]
     {\scriptsize\ttfamily accrete\_quantities}\\[2pt]
-    {\scriptsize\color{newc} ctor: \texttt{(ndust, Kernel::hfactd)}}\\[-2pt]
-    {\scriptsize\color{newc} throws if \texttt{ndust}$\neq$0 and \texttt{hfactd}=0}\\[-2pt]
-    {\scriptsize\color{newc} adds $m\,S_j^2/\rho(h)$ per accreted particle}};
+    {\scriptsize\color{modc} ctor: \texttt{(ndust, Kernel::hfactd)}}\\[-2pt]
+    {\scriptsize\color{modc} throws if \texttt{ndust}$\neq$0 and \texttt{hfactd}=0}\\[-2pt]
+    {\scriptsize\color{modc} adds $m\,S_j^2/\rho(h)$ per accreted particle}};
   \node[gnode] (evict) at (11, -11.2) {SinkParticles\\EvictAccretedParticles\\[-1pt]
     {\scriptsize\ttfamily evict\_accreted\_particles}};
 
@@ -151,7 +157,7 @@
   \node[gedge] (pdat)        at (2.5, -11.2) {scheduler\_patchdata};
 
   % --- solver graph edge produced by a node of the figure (between the columns)
-  \node[gedge, fill=yellow!15] (acc_table) at (16.5, -9.4) {sink\_accretion\_table};
+  \node[gedge] (acc_table) at (16.5, -9.4) {sink\_accretion\_table};
 
   % --- scheduler synchronized_data edges (right column)
   \node[sedge] (sink_pos)  at (22, -0.6)  {sink\_pos};
@@ -176,7 +182,7 @@
         {\footnotesize\mdseries\texttt{sink\_accreted\_dust\_mass} only with monofluid TVA)}}]
       (gs) {};
   \end{scope}
-  \node[font=\sffamily\scriptsize, text=newc, anchor=north, align=left]
+  \node[font=\sffamily\scriptsize, text=gray!70!black, anchor=north, align=left]
     at ($(gs.south)+(3mm,-1mm)$)
     {outside the graph: zero padded to $n_{\rm sink}\times n_{\rm dust}$\\
      by \texttt{Model::resize\_sink\_accreted\_dust\_mass}\\
@@ -227,7 +233,8 @@
       at (12,0) {modified};
     \draw[ro] (15.3,0) -- ++(1.2,0) node[right, text=black] {read only};
     \draw[rw] (18.6,0) -- ++(1.2,0) node[right, text=black] {read / write};
-    \draw[ronew] (22.2,0) -- ++(1.2,0) node[right, text=black] {new connection};
+    \draw[ronew] (22.2,0) -- ++(1.2,0) node[right, text=black] {new read only};
+    \draw[rwnew] (26.2,0) -- ++(1.2,0) node[right, text=black] {new read / write};
   \end{scope}
 
 \end{tikzpicture}

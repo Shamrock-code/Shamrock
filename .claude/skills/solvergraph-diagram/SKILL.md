@@ -78,22 +78,26 @@ nodes may be left out if the panel title says so.
   `seq` boxes chained with `flow` arrows, at most ~8 per row, rows joined
   by the wrap-around arrow. An `OperationIf` body gets a `fit` frame around
   its steps (dashed green if new) and its condition edge as a `gedge`
-  above the If step. Small `text=newc` notes say when new steps run and
-  what modified ones now do; state a build-time flag once (e.g. in the
+  above the If step. Small notes (green `newc` / orange `modc`) say when new
+  steps run and what modified ones now do; state a build-time flag once (e.g. in the
   frame label); mid-row, use one footnote under the sequence instead.
 - **(b) data flow**: `gnode` compute nodes in the middle, in execution
   order; solver_graph edges on the left and `sedge` sync edges on the
   right, each column in a `fit` frame; edges produced by a drawn node sit
-  between the columns. `ro`/`rw` existing, `ronew`/`rwnew` new,
-  `roremoved`/`rwremoved` removed connections. Ctor/behaviour changes go
-  as small green lines inside the node; give shapes when useful
+  between the columns. Connections: `ro`/`rw` unchanged, `ronew`/`rwnew`,
+  `romodified`/`rwmodified` (e.g. read only became read/write),
+  `roremoved`/`rwremoved`. Ctor/behaviour changes go as small orange
+  lines inside the node; give shapes when useful
   (`$N\times n_{\rm dust}$`). Skip (b) if no connection changes.
 - **other panels** when the change lives elsewhere: `evolve_once` steps
   around `solver_sequence.evaluate()`, or the config choosing which nodes
   are built.
-- **styles**: `new` dashed green, `modified` solid green, `removed` dashed
-  red with grey text. The legend lists exactly the styles used, including
-  any you add.
+- **styles**: colour (and dashes) gives the diff state, line width the
+  access. `new` green dashed, `modified` orange solid, `removed` red
+  dashed with grey text, unchanged grey; read only thin (`semithick`),
+  read/write thick (`line width=2.2pt`). Notes take the colour of what
+  they describe; non-graph notes are grey. The legend lists exactly the
+  styles used, including any you add (one per access for each state).
 - **size**: past ~25 boxes, split into several pages (one `tikzpicture`
   per page of the `standalone` document) rather than shrinking text.
 

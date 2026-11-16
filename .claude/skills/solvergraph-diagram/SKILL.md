@@ -109,8 +109,8 @@ out and cross arrows, never boxes. Pitfalls: escape `_` as `\_`; brace
 command -v pdflatex   # if missing (needs root, else ask the user):
 # apt-get install -y --no-install-recommends texlive-latex-base texlive-pictures texlive-latex-extra
 cd <outdir> && pdflatex -interaction=nonstopmode <topic>_solvergraph.tex
-pdftoppm -png -r 70 <topic>_solvergraph.pdf <topic>_preview   # -> <topic>_preview-1.png
-# 70 dpi can mislead: zoom with pdftoppm -png -r 160 -x X -y Y -W W -H H ...
+pdftoppm -png -r 120 <topic>_solvergraph.pdf <topic>_preview   # -> <topic>_preview-1.png
+# zoom on small details with pdftoppm -png -r 200 -x X -y Y -W W -H H ...
 ```
 
 Fix every LaTeX error (`grep -n '^!' <topic>_solvergraph.log`). Then

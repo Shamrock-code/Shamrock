@@ -1,0 +1,195 @@
+% Worked example / template for the solvergraph-diagram skill.
+% SPH solver graph, "sink accretion" section: changes for per species sink accreted dust mass
+% tracking (modifies the existing SinkParticlesAccreteQuantities node).
+% Keep the preamble, styles and legend; replace (a) and (b) with the change being drawn.
+% The removed/roremoved/rwremoved styles are unused here: use them (and add them to the legend)
+% only when the change removes something.
+% Build: pdflatex -interaction=nonstopmode <topic>_solvergraph.tex
+\documentclass[tikz,border=8pt]{standalone}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+
+\definecolor{newc}{RGB}{30,140,60}
+\definecolor{newfill}{RGB}{225,245,228}
+\definecolor{remc}{RGB}{190,40,40}
+\definecolor{remfill}{RGB}{250,228,228}
+\definecolor{syncfill}{RGB}{225,235,250}
+\definecolor{nodefill}{RGB}{245,245,245}
+
+\begin{document}
+\begin{tikzpicture}[
+    font=\sffamily\small,
+    >={Stealth[length=2.4mm]},
+    % solver graph nodes
+    gnode/.style={draw, thick, fill=nodefill, minimum width=36mm, minimum height=9mm,
+      align=center},
+    % solver graph edges (data)
+    gedge/.style={draw, rounded corners=4pt, fill=white, minimum width=30mm,
+      minimum height=6mm, font=\sffamily\footnotesize\ttfamily},
+    % scheduler synchronized_data edges
+    sedge/.style={gedge, fill=syncfill},
+    % anything added by the change
+    new/.style={draw=newc, dashed, very thick, fill=newfill},
+    % existing thing whose behaviour or interface is changed
+    modified/.style={draw=newc, solid, very thick},
+    % anything removed by the change
+    removed/.style={draw=remc, dashed, very thick, fill=remfill, text=gray!70!black},
+    % execution sequence boxes
+    seq/.style={draw, fill=nodefill, minimum width=27mm, minimum height=7mm,
+      font=\sffamily\scriptsize\ttfamily},
+    ro/.style={->, thick, gray!70!black},
+    rw/.style={<->, thick, gray!70!black},
+    ronew/.style={->, thick, newc},
+    rwnew/.style={<->, thick, newc},
+    roremoved/.style={->, thick, remc, dashed},
+    rwremoved/.style={<->, thick, remc, dashed},
+    flow/.style={->, thick},
+  ]
+
+  % ===================================================================================
+  % (a) execution order of the "if_has_sinks" sequence
+  % ===================================================================================
+  \node[font=\sffamily\bfseries\large, anchor=west] (titleA) at (-2, 4.6)
+    {(a) \texttt{sink accretion} = \{\texttt{set\_has\_sinks},
+     \texttt{if\_has\_sinks}\}, \texttt{if\_has\_sinks} =
+     \texttt{OperationIf(has\_sinks)}: execution order of \texttt{sink accretion body}};
+
+  \begin{scope}[node distance=4mm]
+    \node[seq] (s1) at (0, 3.4) {set\_gpart\_mass};
+    \node[seq, right=of s1] (s2) {set\_scheduler\_patchdata};
+    \node[seq, right=of s2] (s3) {attach\_part\_counts};
+    \node[seq, right=of s3] (s4) {attach\_xyz};
+    \node[seq, right=of s4] (s5) {attach\_vxyz};
+    \node[seq, right=of s5] (s6) {attach\_axyz};
+    \node[seq, new, right=of s6] (s7) {attach\_hpart};
+    \node[seq, new, right=of s7] (s8) {attach\_s\_j};
+
+    \node[seq, fill=white, very thick] (s9) at (0, 2.2) {flag\_accrete\_hard};
+    \node[seq, fill=newfill, modified, right=of s9] (s10) {accrete\_quantities};
+    \node[seq, right=of s10, fill=white, very thick] (s11) {evict\_accreted\_particles};
+    \node[seq, right=of s11] (s12) {free\_xyz\_refs};
+    \node[seq, right=of s12] (s13) {free\_vxyz\_refs};
+    \node[seq, right=of s13] (s14) {free\_axyz\_refs};
+    \node[seq, new, right=of s14] (s15) {free\_hpart\_refs\_sink};
+    \node[seq, new, right=of s15] (s16) {free\_s\_j\_refs\_sink};
+  \end{scope}
+
+  \foreach \a/\b in {s1/s2,s2/s3,s3/s4,s4/s5,s5/s6,s6/s7,s7/s8,
+                     s9/s10,s10/s11,s11/s12,s12/s13,s13/s14,s14/s15,s15/s16}
+    \draw[flow] (\a) -- (\b);
+  % wrap-around arrow from the end of a row to the start of the next one
+  \draw[flow, rounded corners=6pt] (s8.east) -- ++(3mm,0) |- ($(s8.south)!0.5!(s9.north)$)
+    -| ($(s9.west)+(-3mm,0)$) -- (s9.west);
+
+  \node[font=\sffamily\scriptsize, text=newc, anchor=south, align=center]
+    at ($(s7.north)!0.5!(s8.north)+(0,1mm)$)
+    {only when \texttt{has\_s\_j\_field} (monofluid TVA)};
+  \node[font=\sffamily\scriptsize, text=newc, anchor=north, align=center]
+    at ($(s15.south)!0.5!(s16.south)+(0,-1mm)$)
+    {only when \texttt{has\_s\_j\_field} (monofluid TVA)};
+  \node[font=\sffamily\scriptsize, text=newc, anchor=north, align=center]
+    at ($(s10.south)+(0,-1mm)$)
+    {also accretes the dust mass};
+
+  % ===================================================================================
+  % (b) data flow of the accretion compute nodes
+  % ===================================================================================
+  \node[font=\sffamily\bfseries\large, anchor=west] (titleB) at (-2, 1.0)
+    {(b) Data flow of the accretion nodes};
+
+  % --- compute nodes (middle column, in execution order)
+  \node[gnode] (flag) at (11, -1.0) {SinkParticles\\FlagAccreteHard\\[-1pt]
+    {\scriptsize\ttfamily flag\_accrete\_hard}};
+  \node[gnode, modified, minimum height=16mm] (qty) at (11, -5.6)
+    {SinkParticles\\AccreteQuantities\\[-1pt]
+    {\scriptsize\ttfamily accrete\_quantities}\\[2pt]
+    {\scriptsize\color{newc} ctor: \texttt{(ndust, Kernel::hfactd)}}\\[-2pt]
+    {\scriptsize\color{newc} throws if \texttt{ndust}$\neq$0 and \texttt{hfactd}=0}};
+  \node[gnode] (evict) at (11, -11.2) {SinkParticles\\EvictAccretedParticles\\[-1pt]
+    {\scriptsize\ttfamily evict\_accreted\_particles}};
+
+  % --- solver graph edges, inputs (left column)
+  \node[gedge] (part_counts) at (2.5, -0.6) {part\_counts};
+  \node[gedge] (xyz)         at (2.5, -1.6) {xyz};
+  \node[gedge] (gpart_mass)  at (2.5, -3.4) {gpart\_mass};
+  \node[gedge] (vxyz)        at (2.5, -4.4) {vxyz};
+  \node[gedge] (axyz)        at (2.5, -5.4) {axyz};
+  \node[gedge, new] (hpart)  at (2.5, -6.8) {hpart {\rm\scriptsize(optional)}};
+  \node[gedge, new] (s_j)    at (2.5, -7.8)
+    {s\_j {\rm\scriptsize($N\times n_{\rm dust}$, optional)}};
+  \node[gedge] (pdat)        at (2.5, -11.2) {scheduler\_patchdata};
+
+  % --- solver graph edge produced by a node of the figure (between the columns)
+  \node[gedge, fill=yellow!15] (acc_table) at (16.5, -9.4) {sink\_accretion\_table};
+
+  % --- scheduler synchronized_data edges (right column)
+  \node[sedge] (sink_pos)  at (22, -0.6)  {sink\_pos};
+  \node[sedge] (sink_racc) at (22, -1.6)  {sink\_accretion\_radius};
+  \node[sedge] (dt)        at (22, -3.0)  {dt};
+  \node[sedge] (sink_vel)  at (22, -4.0)  {sink\_vel};
+  \node[sedge] (sink_acc)  at (22, -5.0)  {sink\_acc\_sph};
+  \node[sedge] (sink_l)    at (22, -6.0)  {sink\_angular\_momentum};
+  \node[sedge] (sink_mass) at (22, -7.0)  {sink\_mass};
+  \node[sedge, new] (sink_dust_mass) at (22, -8.2)
+    {sink\_accreted\_dust\_mass {\rm\scriptsize($n_{\rm sink}\times n_{\rm dust}$, optional)}};
+
+  % --- group frames
+  \begin{scope}[on background layer]
+    \node[draw=gray, rounded corners, inner sep=6pt, fit=(part_counts)(pdat)(s_j),
+      label={[font=\sffamily\bfseries]above:solver\_graph edges}] (gl) {};
+    \node[draw=blue!50!black, rounded corners, inner sep=6pt, fill=syncfill!40,
+      fit=(sink_pos)(sink_dust_mass),
+      label={[font=\sffamily\bfseries, align=center]above:%
+        \texttt{scheduler().synchronized\_data}\\[-2pt]%
+        {\footnotesize\mdseries(ensured at the top of \texttt{init\_solver\_graph},}\\[-3pt]%
+        {\footnotesize\mdseries\texttt{sink\_accreted\_dust\_mass} only with monofluid TVA)}}]
+      (gs) {};
+  \end{scope}
+
+  % --- flag_accrete_hard
+  \draw[ro] (part_counts.east) -- (flag.west |- part_counts.east);
+  \draw[ro] (xyz.east) -- (flag.west |- xyz.east);
+  \draw[ro] (sink_pos.west) -- (flag.east |- sink_pos.west);
+  \draw[ro] (sink_racc.west) -- (flag.east |- sink_racc.west);
+  \draw[rw, rounded corners=6pt] (flag.east) ++(0,-0.3) -| ([xshift=-6mm]acc_table.north);
+
+  % --- accrete_quantities (existing connections)
+  \draw[ro] (part_counts.east) -- (qty.west);
+  \draw[ro] (xyz.east) -- (qty.west);
+  \draw[ro] (gpart_mass.east) -- (qty.west);
+  \draw[ro] (vxyz.east) -- (qty.west);
+  \draw[ro] (axyz.east) -- (qty.west);
+  \draw[ro] (dt.west) -- (qty.east);
+  \foreach \e in {sink_pos, sink_vel, sink_acc, sink_l, sink_mass}
+    \draw[rw] (qty.east) -- (\e.west);
+  \draw[rw, rounded corners=6pt] (qty.south east) ++(-0.4,0) |- ++(0,-0.35)
+    -| ([xshift=0mm]acc_table.north);
+
+  % --- accrete_quantities (new optional connections, wired only with monofluid TVA)
+  \draw[ronew] (hpart.east) -- (qty.south west);
+  \draw[ronew] (s_j.east) -- (qty.south west);
+  \draw[rwnew] (qty.south east) -- (sink_dust_mass.west);
+
+  % --- evict_accreted_particles
+  \draw[ro] (part_counts.east) -- (evict.north west);
+  \draw[ro, rounded corners=6pt] (acc_table.south) |- (evict.east);
+  \draw[rw] (pdat.east) -- (evict.west);
+
+  % ===================================================================================
+  % legend (drop unused entries; add removed / removed connection only when used:
+  %   \node[gedge, removed, minimum width=18mm, anchor=west] at (x,0) {removed};
+  %   \draw[roremoved] (x,0) -- ++(1.2,0) node[right, text=black] {removed connection};)
+  % ===================================================================================
+  \begin{scope}[shift={(-1.5,-13.4)}]
+    \node[gnode, minimum width=18mm, minimum height=6mm, anchor=west] (l1) at (0,0) {node};
+    \node[gedge, minimum width=18mm, anchor=west] (l2) at (3,0) {edge};
+    \node[sedge, minimum width=18mm, anchor=west] (l3) at (6,0) {sync edge};
+    \node[gedge, new, minimum width=18mm, anchor=west] (l4) at (9,0) {new};
+    \node[gnode, modified, minimum width=18mm, minimum height=6mm, anchor=west] (l5)
+      at (12,0) {modified};
+    \draw[ro] (15.3,0) -- ++(1.2,0) node[right, text=black] {read only};
+    \draw[rw] (18.6,0) -- ++(1.2,0) node[right, text=black] {read / write};
+    \draw[ronew] (22.2,0) -- ++(1.2,0) node[right, text=black] {new connection};
+  \end{scope}
+
+\end{tikzpicture}
+\end{document}

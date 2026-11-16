@@ -1,11 +1,10 @@
-% Worked example / template for the solvergraph-diagram skill: keep the preamble, styles, layout
-% patterns (top row + OperationIf condition + body frame, columns of (b)) and legend; replace the
+% Worked example / template for the solvergraph-diagram skill (upstream PR 2739: per species
+% sink accreted dust mass tracking with monofluid TVA dust, if_has_sinks turned into an
+% OperationIf). Keep the preamble, the \tikzset styles, the layout patterns (graph-change note,
+% top row + OperationIf condition + body frame, columns of (b)) and the legend; replace the
 % content. Names, notes and new/modified marks below are specific to this change.
-% The removed/roremoved/rwremoved styles are unused here: use them (and add them to the legend)
-% only when the change removes something.
-% SPH solver graph, "sink accretion" section: changes of branch
-% claude/feat/sink-accreted-dust-mass (per species sink accreted dust mass tracking,
-% if_has_sinks turned into an OperationIf).
+% Styles are in \tikzset so that several tikzpicture pages (one page each) can share them.
+% Legend: list exactly the styles used (add removed / modified connection entries when used).
 % Build: pdflatex -interaction=nonstopmode <topic>_solvergraph.tex
 \documentclass[tikz,border=8pt]{standalone}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
@@ -19,10 +18,8 @@
 \definecolor{syncfill}{RGB}{225,235,250}
 \definecolor{nodefill}{RGB}{245,245,245}
 
-\begin{document}
-\begin{tikzpicture}[
-    font=\sffamily\small,
-    >={Stealth[length=2.4mm]},
+\tikzset{
+    every picture/.style={font=\sffamily\small, >={Stealth[length=2.4mm]}},
     % solver graph nodes
     gnode/.style={draw, thick, fill=nodefill, minimum width=36mm, minimum height=9mm,
       align=center},
@@ -38,7 +35,7 @@
     % anything removed by the change
     removed/.style={draw=remc, dashed, very thick, fill=remfill, text=gray!70!black},
     % execution sequence boxes
-    seq/.style={draw, fill=nodefill, minimum width=27mm, minimum height=7mm,
+    seq/.style={draw, fill=nodefill, minimum width=27mm, minimum height=7mm, align=center,
       font=\sffamily\scriptsize\ttfamily},
     % connections: colour (+ dashes) = diff state, line width = access
     % (read only: thin, read / write: thick)
@@ -51,13 +48,20 @@
     roremoved/.style={->, semithick, remc, dash pattern=on 4pt off 2pt},
     rwremoved/.style={<->, line width=2.2pt, remc, dash pattern=on 4pt off 2pt},
     flow/.style={->, thick},
-  ]
+}
+
+\begin{document}
+\begin{tikzpicture}
 
   % ===================================================================================
   % (a) execution order of the "sink accretion" sequence
   % ===================================================================================
-  \node[font=\sffamily\bfseries\large, anchor=west] (titleA) at (-2, 10.0)
-    {(a) \texttt{sink accretion} (\texttt{OperationSequence}): execution order};
+  \node[font=\sffamily\bfseries\large, anchor=west] (titleA) at (-2, 10.5)
+    {(a) \texttt{sink accretion} (\texttt{OperationSequence}, first step of \texttt{time\_step}): execution order};
+  \node[font=\sffamily\scriptsize, anchor=north west, align=left] (graphnote)
+    at ($(titleA.south west)+(0,-1mm)$)
+    {The graph itself changes: new nodes, steps, an edge and connections,
+     and \texttt{if\_has\_sinks} changes kind. Nothing is removed.};
 
   \begin{scope}[yshift=14mm]
   % --- top level of "sink accretion"
@@ -131,19 +135,27 @@
   % (b) data flow of the accretion compute nodes
   % ===================================================================================
   \node[font=\sffamily\bfseries\large, anchor=west] (titleB) at (-2, 0.9)
-    {(b) Data flow of the accretion nodes};
+    {(b) Data flow of the accretion nodes (\texttt{attach\_*} and unchanged \texttt{free\_*} nodes not drawn)};
 
   % --- compute nodes (middle column, in execution order)
   \node[gnode] (flag) at (11, -1.0) {SinkParticles\\FlagAccreteHard\\[-1pt]
     {\scriptsize\ttfamily flag\_accrete\_hard}};
-  \node[gnode, modified, minimum height=16mm] (qty) at (11, -5.6)
+  \node[gnode, modified, minimum height=19mm] (qty) at (11, -5.6)
     {SinkParticles\\AccreteQuantities\\[-1pt]
     {\scriptsize\ttfamily accrete\_quantities}\\[2pt]
     {\scriptsize\color{modc} ctor: \texttt{(ndust, Kernel::hfactd)}}\\[-2pt]
     {\scriptsize\color{modc} throws if \texttt{ndust}$\neq$0 and \texttt{hfactd}=0}\\[-2pt]
-    {\scriptsize\color{modc} adds $m\,S_j^2/\rho(h)$ per accreted particle}};
+    {\scriptsize\color{modc} adds $m\,S_j^2/\rho(h)$ per accreted particle}\\[-2pt]
+    {\scriptsize\color{modc} zero pads \texttt{sink\_accreted\_dust\_mass} first}};
   \node[gnode] (evict) at (11, -11.2) {SinkParticles\\EvictAccretedParticles\\[-1pt]
     {\scriptsize\ttfamily evict\_accreted\_particles}};
+
+  \node[gnode, new, minimum width=30mm] (free_h) at (9.0, -13.4) {NodeFreeAlloc\\[-1pt]
+    {\scriptsize\ttfamily free\_hpart\_refs\_sink}};
+  \node[gnode, new, minimum width=30mm] (free_sj) at (13.4, -13.4) {NodeFreeAlloc\\[-1pt]
+    {\scriptsize\ttfamily free\_s\_j\_refs\_sink}};
+  \node[font=\sffamily\scriptsize, text=newc, anchor=west, align=left]
+    at ($(free_sj.east)+(2mm,0)$) {only with monofluid TVA\\(build time)};
 
   % --- solver graph edges, inputs (left column)
   \node[gedge] (part_counts) at (2.5, -0.6) {part\_counts};
@@ -216,6 +228,11 @@
   \draw[rwnew] (qty.south east) -- (sink_dust_mass.west)
     node[pos=0.8, below, sloped, font=\sffamily\scriptsize, text=newc] {optional};
 
+  % --- new free nodes (rw on the edge they free)
+  \draw[rwnew, rounded corners=6pt] (hpart.east) -- ++(1.0,0) |- (free_h.west);
+  \draw[rwnew, rounded corners=6pt] (s_j.east) -- ++(1.6,0) |- ($(free_sj.south)+(0,-0.6)$)
+    -- (free_sj.south);
+
   % --- evict_accreted_particles
   \draw[ro] (part_counts.east) -- (evict.north west);
   \draw[ro, rounded corners=6pt] (acc_table.south) |- (evict.east);
@@ -224,7 +241,7 @@
   % ===================================================================================
   % legend
   % ===================================================================================
-  \begin{scope}[shift={(-1.5,-13.6)}]
+  \begin{scope}[shift={(-1.5,-15.8)}]
     \node[gnode, minimum width=18mm, minimum height=6mm, anchor=west] (l1) at (0,0) {node};
     \node[gedge, minimum width=18mm, anchor=west] (l2) at (3,0) {edge};
     \node[sedge, minimum width=18mm, anchor=west] (l3) at (6,0) {sync edge};
@@ -235,6 +252,8 @@
     \draw[rw] (18.6,0) -- ++(1.2,0) node[right, text=black] {read / write};
     \draw[ronew] (22.2,0) -- ++(1.2,0) node[right, text=black] {new read only};
     \draw[rwnew] (26.2,0) -- ++(1.2,0) node[right, text=black] {new read / write};
+    \node[seq, minimum width=18mm, anchor=west] (l6) at (0,-0.9) {step};
+    \draw[flow] (3,-0.9) -- ++(1.2,0) node[right, text=black] {execution order};
   \end{scope}
 
 \end{tikzpicture}

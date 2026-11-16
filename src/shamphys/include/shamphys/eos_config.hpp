@@ -111,6 +111,37 @@ namespace shamphys {
     }
 
     /**
+     * @brief Configuration struct for the barotropic equation of state
+     *
+     * @tparam Tscal Scalar type
+     *
+     * The equation of state is given by:
+     * \f$ P = c_{s,0}^2 \rho \left[1 + (\rho / \rho_0)^{\gamma_0 - 1}\right] \f$,
+     * see `shamphys::EOS_Barotropic`.
+     */
+    template<class Tscal>
+    struct EOS_Config_Barotropic {
+        Tscal cs0;
+        Tscal rho0;
+        Tscal gamma0;
+    };
+
+    /**
+     * @brief Equal operator for the EOS_Config_Barotropic struct
+     *
+     * @tparam Tscal Scalar type
+     * @param lhs First EOS_Config_Barotropic struct to compare
+     * @param rhs Second EOS_Config_Barotropic struct to compare
+     *
+     * @return true if the two structs have the same cs0, rho0 and gamma0 values
+     */
+    template<class Tscal>
+    inline bool operator==(
+        const EOS_Config_Barotropic<Tscal> &lhs, const EOS_Config_Barotropic<Tscal> &rhs) {
+        return (lhs.cs0 == rhs.cs0) && (lhs.rho0 == rhs.rho0) && (lhs.gamma0 == rhs.gamma0);
+    }
+
+    /**
      * @brief Configuration struct for Fermi equation of state
      *
      * @tparam Tscal Scalar type

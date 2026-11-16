@@ -12,8 +12,11 @@ description: >-
 
 Output: `<short_topic>_solvergraph.{tex,pdf,txt}` in the scratchpad (never
 committed). Start from `template.tex` next to this file: a complete worked
-example (sink accreted dust mass tracking). Keep its preamble, styles,
-colours and legend; replace the body.
+example (sink accreted dust mass tracking, plus `if_has_sinks` turned from
+an `OperationSequence` into an `OperationIf`). Keep its preamble, styles,
+colours and legend; replace the body. The template's nodes, edges and notes
+are an illustration only: never reuse a name or note without checking it in
+the diff (similar features can be wired differently).
 
 ## 1. Get the change
 
@@ -35,7 +38,11 @@ The graph is built in `init_solver_graph()` (`src/shammodels/<model>/src/Solver.
   `.set_edges(...)`. The node class's `NODE_EDGES(X_RO, X_RW[, X_RO_OPTIONAL, X_RW_OPTIONAL])`
   (see `shamsolvergraph/node/INode.hpp`) gives read-only (`->`) vs
   read/write (`<->`) and optional edges. Check the `.set_edges` call too:
-  optional edges may only be wired under some condition.
+  optional edges may only be wired under some condition. Some nodes
+  (`NodeSetEdge`, `OperationIf`, ...) set their edges by hand
+  (`__internal_set_*_edges`): read the class. Edges made locally
+  (`IDataEdge::make_shared(...)`) and passed straight to `set_edges` are
+  never registered: draw them as edges labelled `(local edge)`.
 - execution order: `OperationSequence(name, {nodes...})`; conditional
   steps: `OperationIf(name, body)` gated on an `IDataEdge<bool>`, or C++
   `if` around `push_back` of a node (build-time condition: say which).
@@ -43,20 +50,35 @@ The graph is built in `init_solver_graph()` (`src/shammodels/<model>/src/Solver.
   `IDataEdge`, ... (left column).
 - scheduler synchronized data edges: `sched.synchronized_data`, created by
   the `ensure_sync_edge` lambda at the top of `init_solver_graph` (right
-  column; serialized in dumps).
+  column; serialized in dumps). Code outside `init_solver_graph` touching
+  them (e.g. resizing in `Model.hpp` on `add_sink` or dump load) is not a
+  graph change: mention it in a note under the sync frame.
 
 Classify each sequence step, node, edge and connection as **new**,
 **modified** (same name, changed interface/ctor/behaviour/edges) or
-**removed**, and write the list down before drawing. Draw only the
+**removed**, and write the list down before drawing. An existing edge
+that gains a connection is not new: only the arrow is (`ronew`). An
+existing node newly pushed into a sequence is a new step in (a) but a
+plain node in (b). `(optional)` goes on the arrow for an
+`EXPAND_NODE_EDGES_OPTIONAL` connection, on the box only if the edge
+itself is registered conditionally. Draw only the
 sequence(s) and nodes the change touches, plus the unchanged neighbours
 needed to read them (e.g. the node producing an edge a new node reads).
+Big unchanged nodes may be dropped if the panel title says so.
 
 ## 3. Draw (copy the template's structure)
 
 - **(a) execution order**: title names the sequence and its enclosing
   `OperationIf`/sequence; `seq` boxes chained with `flow` arrows, at most
   ~8 per row, rows joined with the template's wrap-around arrow. Small
-  `text=newc` notes say when new steps run and what modified steps now do.
+  `text=newc` notes say when new steps run and what modified steps now do;
+  if new steps sit mid-row (notes would hit the wrap arrows), use one
+  footnote under the sequence instead. A body sequence run by an
+  `OperationIf` gets a frame around its steps (`fit`, dashed green if new),
+  the `IDataEdge<bool>` condition as a `gedge` above the If step (condition
+edges go in (a), not (b)). State a build-time flag and its meaning once
+(e.g. in the frame label) rather than in every note. A change of
+  kind (e.g. Sequence -> If) is `modified`, with a note saying before/after.
 - **(b) data flow**: `gnode` compute nodes in a middle column in execution
   order; `gedge` inputs on the left grouped in a `fit` frame; `sedge`
   sync edges on the right in a `syncfill` frame. Edges produced by a node
@@ -70,17 +92,25 @@ needed to read them (e.g. the node producing an edge a new node reads).
   red, grey text) for removed ones. Drop legend entries the
   figure does not use; add `removed` ones only if something is removed.
 - Place rows so each input sits level with the first node reading it;
-  arrows from one edge to several nodes may fan out, but avoid arrows
-  crossing boxes. Escape `_` as `\_` everywhere.
+  arrows from one edge to several nodes may fan out; arrows may cross
+  arrows but not boxes. Escape `_` as `\_` everywhere. Brace `fit={...}`
+  when it holds `$(...)$` coordinates with commas. `gedge` labels wider
+  than 30mm stick out of their frame: keep them short, move detail into
+  the node's notes. Include notes in `fit` frames. If (a) grows, shift it
+  in a `yshift` scope rather than moving everything in (b).
 
 ## 4. Build, look, fix
 
 ```bash
 command -v pdflatex || apt-get install -y --no-install-recommends \
   texlive-latex-base texlive-pictures texlive-latex-extra
-cd <scratchpad> && pdflatex -interaction=nonstopmode <topic>_solvergraph.tex
+cd <outdir> && pdflatex -interaction=nonstopmode <topic>_solvergraph.tex
 pdftoppm -png -r 70 <topic>_solvergraph.pdf <topic>_preview
+# 70 dpi can mislead: zoom on details with pdftoppm -png -r 160 -x X -y Y -W W -H H ...
 ```
+
+`<outdir>` is the scratchpad unless the user names one; delete the
+`.aux`/`.log`/preview PNGs once done.
 
 Fix every LaTeX error (check the `.log`, `grep -n '^!'`). Then **Read the
 PNG** and fix overlapping boxes, labels crossing arrows or boxes, boxes

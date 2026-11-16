@@ -981,7 +981,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
         // the "time_step" sequence (set_gpart_mass, attach fields to scheduler, ...)
         // has not run yet at this stage of the timestep
-        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> if_has_sinks_sequence{
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> accretion_sequence{
             solver_graph.get_node_ptr_base("set_gpart_mass"),
             solver_graph.get_node_ptr_base("set_scheduler_patchdata"),
             solver_graph.get_node_ptr_base("attach_part_counts"),
@@ -989,27 +989,32 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             solver_graph.get_node_ptr_base("attach_vxyz"),
             solver_graph.get_node_ptr_base("attach_axyz"),
         };
-        if_has_sinks_sequence.insert(
-            if_has_sinks_sequence.end(),
+        accretion_sequence.insert(
+            accretion_sequence.end(),
             attach_sink_dust_fields.begin(),
             attach_sink_dust_fields.end());
 
         // Actually perform the accretion
-        if_has_sinks_sequence.push_back(flag_node);
-        if_has_sinks_sequence.push_back(qty_node);
-        if_has_sinks_sequence.push_back(evict_node);
+        accretion_sequence.push_back(flag_node);
+        accretion_sequence.push_back(qty_node);
+        accretion_sequence.push_back(evict_node);
 
         // free the refs since the particle counts may have changed
-        if_has_sinks_sequence.push_back(free_xyz);
-        if_has_sinks_sequence.push_back(free_vxyz);
-        if_has_sinks_sequence.push_back(free_axyz);
-        if_has_sinks_sequence.insert(
-            if_has_sinks_sequence.end(),
-            free_sink_dust_fields.begin(),
-            free_sink_dust_fields.end());
+        accretion_sequence.push_back(free_xyz);
+        accretion_sequence.push_back(free_vxyz);
+        accretion_sequence.push_back(free_axyz);
+        accretion_sequence.insert(
+            accretion_sequence.end(), free_sink_dust_fields.begin(), free_sink_dust_fields.end());
 
+        auto accretion_body = solver_graph.register_node(
+            "sink accretion body",
+            OperationSequence("sink accretion body", std::move(accretion_sequence)));
+
+        // skip the accretion entirely when there are no sinks
         auto if_has_sinks = solver_graph.register_node(
-            "if_has_sinks", OperationSequence("if_has_sinks", std::move(if_has_sinks_sequence)));
+            "if_has_sinks", OperationIf("if_has_sinks", accretion_body));
+        shambase::get_check_ref(if_has_sinks)
+            .set_edges(solver_graph.get_edge_ptr<IDataEdge<bool>>("has_sinks"));
 
         // register the actual node that will be used
         solver_graph.register_node(

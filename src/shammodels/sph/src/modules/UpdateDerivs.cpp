@@ -1598,8 +1598,15 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
     }
     node_tj->evaluate();
 
+    MonofluidTVA &cfg_monofluid_tva
+        = shambase::get_check_ref((std::get_if<MonofluidTVA>(&cfg.current_mode)));
+
+    // the pair gate is independent of the limiter choice; when combined with the smooth limiter
+    // it replaces its per-particle xi switch
+    const bool use_pair_gate = cfg_monofluid_tva.pair_gate_s_positivity_limiter;
+
     std::shared_ptr<NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>> node
-        = std::make_shared<NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>>(ndust);
+        = std::make_shared<NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>>(ndust, use_pair_gate);
     {
         node->set_edges(
             gpart_mass,
@@ -1690,12 +1697,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
         node_add_source_term->evaluate();
     }
 
-    MonofluidTVA &cfg_monofluid_tva
-        = shambase::get_check_ref((std::get_if<MonofluidTVA>(&cfg.current_mode)));
-
     if (cfg_monofluid_tva.smooth_s_positivity_limiter) {
+        // with the pair gate the xi switch was already applied pairwise in the TVA derivative,
+        // only the restoring term (phi) remains
         std::shared_ptr<NodeMonofluidTVASmoothSPositivityLimiter<Tvec>> node_limiter
-            = std::make_shared<NodeMonofluidTVASmoothSPositivityLimiter<Tvec>>(ndust);
+            = std::make_shared<NodeMonofluidTVASmoothSPositivityLimiter<Tvec>>(
+                ndust, !use_pair_gate);
         {
             node_limiter->set_edges(part_counts, s_j_refs, Ttilde_sj_field, ds_j_dt_refs);
         }

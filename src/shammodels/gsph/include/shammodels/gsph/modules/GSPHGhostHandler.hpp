@@ -32,35 +32,13 @@
 #include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <utility>
-#include <variant>
 
 namespace shammodels::gsph {
 
     template<class vec>
-    struct GSPHGhostHandlerConfig {
-
-        using Tscal = shambase::VecComponent<vec>;
-
-        struct Free {};
-        struct Periodic {};
-        struct ShearingPeriodic {
-            i32_3 shear_base;
-            i32_3 shear_dir;
-            Tscal shear_value;
-            Tscal shear_speed;
-        };
-
-        using Variant = std::variant<Free, Periodic, ShearingPeriodic>;
-    };
-
-    template<class vec>
     class GSPHGhostHandler {
 
-        using CfgClass = GSPHGhostHandlerConfig<vec>;
-        using Config   = typename CfgClass::Variant;
-
         PatchScheduler &sched;
-        Config ghost_config;
 
         public:
         using flt                = shambase::VecComponent<vec>;
@@ -85,14 +63,10 @@ namespace shammodels::gsph {
 
         GSPHGhostHandler(
             PatchScheduler &sched,
-            Config ghost_config,
             std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner,
             std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &xyzh_ghost_layout)
-            : sched(sched), ghost_config(ghost_config),
-              patch_rank_owner(std::move(patch_rank_owner)), xyzh_ghost_layout(xyzh_ghost_layout) {}
-
-        /// Get the boundary condition config of this ghost handler
-        inline const Config &get_ghost_config() const { return ghost_config; }
+            : sched(sched), patch_rank_owner(std::move(patch_rank_owner)),
+              xyzh_ghost_layout(xyzh_ghost_layout) {}
 
         shambase::DistributedDataShared<InterfaceIdTable> gen_id_table_interfaces(
             GeneratorMap &&gen);

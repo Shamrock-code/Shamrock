@@ -175,15 +175,12 @@ namespace shammodels::basegodunov {
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
-            // Migrate old dumps that stored time/dt in solver_config.time_state (before PR #1932)
-            auto sync_names = sched.synchronized_data.get_edge_names();
+            // Migrate old dumps that stored time/dt in solver_config.time_state (before PR #1932).
+            // Checking for time is equivalent to dumps written after this migration. It must be
+            // checked before init_solver_graph, which creates the time/dt edges if missing.
+            bool had_time_edge = sched.synchronized_data.has_edge("time");
 
-            // Checking for time is equivalent to dumps written after this migration
-            bool had_time_edge
-                = std::find(sync_names.begin(), sync_names.end(), "time") != sync_names.end();
-
-            // create time/dt synchronization edges if not present
-            solver.ensure_time_state_edges();
+            solver.init_solver_graph();
 
             if (!had_time_edge) {
                 if (j.at("solver_config").contains("time_state")) {

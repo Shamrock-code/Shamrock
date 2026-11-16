@@ -170,6 +170,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("mu_e"))
+        .def(
+            "set_eos_barotropic",
+            [](TConfig &self, Tscal cs0, Tscal rho0, Tscal gamma0) {
+                self.set_eos_barotropic(cs0, rho0, gamma0);
+            },
+            py::kw_only(),
+            py::arg("cs0"),
+            py::arg("rho0"),
+            py::arg("gamma0") = Tscal{5.0 / 3.0})
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "set_artif_viscosity_Constant",
@@ -318,7 +327,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                bool ensure_s_j_positivity,
                bool smooth_s_positivity_limiter,
                bool dust_corrected_av,
-               std::optional<Tscal> clamp_dust_frac) {
+               std::optional<Tscal> clamp_dust_frac,
+               bool pair_gate_s_positivity_limiter) {
                 self.dust_config.set_monofluid_tva(
                     nvar,
                     pure_diffusion_mode,
@@ -328,18 +338,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     ensure_s_j_positivity,
                     smooth_s_positivity_limiter,
                     dust_corrected_av,
-                    clamp_dust_frac);
+                    clamp_dust_frac,
+                    pair_gate_s_positivity_limiter);
             },
             py::kw_only(),
             py::arg("nvar"),
-            py::arg("pure_diffusion_mode")         = false,
-            py::arg("C_1_fluid")                   = 0.1,
-            py::arg("C_drift")                     = 1.0,
-            py::arg("cfl_density_threshold")       = shambase::get_epsilon<Tscal>(),
-            py::arg("ensure_s_j_positivity")       = true,
-            py::arg("smooth_s_positivity_limiter") = false,
-            py::arg("dust_corrected_av")           = false,
-            py::arg("clamp_dust_frac")             = std::nullopt)
+            py::arg("pure_diffusion_mode")            = false,
+            py::arg("C_1_fluid")                      = 0.1,
+            py::arg("C_drift")                        = 1.0,
+            py::arg("cfl_density_threshold")          = shambase::get_epsilon<Tscal>(),
+            py::arg("ensure_s_j_positivity")          = true,
+            py::arg("smooth_s_positivity_limiter")    = false,
+            py::arg("dust_corrected_av")              = false,
+            py::arg("clamp_dust_frac")                = std::nullopt,
+            py::arg("pair_gate_s_positivity_limiter") = false)
         .def(
             "set_dust_mode_monofluid_complete",
             [](TConfig &self, u32 ndust) {
@@ -1244,8 +1256,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self) {
                 py::list list_out;
 
-                auto edges = get_sink_edges<Tvec>(
-                    shambase::get_check_ref(self.ctx.sched).synchronized_data);
+                auto &sync  = shambase::get_check_ref(self.ctx.sched).synchronized_data;
+                auto edges  = get_sink_edges<Tvec>(sync);
                 for (auto &sink : to_sink_particles(edges)) {
                     py::dict sink_dic;
                     sink_dic["pos"]              = sink.pos;
@@ -1256,6 +1268,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     sink_dic["angular_momentum"] = sink.angular_momentum;
                     sink_dic["accretion_radius"] = sink.accretion_radius;
                     list_out.append(sink_dic);
+                }
+
+                // only present with dust, flattened as [i_sink * ndust + j_dust]
+                if (has_sink_accreted_dust_mass(sync)) {
+                    auto &dust_mass = get_sink_accreted_dust_mass<Tvec>(sync);
+                    size_t nsink    = list_out.size();
+                    size_t ndust    = (nsink == 0) ? 0 : dust_mass.size() / nsink;
+                    for (size_t i = 0; i < nsink; i++) {
+                        auto begin = dust_mass.begin() + i * ndust;
+                        list_out[i]["accreted_dust_mass"]
+                            = std::vector<Tscal>(begin, begin + ndust);
+                    }
                 }
 
                 return list_out;
@@ -1807,6 +1831,28 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self) {
                 return self.get_dt_sph();
             })
+        .def(
+            "get_last_cfl_dts",
+            [](T &self) {
+                py::dict ret;
+                for (auto &[name, value] : self.solver.get_last_cfl_dts()) {
+                    ret[py::str(name)] = value;
+                }
+                return ret;
+            },
+            R"==(
+    Get the last CFL timesteps stored in the synchronized edges.
+
+    Returns a dict keyed by synchronized edge name:
+
+    - ``"cfl_dt"``: the global CFL timestep of the last step (min over all CFL conditions).
+    - ``"cfl_dt_<type>"`` (e.g. ``"cfl_dt_courant"``, ``"cfl_dt_force"``,
+      ``"cfl_dt_sink_sink"``): the CFL timestep of each condition enabled in the solver
+      config, only present when ``show_cfl_detail`` is enabled.
+
+    All values are 0 before the first step. A condition that was not evaluated during the
+    last step (e.g. ``"cfl_dt_sink_sink"`` with no sinks) keeps its previous value.
+)==")
         .def(
             "set_time",
             [](T &self, Tscal t) {

@@ -16,6 +16,8 @@
  *
  */
 
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shambase/type_name_info.hpp"
 #include "shambackends/type_traits.hpp"
 #include "shambackends/vec.hpp"
@@ -52,20 +54,6 @@ namespace shammodels::sph {
     namespace details {
 
         template<class T>
-        inline void ensure_sync_data_edge(
-            shamrock::solvergraph::SolverGraphSerializable &sync_data,
-            const std::string &name,
-            const std::string &tex_symbol,
-            T init_value) {
-
-            if (!sync_data.has_edge(name)) {
-                auto edge = sync_data.register_edge(
-                    name, shamrock::solvergraph::IDataEdgeSerializable<T>(name, tex_symbol));
-                edge->data = std::move(init_value);
-            }
-        }
-
-        template<class T>
         inline T &get_sync_data(
             shamrock::solvergraph::SolverGraphSerializable &sync, const std::string &name) {
             return sync.template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<T>>(name)
@@ -75,30 +63,7 @@ namespace shammodels::sph {
     } // namespace details
 
     /**
-     * @brief Register sink SoA synchronized edges if missing (idempotent).
-     */
-    template<class Tvec>
-    inline void ensure_sink_edges(shamrock::solvergraph::SolverGraphSerializable &sync) {
-        using Tscal = shambase::VecComponent<Tvec>;
-
-        details::ensure_sync_data_edge<std::vector<Tvec>>(
-            sync, "sink_pos", "\\bf{r}_{\\mathrm{sink}}", {});
-        details::ensure_sync_data_edge<std::vector<Tvec>>(
-            sync, "sink_vel", "\\bf{v}_{\\mathrm{sink}}", {});
-        details::ensure_sync_data_edge<std::vector<Tvec>>(
-            sync, "sink_acc_sph", "\\bf{a}_{\\mathrm{sink, sph}}", {});
-        details::ensure_sync_data_edge<std::vector<Tvec>>(
-            sync, "sink_acc_ext", "\\bf{a}_{\\mathrm{sink, ext}}", {});
-        details::ensure_sync_data_edge<std::vector<Tscal>>(
-            sync, "sink_mass", "m_{\\mathrm{sink}}", {});
-        details::ensure_sync_data_edge<std::vector<Tvec>>(
-            sync, "sink_angular_momentum", "\\bf{L}_{\\mathrm{sink}}", {});
-        details::ensure_sync_data_edge<std::vector<Tscal>>(
-            sync, "sink_accretion_radius", "r_{\\mathrm{accretion}}", {});
-    }
-
-    /**
-     * @brief Named SoA getters (edges must already exist; call ensure_sink_edges first).
+     * @brief Named SoA getters (edges must already exist; registered by Solver::init_solver_graph).
      * Prefer these when a function only needs a subset of sink fields.
      */
     template<class Tvec>
@@ -143,10 +108,51 @@ namespace shammodels::sph {
     }
 
     /**
+     * @brief Whether the per species accreted dust mass sink edge is registered.
+     *
+     * Only registered with monofluid TVA dust. Flattened as [i_sink * ndust + j_dust].
+     */
+    inline bool has_sink_accreted_dust_mass(shamrock::solvergraph::SolverGraphSerializable &sync) {
+        return sync.has_edge("sink_accreted_dust_mass");
+    }
+
+    template<class Tvec>
+    inline std::vector<shambase::VecComponent<Tvec>> &get_sink_accreted_dust_mass(
+        shamrock::solvergraph::SolverGraphSerializable &sync) {
+        return details::get_sync_data<std::vector<shambase::VecComponent<Tvec>>>(
+            sync, "sink_accreted_dust_mass");
+    }
+
+    /**
+     * @brief Resize the flattened per species accreted dust mass to sink_count * ndust.
+     *
+     * Only pads with zeros the sinks that have no entry yet (sinks added since the last call, or
+     * loaded from a dump that predates the tracking). Throws if the stored layout does not match
+     * ndust, e.g. if the number of dust species changed after dust has been tracked.
+     */
+    template<class Tscal>
+    inline void resize_sink_accreted_dust_mass(
+        std::vector<Tscal> &accreted_dust_mass, size_t sink_count, u32 ndust) {
+        size_t target_size = sink_count * ndust;
+        if (accreted_dust_mass.size() == target_size) {
+            return;
+        }
+        if (ndust == 0 || accreted_dust_mass.size() > target_size
+            || accreted_dust_mass.size() % ndust != 0) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                "sink accreted dust mass layout mismatch: size={}, sink_count={}, ndust={}",
+                accreted_dust_mass.size(),
+                sink_count,
+                ndust));
+        }
+        accreted_dust_mass.resize(target_size, Tscal{0});
+    }
+
+    /**
      * @brief Check whether any sinks are present by inspecting sink_pos only.
      *
      * Prefer this for early-exit checks instead of fetching the full SinkEdges struct.
-     * Edges must already exist (call ensure_sink_edges first).
+     * Edges must already exist (registered by Solver::init_solver_graph).
      */
     template<class Tvec>
     inline bool has_sinks(shamrock::solvergraph::SolverGraphSerializable &sync) {
@@ -156,7 +162,7 @@ namespace shammodels::sph {
     /**
      * @brief Fetch mutable references to the sink SoA synchronized edges.
      *
-     * Edges must already exist (call ensure_sink_edges first).
+     * Edges must already exist (registered by Solver::init_solver_graph).
      * Prefer named getters when only a subset of fields is needed.
      */
     template<class Tvec>

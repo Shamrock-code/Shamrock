@@ -25,14 +25,15 @@ void shammodels::basegodunov::modules::BarotropicEnergyReset<Tvec, TgridVec>::re
 
     using namespace shamrock::patch;
 
-    using ResetBarotropic      = typename EOSConfig<Tvec>::ResetBarotropic;
-    const ResetBarotropic *cfg = std::get_if<ResetBarotropic>(&solver_config.eos_config.config);
+    using InstantBarotropic = typename CoolingConfig<Tvec>::InstantBarotropic;
+    const InstantBarotropic *cfg
+        = std::get_if<InstantBarotropic>(&solver_config.cooling_config.config);
     if (cfg == nullptr) {
         return;
     }
 
     const shammath::FluidStateBarotropic<Tvec> barotrope = cfg->get_barotrope();
-    const Tscal gamma                                    = cfg->gamma;
+    const Tscal gamma                                    = solver_config.get_eos_gamma();
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 

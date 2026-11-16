@@ -277,14 +277,14 @@ namespace shammodels::basegodunov {
         };
         PoissonSolverWorkFields poisson_work;
 
-        Component<shamrock::ComputeField<Tscal>> rho_next_no_drag;
-        Component<shamrock::ComputeField<Tvec>> rhov_next_no_drag;
-        Component<shamrock::ComputeField<Tscal>> rhoe_next_no_drag;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rho_next_no_drag;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> rhov_next_no_drag;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rhoe_next_no_drag;
 
         // next time step dust density before drag
-        Component<shamrock::ComputeField<Tscal>> rho_d_next_no_drag;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rho_d_next_no_drag;
         // next time step dust momentum before drag
-        Component<shamrock::ComputeField<Tvec>> rhov_d_next_no_drag;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> rhov_d_next_no_drag;
 
         std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>>
             rho_dust_face_xp;

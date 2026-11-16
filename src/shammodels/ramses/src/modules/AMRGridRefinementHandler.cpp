@@ -2832,11 +2832,12 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             Tscal dxfact(solver_config.grid_coord_to_pos_fact);
             Tscal G = solver_config.get_constant_G();
 
-            using EOSResetBarotropic = typename EOSConfig<Tvec>::ResetBarotropic;
+            using CoolingInstantBarotropic = typename CoolingConfig<Tvec>::InstantBarotropic;
             const auto *baro_cfg
-                = std::get_if<EOSResetBarotropic>(&solver_config.eos_config.config);
+                = std::get_if<CoolingInstantBarotropic>(&solver_config.cooling_config.config);
 
-            // the barotrope is unused (only to fill the accessor) if the EOS is adiabatic
+            // the barotrope is unused (only to fill the accessor) without the InstantBarotropic
+            // cooling
             bool use_barotrope = baro_cfg != nullptr;
             shammath::FluidStateBarotropic<Tvec> barotrope
                 = (use_barotrope) ? baro_cfg->get_barotrope()

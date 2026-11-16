@@ -28,9 +28,17 @@ the diff (similar features can be wired differently).
   `git fetch https://github.com/Shamrock-code/Shamrock pull/N/head:pr-N main:refs/remotes/upstream/main`,
   then `git diff $(git merge-base upstream/main pr-N) pr-N`.
 
-Read the full new versions of the touched files, not only the hunks.
+For a large diff, start with `git diff --stat` and keep the hunks in
+`init_solver_graph`, the node classes they touch and the code deciding
+what gets built (config, `evolve_once`). Read the full new versions of
+those files, and the old ones where you claim something is unchanged or
+removed (e.g. a deleted branch built the same node as a kept one).
 
 ## 2. Identify the affected part of the graph
+
+First decide whether the graph itself changes (nodes, edges, order) or
+only how/when it is built or run, and say which in the figure's first
+note (e.g. "graph unchanged for an equivalent setup").
 
 The graph is built in `init_solver_graph()` (`src/shammodels/<model>/src/Solver.cpp`):
 
@@ -45,7 +53,9 @@ The graph is built in `init_solver_graph()` (`src/shammodels/<model>/src/Solver.
   never registered: draw them as edges labelled `(local edge)`.
 - execution order: `OperationSequence(name, {nodes...})`; conditional
   steps: `OperationIf(name, body)` gated on an `IDataEdge<bool>`, or C++
-  `if` around `push_back` of a node (build-time condition: say which).
+  `if` around `push_back`, or a `std::visit` over a config variant
+  (build-time: draw the alternatives as small boxes in a frame labelled
+  with the condition, under the step they build).
 - solver_graph edges: `register_edge`, `FieldRefs`, `Field`, `Indexes`,
   `IDataEdge`, ... (left column).
 - scheduler synchronized data edges: `sched.synchronized_data`, created by
@@ -67,6 +77,13 @@ needed to read them (e.g. the node producing an edge a new node reads).
 Big unchanged nodes may be dropped if the panel title says so.
 
 ## 3. Draw (copy the template's structure)
+
+Panels (a) and (b) are the default, not mandatory: skip (b) if no edge
+or connection changes, and add a panel when the change lives elsewhere,
+e.g. `evolve_once` steps run around `solver_sequence.evaluate()`, or the
+config/serialization choosing which nodes are built. If one figure gets
+past ~25 boxes, split it into several pages (one `tikzpicture` per page
+of the `standalone` document) rather than shrinking text.
 
 - **(a) execution order**: title names the sequence and its enclosing
   `OperationIf`/sequence; `seq` boxes chained with `flow` arrows, at most
@@ -90,7 +107,8 @@ edges go in (a), not (b)). State a build-time flag and its meaning once
 - styles: `new` (dashed green) for added things, `modified` (solid green)
   for existing things whose interface/behaviour changed, `removed` (dashed
   red, grey text) for removed ones. Drop legend entries the
-  figure does not use; add `removed` ones only if something is removed.
+  figure does not use; add `removed` ones only if something is removed, and
+  an entry for any extra arrow/box style you introduce.
 - Place rows so each input sits level with the first node reading it;
   arrows from one edge to several nodes may fan out; arrows may cross
   arrows but not boxes. Escape `_` as `\_` everywhere. Brace `fit={...}`
@@ -110,7 +128,7 @@ pdftoppm -png -r 70 <topic>_solvergraph.pdf <topic>_preview
 ```
 
 `<outdir>` is the scratchpad unless the user names one; delete the
-`.aux`/`.log`/preview PNGs once done.
+`.aux`/`.log` once done (pdftoppm names the preview `<topic>_preview-1.png`).
 
 Fix every LaTeX error (check the `.log`, `grep -n '^!'`). Then **Read the
 PNG** and fix overlapping boxes, labels crossing arrows or boxes, boxes

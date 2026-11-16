@@ -52,7 +52,12 @@ The graph is built in `init_solver_graph()` (`src/shammodels/<model>/src/Solver.
   variant (draw the alternatives as small boxes in a frame labelled with
   the condition, under the step they build).
 - solver_graph edges: `register_edge`, `FieldRefs`, `Field`, `Indexes`,
-  `IDataEdge`, ...
+  `IDataEdge`, ... Some solvers (Ramses) keep most edges as
+  `std::make_shared` members of `storage` instead of registering them:
+  title that column "`storage` edges" and keep `(local edge)` for edges
+  created inside one sequence (e.g. per-sequence `FieldRefs`). If nodes
+  are not registered by name, label steps with the `OperationSequence`
+  name or the node's `_impl_get_label()`.
 - synchronized data edges: `sched.synchronized_data`, created by the
   `ensure_sync_edge` lambda at the top of `init_solver_graph` (serialized
   in dumps). Code elsewhere touching them (e.g. resizing in `Model.hpp`)
@@ -65,6 +70,8 @@ Sequence -> If) or **removed**, and write the list down before drawing:
 - an existing edge gaining a connection is not new: only the arrow is;
 - an existing node newly pushed into a sequence is a new step in (a) but
   a plain node in (b);
+- a node or edge whose build-time condition changes (built in more or
+  fewer configs) is `modified`: give the old and new condition in a note;
 - `(optional)` goes on the arrow of an optional connection; on the edge
   box only if the edge itself is registered conditionally.
 
@@ -88,7 +95,8 @@ nodes may be left out if the panel title says so.
   `romodified`/`rwmodified` (e.g. read only became read/write),
   `roremoved`/`rwremoved`. Ctor/behaviour changes go as small orange
   lines inside the node; give shapes when useful
-  (`$N\times n_{\rm dust}$`). Skip (b) if no connection changes.
+  (`$N\times n_{\rm dust}$`). Skip (b) if no connection changes. With no sync edge involved, drop the
+  right column; it can hold edges created for the new nodes instead.
 - **other panels** when the change lives elsewhere: `evolve_once` steps
   around `solver_sequence.evaluate()`, or the config choosing which nodes
   are built.
@@ -99,7 +107,8 @@ nodes may be left out if the panel title says so.
   they describe; non-graph notes are grey. The legend lists exactly the
   styles used, including any you add (one per access for each state).
 - **size**: past ~25 boxes, split into several pages (one `tikzpicture`
-  per page of the `standalone` document) rather than shrinking text.
+  per page of the `standalone` document) rather than shrinking text; each
+  page has its own title and a legend of the styles used on that page.
 
 Layout: level each input with the first node reading it; arrows may fan
 out and cross arrows, never boxes. Pitfalls: escape `_` as `\_`; brace

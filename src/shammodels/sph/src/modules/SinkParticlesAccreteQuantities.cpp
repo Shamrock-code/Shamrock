@@ -22,10 +22,13 @@
 #include "shambackends/kernel_call.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/SinkParticlesAccreteQuantities.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <shambackends/sycl.hpp>
 #include <string>
+#include <vector>
 
 namespace shammodels::sph::modules {
 
@@ -54,6 +57,20 @@ namespace shammodels::sph::modules {
         auto &sink_mass          = edges.sink_mass.data;
 
         u32 sink_count = shambase::narrow_or_throw<u32>(sink_positions.size());
+
+        // per species dust accretion tracking (monofluid TVA), the dust mass of a particle is
+        // m * epsilon_j with epsilon_j = S_j^2 / rho
+        bool track_dust = ndust > 0 && edges.sink_accreted_dust_mass.has_value();
+        if (track_dust && !(edges.s_j.has_value() && edges.hpart.has_value())) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "accreted dust mass tracking requires s_j and hpart");
+        }
+
+        if (track_dust) {
+            resize_sink_accreted_dust_mass(
+                edges.sink_accreted_dust_mass.value().get().data, sink_count, ndust);
+        }
+
         for (u32 i_sink = 0; i_sink < sink_count; i_sink++) {
 
             Tvec r_sink = sink_positions[i_sink];
@@ -65,6 +82,7 @@ namespace shammodels::sph::modules {
             Tvec s_acc_pxyz  = {0, 0, 0};
             Tvec s_acc_maxyz = {0, 0, 0};
             Tvec s_acc_lxyz  = {0, 0, 0};
+            std::vector<Tscal> s_acc_dust_mass(track_dust ? ndust : 0, 0);
 
             edges.part_counts.indexes.for_each([&](u64 id_patch, u32 Nobj) {
                 acc_flag.resize(Nobj);
@@ -137,6 +155,39 @@ namespace shammodels::sph::modules {
                     s_acc_mxyz += acc_mxyz;
                     s_acc_maxyz += acc_maxyz;
                     s_acc_lxyz += acc_lxyz;
+
+                    if (track_dust) {
+                        // accreted dust mass laid out as [j_dust * Naccrete + id_a] so that each
+                        // species can be summed over a contiguous range
+                        sham::DeviceBuffer<Tscal> dust_mass_acc(Naccrete * ndust, dev_sched);
+
+                        auto &hpart_data = edges.hpart.value().get().get_spans().get(id_patch);
+                        auto &s_j_data   = edges.s_j.value().get().get_spans().get(id_patch);
+
+                        sham::kernel_call(
+                            q,
+                            sham::MultiRef{hpart_data, s_j_data, id_list_accrete},
+                            sham::MultiRef{dust_mass_acc},
+                            Naccrete,
+                            [gpart_mass, hfactd = this->hfactd, ndust = this->ndust, Naccrete](
+                                u32 id_a,
+                                const Tscal *__restrict hpart,
+                                const Tscal *__restrict s_j,
+                                const u32 *__restrict id_acc,
+                                Tscal *__restrict dust_mass) {
+                                u32 i_a     = id_acc[id_a];
+                                Tscal rho_a = shamrock::sph::rho_h(gpart_mass, hpart[i_a], hfactd);
+                                for (u32 j = 0; j < ndust; j++) {
+                                    Tscal sj                       = s_j[i_a * ndust + j];
+                                    dust_mass[j * Naccrete + id_a] = gpart_mass * sj * sj / rho_a;
+                                }
+                            });
+
+                        for (u32 j = 0; j < ndust; j++) {
+                            s_acc_dust_mass[j] += shamalgs::primitives::sum(
+                                dev_sched, dust_mass_acc, j * Naccrete, (j + 1) * Naccrete);
+                        }
+                    }
                 }
             });
 
@@ -151,6 +202,11 @@ namespace shammodels::sph::modules {
             Tvec sum_acc_mxyz  = shamalgs::collective::allreduce_sum(s_acc_mxyz);
             Tvec sum_acc_maxyz = shamalgs::collective::allreduce_sum(s_acc_maxyz);
             Tvec sum_acc_lxyz  = shamalgs::collective::allreduce_sum(s_acc_lxyz);
+
+            std::vector<Tscal> sum_acc_dust_mass(s_acc_dust_mass.size());
+            for (u32 j = 0; j < s_acc_dust_mass.size(); j++) {
+                sum_acc_dust_mass[j] = shamalgs::collective::allreduce_sum(s_acc_dust_mass[j]);
+            }
 
             Tscal old_mass = sink_mass[i_sink];
             Tvec old_pos   = sink_positions[i_sink];
@@ -173,6 +229,13 @@ namespace shammodels::sph::modules {
             sink_angmom[i_sink]        = new_ang_mom;
             sink_accelerations[i_sink] = new_acc;
 
+            if (track_dust) {
+                auto &sink_dust_mass = edges.sink_accreted_dust_mass.value().get().data;
+                for (u32 j = 0; j < ndust; j++) {
+                    sink_dust_mass[i_sink * ndust + j] += sum_acc_dust_mass[j];
+                }
+            }
+
             had_accretion = true;
             log += sham::format(
                 "\n    id {} deltas : mass={} r={} v={} l={}",
@@ -181,6 +244,9 @@ namespace shammodels::sph::modules {
                 new_pos - old_pos,
                 new_vel - old_vel,
                 new_ang_mom - old_ang);
+            if (track_dust) {
+                log += sham::format(" dust={}", sum_acc_dust_mass);
+            }
         }
 
         if (shamcomm::world_rank() == 0 && had_accretion) {

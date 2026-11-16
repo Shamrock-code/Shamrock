@@ -232,10 +232,11 @@ namespace shammodels::sph {
         /**
          * @brief Get the last CFL dt values stored in the synchronized edges
          *
-         * Returns the global CFL dt (edge "cfl_dt") and, if `show_cfl_detail` is enabled, the
-         * CFL dt per CFL type (edges "cfl_dt_<type>"), keyed by edge name. All values are 0
-         * before the first step. An edge whose CFL type was not evaluated in the last step
-         * (e.g. "cfl_dt_sink_sink" with no sinks) keeps its previous value.
+         * Returns the global CFL dt (edge "cfl_dt", including the CFL multiplier) and, if
+         * `show_cfl_detail` is enabled, the CFL dt per CFL type (edges "cfl_dt_<type>", without the
+         * multiplier), keyed by edge name. All values are 0 before the first step. An edge whose
+         * CFL type was not evaluated in the last step (e.g. "cfl_dt_sink_sink" with no sinks) keeps
+         * its previous value.
          */
         inline std::map<std::string, Tscal> get_last_cfl_dts() {
             using Edge = shamrock::solvergraph::IDataEdgeSerializable<Tscal>;

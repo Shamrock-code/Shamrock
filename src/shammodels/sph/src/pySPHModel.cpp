@@ -1256,8 +1256,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self) {
                 py::list list_out;
 
-                auto edges = get_sink_edges<Tvec>(
-                    shambase::get_check_ref(self.ctx.sched).synchronized_data);
+                auto &sync  = shambase::get_check_ref(self.ctx.sched).synchronized_data;
+                auto edges  = get_sink_edges<Tvec>(sync);
                 for (auto &sink : to_sink_particles(edges)) {
                     py::dict sink_dic;
                     sink_dic["pos"]              = sink.pos;
@@ -1268,6 +1268,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     sink_dic["angular_momentum"] = sink.angular_momentum;
                     sink_dic["accretion_radius"] = sink.accretion_radius;
                     list_out.append(sink_dic);
+                }
+
+                // only present with dust, flattened as [i_sink * ndust + j_dust]
+                if (has_sink_accreted_dust_mass(sync)) {
+                    auto &dust_mass = get_sink_accreted_dust_mass<Tvec>(sync);
+                    size_t nsink    = list_out.size();
+                    size_t ndust    = (nsink == 0) ? 0 : dust_mass.size() / nsink;
+                    for (size_t i = 0; i < nsink; i++) {
+                        auto begin = dust_mass.begin() + i * ndust;
+                        list_out[i]["accreted_dust_mass"]
+                            = std::vector<Tscal>(begin, begin + ndust);
+                    }
                 }
 
                 return list_out;
@@ -1833,10 +1845,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     Returns a dict keyed by synchronized edge name:
 
-    - ``"cfl_dt"``: the global CFL timestep of the last step (min over all CFL conditions).
+    - ``"cfl_dt"``: the global CFL timestep of the last step (min over all CFL conditions,
+      times the CFL multiplier).
     - ``"cfl_dt_<type>"`` (e.g. ``"cfl_dt_courant"``, ``"cfl_dt_force"``,
       ``"cfl_dt_sink_sink"``): the CFL timestep of each condition enabled in the solver
-      config, only present when ``show_cfl_detail`` is enabled.
+      config, without the CFL multiplier, only present when ``show_cfl_detail`` is enabled.
 
     All values are 0 before the first step. A condition that was not evaluated during the
     last step (e.g. ``"cfl_dt_sink_sink"`` with no sinks) keeps its previous value.

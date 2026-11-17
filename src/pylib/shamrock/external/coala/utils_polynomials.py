@@ -78,7 +78,7 @@ def polynomial_derivative_coeffs(k, pol_coeffs):
     return dcoeffs
 
 
-# @njit
+@maybe_njit
 def dphik(ak, hj, xij):
     """
     Derivative of P_k(xij) with respect to x, where xij = 2/hj*(x-xj)

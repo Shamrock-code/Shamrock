@@ -46,6 +46,11 @@ void shammodels::gsph::SolverConfig<Tvec, SPHKernel>::set_layout(
     pdl.add_field<Tscal>(names::newtonian::density, 1);
     pdl.add_field<Tscal>(names::newtonian::pressure, 1);
     pdl.add_field<Tscal>(names::newtonian::soundspeed, 1);
+
+    // Particle id, used to tag the injected particles
+    if (particle_injection.has_injectors()) {
+        pdl.add_field<u64>("part_id", 1);
+    }
 }
 
 template<class Tvec, template<class> class SPHKernel>

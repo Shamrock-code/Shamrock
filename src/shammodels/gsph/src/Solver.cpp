@@ -1023,6 +1023,24 @@ void shammodels::gsph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_va
 }
 
 template<class Tvec, template<class> class Kern>
+auto shammodels::gsph::Solver<Tvec, Kern>::get_particle_injector()
+    -> shammodels::common::injection::ParticleInjector<Tvec> & {
+    if (!storage.particle_injector) {
+        storage.particle_injector
+            = std::make_unique<shammodels::common::injection::ParticleInjector<Tvec>>(
+                solver_config.particle_injection, solver_config.gpart_mass, Kernel::hfactd);
+    }
+    return *storage.particle_injector;
+}
+
+template<class Tvec, template<class> class Kern>
+void shammodels::gsph::Solver<Tvec, Kern>::inject_particles(Tscal t_old, Tscal t_new) {
+    StackEntry stack_loc{};
+
+    get_particle_injector().inject(scheduler(), t_old, t_new);
+}
+
+template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     StackEntry stack_loc{};
     using namespace shamrock::patch;
@@ -1899,6 +1917,12 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     Tscal t_current = get_time();
     Tscal dt        = get_dt();
 
+    // no step over an injection start, including the first step and an imposed dt
+    if (solver_config.particle_injection.has_injectors()) {
+        dt = sham::min(dt, get_particle_injector().get_max_dt(t_current));
+        set_next_dt(dt);
+    }
+
     StackEntry stack_loc{};
 
     if (shamcomm::world_rank() == 0) {
@@ -1947,6 +1971,11 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // (On first iteration, accelerations are zero, so this is just position drift)
     do_predictor_leapfrog(dt);
 
+    // inject the particles born during the step, at their positions at t + dt
+    if (solver_config.particle_injection.has_injectors()) {
+        inject_particles(t_current, t_current + dt);
+    }
+
     // STEP 2: BOUNDARY - apply boundary conditions to NEW positions
     // Build serial patch tree first (needed for boundary application)
     gen_serial_patch_tree();
@@ -1993,6 +2022,10 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // Ensure dt doesn't grow too fast (max 2x per step), but allow any value if dt was 0
     if (dt > Tscal(0)) {
         dt_next = sham::min(dt_next, Tscal(2) * dt);
+    }
+
+    if (storage.particle_injector) {
+        dt_next = sham::min(dt_next, storage.particle_injector->get_max_dt(t_current + dt));
     }
 
     // Copy EOS fields to patchdata for persistence and VTKDump access

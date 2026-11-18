@@ -9,4 +9,5 @@ Documentation about the usage of the SPH model in Shamrock.
 sph/setup_graph.md
 sph/shearing_box.md
 sph/smoothing_length_tolerance.md
+sph/particle_injection.md
 ```

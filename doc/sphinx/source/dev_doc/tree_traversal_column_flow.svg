@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="tt-diagram" width="720" height="236" viewBox="0 0 720 236" role="img" aria-label="Flow of the column kernel: one thread per ray traverses the tree with a stack, tests node boxes, scans leaf particles and adds each accepted particle&#x27;s contribution to a running sum.">
+  <title>Column kernel with the standard stack-based traversal</title>
+  <style>
+    /* Colours follow the pydata-sphinx-theme variables (and so the light/dark switch) when the
+       SVG is inlined in the doc; the fallbacks are used when the file is viewed on its own. */
+    .tt-diagram {
+      --tt-ink: var(--pst-color-text-base, #19211e);
+      --tt-mut: var(--pst-color-text-muted, #5b6763);
+      --tt-line: var(--pst-color-border, #c6cec9);
+      --tt-surface: var(--pst-color-background, #fcfcfb);
+      --tt-faint: var(--pst-color-surface, #e7ece8);
+      --tt-hot: var(--pst-color-warning, #b8641b);
+      --tt-hot-soft: var(--pst-color-warning-bg, #f3e4d6);
+      --tt-display: var(--pst-font-family-base, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif);
+      --tt-mono: var(--pst-font-family-monospace, ui-monospace, Menlo, monospace);
+      color: var(--tt-ink);
+      max-width: 100%;
+      height: auto;
+    }
+    .tt-diagram .tt-lbl { font: 500 12.5px var(--tt-display); fill: currentColor; }
+    .tt-diagram .tt-small { font: 400 11.5px var(--tt-display); fill: currentColor; }
+    .tt-diagram .tt-b { font-weight: 700; }
+    .tt-diagram .tt-tick { font: 400 10.5px var(--tt-mono); fill: var(--tt-mut); }
+    .tt-diagram .tt-val { font: 500 11.5px var(--tt-mono); fill: currentColor; }
+    .tt-diagram .tt-mono { font: 12px var(--tt-mono); fill: currentColor; }
+    .tt-diagram .tt-mut { fill: var(--tt-mut); }
+    .tt-diagram .tt-ln { stroke: currentColor; stroke-width: 1.4; fill: none; }
+    .tt-diagram .tt-dash { stroke-dasharray: 4 3; }
+    .tt-diagram .tt-grid { stroke: var(--tt-line); stroke-width: 1; }
+    .tt-diagram .tt-box { fill: var(--tt-surface); stroke: currentColor; stroke-width: 1.2; }
+    .tt-diagram .tt-box.tt-hotB { fill: var(--tt-hot-soft); stroke: var(--tt-hot); }
+    .tt-diagram .tt-cell { fill: var(--tt-faint); stroke: var(--tt-line); stroke-width: 1; }
+    .tt-diagram .tt-hotF, .tt-diagram .tt-cell.tt-hotF { fill: var(--tt-hot); stroke: none; }
+    .tt-diagram .tt-cell.tt-idle { fill: none; stroke: var(--tt-line); stroke-dasharray: 2 2; }
+    .tt-diagram .tt-track { fill: var(--tt-faint); stroke: none; }
+    .tt-diagram .tt-nodeC { fill: var(--tt-surface); stroke: currentColor; stroke-width: 1.2; }
+  </style>
+<defs>
+<marker id="tt-flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+</defs>
+<rect x="10" y="30" width="120" height="52" rx="3" class="tt-box" />
+<text x="70.0" y="52" class="tt-lbl tt-b" text-anchor="middle" >ray gid</text>
+<text x="70.0" y="70" class="tt-small" text-anchor="middle" >one thread per ray</text>
+<rect x="160" y="30" width="130" height="52" rx="3" class="tt-box" />
+<text x="225.0" y="52" class="tt-lbl tt-b" text-anchor="middle" >pop node</text>
+<text x="225.0" y="70" class="tt-small" text-anchor="middle" >per-thread stack</text>
+<rect x="320" y="30" width="150" height="52" rx="3" class="tt-box tt-hotB" />
+<text x="395.0" y="52" class="tt-lbl tt-b" text-anchor="middle" >node AABB test</text>
+<text x="395.0" y="70" class="tt-small" text-anchor="middle" >slab test, FP64</text>
+<rect x="500" y="30" width="100" height="52" rx="3" class="tt-box" />
+<text x="550.0" y="52" class="tt-lbl tt-b" text-anchor="middle" >leaf?</text>
+<rect x="500" y="140" width="200" height="52" rx="3" class="tt-box tt-hotB" />
+<text x="600.0" y="162" class="tt-lbl tt-b" text-anchor="middle" >particle test</text>
+<text x="600.0" y="180" class="tt-small" text-anchor="middle" >distance² to ray ≤ (2h)²</text>
+<rect x="160" y="140" width="300" height="52" rx="3" class="tt-box tt-hotB" />
+<text x="310.0" y="162" class="tt-lbl tt-b" text-anchor="middle" >contribution</text>
+<text x="310.0" y="180" class="tt-small" text-anchor="middle" >sqrt · Y_3d · division by ρ</text>
+<line x1="130" y1="56" x2="158" y2="56" class="tt-ln" marker-end="url(#tt-flow-arrow)" />
+<line x1="290" y1="56" x2="318" y2="56" class="tt-ln" marker-end="url(#tt-flow-arrow)" />
+<line x1="470" y1="56" x2="498" y2="56" class="tt-ln" marker-end="url(#tt-flow-arrow)" />
+<path d="M600,56 H650 V8 H225 V28" class="tt-ln" fill="none" marker-end="url(#tt-flow-arrow)" />
+<text x="440" y="20" class="tt-small" text-anchor="middle" >no: push 2 children</text>
+<line x1="550" y1="82" x2="550" y2="138" class="tt-ln" marker-end="url(#tt-flow-arrow)" />
+<text x="556" y="114" class="tt-small" text-anchor="start" >yes: loop over its particles</text>
+<line x1="498" y1="166" x2="462" y2="166" class="tt-ln" marker-end="url(#tt-flow-arrow)" />
+<text x="480" y="128" class="tt-small" text-anchor="middle" >accepted</text>
+<path d="M310,192 V216 H40 V84" class="tt-ln tt-dash" fill="none" marker-end="url(#tt-flow-arrow)" />
+<text x="175" y="230" class="tt-small" text-anchor="middle" >acc += term  (one running sum per ray, fixed order)</text>
+</svg>

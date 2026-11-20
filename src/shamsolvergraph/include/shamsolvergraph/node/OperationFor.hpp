@@ -16,8 +16,10 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
+#include <stdexcept>
 
 #define NODE_EDGES(X_RO, X_RW) X_RO(shamrock::solvergraph::IDataEdge<u32>, count)
 
@@ -36,7 +38,12 @@ namespace shamrock::solvergraph {
          * @param body Node evaluated `count` times
          */
         OperationFor(std::string name, std::shared_ptr<INode> body)
-            : body(std::move(body)), name(std::move(name)) {}
+            : body(std::move(body)), name(std::move(name)) {
+            if (!this->body) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "OperationFor requires a non-null body node");
+            }
+        }
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 

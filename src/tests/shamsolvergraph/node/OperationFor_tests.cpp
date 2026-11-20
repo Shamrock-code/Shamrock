@@ -86,4 +86,6 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationFor", 1) {
         REQUIRE(node.get_dot_graph().size() > 0);
         REQUIRE(node.get_tex().size() > 0);
     }
+
+    REQUIRE_EXCEPTION_THROW(OperationFor("for", nullptr), std::invalid_argument);
 }

@@ -135,7 +135,7 @@ placeholders so slot indices stay stable. `get_ro_edge_optional` returns
 
 ## Composition nodes
 
-`OperationSequence` and `OperationIf` wrap other `INode`s. Nested nodes are
+`OperationSequence`, `OperationIf` and `OperationForUntil` wrap other `INode`s. Nested nodes are
 passed to the constructor (graph structure). Data edges are still wired with
 `set_edges`.
 
@@ -157,11 +157,49 @@ if_node->evaluate();
 To gate several nodes, wrap them in an `OperationSequence` and pass that as
 `then_node` / `else_node`. Else-only is `OperationIf("name", {}, else_node)`.
 
+`OperationForUntil` is a bounded loop: it evaluates its (mandatory) body node while
+its `IDataEdge<bool>` condition is true, for at most `max_iter` iterations. It
+is equivalent to:
+
+```cpp
+u32 i = 0;
+for (; i < max_iter && condition; i++) {
+    body->evaluate(); // expected to update condition
+}
+iter = i;
+```
+
+The condition is checked before each iteration, so the body may run zero
+times. The body updates the condition, typically through its own read-write
+edge pointing to the same `IDataEdge<bool>`. The `IDataEdge<u32>` `iter` edge
+holds the current iteration index while the body runs, and the number of
+evaluated iterations once the loop ends (the body must not write it). Check
+the condition after the loop to know whether it stopped on the condition or on
+`max_iter`.
+
+```cpp
+auto cond = IDataEdge<bool>::make_shared("not_converged", "not_converged");
+auto iter = IDataEdge<u32>::make_shared("iter", "i");
+auto body = std::make_shared<MyIterationNode>(...); // updates cond->data
+
+auto for_node = std::make_shared<OperationForUntil>("iterate", body, max_iter);
+for_node->set_edges(cond, iter);
+
+cond->data = true;
+for_node->evaluate();
+// cond->data == true here means max_iter was reached before convergence
+```
+
+To loop over several nodes, wrap them in an `OperationSequence` and pass that
+as the body.
+
 ## Related files
 
 - [`INode.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/INode.hpp)
 - [`INullOptEdge.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/edge/INullOptEdge.hpp)
+- [`OperationForUntil.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationForUntil.hpp)
 - [`OperationIf.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationIf.hpp)
 - [`OperationSequence.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationSequence.hpp)
 - [`OptionalEdges_tests.cpp`](../../../src/tests/shamsolvergraph/node/OptionalEdges_tests.cpp)
 - [`OperationIf_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationIf_tests.cpp)
+- [`OperationForUntil_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationForUntil_tests.cpp)

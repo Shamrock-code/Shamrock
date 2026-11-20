@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file OperationFor.hpp
+ * @file OperationForUntil.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Meta node that evaluates a body node while a bool edge is true, for at most a given
  * number of iterations
@@ -50,7 +50,7 @@ namespace shamrock::solvergraph {
      * OperationSequence and OperationIf). The runtime predicate is an `IDataEdge<bool>` wired
      * with `set_edges`.
      */
-    class OperationFor : public INode {
+    class OperationForUntil : public INode {
         std::shared_ptr<INode> body_node;
         u32 max_iter;
         std::string name;
@@ -61,7 +61,7 @@ namespace shamrock::solvergraph {
          * @param body_node Node evaluated at each iteration
          * @param max_iter Maximum number of iterations
          */
-        OperationFor(std::string name, std::shared_ptr<INode> body_node, u32 max_iter);
+        OperationForUntil(std::string name, std::shared_ptr<INode> body_node, u32 max_iter);
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 

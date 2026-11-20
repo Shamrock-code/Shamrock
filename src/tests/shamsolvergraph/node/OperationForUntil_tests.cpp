@@ -9,7 +9,7 @@
 
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
-#include "shamsolvergraph/node/OperationFor.hpp"
+#include "shamsolvergraph/node/OperationForUntil.hpp"
 #include "shamtest/shamtest.hpp"
 #include <memory>
 #include <stdexcept>
@@ -43,7 +43,7 @@ namespace {
 
 } // namespace
 
-NEW_TEST(Unittest, "shamsolvergraph/node/OperationFor", 1) {
+NEW_TEST(Unittest, "shamsolvergraph/node/OperationForUntil", 1) {
     using namespace shamrock::solvergraph;
 
     auto make_iter = []() {
@@ -63,7 +63,7 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationFor", 1) {
         auto cond = make_condition(true);
         auto body = std::make_shared<CountdownNode>(iter, cond, u32{3});
 
-        OperationFor node("for", body, 10);
+        OperationForUntil node("for", body, 10);
         node.set_edges(cond, iter);
         node.evaluate();
 
@@ -78,7 +78,7 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationFor", 1) {
         auto cond = make_condition(true);
         auto body = std::make_shared<CountdownNode>(iter, cond, u32{100});
 
-        OperationFor node("for", body, 4);
+        OperationForUntil node("for", body, 4);
         node.set_edges(cond, iter);
         node.evaluate();
 
@@ -93,7 +93,7 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationFor", 1) {
         auto cond = make_condition(true);
         auto body = std::make_shared<CountdownNode>(iter, cond, u32{4});
 
-        OperationFor node("for", body, 4);
+        OperationForUntil node("for", body, 4);
         node.set_edges(cond, iter);
         node.evaluate();
 
@@ -107,7 +107,7 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationFor", 1) {
         auto cond = make_condition(false);
         auto body = std::make_shared<CountdownNode>(iter, cond, u32{3});
 
-        OperationFor node("for", body, 10);
+        OperationForUntil node("for", body, 10);
         node.set_edges(cond, iter);
         node.evaluate();
 
@@ -121,7 +121,7 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationFor", 1) {
         auto cond = make_condition(true);
         auto body = std::make_shared<CountdownNode>(iter, cond, u32{3});
 
-        OperationFor node("for", body, 0);
+        OperationForUntil node("for", body, 0);
         node.set_edges(cond, iter);
         node.evaluate();
 
@@ -131,7 +131,7 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationFor", 1) {
 
     // a body is mandatory
     {
-        REQUIRE_EXCEPTION_THROW(OperationFor("for", {}, 10), std::invalid_argument);
+        REQUIRE_EXCEPTION_THROW(OperationForUntil("for", {}, 10), std::invalid_argument);
     }
 
     // dot graph & tex
@@ -140,7 +140,7 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationFor", 1) {
         auto cond = make_condition(true);
         auto body = std::make_shared<CountdownNode>(iter, cond, u32{1});
 
-        OperationFor node("for", body, 7);
+        OperationForUntil node("for", body, 7);
         node.set_edges(cond, iter);
 
         std::string dot = node.get_dot_graph();

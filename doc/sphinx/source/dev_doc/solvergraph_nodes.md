@@ -135,7 +135,7 @@ placeholders so slot indices stay stable. `get_ro_edge_optional` returns
 
 ## Composition nodes
 
-`OperationSequence`, `OperationIf` and `OperationFor` wrap other `INode`s. Nested nodes are
+`OperationSequence`, `OperationIf` and `OperationForUntil` wrap other `INode`s. Nested nodes are
 passed to the constructor (graph structure). Data edges are still wired with
 `set_edges`.
 
@@ -157,7 +157,7 @@ if_node->evaluate();
 To gate several nodes, wrap them in an `OperationSequence` and pass that as
 `then_node` / `else_node`. Else-only is `OperationIf("name", {}, else_node)`.
 
-`OperationFor` is a bounded loop: it evaluates its (mandatory) body node while
+`OperationForUntil` is a bounded loop: it evaluates its (mandatory) body node while
 its `IDataEdge<bool>` condition is true, for at most `max_iter` iterations. It
 is equivalent to:
 
@@ -182,7 +182,7 @@ auto cond = IDataEdge<bool>::make_shared("not_converged", "not_converged");
 auto iter = IDataEdge<u32>::make_shared("iter", "i");
 auto body = std::make_shared<MyIterationNode>(...); // updates cond->data
 
-auto for_node = std::make_shared<OperationFor>("iterate", body, max_iter);
+auto for_node = std::make_shared<OperationForUntil>("iterate", body, max_iter);
 for_node->set_edges(cond, iter);
 
 cond->data = true;
@@ -197,9 +197,9 @@ as the body.
 
 - [`INode.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/INode.hpp)
 - [`INullOptEdge.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/edge/INullOptEdge.hpp)
-- [`OperationFor.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationFor.hpp)
+- [`OperationForUntil.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationForUntil.hpp)
 - [`OperationIf.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationIf.hpp)
 - [`OperationSequence.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationSequence.hpp)
 - [`OptionalEdges_tests.cpp`](../../../src/tests/shamsolvergraph/node/OptionalEdges_tests.cpp)
 - [`OperationIf_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationIf_tests.cpp)
-- [`OperationFor_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationFor_tests.cpp)
+- [`OperationForUntil_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationForUntil_tests.cpp)

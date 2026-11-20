@@ -8,27 +8,29 @@
 // -------------------------------------------------------//
 
 /**
- * @file OperationFor.cpp
+ * @file OperationForUntil.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Implementation of the OperationFor meta node
+ * @brief Implementation of the OperationForUntil meta node
  *
  */
 
 #include "shambase/exception.hpp"
-#include "shamsolvergraph/node/OperationFor.hpp"
+#include "shamsolvergraph/node/OperationForUntil.hpp"
 #include <sstream>
 #include <stdexcept>
 
 namespace shamrock::solvergraph {
 
-    OperationFor::OperationFor(std::string name, std::shared_ptr<INode> body_node, u32 max_iter)
+    OperationForUntil::OperationForUntil(
+        std::string name, std::shared_ptr<INode> body_node, u32 max_iter)
         : body_node(std::move(body_node)), max_iter(max_iter), name(std::move(name)) {
         if (!this->body_node) {
-            shambase::throw_with_loc<std::invalid_argument>("OperationFor must have a body node");
+            shambase::throw_with_loc<std::invalid_argument>(
+                "OperationForUntil must have a body node");
         }
     }
 
-    void OperationFor::_impl_evaluate_internal() {
+    void OperationForUntil::_impl_evaluate_internal() {
         auto edges = get_edges();
 
         // The condition is re-read at every iteration since the body is expected to update it.
@@ -40,7 +42,7 @@ namespace shamrock::solvergraph {
         edges.iter.data = i;
     }
 
-    std::string OperationFor::_impl_get_dot_graph_partial() const {
+    std::string OperationForUntil::_impl_get_dot_graph_partial() const {
 
         std::stringstream ss;
 
@@ -78,7 +80,7 @@ namespace shamrock::solvergraph {
         return ss.str();
     }
 
-    std::string OperationFor::_impl_get_tex() const {
+    std::string OperationForUntil::_impl_get_tex() const {
         std::stringstream ss;
         ss << "Start : " << _impl_get_label() << "\n";
         ss << "For (at most " << max_iter << " iterations) :\n"

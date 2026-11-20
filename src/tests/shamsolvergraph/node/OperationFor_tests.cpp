@@ -9,7 +9,7 @@
 
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
-#include "shamsolvergraph/node/OperationRepeat.hpp"
+#include "shamsolvergraph/node/OperationFor.hpp"
 #include "shamtest/shamtest.hpp"
 #include <memory>
 #include <string>
@@ -42,7 +42,7 @@ namespace {
 
 } // namespace
 
-NEW_TEST(Unittest, "shamsolvergraph/node/OperationRepeat", 1) {
+NEW_TEST(Unittest, "shamsolvergraph/node/OperationFor", 1) {
     using namespace shamrock::solvergraph;
 
     auto make_edge = [](u32 value) {
@@ -56,7 +56,7 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationRepeat", 1) {
         auto counter = make_edge(0);
         auto count   = make_edge(n);
 
-        OperationRepeat node("repeat", std::make_shared<ProbeNode>(counter, u32{2}));
+        OperationFor node("for", std::make_shared<ProbeNode>(counter, u32{2}));
         node.set_edges(count);
         node.evaluate();
 
@@ -68,7 +68,7 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationRepeat", 1) {
         auto counter = make_edge(0);
         auto count   = make_edge(3);
 
-        OperationRepeat node("repeat", std::make_shared<ProbeNode>(counter, u32{1}, count));
+        OperationFor node("for", std::make_shared<ProbeNode>(counter, u32{1}, count));
         node.set_edges(count);
         node.evaluate();
 
@@ -80,7 +80,7 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationRepeat", 1) {
         auto counter = make_edge(0);
         auto count   = make_edge(1);
 
-        OperationRepeat node("repeat", std::make_shared<ProbeNode>(counter, u32{1}));
+        OperationFor node("for", std::make_shared<ProbeNode>(counter, u32{1}));
         node.set_edges(count);
 
         REQUIRE(node.get_dot_graph().size() > 0);

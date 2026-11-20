@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file OperationRepeat.hpp
+ * @file OperationFor.hpp
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Meta node that evaluates a node a number of times
  *
@@ -26,7 +26,7 @@ namespace shamrock::solvergraph {
     /**
      * @brief Loop meta node: evaluate `body` `count` times.
      */
-    class OperationRepeat : public INode {
+    class OperationFor : public INode {
         std::shared_ptr<INode> body;
         std::string name;
 
@@ -35,7 +35,7 @@ namespace shamrock::solvergraph {
          * @param name Display name for DOT / TeX
          * @param body Node evaluated `count` times
          */
-        OperationRepeat(std::string name, std::shared_ptr<INode> body)
+        OperationFor(std::string name, std::shared_ptr<INode> body)
             : body(std::move(body)), name(std::move(name)) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)

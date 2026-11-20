@@ -8,25 +8,25 @@
 // -------------------------------------------------------//
 
 /**
- * @file OperationRepeat.cpp
+ * @file OperationFor.cpp
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
 
-#include "shamsolvergraph/node/OperationRepeat.hpp"
+#include "shamsolvergraph/node/OperationFor.hpp"
 #include <sstream>
 
 namespace shamrock::solvergraph {
 
-    void OperationRepeat::_impl_evaluate_internal() {
+    void OperationFor::_impl_evaluate_internal() {
         const u32 count = get_edges().count.data;
         for (u32 i = 0; i < count; i++) {
             body->evaluate();
         }
     }
 
-    std::string OperationRepeat::_impl_get_dot_graph_partial() const {
+    std::string OperationFor::_impl_get_dot_graph_partial() const {
 
         std::stringstream ss;
 
@@ -54,7 +54,7 @@ namespace shamrock::solvergraph {
         return ss.str();
     }
 
-    std::string OperationRepeat::_impl_get_tex() const {
+    std::string OperationFor::_impl_get_tex() const {
         std::stringstream ss;
         ss << "Start : " << _impl_get_label() << " (repeated $"
            << get_ro_edge_base(0).get_tex_symbol() << "$ times)\n";

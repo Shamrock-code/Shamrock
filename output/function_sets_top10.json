@@ -188,7 +188,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             74.899,
@@ -214,6 +215,7 @@
             34.102,
             26.231,
             48.738,
+            null,
             null,
             null,
             null,
@@ -1290,6 +1292,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -1482,7 +1489,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             46.863,
@@ -1667,7 +1675,8 @@
             18.8,
             18.405,
             16.901,
-            25.568
+            25.568,
+            15.694
          ],
          "customdata": [
             [
@@ -2584,6 +2593,11 @@
                "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
                522,
                48
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               522,
+               30
             ]
          ],
          "connectgaps": false,
@@ -2776,7 +2790,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             34.783,
@@ -2802,6 +2817,7 @@
             16.457,
             13.086,
             23.414,
+            null,
             null,
             null,
             null,
@@ -3878,6 +3894,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -4070,7 +4091,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             26.429,
@@ -4255,7 +4277,8 @@
             11.005,
             10.146,
             10.302,
-            14.046
+            14.046,
+            9.385
          ],
          "customdata": [
             [
@@ -5172,6 +5195,11 @@
                "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
                40,
                351
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               234
             ]
          ],
          "connectgaps": false,
@@ -5364,7 +5392,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             25.75,
@@ -5390,6 +5419,7 @@
             12.257,
             9.67,
             17.41,
+            null,
             null,
             null,
             null,
@@ -6466,6 +6496,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -6658,7 +6693,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             17.951,
@@ -6684,6 +6720,7 @@
             8.311,
             6.518,
             11.778,
+            null,
             null,
             null,
             null,
@@ -7760,6 +7797,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -7952,7 +7994,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             17.067,
@@ -8137,7 +8180,8 @@
             7.064,
             6.816,
             6.482,
-            10.092
+            10.092,
+            5.972
          ],
          "customdata": [
             [
@@ -9054,6 +9098,11 @@
                "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
                228,
                44
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               228,
+               26
             ]
          ],
          "connectgaps": false,
@@ -9246,7 +9295,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             16.012,
@@ -9276,6 +9326,7 @@
             7.3,
             7.094,
             7.456,
+            null,
             null,
             null,
             null,
@@ -10348,6 +10399,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -10540,7 +10596,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             null,
@@ -10725,7 +10782,8 @@
             9.951,
             10.198,
             10.877,
-            13.759
+            13.759,
+            9.465
          ],
          "customdata": [
             [
@@ -11642,6 +11700,11 @@
                "shammodels::sph::Solver&lt;$&gt;::init_solver_graph()",
                6,
                2293
+            ],
+            [
+               "shammodels::sph::Solver&lt;$&gt;::init_solver_graph()",
+               6,
+               1577
             ]
          ],
          "connectgaps": false,
@@ -11834,7 +11897,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             16.251,
@@ -11860,6 +11924,7 @@
             7.601,
             6.061,
             10.922,
+            null,
             null,
             null,
             null,
@@ -12936,6 +13001,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -13128,7 +13198,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             16.172,
@@ -13313,7 +13384,8 @@
             6.806,
             6.273,
             6.796,
-            7.884
+            7.884,
+            null
          ],
          "customdata": [
             [
@@ -14230,6 +14302,11 @@
                "void test_karras_alg&lt;$&gt;()",
                2,
                3942
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -14422,7 +14499,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             null,
@@ -14607,7 +14685,8 @@
             8.407,
             8.39,
             7.836,
-            11.562
+            11.562,
+            7.304
          ],
          "customdata": [
             [
@@ -15524,6 +15603,11 @@
                "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
                320,
                36
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               320,
+               22
             ]
          ],
          "connectgaps": false,
@@ -15716,7 +15800,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             null,
@@ -15901,7 +15986,8 @@
             7.873,
             7.803,
             8.466,
-            11.327
+            11.327,
+            7.465
          ],
          "customdata": [
             [
@@ -16818,6 +16904,11 @@
                "shammodels::sph::Solver&lt;$&gt;::evolve_once()",
                6,
                1887
+            ],
+            [
+               "shammodels::sph::Solver&lt;$&gt;::evolve_once()",
+               6,
+               1244
             ]
          ],
          "connectgaps": false,
@@ -17010,7 +17101,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             null,
@@ -17195,7 +17287,8 @@
             7.601,
             7.116,
             6.514,
-            9.982
+            9.982,
+            6.171
          ],
          "customdata": [
             [
@@ -18112,6 +18205,11 @@
                "void validate_f3d_integ_z_symmetric&lt;$&gt;()",
                160,
                62
+            ],
+            [
+               "void validate_f3d_integ_z_symmetric&lt;$&gt;()",
+               160,
+               38
             ]
          ],
          "connectgaps": false,
@@ -18304,13 +18402,15 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             null,
             null,
             null,
             10.013,
+            null,
             null,
             null,
             null,
@@ -19406,6 +19506,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -19598,7 +19703,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             null,
@@ -19783,7 +19889,8 @@
             6.38,
             6.267,
             5.922,
-            8.993
+            8.993,
+            5.507
          ],
          "customdata": [
             [
@@ -20700,6 +20807,11 @@
                "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, unsigned int)",
                182,
                49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, unsigned int)",
+               182,
+               30
             ]
          ],
          "connectgaps": false,
@@ -20892,7 +21004,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             null,
@@ -20912,6 +21025,7 @@
             null,
             null,
             9.176,
+            null,
             null,
             null,
             null,
@@ -21994,6 +22108,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -22186,7 +22305,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             null,
@@ -22371,7 +22491,8 @@
             6.078,
             5.964,
             5.497,
-            8.417
+            8.417,
+            5.267
          ],
          "customdata": [
             [
@@ -23288,6 +23409,11 @@
                "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
                167,
                50
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               167,
+               31
             ]
          ],
          "connectgaps": false,
@@ -23480,7 +23606,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             null,
@@ -23661,6 +23788,7 @@
             null,
             null,
             7.672,
+            null,
             null,
             null,
             null,
@@ -24582,6 +24710,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -24774,7 +24907,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             null,
@@ -24828,6 +24962,7 @@
             null,
             null,
             6.154,
+            null,
             null,
             null,
             null,
@@ -25876,6 +26011,11 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
             ]
          ],
          "connectgaps": false,
@@ -26068,7 +26208,8 @@
             "2026-11-14T22:02:01Z",
             "2026-11-17T07:50:00Z",
             "2026-11-17T21:57:14Z",
-            "2026-11-18T00:04:12Z"
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
          ],
          "y": [
             null,
@@ -26105,6 +26246,7 @@
             null,
             null,
             4.865,
+            null,
             null,
             null,
             null,
@@ -27170,6 +27312,1312 @@
                null,
                null,
                null
+            ],
+            [
+               null,
+               null,
+               null
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "std::_Function_handler<$>::_M_manager",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z",
+            "2026-08-21T20:40:23Z",
+            "2026-08-22T00:21:56Z",
+            "2026-08-23T00:50:58Z",
+            "2026-08-23T04:26:36Z",
+            "2026-08-23T16:02:39Z",
+            "2026-08-24T09:05:49Z",
+            "2026-08-24T17:28:50Z",
+            "2026-08-25T03:52:18Z",
+            "2026-08-25T16:43:29Z",
+            "2026-08-26T15:25:46Z",
+            "2026-08-27T08:11:30Z",
+            "2026-08-27T13:55:27Z",
+            "2026-08-27T19:36:52Z",
+            "2026-08-28T01:37:10Z",
+            "2026-08-28T09:38:19Z",
+            "2026-08-28T16:50:29Z",
+            "2026-08-28T22:30:12Z",
+            "2026-08-29T04:44:35Z",
+            "2026-08-29T06:50:42Z",
+            "2026-08-29T15:16:08Z",
+            "2026-08-29T19:59:56Z",
+            "2026-08-30T00:36:26Z",
+            "2026-08-30T09:01:29Z",
+            "2026-08-31T18:23:48Z",
+            "2026-08-31T21:36:51Z",
+            "2026-09-01T00:44:08Z",
+            "2026-09-01T02:32:48Z",
+            "2026-09-03T07:02:33Z",
+            "2026-09-03T12:47:06Z",
+            "2026-09-04T13:13:29Z",
+            "2026-09-04T16:39:08Z",
+            "2026-09-04T19:51:27Z",
+            "2026-09-04T22:10:58Z",
+            "2026-09-05T12:33:05Z",
+            "2026-09-08T01:35:45Z",
+            "2026-09-09T18:47:06Z",
+            "2026-09-10T18:12:48Z",
+            "2026-09-10T23:11:15Z",
+            "2026-09-11T18:20:59Z",
+            "2026-09-12T00:56:29Z",
+            "2026-09-12T12:42:31Z",
+            "2026-09-12T23:19:38Z",
+            "2026-09-15T10:20:11Z",
+            "2026-09-15T17:45:33Z",
+            "2026-09-15T21:28:52Z",
+            "2026-09-16T02:06:28Z",
+            "2026-09-16T04:38:18Z",
+            "2026-09-16T12:55:22Z",
+            "2026-09-17T19:41:09Z",
+            "2026-09-17T22:54:22Z",
+            "2026-09-18T01:55:04Z",
+            "2026-09-18T03:39:54Z",
+            "2026-09-18T09:08:49Z",
+            "2026-09-19T00:54:22Z",
+            "2026-09-19T04:19:09Z",
+            "2026-09-20T04:05:17Z",
+            "2026-09-20T09:59:22Z",
+            "2026-09-20T13:17:16Z",
+            "2026-09-20T23:54:04Z",
+            "2026-09-22T03:27:49Z",
+            "2026-09-23T07:14:24Z",
+            "2026-09-23T12:52:23Z",
+            "2026-09-23T19:27:32Z",
+            "2026-09-23T22:51:56Z",
+            "2026-09-24T02:07:52Z",
+            "2026-09-25T00:32:40Z",
+            "2026-09-25T09:22:52Z",
+            "2026-09-28T09:21:27Z",
+            "2026-09-28T23:56:02Z",
+            "2026-09-29T03:09:38Z",
+            "2026-09-29T05:09:20Z",
+            "2026-09-29T20:08:10Z",
+            "2026-09-30T01:33:50Z",
+            "2026-09-30T05:00:44Z",
+            "2026-09-30T16:16:14Z",
+            "2026-10-01T00:08:55Z",
+            "2026-10-01T15:48:23Z",
+            "2026-10-01T23:04:34Z",
+            "2026-10-02T22:44:34Z",
+            "2026-10-04T17:55:32Z",
+            "2026-10-04T22:22:38Z",
+            "2026-10-05T01:03:37Z",
+            "2026-10-06T04:11:11Z",
+            "2026-10-06T06:04:22Z",
+            "2026-10-06T11:24:26Z",
+            "2026-10-06T15:38:03Z",
+            "2026-10-06T22:27:37Z",
+            "2026-10-07T09:26:20Z",
+            "2026-10-08T12:12:47Z",
+            "2026-10-08T17:56:07Z",
+            "2026-10-09T00:50:06Z",
+            "2026-10-09T03:41:47Z",
+            "2026-10-09T05:49:59Z",
+            "2026-10-09T12:09:11Z",
+            "2026-10-10T16:41:27Z",
+            "2026-10-10T19:06:22Z",
+            "2026-10-11T16:57:13Z",
+            "2026-10-12T00:20:09Z",
+            "2026-10-12T20:11:47Z",
+            "2026-10-13T12:04:09Z",
+            "2026-10-13T16:40:21Z",
+            "2026-10-13T21:53:20Z",
+            "2026-10-14T09:15:17Z",
+            "2026-10-15T14:22:23Z",
+            "2026-10-15T19:18:20Z",
+            "2026-10-16T03:15:46Z",
+            "2026-10-16T05:27:37Z",
+            "2026-10-16T13:30:52Z",
+            "2026-10-16T20:15:55Z",
+            "2026-10-16T22:31:14Z",
+            "2026-10-20T02:41:24Z",
+            "2026-10-20T05:56:10Z",
+            "2026-10-20T18:48:19Z",
+            "2026-10-20T23:22:22Z",
+            "2026-10-21T02:21:12Z",
+            "2026-10-22T01:21:44Z",
+            "2026-10-22T12:59:19Z",
+            "2026-10-22T23:00:04Z",
+            "2026-10-23T01:08:55Z",
+            "2026-10-23T13:58:31Z",
+            "2026-10-23T20:09:39Z",
+            "2026-10-23T22:28:13Z",
+            "2026-10-24T15:31:38Z",
+            "2026-10-25T01:27:55Z",
+            "2026-10-25T14:06:07Z",
+            "2026-10-25T22:51:03Z",
+            "2026-10-26T01:09:17Z",
+            "2026-10-26T09:08:35Z",
+            "2026-10-26T15:09:19Z",
+            "2026-10-27T20:45:22Z",
+            "2026-10-27T23:13:47Z",
+            "2026-10-29T15:30:34Z",
+            "2026-10-30T23:02:34Z",
+            "2026-10-31T18:56:22Z",
+            "2026-11-01T03:16:01Z",
+            "2026-11-01T05:15:02Z",
+            "2026-11-01T17:52:43Z",
+            "2026-11-01T21:02:28Z",
+            "2026-11-02T01:18:34Z",
+            "2026-11-02T03:38:24Z",
+            "2026-11-02T15:42:11Z",
+            "2026-11-03T18:39:33Z",
+            "2026-11-03T21:30:46Z",
+            "2026-11-04T16:17:16Z",
+            "2026-11-05T21:39:54Z",
+            "2026-11-07T11:09:55Z",
+            "2026-11-08T02:59:24Z",
+            "2026-11-08T19:49:23Z",
+            "2026-11-09T01:10:50Z",
+            "2026-11-09T17:15:09Z",
+            "2026-11-10T22:25:33Z",
+            "2026-11-11T05:50:00Z",
+            "2026-11-11T13:09:06Z",
+            "2026-11-13T14:31:24Z",
+            "2026-11-14T22:02:01Z",
+            "2026-11-17T07:50:00Z",
+            "2026-11-17T21:57:14Z",
+            "2026-11-18T00:04:12Z",
+            "2026-11-20T20:16:59Z"
+         ],
+         "y": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            5.014
+         ],
+         "customdata": [
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "std::_Function_handler&lt;$&gt;::_M_manager(std::_Any_data&amp;, std::_Any_data const&amp;, std::_Manager_operation)",
+               5046,
+               0
             ]
          ],
          "connectgaps": false,

@@ -1174,19 +1174,25 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd(
         cfg.alpha_B,
         /*etaO=*/Tscal(0),
         /*etaH=*/Tscal(0),
-        /*etaAD=*/Tscal(0));
+        /*etaAD=*/Tscal(0),
+        /*eta_fields=*/false);
 }
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_nimhd(NonIdealMHD cfg) {
     update_derivs_mhd_impl<shamrock::sph::mhd::MHDType::NonIdeal>(
-        cfg.sigma_mhd, cfg.alpha_B, cfg.etaO, cfg.etaH, cfg.etaAD);
+        cfg.sigma_mhd,
+        cfg.alpha_B,
+        cfg.etaO,
+        cfg.etaH,
+        cfg.etaAD,
+        /*eta_fields=*/cfg.eta_fields || cfg.eta_semi_constant);
 }
 
 template<class Tvec, template<class> class SPHKernel>
 template<shamrock::sph::mhd::MHDType mhd_mode>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_impl(
-    Tscal sigma_mhd, Tscal alpha_B, Tscal etaO, Tscal etaH, Tscal etaAD) {
+    Tscal sigma_mhd, Tscal alpha_B, Tscal etaO, Tscal etaH, Tscal etaAD, bool eta_fields) {
 
     StackEntry stack_loc{};
 
@@ -1228,6 +1234,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
     u32 iB_on_rho_interf  = ghost_layout.get_field_idx<Tvec>("B/rho");
     u32 ipsi_on_ch_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
 
+    u32 ieta_o_interf  = (eta_fields) ? ghost_layout.get_field_idx<Tscal>("eta_o") : 0;
+    u32 ieta_h_interf  = (eta_fields) ? ghost_layout.get_field_idx<Tscal>("eta_h") : 0;
+    u32 ieta_ad_interf = (eta_fields) ? ghost_layout.get_field_idx<Tscal>("eta_ad") : 0;
+
     bool do_nimhd = solver_config.do_nimhd();
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
@@ -1255,7 +1265,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
         sham::DeviceBuffer<Tscal> &buf_psi_on_ch
             = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
 
-        bool do_nimhd = solver_config.do_nimhd();
+        sham::DeviceBuffer<Tscal> *buf_eta_o
+            = (eta_fields) ? &mpdat.get_field_buf_ref<Tscal>(ieta_o_interf) : nullptr;
+        sham::DeviceBuffer<Tscal> *buf_eta_h
+            = (eta_fields) ? &mpdat.get_field_buf_ref<Tscal>(ieta_h_interf) : nullptr;
+        sham::DeviceBuffer<Tscal> *buf_eta_ad
+            = (eta_fields) ? &mpdat.get_field_buf_ref<Tscal>(ieta_ad_interf) : nullptr;
+
         sham::DeviceBuffer<Tvec> *buf_J
             = (do_nimhd) ? &storage.MagCurrentJ_ghost.get().get(cur_p.id_patch).get_buf() : nullptr;
 
@@ -1278,7 +1294,14 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
         auto dB_on_rho  = buf_dB_on_rho.get_write_access(depends_list);
         auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
         auto drho_dt    = buf_drho_dt.get_write_access(depends_list);
-        auto J_field    = (do_nimhd) ? buf_J->get_read_access(depends_list) : nullptr;
+
+        const Tvec *J_field = (do_nimhd) ? buf_J->get_read_access(depends_list) : nullptr;
+        const Tscal *eta_o_field
+            = (eta_fields) ? buf_eta_o->get_read_access(depends_list) : nullptr;
+        const Tscal *eta_h_field
+            = (eta_fields) ? buf_eta_h->get_read_access(depends_list) : nullptr;
+        const Tscal *eta_ad_field
+            = (eta_fields) ? buf_eta_ad->get_read_access(depends_list) : nullptr;
 
         Tvec *mag_pressure
             = (do_MHD_debug)
@@ -1315,12 +1338,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
         auto ploop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            const Tscal pmass    = solver_config.gpart_mass;
-            const Tscal _sigma   = sigma_mhd;
-            const Tscal _alpha_B = alpha_B;
-            const Tscal _etaO    = etaO;
-            const Tscal _etaH    = etaH;
-            const Tscal _etaAD   = etaAD;
+            const Tscal pmass      = solver_config.gpart_mass;
+            const Tscal _sigma     = sigma_mhd;
+            const Tscal _alpha_B   = alpha_B;
+            const Tscal _etaO      = etaO;
+            const Tscal _etaH      = etaH;
+            const Tscal _etaAD     = etaAD;
+            const bool _eta_fields = eta_fields;
 
             shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
             shamlog_debug_sycl_ln("deriv kernel", "sigma_mhd  :", _sigma);
@@ -1346,6 +1370,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
                 Tscal omega_a = omega[id_a];
 
                 Tvec J_a = (do_nimhd) ? J_field[id_a] : Tvec{0, 0, 0};
+
+                Tscal etaO_a  = (_eta_fields) ? eta_o_field[id_a] : _etaO;
+                Tscal etaH_a  = (_eta_fields) ? eta_h_field[id_a] : _etaH;
+                Tscal etaAD_a = (_eta_fields) ? eta_ad_field[id_a] : _etaAD;
 
                 Tscal rho_a    = rho_h(pmass, h_a, Kernel::hfactd);
                 Tscal rho_a_sq = rho_a * rho_a;
@@ -1384,6 +1412,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
 
                     Tvec J_b = (do_nimhd) ? J_field[id_b] : Tvec{0, 0, 0};
 
+                    Tscal etaO_b  = (_eta_fields) ? eta_o_field[id_b] : _etaO;
+                    Tscal etaH_b  = (_eta_fields) ? eta_h_field[id_b] : _etaH;
+                    Tscal etaAD_b = (_eta_fields) ? eta_ad_field[id_b] : _etaAD;
+
                     Tscal rho_b      = rho_h(pmass, h_b, Kernel::hfactd);
                     Tvec B_b         = B_on_rho[id_b] * rho_b;
                     Tscal v_alfven_b = sycl::sqrt(sycl::dot(B_b, B_b) / (mu_0 * rho_b));
@@ -1419,9 +1451,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
                         psi_b,
                         mu_0,
                         _sigma,
-                        _etaO,
-                        _etaH,
-                        _etaAD,
+                        etaO_a,
+                        etaH_a,
+                        etaAD_a,
+                        etaO_b,
+                        etaH_b,
+                        etaAD_b,
                         force_mhd,
                         tmpdU_mhd,
                         magnetic_eq,
@@ -1438,7 +1473,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
                 if (do_nimhd) {
                     // only add once per particle
                     Tscal u_NI = shamrock::sph::mhd::u_ni_heating<Tvec, Tscal, mhd_mode>(
-                        B_a, J_a, rho_a, etaO, etaH, etaAD, mu_0);
+                        B_a, J_a, rho_a, etaO_a, etaH_a, etaAD_a, mu_0);
                     tmpdU_mhd += u_NI;
                 }
 
@@ -1477,6 +1512,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
 
         if (do_nimhd) {
             buf_J->complete_event_state(e);
+        }
+
+        if (eta_fields) {
+            buf_eta_o->complete_event_state(e);
+            buf_eta_h->complete_event_state(e);
+            buf_eta_ad->complete_event_state(e);
         }
 
         if (do_MHD_debug) {

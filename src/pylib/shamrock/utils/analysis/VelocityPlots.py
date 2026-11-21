@@ -1,6 +1,7 @@
 import numpy as np
 
 import shamrock.sys
+from shamrock.utils.numba_helper import maybe_njit
 
 from .StandardPlotHelper import StandardPlotHelper
 
@@ -104,7 +105,7 @@ def SliceDiffVthetaProfile(
             print("Using numba for velocity profile in SliceDiffVthetaProfile")
 
         if _HAS_NUMBA:
-            vel_profile_jit = njit(velocity_profile)
+            vel_profile_jit = maybe_njit(velocity_profile)
         else:
             vel_profile_jit = np.vectorize(velocity_profile)
 
@@ -230,7 +231,7 @@ def gen_angular_momt_custom_getter(model, velocity_profile):
             print(
                 "Using numba for velocity profile in SliceAngularMomentumTransportCoefficientPlot"
             )
-        vel_profile_jit = njit(velocity_profile)
+        vel_profile_jit = maybe_njit(velocity_profile)
     else:
         vel_profile_jit = np.vectorize(velocity_profile)
 

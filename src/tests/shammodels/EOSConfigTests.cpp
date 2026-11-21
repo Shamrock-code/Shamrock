@@ -94,10 +94,38 @@ void test_serialize_locally_isothermallp07() {
     }
 }
 
+void test_serialize_barotropic() {
+
+    shammodels::EOSConfig<f64_3> in_config;
+
+    in_config.set_barotropic(0.19, 1e-13, 5. / 3.);
+
+    nlohmann::json j = in_config;
+
+    std::string s = j.dump(4);
+
+    nlohmann::json jout = nlohmann::json::parse(s);
+
+    shammodels::EOSConfig<f64_3> out_config = jout.template get<shammodels::EOSConfig<f64_3>>();
+
+    using Config = shamphys::EOS_Config_Barotropic<f64>;
+
+    if (Config *out_eos_config = std::get_if<Config>(&out_config.config)) {
+        if (Config *in_eos_config = std::get_if<Config>(&in_config.config)) {
+            REQUIRE(*in_eos_config == *out_eos_config);
+        } else {
+            REQUIRE(false);
+        }
+    } else {
+        REQUIRE(false);
+    }
+}
+
 NEW_TEST(Unittest, "shammodels/EOSConfig::json", 1) {
 
     test_serialize_adiabatic();
     test_serialize_locally_isothermal();
     test_serialize_locally_isothermallp07();
+    test_serialize_barotropic();
     // TODO test others cases
 }

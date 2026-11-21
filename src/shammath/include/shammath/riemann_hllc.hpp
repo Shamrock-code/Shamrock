@@ -249,4 +249,99 @@ namespace shammath {
             return f_r;
     }
 
+    /**
+     * @brief HLLC solver based on section 10.4 from Toro 3rd Edition , Springer 2009, using the
+     *        wave speed estimate of the RAMSES code (riemann_hllc in hydro/godunov_utils.f90):
+     *          s_l = min(velx_l, velx_r) - max(cs_l, cs_r)
+     *          s_r = max(velx_l, velx_r) + max(cs_l, cs_r)
+     *        so that the flux matches the hllc solver of RAMSES. Like the Davis estimate it does
+     *        not rely on an adiabatic equation of state for the pressure in the star region.
+     *        Computes the flux across a face with unit normal n.
+     * @tparam FSpec
+     * @param fspec fluid state spec (equation of state + flux/wave-speed operations)
+     * @param prim_l left  primitive state
+     * @param prim_r right primitive state
+     * @param n face unit normal
+     */
+    template<FluidStateSpec FSpec>
+    inline constexpr typename FSpec::Tcons hllc_ramses_flux(
+        const FSpec &fspec,
+        const typename FSpec::Tprim &prim_l,
+        const typename FSpec::Tprim &prim_r,
+        const typename FSpec::Tvec &n) {
+        using Tscal = typename FSpec::Tscal;
+        using Tvec  = typename FSpec::Tvec;
+        using Tcons = typename FSpec::Tcons;
+
+        // Conservative form is only needed for the star-state algebra below.
+        const Tcons c_l = fspec.prim_to_cons(prim_l);
+        const Tcons c_r = fspec.prim_to_cons(prim_r);
+
+        // sound speeds
+        const auto cs_l = fspec.sound_speed(prim_l);
+        const auto cs_r = fspec.sound_speed(prim_r);
+
+        // Left variables
+        const auto rho_l   = prim_l.rho;
+        const auto press_l = prim_l.press;
+        const auto velx_l  = fspec.vn(prim_l, n);
+
+        // Right variables
+        const auto rho_r   = prim_r.rho;
+        const auto press_r = prim_r.press;
+        const auto velx_r  = fspec.vn(prim_r, n);
+
+        // Left and right state fluxes
+        const auto f_l = fspec.flux(prim_l, n, velx_l);
+        const auto f_r = fspec.flux(prim_r, n, velx_r);
+
+        // Wave speed estimate of the RAMSES code (riemann_hllc in hydro/godunov_utils.f90)
+        const Tscal cs_max = sham::max(cs_l, cs_r);
+        Tscal s_l          = sham::min(velx_l, velx_r) - cs_max;
+        Tscal s_r          = sham::max(velx_l, velx_r) + cs_max;
+
+        // lagrangian sound speed
+        const Tscal var_l = rho_l * (s_l - velx_l);
+        const Tscal var_r = rho_r * (s_r - velx_r);
+
+        // NOLINTBEGIN(readability-identifier-naming)
+
+        // S* speed estimate
+        // Equation (10.37) from Toro 3rd Edition , Springer 2009
+        const Tscal S_star
+            = (prim_r.press - prim_l.press + velx_l * var_l - velx_r * var_r) / (var_l - var_r);
+
+        // New pressure estimate in the star region as average the pressure estimate at right
+        // and left of S_star in the star region
+        // Equation (10.42) from Toro 3rd Edition , Springer 2009
+        const Tscal press_lr
+            = 0.5 * (press_l + press_r + var_l * (S_star - velx_l) + var_r * (S_star - velx_r));
+        Tcons D_star{0, S_star, n};
+
+        // NOLINTEND(readability-identifier-naming)
+
+        // Equation (10.40) from Toro 3rd Edition , Springer 2009
+        // Left intermediate conservative state in the star region
+        Tcons c_l_star = (s_l * c_l - f_l + press_lr * D_star) * (1.0 / (s_l - S_star));
+
+        // Equation (10.40) from Toro 3rd Edition , Springer 2009
+        // Right intermediate conservative state in the star region
+        Tcons c_r_star = (s_r * c_r - f_r + press_lr * D_star) * (1.0 / (s_r - S_star));
+
+        // intemediate Flux in the star region
+        // Equation (10.38) from Toro 3rd Edition , Springer 2009
+        Tcons f_l_star = f_l + s_l * (c_l_star - c_l);
+        Tcons f_r_star = f_r + s_r * (c_r_star - c_r);
+
+        // HLLC flux
+        if (s_l >= 0) {
+            return f_l;
+        } else if (S_star >= 0) {
+            return f_l_star;
+        } else if (s_r >= 0) {
+            return f_r_star;
+        } else
+            return f_r;
+    }
+
 } // namespace shammath

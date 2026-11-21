@@ -202,6 +202,8 @@ jobs:
           # Physics examples
           - testfile: "examples/physics/run_coala.py"
             artifact_name: gallery_coala
+          - testfile: "examples/physics/run_coala_coag_frag.py"
+            artifact_name: gallery_coala_coag_frag
 
           # Ramses examples
           - testfile: "examples/ramses/run_kh.py"

@@ -8,6 +8,10 @@ from .generate_flux_intflux import *
 from .limiter import *
 from .utils_polynomials import *
 
+# ---------------------------
+# functions for coagulation
+# ---------------------------
+
 
 # for analytical collision kernel
 def compute_CFL_coag_k0(eps, nbins, massgrid, gij, tensor_tabflux_coag):
@@ -37,29 +41,21 @@ def compute_CFL_coag_k0(eps, nbins, massgrid, gij, tensor_tabflux_coag):
 
     """
 
-    tabdflux = np.zeros(nbins)
     tabdtCFL = np.zeros(nbins)
 
     flux = compute_flux_coag_k0(gij, tensor_tabflux_coag)
 
-    if np.array_equal(flux, np.zeros(nbins)):
-        # calculs continue with no coag
-        CFL_k0 = 1e3
+    for j in range(1, nbins):
+        hj = massgrid[j + 1] - massgrid[j]
 
-    else:
-        tabdflux[0] = flux[0]
-        tabdtCFL[0] = np.abs(gij[0] * (massgrid[1] - massgrid[0]) / (tabdflux[0]))
-
-        for j in range(1, nbins):
-            hj = massgrid[j + 1] - massgrid[j]
-            tabdflux[j] = flux[j] - flux[j - 1]
-
-            if gij[j] > eps:
-                tabdtCFL[j] = np.abs(gij[j] * hj / tabdflux[j])
+        if gij[j] > eps:
+            if j == 0:
+                # bin 1, where flux(0) = 0, no mass entering the mass domain [massmin,massmax]
+                tabdtCFL[j] = np.abs(gij[j] * hj / flux[j])
             else:
-                tabdtCFL[j] = 1e3
+                tabdtCFL[j] = np.abs(gij[j] * hj / (flux[j] - flux[j - 1]))
 
-        CFL_k0 = np.min(tabdtCFL)
+    CFL_k0 = np.min(tabdtCFL[tabdtCFL > 0.0])
 
     if CFL_k0 == 0.0:
         print("gij=", gij)
@@ -211,32 +207,21 @@ def compute_CFL_coag_k0_kdv(eps, nbins, massgrid, gij, tensor_tabflux_coag, dv):
 
     """
 
-    tabdflux = np.zeros(nbins)
     tabdtCFL = np.zeros(nbins)
 
     flux = compute_flux_coag_k0_kdv(gij, tensor_tabflux_coag, dv)
 
-    if np.array_equal(flux, np.zeros(nbins)):
-        # calculs continue with no coag
-        CFL_k0 = 1e3
+    for j in range(1, nbins):
+        hj = massgrid[j + 1] - massgrid[j]
 
-    else:
-        tabdflux[0] = flux[0]
-        tabdtCFL[0] = np.abs(gij[0] * (massgrid[1] - massgrid[0]) / (tabdflux[0]))
-
-        for j in range(1, nbins):
-            hj = massgrid[j + 1] - massgrid[j]
-            tabdflux[j] = flux[j] - flux[j - 1]
-
-            if gij[j] > eps:
-                tabdtCFL[j] = np.abs(gij[j] * hj / tabdflux[j])
+        if gij[j] > eps:
+            if j == 0:
+                # bin 1, where flux(0) = 0, no mass entering the mass domain [massmin,massmax]
+                tabdtCFL[j] = np.abs(gij[j] * hj / flux[j])
             else:
-                tabdtCFL[j] = 1e3
+                tabdtCFL[j] = np.abs(gij[j] * hj / (flux[j] - flux[j - 1]))
 
-        # print("gij=",gij)
-        # print("tabdtCFL =",tabdtCFL)
-
-        CFL_k0 = np.min(tabdtCFL)
+    CFL_k0 = np.min(tabdtCFL[tabdtCFL > 0.0])
 
     if CFL_k0 == 0.0:
         print("gij=", gij)
@@ -393,29 +378,21 @@ def compute_CFL_coag(eps, nbins, kpol, massgrid, gij, tensor_tabflux_coag):
 
     """
 
-    tabdflux = np.zeros(nbins)
     tabdtCFL = np.zeros(nbins)
 
     flux = compute_flux_coag(gij, tensor_tabflux_coag)
 
-    if np.array_equal(flux, np.zeros(nbins)):
-        # calculs continue with no coag
-        CFL_k0 = 1e3
+    for j in range(1, nbins):
+        hj = massgrid[j + 1] - massgrid[j]
 
-    else:
-        tabdflux[0] = flux[0]
-        tabdtCFL[0] = np.abs(gij[0, 0] * (massgrid[1] - massgrid[0]) / (tabdflux[0]))
-
-        for j in range(1, nbins):
-            hj = massgrid[j + 1] - massgrid[j]
-            tabdflux[j] = flux[j] - flux[j - 1]
-
-            if gij[j, 0] > eps:
-                tabdtCFL[j] = np.abs(gij[j, 0] * hj / tabdflux[j])
+        if gij[j, 0] > eps:
+            if j == 0:
+                # bin 1, where flux(0) = 0, no mass entering the mass domain [massmin,massmax]
+                tabdtCFL[j] = np.abs(gij[j, 0] * hj / flux[j])
             else:
-                tabdtCFL[j] = 1e3
+                tabdtCFL[j] = np.abs(gij[j, 0] * hj / (flux[j] - flux[j - 1]))
 
-        CFL = np.min(tabdtCFL)
+    CFL = np.min(tabdtCFL[tabdtCFL > 0.0])
 
     if CFL <= 0.0:
         print("gij[:,0]=", gij[:, 0])
@@ -607,29 +584,21 @@ def compute_CFL_coag_kdv(eps, nbins, kpol, massgrid, gij, tensor_tabflux_coag, d
        CFL restriction for coagulation
 
     """
-    tabdflux = np.zeros(nbins)
     tabdtCFL = np.zeros(nbins)
 
     flux = compute_flux_coag_kdv(gij, tensor_tabflux_coag, dv)
 
-    if np.array_equal(flux, np.zeros(nbins)):
-        # calculs continue with no coag
-        CFL = 1e3
+    for j in range(1, nbins):
+        hj = massgrid[j + 1] - massgrid[j]
 
-    else:
-        tabdflux[0] = flux[0]
-        tabdtCFL[0] = np.abs(gij[0, 0] * (massgrid[1] - massgrid[0]) / (tabdflux[0]))
-
-        for j in range(1, nbins):
-            hj = massgrid[j + 1] - massgrid[j]
-            tabdflux[j] = flux[j] - flux[j - 1]
-
-            if gij[j, 0] > eps:
-                tabdtCFL[j] = np.abs(gij[j, 0] * hj / tabdflux[j])
+        if gij[j, 0] > eps:
+            if j == 0:
+                # bin 1, where flux(0) = 0, no mass entering the mass domain [massmin,massmax]
+                tabdtCFL[j] = np.abs(gij[j, 0] * hj / flux[j])
             else:
-                tabdtCFL[j] = 1e3
+                tabdtCFL[j] = np.abs(gij[j, 0] * hj / (flux[j] - flux[j - 1]))
 
-        CFL = np.min(tabdtCFL)
+    CFL = np.min(tabdtCFL[tabdtCFL > 0.0])
 
     if CFL <= 0.0:
         print("gij[:,0]=", gij[:, 0])
@@ -802,5 +771,726 @@ def solver_coag_kdv(
     else:
         gijnew[:, 1:][gijnew[:, 0] < eps] = 0.0
         gijnew[:, 0][gijnew[:, 0] < eps] = eps
+
+    return gijnew
+
+
+# ---------------------------
+# functions for fragmentation
+# ---------------------------
+
+
+# for analytical kernel
+def compute_CFL_frag_k0(
+    eps, nbins, massgrid, gij, tensor_tabflux_coag, tensor_tabflux_frag_T1, tensor_tabflux_frag_T2
+):
+    """
+    Function to compute fragmentation CFL for DG scheme k=0 piecewise constant approximation
+
+    CFL formulation from Filbet & Laurencot 2004, dt <= mean_g * dm/dF
+
+    Parameters
+    ----------
+    eps : scalar, type -> float
+       minimum value for mass distribution approximation gij
+    nbins : scalar, type -> integer
+       number of dust bins
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+    gij : 1D array (dim = nbins), type -> float
+       components of g on the polynomial basis
+    tensor_tabflux_coag : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate coagulation term in fragmentation flux
+    tensor_tabflux_frag_T1 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 1 for fragmentation flux
+    tensor_tabflux_frag_T2 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 2 for fragmentation flux
+
+
+
+    Returns
+    -------
+    CFL_k0 : scalar, type -> float
+       CFL restriction for coagulation
+
+    """
+
+    tabdtCFL = np.zeros(nbins)
+
+    flux = compute_flux_frag_k0(
+        gij, tensor_tabflux_coag, tensor_tabflux_frag_T1, tensor_tabflux_frag_T2
+    )
+
+    for j in range(1, nbins):
+        hj = massgrid[j + 1] - massgrid[j]
+
+        if gij[j] > eps:
+            if j == 0:
+                # bin 1, where flux(0) = 0, no mass entering the mass domain [massmin,massmax]
+                tabdtCFL[j] = np.abs(gij[j] * hj / flux[j])
+            else:
+                tabdtCFL[j] = np.abs(gij[j] * hj / (flux[j] - flux[j - 1]))
+
+    CFL_k0 = np.min(tabdtCFL[tabdtCFL > 0.0])
+
+    if CFL_k0 == 0.0:
+        print("gij=", gij)
+        print("hj = ", massgrid[1:] - massgrid[:nbins])
+        print("tabdtCFL = ", tabdtCFL)
+        print("CFL_k0 = ", CFL_k0)
+        print("issue in CFL fragmentation")
+        sys.exit()
+
+    return CFL_k0
+
+
+def L_func_frag_k0(
+    nbins, massgrid, gij, tensor_tabflux_coag, tensor_tabflux_frag_T1, tensor_tabflux_frag_T2
+):
+    """
+    Function to compute the DG operator L for fragmentation with piecewise constant approximation (see Lombart et al., 2021)
+    It is used for the time solver
+
+    Parameters
+    ----------
+    nbins : scalar, type -> integer
+       number of dust bins
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+    gij : 1D array (dim = nbins), type -> float
+       components of g on the polynomial basis
+    tensor_tabflux_coag : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate coagulation term in fragmentation flux
+    tensor_tabflux_frag_T1 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 1 for fragmentation flux
+    tensor_tabflux_frag_T2 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 2 for fragmentation flux
+
+
+    Returns
+    -------
+    Lk0 : 1D array (dim = nbins), type -> float
+       DG operator for piecewise constant approximation in each bin
+
+    """
+
+    flux = compute_flux_frag_k0(
+        gij, tensor_tabflux_coag, tensor_tabflux_frag_T1, tensor_tabflux_frag_T2
+    )
+
+    Lk0 = np.zeros(nbins)
+    Lk0[0] = -flux[0] / (massgrid[1] - massgrid[0])
+    Lk0[1:] = -(flux[1:] - flux[0 : nbins - 1]) / (massgrid[2:] - massgrid[1:nbins])
+
+    return Lk0
+
+
+def solver_frag_k0(
+    eps,
+    nbins,
+    massgrid,
+    gij,
+    tensor_tabflux_coag,
+    tensor_tabflux_frag_T1,
+    tensor_tabflux_frag_T2,
+    dt,
+):
+    """
+    Function to compute SSPRK order 3 time solver for fragmentation with piecewise constant approximation
+    See Zhang & Shu 2010 and Lombart et al., 2021
+
+
+    Parameters
+    ----------
+    eps : scalar, type -> float
+       minimum value for mass distribution approximation gij
+    nbins : scalar, type -> integer
+       number of dust bins
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+    gij : 1D array (dim = nbins), type -> float
+       components of g on the polynomial basis
+    tensor_tabflux_coag : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate coagulation term in fragmentation flux
+    tensor_tabflux_frag_T1 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 1 for fragmentation flux
+    tensor_tabflux_frag_T2 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 2 for fragmentation flux
+    dt : scalar, type -> float
+       timestep
+
+
+    Returns
+    -------
+    gijnew : 1D array (dim = nbins), type -> float
+       evolved components of g on the polynomial basis after 1 timestep
+
+    """
+
+    # SSPRK3 algo (Zhang & Shu 2010)
+    # step 1
+    Lk0 = L_func_frag_k0(
+        nbins, massgrid, gij, tensor_tabflux_coag, tensor_tabflux_frag_T1, tensor_tabflux_frag_T2
+    )
+
+    gij1 = gij + dt * Lk0
+
+    # limit gij1 to eps value
+    if len(gij1[gij1 < 0.0]) > 0:
+        print("gij", gij)
+        print("dt*Lk0 = ", dt * Lk0)
+        print("gij1 = ", gij1)
+        sys.exit()
+    else:
+        gij1[gij1 < eps] = eps
+
+    Lk0_1 = L_func_frag_k0(
+        nbins, massgrid, gij1, tensor_tabflux_coag, tensor_tabflux_frag_T1, tensor_tabflux_frag_T2
+    )
+
+    gij2 = 3.0 * gij / 4.0 + (gij1 + dt * Lk0_1) / 4.0
+
+    # limit gij2 to eps value
+    if len(gij2[gij2 < 0.0]) > 0:
+        print("gi1", gi1)
+        print("dt*Lk0_1 = ", dt * Lk0_1)
+        print("gij2 = ", gij2)
+        sys.exit()
+    else:
+        gij2[gij2 < eps] = eps
+
+    # step 3
+    Lk0_2 = L_func_frag_k0(
+        nbins, massgrid, gij2, tensor_tabflux_coag, tensor_tabflux_frag_T1, tensor_tabflux_frag_T2
+    )
+
+    gijnew = gij / 3.0 + 2.0 * (gij2 + dt * Lk0_2) / 3.0
+
+    # limit gijnew to eps value
+    if len(gijnew[gijnew < 0.0]) > 0:
+        print("gij2", gij2)
+        print("dt*Lk0_2 = ", dt * Lk0_2)
+        print("gijnew = ", gijnew)
+        sys.exit()
+    else:
+        gijnew[gijnew < eps] = eps
+
+    return gijnew
+
+
+# for physical kernel with cross-section x dv
+def compute_CFL_frag_k0_kdv(
+    eps,
+    nbins,
+    massgrid,
+    gij,
+    tensor_tabflux_coag,
+    tensor_tabflux_frag_T1,
+    tensor_tabflux_frag_T2,
+    dv,
+):
+    """
+    Function to compute fragmentation CFL for DG scheme k=0 piecewise constant approximation.
+
+    Function for ballistic kernel with differential velocities dv
+
+    CFL formulation from Filbet & Laurencot 2004, dt <= mean_g * dm/dF
+
+    Parameters
+    ----------
+    eps : scalar, type -> float
+       minimum value for mass distribution approximation gij
+    nbins : scalar, type -> integer
+       number of dust bins
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+    gij : 1D array (dim = nbins), type -> float
+       components of g on the polynomial basis
+    tensor_tabflux_coag : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate coagulation term in fragmentation flux
+    tensor_tabflux_frag_T1 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 1 for fragmentation flux
+    tensor_tabflux_frag_T2 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 2 for fragmentation flux
+    dv : 2D array (dim = (nbins,nbins)), type -> float
+       array of the differential velocity between grains
+
+
+    Returns
+    -------
+    CFL_k0 : scalar, type -> float
+       CFL restriction for coagulation
+
+    """
+
+    tabdtCFL = np.zeros(nbins)
+
+    flux = compute_flux_frag_k0_kdv(
+        gij, tensor_tabflux_coag, tensor_tabflux_frag_T1, tensor_tabflux_frag_T2, dv
+    )
+
+    for j in range(1, nbins):
+        hj = massgrid[j + 1] - massgrid[j]
+
+        if gij[j] > eps:
+            if j == 0:
+                # bin 1, where flux(0) = 0, no mass entering the mass domain [massmin,massmax]
+                tabdtCFL[j] = np.abs(gij[j] * hj / flux[j])
+            else:
+                tabdtCFL[j] = np.abs(gij[j] * hj / (flux[j] - flux[j - 1]))
+
+    CFL_k0 = np.min(tabdtCFL[tabdtCFL > 0.0])
+
+    if CFL_k0 == 0.0:
+        print("gij=", gij)
+        print("hj = ", massgrid[1:] - massgrid[:nbins])
+        print("tabdtCFL = ", tabdtCFL)
+        print("CFL_k0 = ", CFL_k0)
+        print("issue in CFL fragmentation kdv")
+        sys.exit()
+
+    return CFL_k0
+
+
+def L_func_frag_k0_kdv(
+    nbins, massgrid, gij, tensor_tabflux_coag, tensor_tabflux_frag_T1, tensor_tabflux_frag_T2, dv
+):
+    """
+    Function to compute the DG operator L for piecewise constant approximation (see Lombart et al., 2021)
+    Function for ballistic kernel with differential velocities dv
+    It is used for the time solver
+
+    Parameters
+    ----------
+    nbins : scalar, type -> integer
+       number of dust bins
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+    gij : 1D array (dim = nbins), type -> float
+       components of g on the polynomial basis
+    tensor_tabflux_coag : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate coagulation term in fragmentation flux
+    tensor_tabflux_frag_T1 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 1 for fragmentation flux
+    tensor_tabflux_frag_T2 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 2 for fragmentation flux
+    dv : 2D array (dim = (nbins,nbins)), type -> float
+       array of the differential velocity between grains
+
+
+    Returns
+    -------
+    Lk0 : 1D array (dim = nbins), type -> float
+       DG operator for piecewise constant approximation in each bin
+
+    """
+
+    flux = compute_flux_frag_k0_kdv(
+        gij, tensor_tabflux_coag, tensor_tabflux_frag_T1, tensor_tabflux_frag_T2, dv
+    )
+
+    Lk0 = np.zeros(nbins)
+    Lk0[0] = -flux[0] / (massgrid[1] - massgrid[0])
+    Lk0[1:] = -(flux[1:] - flux[0 : nbins - 1]) / (massgrid[2:] - massgrid[1:nbins])
+
+    return Lk0
+
+
+def solver_frag_k0_kdv(
+    eps,
+    nbins,
+    massgrid,
+    gij,
+    tensor_tabflux_coag,
+    tensor_tabflux_frag_T1,
+    tensor_tabflux_frag_T2,
+    dv,
+    dt,
+):
+    """
+    Function to compute SSPRK order 3 time solver with piecewise constant approximation
+    Function for ballistic kernel with differential velocities dv
+    See Zhang & Shu 2010 and Lombart et al., 2021
+
+
+    Parameters
+    ----------
+    eps : scalar, type -> float
+       minimum value for mass distribution approximation gij
+    nbins : scalar, type -> integer
+       number of dust bins
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+    gij : 1D array (dim = nbins), type -> float
+       components of g on the polynomial basis
+    tensor_tabflux_coag : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate coagulation flux
+    dv : 2D array (dim = (nbins,nbins)), type -> float
+       array of the differential velocity between grains
+    dt : scalar, type -> float
+       timestep
+
+
+    Returns
+    -------
+    gijnew : 1D array (dim = nbins), type -> float
+       evolved components of g on the polynomial basis after 1 timestep
+
+    """
+
+    # SSPRK3 algo (Zhang & Shu 2010)
+    # step 1
+    Lk0 = L_func_frag_k0_kdv(
+        nbins,
+        massgrid,
+        gij,
+        tensor_tabflux_coag,
+        tensor_tabflux_frag_T1,
+        tensor_tabflux_frag_T2,
+        dv,
+    )
+
+    gij1 = gij + dt * Lk0
+
+    # limit gij1 to eps value
+    if len(gij1[gij1 < 0.0]) > 0:
+        print("gij", gij)
+        print("dt*Lk0 = ", dt * Lk0)
+        print("gij1 = ", gij1)
+        sys.exit()
+    else:
+        gij1[gij1 < eps] = eps
+
+    Lk0_1 = L_func_frag_k0_kdv(
+        nbins,
+        massgrid,
+        gij1,
+        tensor_tabflux_coag,
+        tensor_tabflux_frag_T1,
+        tensor_tabflux_frag_T2,
+        dv,
+    )
+
+    gij2 = 3.0 * gij / 4.0 + (gij1 + dt * Lk0_1) / 4.0
+
+    # limit gij2 to eps value
+    if len(gij2[gij2 < 0.0]) > 0:
+        print("gi1", gi1)
+        print("dt*Lk0_1 = ", dt * Lk0_1)
+        print("gij2 = ", gij2)
+        sys.exit()
+    else:
+        gij2[gij2 < eps] = eps
+
+    # step 3
+    Lk0_2 = L_func_frag_k0_kdv(
+        nbins,
+        massgrid,
+        gij2,
+        tensor_tabflux_coag,
+        tensor_tabflux_frag_T1,
+        tensor_tabflux_frag_T2,
+        dv,
+    )
+
+    gijnew = gij / 3.0 + 2.0 * (gij2 + dt * Lk0_2) / 3.0
+
+    # limit gijnew to eps value
+    if len(gijnew[gijnew < 0.0]) > 0:
+        print("gij2", gij2)
+        print("dt*Lk0_2 = ", dt * Lk0_2)
+        print("gijnew = ", gijnew)
+        sys.exit()
+    else:
+        gijnew[gijnew < eps] = eps
+
+    return gijnew
+
+
+# ---------------------------
+# functions for coagulation + fragmentation
+# ---------------------------
+
+
+# for physical kernel with cross-section x dv
+def compute_CFL_coag_frag_k0_kdv(
+    eps,
+    nbins,
+    massgrid,
+    gij,
+    tensor_tabflux_coag,
+    tensor_tabflux_frag_T1,
+    tensor_tabflux_frag_T2,
+    dv,
+    proba_coag,
+    proba_frag,
+):
+    """
+    Function to compute coagulation + fragmentation CFL for DG scheme k=0 piecewise constant approximation.
+
+    Function for ballistic kernel with differential velocities dv
+
+    CFL formulation from Filbet & Laurencot 2004, dt <= mean_g * dm/dF
+
+    Parameters
+    ----------
+    eps : scalar, type -> float
+       minimum value for mass distribution approximation gij
+    nbins : scalar, type -> integer
+       number of dust bins
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+    gij : 1D array (dim = nbins), type -> float
+       components of g on the polynomial basis
+    tensor_tabflux_coag : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate coagulation term in fragmentation flux
+    tensor_tabflux_frag_T1 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 1 for fragmentation flux
+    tensor_tabflux_frag_T2 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 2 for fragmentation flux
+    dv : 2D array (dim = (nbins,nbins)), type -> float
+       array of the differential velocity between grains
+    proba_coag : 2D array (dim = (nbins,nbins)), type -> float
+       probability to have coagulation (depending on v_frag and dv)
+    proba_frag : 2D array (dim = (nbins,nbins)), type -> float
+       probability to have fragmentation (depending on v_frag and dv)
+
+
+
+    Returns
+    -------
+    CFL_k0 : scalar, type -> float
+       CFL restriction for coagulation
+
+    """
+
+    tabdtCFL = np.zeros(nbins)
+
+    flux = compute_flux_coag_frag_k0_kdv(
+        gij,
+        tensor_tabflux_coag,
+        tensor_tabflux_frag_T1,
+        tensor_tabflux_frag_T2,
+        dv,
+        proba_coag,
+        proba_frag,
+    )
+
+    for j in range(nbins):
+        hj = massgrid[j + 1] - massgrid[j]
+
+        if gij[j] > eps:
+            if j == 0:
+                # bin 1, where flux(0) = 0, no mass entering the mass domain [massmin,massmax]
+                tabdtCFL[j] = np.abs(gij[j] * hj / flux[j])
+            else:
+                tabdtCFL[j] = np.abs(gij[j] * hj / (flux[j] - flux[j - 1]))
+
+    CFL_k0 = np.min(tabdtCFL[tabdtCFL > 0.0])
+
+    #  print("tabdtCFL = ",tabdtCFL)
+
+    if CFL_k0 == 0.0:
+        print("gij=", gij)
+        print("hj = ", massgrid[1:] - massgrid[:nbins])
+        print("tabdtCFL = ", tabdtCFL)
+        print("CFL_k0 = ", CFL_k0)
+        print("issue in CFL fragmentation kdv")
+        sys.exit()
+
+    return CFL_k0
+
+
+def L_func_coag_frag_k0_kdv(
+    nbins,
+    massgrid,
+    gij,
+    tensor_tabflux_coag,
+    tensor_tabflux_frag_T1,
+    tensor_tabflux_frag_T2,
+    dv,
+    proba_coag,
+    proba_frag,
+):
+    """
+    Function to compute the DG operator L for piecewise constant approximation (see Lombart et al., 2021)
+    Function for ballistic kernel with differential velocities dv
+    It is used for the time solver
+
+    Parameters
+    ----------
+    nbins : scalar, type -> integer
+       number of dust bins
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+    gij : 1D array (dim = nbins), type -> float
+       components of g on the polynomial basis
+    tensor_tabflux_coag : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate coagulation term in fragmentation flux
+    tensor_tabflux_frag_T1 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 1 for fragmentation flux
+    tensor_tabflux_frag_T2 : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate the term 2 for fragmentation flux
+    dv : 2D array (dim = (nbins,nbins)), type -> float
+       array of the differential velocity between grains
+    proba_coag : 2D array (dim = (nbins,nbins)), type -> float
+       probability to have coagulation (depending on v_frag and dv)
+    proba_frag : 2D array (dim = (nbins,nbins)), type -> float
+       probability to have fragmentation (depending on v_frag and dv)
+
+
+
+    Returns
+    -------
+    Lk0 : 1D array (dim = nbins), type -> float
+       DG operator for piecewise constant approximation in each bin
+
+    """
+
+    flux = compute_flux_coag_frag_k0_kdv(
+        gij,
+        tensor_tabflux_coag,
+        tensor_tabflux_frag_T1,
+        tensor_tabflux_frag_T2,
+        dv,
+        proba_coag,
+        proba_frag,
+    )
+
+    Lk0 = np.zeros(nbins)
+    Lk0[0] = -flux[0] / (massgrid[1] - massgrid[0])
+    Lk0[1:] = -(flux[1:] - flux[0 : nbins - 1]) / (massgrid[2:] - massgrid[1:nbins])
+
+    return Lk0
+
+
+def solver_coag_frag_k0_kdv(
+    eps,
+    nbins,
+    massgrid,
+    gij,
+    tensor_tabflux_coag,
+    tensor_tabflux_frag_T1,
+    tensor_tabflux_frag_T2,
+    dv,
+    proba_coag,
+    proba_frag,
+    dt,
+):
+    """
+    Function to compute SSPRK order 3 time solver with piecewise constant approximation
+    Function for ballistic kernel with differential velocities dv
+    See Zhang & Shu 2010 and Lombart et al., 2021
+
+
+    Parameters
+    ----------
+    eps : scalar, type -> float
+       minimum value for mass distribution approximation gij
+    nbins : scalar, type -> integer
+       number of dust bins
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+    gij : 1D array (dim = nbins), type -> float
+       components of g on the polynomial basis
+    tensor_tabflux_coag : 3D array (dim = (nbins,nbins,nbins)), type -> float
+       array to evaluate coagulation flux
+    dv : 2D array (dim = (nbins,nbins)), type -> float
+       array of the differential velocity between grains
+    proba_coag : 2D array (dim = (nbins,nbins)), type -> float
+       probability to have coagulation (depending on v_frag and dv)
+    proba_frag : 2D array (dim = (nbins,nbins)), type -> float
+       probability to have fragmentation (depending on v_frag and dv)
+    dt : scalar, type -> float
+       timestep
+
+
+    Returns
+    -------
+    gijnew : 1D array (dim = nbins), type -> float
+       evolved components of g on the polynomial basis after 1 timestep
+
+    """
+
+    # SSPRK3 algo (Zhang & Shu 2010)
+    # step 1
+    Lk0 = L_func_coag_frag_k0_kdv(
+        nbins,
+        massgrid,
+        gij,
+        tensor_tabflux_coag,
+        tensor_tabflux_frag_T1,
+        tensor_tabflux_frag_T2,
+        dv,
+        proba_coag,
+        proba_frag,
+    )
+
+    gij1 = gij + dt * Lk0
+
+    #  print("gij", gij)
+    #  print("dt = ",dt)
+    #  print("Lk0 = ", Lk0)
+    #  print("gij1 = ", gij1)
+    #  sys.exit()
+
+    # limit gij1 to eps value
+    if len(gij1[gij1 < 0.0]) > 0:
+        print("negative value in gij1")
+        print("gij", gij)
+        print("dt*Lk0 = ", dt * Lk0)
+        print("gij1 = ", gij1)
+        sys.exit()
+    else:
+        gij1[gij1 < eps] = eps
+
+    Lk0_1 = L_func_coag_frag_k0_kdv(
+        nbins,
+        massgrid,
+        gij1,
+        tensor_tabflux_coag,
+        tensor_tabflux_frag_T1,
+        tensor_tabflux_frag_T2,
+        dv,
+        proba_coag,
+        proba_frag,
+    )
+
+    gij2 = 3.0 * gij / 4.0 + (gij1 + dt * Lk0_1) / 4.0
+
+    # limit gij2 to eps value
+    if len(gij2[gij2 < 0.0]) > 0:
+        print("negative value in gij2")
+        print("gi1", gi1)
+        print("dt*Lk0_1 = ", dt * Lk0_1)
+        print("gij2 = ", gij2)
+        sys.exit()
+    else:
+        gij2[gij2 < eps] = eps
+
+    # step 3
+    Lk0_2 = L_func_coag_frag_k0_kdv(
+        nbins,
+        massgrid,
+        gij2,
+        tensor_tabflux_coag,
+        tensor_tabflux_frag_T1,
+        tensor_tabflux_frag_T2,
+        dv,
+        proba_coag,
+        proba_frag,
+    )
+
+    gijnew = gij / 3.0 + 2.0 * (gij2 + dt * Lk0_2) / 3.0
+
+    # limit gijnew to eps value
+    if len(gijnew[gijnew < 0.0]) > 0:
+        print("negative value in gijnew")
+        print("gij2", gij2)
+        print("dt*Lk0_2 = ", dt * Lk0_2)
+        print("gijnew = ", gijnew)
+        sys.exit()
+    else:
+        gijnew[gijnew < eps] = eps
 
     return gijnew

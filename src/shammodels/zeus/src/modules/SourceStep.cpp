@@ -107,7 +107,6 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
                 Tvec d_cell  = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
                                * coord_conv_fact;
 
-                // clang-format off
                 Tscal rho_i_j_k   = rho[id_a];
                 Tscal rho_im1_j_k = rho_xm[id_a];
                 Tscal rho_i_jm1_k = rho_ym[id_a];
@@ -118,29 +117,21 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
                 Tscal p_i_jm1_k = p_ym[id_a];
                 Tscal p_i_j_km1 = p_zm[id_a];
 
-                Tvec dp = {
-                    p_i_j_k - p_im1_j_k,
-                    p_i_j_k - p_i_jm1_k,
-                    p_i_j_k - p_i_j_km1
-                };
+                Tvec dp = {p_i_j_k - p_im1_j_k, p_i_j_k - p_i_jm1_k, p_i_j_k - p_i_j_km1};
 
-                Tvec avg_rho =
-                    Tvec{
-                        rho_i_j_k + rho_im1_j_k,
-                        rho_i_j_k + rho_i_jm1_k,
-                        rho_i_j_k + rho_i_j_km1
-                        } * Tscal{0.5};
+                Tvec avg_rho
+                    = Tvec{rho_i_j_k + rho_im1_j_k, rho_i_j_k + rho_i_jm1_k, rho_i_j_k + rho_i_j_km1}
+                      * Tscal{0.5};
 
                 Tvec grad_p_source_term = dp / (avg_rho * d_cell);
 
-                //sycl::ext::oneapi::experimental::printf("(%f %f %f) (%f %f %f) (%f %f %f)\n"
-                //    , dp.x(),dp.y(),dp.z()
-                //    , avg_rho.x(),avg_rho.y(),avg_rho.z()
-                //    , grad_p_source_term.x(),grad_p_source_term.y(),grad_p_source_term.z()
-                //    );
-                //grad_p[id_a] = grad_p_source_term;
+                // sycl::ext::oneapi::experimental::printf("(%f %f %f) (%f %f %f) (%f %f %f)\n"
+                //     , dp.x(),dp.y(),dp.z()
+                //     , avg_rho.x(),avg_rho.y(),avg_rho.z()
+                //     , grad_p_source_term.x(),grad_p_source_term.y(),grad_p_source_term.z()
+                //     );
+                // grad_p[id_a] = grad_p_source_term;
                 grad_p[id_a] = -grad_p_source_term;
-                // clang-format on
             });
     });
 
@@ -411,7 +402,6 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
                 Tvec d_cell  = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
                                * coord_conv_fact;
 
-                // clang-format off
                 Tscal rho_i_j_k   = rho[id_a];
                 Tscal rho_im1_j_k = rho_xm[id_a];
                 Tscal rho_i_jm1_k = rho_ym[id_a];
@@ -422,21 +412,16 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
                 Tvec q_i_jm1_k = q_AV_ym[id_a];
                 Tvec q_i_j_km1 = q_AV_zm[id_a];
 
-                Tvec avg_rho =
-                    Tvec{
-                        rho_i_j_k + rho_im1_j_k,
-                        rho_i_j_k + rho_i_jm1_k,
-                        rho_i_j_k + rho_i_j_km1
-                        } * Tscal{0.5};
+                Tvec avg_rho
+                    = Tvec{rho_i_j_k + rho_im1_j_k, rho_i_j_k + rho_i_jm1_k, rho_i_j_k + rho_i_j_km1}
+                      * Tscal{0.5};
 
-                Tvec dq = {
-                    q_i_j_k.x()-q_im1_j_k.x(),
-                    q_i_j_k.y()-q_i_jm1_k.y(),
-                    q_i_j_k.z()-q_i_j_km1.z()
-                };
+                Tvec dq
+                    = {q_i_j_k.x() - q_im1_j_k.x(),
+                       q_i_j_k.y() - q_i_jm1_k.y(),
+                       q_i_j_k.z() - q_i_j_km1.z()};
 
-                vel[id_a] += - dt*(dq)/ (avg_rho * d_cell);
-                // clang-format on
+                vel[id_a] += -dt * (dq) / (avg_rho * d_cell);
             });
     });
 
@@ -494,22 +479,19 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
                 Tvec d_cell  = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
                                * coord_conv_fact;
 
-                // clang-format off
-                Tvec vel_i_j_k = vel[id_a];
+                Tvec vel_i_j_k   = vel[id_a];
                 Tvec vel_ip1_j_k = vel_xp[id_a];
                 Tvec vel_i_jp1_k = vel_yp[id_a];
                 Tvec vel_i_j_kp1 = vel_zp[id_a];
 
-                Tvec q_i_j_k   = q_AV[id_a];
+                Tvec q_i_j_k = q_AV[id_a];
 
-                Tvec dv = {
-                    vel_ip1_j_k.x() - vel_i_j_k.x(),
-                    vel_i_jp1_k.y() - vel_i_j_k.y(),
-                    vel_i_j_kp1.z() - vel_i_j_k.z()
-                };
+                Tvec dv
+                    = {vel_ip1_j_k.x() - vel_i_j_k.x(),
+                       vel_i_jp1_k.y() - vel_i_j_k.y(),
+                       vel_i_j_kp1.z() - vel_i_j_k.z()};
 
-                eint[id_a] += -dt*sycl::dot(q_i_j_k,dv/ d_cell);
-                // clang-format on
+                eint[id_a] += -dt * sycl::dot(q_i_j_k, dv / d_cell);
             });
     });
 }

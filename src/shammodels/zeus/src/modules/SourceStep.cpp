@@ -286,26 +286,27 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_AV() {
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::EventList depends_list;
+        sham::kernel_call(
+            q,
+            sham::MultiRef{
+                buf_cell_min, buf_cell_max, buf_rho, buf_vel, buf_vel_xp, buf_vel_yp, buf_vel_zp},
+            sham::MultiRef{q_AV_buf},
+            mpdat.total_elements * Block::block_size,
+            [coord_conv_fact](
+                u32 id_a,
+                const TgridVec *__restrict cell_min,
+                const TgridVec *__restrict cell_max,
+                const Tscal *__restrict rho,
+                const Tvec *__restrict vel,
+                const Tvec *__restrict vel_xp,
+                const Tvec *__restrict vel_yp,
+                const Tvec *__restrict vel_zp,
+                Tvec *__restrict q_AV) {
+                u32 block_id = id_a / Block::block_size;
+                Tvec d_cell  = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                               * coord_conv_fact;
 
-        auto cell_min = buf_cell_min.get_read_access(depends_list);
-        auto cell_max = buf_cell_max.get_read_access(depends_list);
-        auto rho      = buf_rho.get_read_access(depends_list);
-        auto vel      = buf_vel.get_read_access(depends_list);
-        auto vel_xp   = buf_vel_xp.get_read_access(depends_list);
-        auto vel_yp   = buf_vel_yp.get_read_access(depends_list);
-        auto vel_zp   = buf_vel_zp.get_read_access(depends_list);
-        auto q_AV     = q_AV_buf.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(
-                cgh, mpdat.total_elements * Block::block_size, "compute AV", [=](u64 id_a) {
-                    u32 block_id = id_a / Block::block_size;
-                    Tvec d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
-                          * coord_conv_fact;
-
-                    // clang-format off
+                // clang-format off
                     Tscal rho_i_j_k   = rho[id_a];
 
                     Tvec vel_i_j_k = vel[id_a];
@@ -324,18 +325,8 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_AV() {
                     constexpr Tscal C2 = 3;
 
                     q_AV[id_a] = C2*rho_i_j_k*(dv*dv);
-                    // clang-format on
-                });
-        });
-
-        buf_cell_min.complete_event_state(e);
-        buf_cell_max.complete_event_state(e);
-        buf_rho.complete_event_state(e);
-        buf_vel.complete_event_state(e);
-        buf_vel_xp.complete_event_state(e);
-        buf_vel_yp.complete_event_state(e);
-        buf_vel_zp.complete_event_state(e);
-        q_AV_buf.complete_event_state(e);
+                // clang-format on
+            });
     });
 }
 

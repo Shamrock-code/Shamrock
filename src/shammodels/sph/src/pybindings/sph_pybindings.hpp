@@ -85,12 +85,8 @@ namespace shammodels::sph::pybindings {
     void register_analysisAngularMomentum_impl(py::module &msph);
     void register_analysisDustMass_impl(py::module &msph);
 
-    // Non-templated classes & functions
+    // Non-templated functions
 
-    void add_patch_data_lazy_getter(py::module &m);
-    void add_evolve_until_results(py::module &m);
     void add_get_model_sph(py::module &m);
-    void add_isph_setup_node(py::module &msph);
-    void add_timestep_log(py::module &msph);
 
 } // namespace shammodels::sph::pybindings

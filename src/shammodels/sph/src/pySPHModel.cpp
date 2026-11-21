@@ -16,11 +16,17 @@
  */
 
 #include "pybindings/sph_pybindings.hpp"
+#include "sham/format/format.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/sph/Solver.hpp"
+#include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
+#include "shampylib/PatchDataToPy.hpp"
+#include <memory>
 #include <string>
 
+using namespace shammodels::sph;
 using namespace shammodels::sph::pybindings;
 
 template<class Tvec, template<class> class SPHKernel>
@@ -41,9 +47,23 @@ ON_PYTHON_INIT {
 
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
 
-    add_patch_data_lazy_getter(m);
+    py::class_<shamrock::PatchDataLazyGetter>(m, "PatchDataLazyGetter")
+        .def("__getitem__", &shamrock::PatchDataLazyGetter::get_item);
 
-    add_evolve_until_results(m);
+    py::class_<EvolveUntilResults>(m, "EvolveUntilResults")
+        .def_readwrite("reach_target_time", &EvolveUntilResults::reach_target_time)
+        .def_readwrite("reach_niter_max", &EvolveUntilResults::reach_niter_max)
+        .def_readwrite("reach_max_walltime", &EvolveUntilResults::reach_max_walltime)
+        .def_readwrite("iter_count", &EvolveUntilResults::iter_count)
+        .def("__repr__", [](const EvolveUntilResults &self) {
+            return sham::format(
+                "EvolveUntilResults(reach_target_time={}, reach_niter_max={}, "
+                "reach_max_walltime={}, iter_count={})",
+                self.reach_target_time,
+                self.reach_niter_max,
+                self.reach_max_walltime,
+                self.iter_count);
+        });
 
     add_instance<f64_3, shammath::M4>(msph, "SPHModel_f64_3_M4_SolverConfig", "SPHModel_f64_3_M4");
     add_instance<f64_3, shammath::M6>(msph, "SPHModel_f64_3_M6_SolverConfig", "SPHModel_f64_3_M6");
@@ -55,9 +75,21 @@ ON_PYTHON_INIT {
 
     add_get_model_sph(m);
 
-    add_isph_setup_node(msph);
+    py::class_<
+        shammodels::sph::modules::ISPHSetupNode,
+        std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>>(msph, "ISPHSetupNode")
+        .def("get_dot", [](std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> &self) {
+            return self->get_dot();
+        });
 
-    add_timestep_log(msph);
+    py::class_<shammodels::sph::TimestepLog>(msph, "TimestepLog")
+        .def(py::init<>())
+        .def_readwrite("rank", &shammodels::sph::TimestepLog::rank)
+        .def_readwrite("rate", &shammodels::sph::TimestepLog::rate)
+        .def_readwrite("npart", &shammodels::sph::TimestepLog::npart)
+        .def_readwrite("tcompute", &shammodels::sph::TimestepLog::tcompute)
+        .def("rate_sum", &shammodels::sph::TimestepLog::rate_sum)
+        .def("npart_sum", &shammodels::sph::TimestepLog::npart_sum);
 
     add_analysisBarycenter_instance<f64_3, shammath::M4>(msph, "AnalysisBarycenter_f64_3_M4");
     add_analysisBarycenter_instance<f64_3, shammath::M6>(msph, "AnalysisBarycenter_f64_3_M6");

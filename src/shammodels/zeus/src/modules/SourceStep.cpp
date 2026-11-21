@@ -578,26 +578,25 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_div_v() {
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::EventList depends_list;
-        auto cell_min = buf_cell_min.get_read_access(depends_list);
-        auto cell_max = buf_cell_max.get_read_access(depends_list);
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_cell_min, buf_cell_max, buf_vel, buf_vel_xp, buf_vel_yp, buf_vel_zp},
+            sham::MultiRef{buf_div_v},
+            pdat.get_obj_cnt() * Block::block_size,
+            [coord_conv_fact](
+                u32 id_a,
+                const TgridVec *__restrict cell_min,
+                const TgridVec *__restrict cell_max,
+                const Tvec *__restrict vel,
+                const Tvec *__restrict vel_xp,
+                const Tvec *__restrict vel_yp,
+                const Tvec *__restrict vel_zp,
+                Tscal *__restrict divv) {
+                u32 block_id = id_a / Block::block_size;
+                Tvec d_cell  = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                               * coord_conv_fact;
 
-        auto vel    = buf_vel.get_read_access(depends_list);
-        auto vel_xp = buf_vel_xp.get_read_access(depends_list);
-        auto vel_yp = buf_vel_yp.get_read_access(depends_list);
-        auto vel_zp = buf_vel_zp.get_read_access(depends_list);
-
-        auto divv = buf_div_v.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(
-                cgh, pdat.get_obj_cnt() * Block::block_size, "compute divv", [=](u64 id_a) {
-                    u32 block_id = id_a / Block::block_size;
-                    Tvec d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
-                          * coord_conv_fact;
-
-                    // clang-format off
+                // clang-format off
                     Tvec vel_i_j_k = vel[id_a];
                     Tvec vel_ip1_j_k = vel_xp[id_a];
                     Tvec vel_i_jp1_k = vel_yp[id_a];
@@ -610,17 +609,8 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_div_v() {
                     };
 
                     divv[id_a] += sycl::dot(dv,Tvec{1,1,1}/ d_cell);
-                    // clang-format on
-                });
-        });
-
-        buf_cell_min.complete_event_state(e);
-        buf_cell_max.complete_event_state(e);
-        buf_vel.complete_event_state(e);
-        buf_vel_xp.complete_event_state(e);
-        buf_vel_yp.complete_event_state(e);
-        buf_vel_zp.complete_event_state(e);
-        buf_div_v.complete_event_state(e);
+                // clang-format on
+            });
     });
 }
 

@@ -75,78 +75,73 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::EventList depends_list;
+        sham::kernel_call(
+            q,
+            sham::MultiRef{
+                buf_cell_min,
+                buf_cell_max,
+                buf_rho,
+                buf_rho_xm,
+                buf_rho_ym,
+                buf_rho_zm,
+                buf_p,
+                buf_p_xm,
+                buf_p_ym,
+                buf_p_zm},
+            sham::MultiRef{forces_buf},
+            mpdat.total_elements * Block::block_size,
+            [coord_conv_fact](
+                u32 id_a,
+                const TgridVec *__restrict cell_min,
+                const TgridVec *__restrict cell_max,
+                const Tscal *__restrict rho,
+                const Tscal *__restrict rho_xm,
+                const Tscal *__restrict rho_ym,
+                const Tscal *__restrict rho_zm,
+                const Tscal *__restrict press,
+                const Tscal *__restrict p_xm,
+                const Tscal *__restrict p_ym,
+                const Tscal *__restrict p_zm,
+                Tvec *__restrict grad_p) {
+                u32 block_id = id_a / Block::block_size;
+                Tvec d_cell  = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                               * coord_conv_fact;
 
-        auto cell_min = buf_cell_min.get_read_access(depends_list);
-        auto cell_max = buf_cell_max.get_read_access(depends_list);
-        auto rho      = buf_rho.get_read_access(depends_list);
-        auto rho_xm   = buf_rho_xm.get_read_access(depends_list);
-        auto rho_ym   = buf_rho_ym.get_read_access(depends_list);
-        auto rho_zm   = buf_rho_zm.get_read_access(depends_list);
-        auto press    = buf_p.get_read_access(depends_list);
-        auto p_xm     = buf_p_xm.get_read_access(depends_list);
-        auto p_ym     = buf_p_ym.get_read_access(depends_list);
-        auto p_zm     = buf_p_zm.get_read_access(depends_list);
+                // clang-format off
+                Tscal rho_i_j_k   = rho[id_a];
+                Tscal rho_im1_j_k = rho_xm[id_a];
+                Tscal rho_i_jm1_k = rho_ym[id_a];
+                Tscal rho_i_j_km1 = rho_zm[id_a];
 
-        auto grad_p = forces_buf.get_write_access(depends_list);
+                Tscal p_i_j_k   = press[id_a];
+                Tscal p_im1_j_k = p_xm[id_a];
+                Tscal p_i_jm1_k = p_ym[id_a];
+                Tscal p_i_j_km1 = p_zm[id_a];
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(
-                cgh, mpdat.total_elements * Block::block_size, "compute grad p", [=](u64 id_a) {
-                    u32 block_id = id_a / Block::block_size;
-                    Tvec d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
-                          * coord_conv_fact;
+                Tvec dp = {
+                    p_i_j_k - p_im1_j_k,
+                    p_i_j_k - p_i_jm1_k,
+                    p_i_j_k - p_i_j_km1
+                };
 
-                    // clang-format off
-                    Tscal rho_i_j_k   = rho[id_a];
-                    Tscal rho_im1_j_k = rho_xm[id_a];
-                    Tscal rho_i_jm1_k = rho_ym[id_a];
-                    Tscal rho_i_j_km1 = rho_zm[id_a];
+                Tvec avg_rho =
+                    Tvec{
+                        rho_i_j_k + rho_im1_j_k,
+                        rho_i_j_k + rho_i_jm1_k,
+                        rho_i_j_k + rho_i_j_km1
+                        } * Tscal{0.5};
 
-                    Tscal p_i_j_k   = press[id_a];
-                    Tscal p_im1_j_k = p_xm[id_a];
-                    Tscal p_i_jm1_k = p_ym[id_a];
-                    Tscal p_i_j_km1 = p_zm[id_a];
+                Tvec grad_p_source_term = dp / (avg_rho * d_cell);
 
-                    Tvec dp = {
-                        p_i_j_k - p_im1_j_k,
-                        p_i_j_k - p_i_jm1_k,
-                        p_i_j_k - p_i_j_km1
-                    };
-
-                    Tvec avg_rho =
-                        Tvec{
-                            rho_i_j_k + rho_im1_j_k,
-                            rho_i_j_k + rho_i_jm1_k,
-                            rho_i_j_k + rho_i_j_km1
-                            } * Tscal{0.5};
-
-                    Tvec grad_p_source_term = dp / (avg_rho * d_cell);
-
-                    //sycl::ext::oneapi::experimental::printf("(%f %f %f) (%f %f %f) (%f %f %f)\n"
-                    //    , dp.x(),dp.y(),dp.z()
-                    //    , avg_rho.x(),avg_rho.y(),avg_rho.z()
-                    //    , grad_p_source_term.x(),grad_p_source_term.y(),grad_p_source_term.z()
-                    //    );
-                    //grad_p[id_a] = grad_p_source_term;
-                    grad_p[id_a] = -grad_p_source_term;
-                    // clang-format on
-                });
-        });
-
-        buf_cell_min.complete_event_state(e);
-        buf_cell_max.complete_event_state(e);
-        buf_rho.complete_event_state(e);
-        buf_rho_xm.complete_event_state(e);
-        buf_rho_ym.complete_event_state(e);
-        buf_rho_zm.complete_event_state(e);
-        buf_p.complete_event_state(e);
-        buf_p_xm.complete_event_state(e);
-        buf_p_ym.complete_event_state(e);
-        buf_p_zm.complete_event_state(e);
-
-        forces_buf.complete_event_state(e);
+                //sycl::ext::oneapi::experimental::printf("(%f %f %f) (%f %f %f) (%f %f %f)\n"
+                //    , dp.x(),dp.y(),dp.z()
+                //    , avg_rho.x(),avg_rho.y(),avg_rho.z()
+                //    , grad_p_source_term.x(),grad_p_source_term.y(),grad_p_source_term.z()
+                //    );
+                //grad_p[id_a] = grad_p_source_term;
+                grad_p[id_a] = -grad_p_source_term;
+                // clang-format on
+            });
     });
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {

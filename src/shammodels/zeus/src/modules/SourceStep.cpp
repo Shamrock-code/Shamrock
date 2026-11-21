@@ -462,57 +462,55 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::EventList depends_list;
-        auto cell_min = buf_cell_min.get_read_access(depends_list);
-        auto cell_max = buf_cell_max.get_read_access(depends_list);
-        auto vel      = buf_vel.get_read_access(depends_list);
-        auto vel_xp   = buf_vel_xp.get_read_access(depends_list);
-        auto vel_yp   = buf_vel_yp.get_read_access(depends_list);
-        auto vel_zp   = buf_vel_zp.get_read_access(depends_list);
-        auto q_AV     = q_AV_buf.get_read_access(depends_list);
-        auto q_AV_xm  = buf_q_AV_n_xm.get_read_access(depends_list);
-        auto q_AV_ym  = buf_q_AV_n_ym.get_read_access(depends_list);
-        auto q_AV_zm  = buf_q_AV_n_zm.get_read_access(depends_list);
-        auto eint     = buf_eint.get_write_access(depends_list);
+        sham::kernel_call(
+            q,
+            sham::MultiRef{
+                buf_cell_min,
+                buf_cell_max,
+                buf_vel,
+                buf_vel_xp,
+                buf_vel_yp,
+                buf_vel_zp,
+                q_AV_buf,
+                buf_q_AV_n_xm,
+                buf_q_AV_n_ym,
+                buf_q_AV_n_zm},
+            sham::MultiRef{buf_eint},
+            pdat.get_obj_cnt() * Block::block_size,
+            [coord_conv_fact, dt](
+                u32 id_a,
+                const TgridVec *__restrict cell_min,
+                const TgridVec *__restrict cell_max,
+                const Tvec *__restrict vel,
+                const Tvec *__restrict vel_xp,
+                const Tvec *__restrict vel_yp,
+                const Tvec *__restrict vel_zp,
+                const Tvec *__restrict q_AV,
+                const Tvec *__restrict q_AV_xm,
+                const Tvec *__restrict q_AV_ym,
+                const Tvec *__restrict q_AV_zm,
+                Tscal *__restrict eint) {
+                u32 block_id = id_a / Block::block_size;
+                Tvec d_cell  = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                               * coord_conv_fact;
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(
-                cgh, pdat.get_obj_cnt() * Block::block_size, "add eint AV", [=](u64 id_a) {
-                    u32 block_id = id_a / Block::block_size;
-                    Tvec d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
-                          * coord_conv_fact;
+                // clang-format off
+                Tvec vel_i_j_k = vel[id_a];
+                Tvec vel_ip1_j_k = vel_xp[id_a];
+                Tvec vel_i_jp1_k = vel_yp[id_a];
+                Tvec vel_i_j_kp1 = vel_zp[id_a];
 
-                    // clang-format off
-                    Tvec vel_i_j_k = vel[id_a];
-                    Tvec vel_ip1_j_k = vel_xp[id_a];
-                    Tvec vel_i_jp1_k = vel_yp[id_a];
-                    Tvec vel_i_j_kp1 = vel_zp[id_a];
+                Tvec q_i_j_k   = q_AV[id_a];
 
-                    Tvec q_i_j_k   = q_AV[id_a];
+                Tvec dv = {
+                    vel_ip1_j_k.x() - vel_i_j_k.x(),
+                    vel_i_jp1_k.y() - vel_i_j_k.y(),
+                    vel_i_j_kp1.z() - vel_i_j_k.z()
+                };
 
-                    Tvec dv = {
-                        vel_ip1_j_k.x() - vel_i_j_k.x(),
-                        vel_i_jp1_k.y() - vel_i_j_k.y(),
-                        vel_i_j_kp1.z() - vel_i_j_k.z()
-                    };
-
-                    eint[id_a] += -dt*sycl::dot(q_i_j_k,dv/ d_cell);
-                    // clang-format on
-                });
-        });
-
-        buf_cell_min.complete_event_state(e);
-        buf_cell_max.complete_event_state(e);
-        buf_vel.complete_event_state(e);
-        buf_vel_xp.complete_event_state(e);
-        buf_vel_yp.complete_event_state(e);
-        buf_vel_zp.complete_event_state(e);
-        q_AV_buf.complete_event_state(e);
-        buf_q_AV_n_xm.complete_event_state(e);
-        buf_q_AV_n_ym.complete_event_state(e);
-        buf_q_AV_n_zm.complete_event_state(e);
-        buf_eint.complete_event_state(e);
+                eint[id_a] += -dt*sycl::dot(q_i_j_k,dv/ d_cell);
+                // clang-format on
+            });
     });
 }
 

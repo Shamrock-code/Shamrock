@@ -657,33 +657,27 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::update_eint_eos(Tsca
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::EventList depends_list;
-        auto cell_min = buf_cell_min.get_read_access(depends_list);
-        auto cell_max = buf_cell_max.get_read_access(depends_list);
+        Tscal fact = (dt / 2.) * (solver_config.eos_gamma - 1);
 
-        auto divv = buf_divv.get_read_access(depends_list);
-        auto eint = buf_eint.get_write_access(depends_list);
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_cell_min, buf_cell_max, buf_divv},
+            sham::MultiRef{buf_eint},
+            pdat.get_obj_cnt() * Block::block_size,
+            [coord_conv_fact, fact](
+                u32 id_a,
+                const TgridVec *__restrict cell_min,
+                const TgridVec *__restrict cell_max,
+                const Tscal *__restrict divv,
+                Tscal *__restrict eint) {
+                u32 block_id = id_a / Block::block_size;
+                Tvec d_cell  = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                               * coord_conv_fact;
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            Tscal fact = (dt / 2.) * (solver_config.eos_gamma - 1);
+                Tscal factdivv = divv[id_a] * fact;
 
-            shambase::parallel_for(
-                cgh, pdat.get_obj_cnt() * Block::block_size, "evolve eint", [=](u64 id_a) {
-                    u32 block_id = id_a / Block::block_size;
-                    Tvec d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
-                          * coord_conv_fact;
-
-                    Tscal factdivv = divv[id_a] * fact;
-
-                    eint[id_a] *= (1 - factdivv) / (1 + factdivv);
-                });
-        });
-
-        buf_cell_min.complete_event_state(e);
-        buf_cell_max.complete_event_state(e);
-        buf_divv.complete_event_state(e);
-        buf_eint.complete_event_state(e);
+                eint[id_a] *= (1 - factdivv) / (1 + factdivv);
+            });
     });
 }
 

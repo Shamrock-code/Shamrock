@@ -255,35 +255,9 @@ namespace shamalgs {
             head_host += offset;
         }
 
-        inline void write(std::string s) {
-            StackEntry stack_loc{false};
-            write(u32(s.size()));
+        void write(std::string s);
 
-            sycl::buffer<char> buf(s.size());
-            {
-                sycl::host_accessor acc{buf, sycl::write_only, sycl::no_init};
-                for (u32 i = 0; i < s.size(); i++) {
-                    acc[i] = s[i];
-                }
-            }
-            write_buf(buf, s.size());
-        }
-
-        inline void load(std::string &s) {
-            StackEntry stack_loc{false};
-            u32 len;
-            load(len);
-            s.resize(len);
-
-            sycl::buffer<char> buf(len);
-            load_buf(buf, len);
-            {
-                sycl::host_accessor acc{buf, sycl::read_only};
-                for (u32 i = 0; i < len; i++) {
-                    s[i] = acc[i];
-                }
-            }
-        }
+        void load(std::string &s);
 
         template<class T>
         inline void write_buf(sycl::buffer<T> &buf, u64 len) {

@@ -16,6 +16,7 @@
 
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "fmt/core.h"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/riemann.hpp"
 #include "shammath/riemann_dust.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -61,24 +62,27 @@ void shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl_g
                   .get()
                   .get_buf();
 
-        sham::EventList depends_list;
-        auto cfl_dt        = cfl_dt_buf.get_write_access(depends_list);
-        auto acc_block_min = buf_block_min.get_read_access(depends_list);
-        auto acc_block_max = buf_block_max.get_read_access(depends_list);
-        auto rho           = buf_rho.get_read_access(depends_list);
-        auto rhov          = buf_rhov.get_read_access(depends_list);
-        auto rhoe          = buf_rhoe.get_read_access(depends_list);
+        Tscal C_safe = solver_config.Csafe;
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            Tscal C_safe = solver_config.Csafe;
+        Tscal one_over_Nside = 1. / AMRBlock::Nside;
 
-            Tscal one_over_Nside = 1. / AMRBlock::Nside;
+        Tscal dxfact = solver_config.grid_coord_to_pos_fact;
 
-            Tscal dxfact = solver_config.grid_coord_to_pos_fact;
+        auto fspec = fluid;
 
-            auto fspec = fluid;
-
-            shambase::parallel_for(cgh, cell_count, "compute_cfl", [=](u64 gid) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_block_min, buf_block_max, buf_rho, buf_rhov, buf_rhoe},
+            sham::MultiRef{cfl_dt_buf},
+            cell_count,
+            [C_safe, one_over_Nside, dxfact, fspec](
+                u32 gid,
+                const TgridVec *__restrict acc_block_min,
+                const TgridVec *__restrict acc_block_max,
+                const Tscal *__restrict rho,
+                const Tvec *__restrict rhov,
+                const Tscal *__restrict rhoe,
+                Tscal *__restrict cfl_dt) {
                 const u32 cell_global_id = (u32) gid;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
@@ -105,14 +109,6 @@ void shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl_g
 
                 cfl_dt[gid] = dt;
             });
-        });
-
-        cfl_dt_buf.complete_event_state(e);
-        buf_block_min.complete_event_state(e);
-        buf_block_max.complete_event_state(e);
-        buf_rho.complete_event_state(e);
-        buf_rhov.complete_event_state(e);
-        buf_rhoe.complete_event_state(e);
     });
 }
 

@@ -124,6 +124,11 @@ namespace shammodels::sph {
             pdl.add_field<Tscal>("ds_j_dt", ndust);
             pdl.add_field<Tvec>("delta_v", ndust);
         }
+
+        if (has_field_freeze_id()) {
+            // non-zero for the frozen boundary particles, see SolverConfig::use_boundary_particles
+            pdl.add_field<u32>("freeze_id", 1);
+        }
     }
 
     template<class Tvec, template<class> class SPHKernel>

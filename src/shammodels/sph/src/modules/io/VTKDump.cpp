@@ -115,6 +115,10 @@ namespace shammodels::sph::modules {
             fnum++;
         }
 
+        if (solver_config.has_field_freeze_id()) {
+            fnum++;
+        }
+
         if (solver_config.dust_config.has_epsilon_field()) {
             const u32 ndust = solver_config.dust_config.get_dust_nvar();
             fnum += ndust;
@@ -170,6 +174,11 @@ namespace shammodels::sph::modules {
         if (solver_config.compute_luminosity) {
             const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
             vtk_dump_add_field<Tscal>(scheduler(), writer, iluminosity, "luminosity");
+        }
+
+        if (solver_config.has_field_freeze_id()) {
+            const u32 ifreeze_id = pdl.get_field_idx<u32>("freeze_id");
+            vtk_dump_add_field<u32>(scheduler(), writer, ifreeze_id, "freeze_id");
         }
 
         vtk_dump_add_compute_field(scheduler(), writer, density, "rho");

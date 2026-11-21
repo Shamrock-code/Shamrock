@@ -182,16 +182,19 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
                   .get()
                   .get_buf();
 
-        sham::EventList depends_list;
-        auto dust_cfl_dt        = dust_cfl_dt_buf.get_write_access(depends_list);
-        auto rho_dust           = buf_rho_dust.get_read_access(depends_list);
-        auto rhov_dust          = buf_rhov_dust.get_read_access(depends_list);
-        auto acc_aabb_cell_size = block_cell_sizes.get_read_access(depends_list);
+        Tscal C_safe = solver_config.Csafe;
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            Tscal C_safe = solver_config.Csafe;
-
-            shambase::parallel_for(cgh, ndust * cell_count, "compute_dust_cfl", [=](u64 gid) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_rho_dust, buf_rhov_dust, block_cell_sizes},
+            sham::MultiRef{dust_cfl_dt_buf},
+            ndust * cell_count,
+            [C_safe, ndust](
+                u32 gid,
+                const Tscal *__restrict rho_dust,
+                const Tvec *__restrict rhov_dust,
+                const Tscal *__restrict acc_aabb_cell_size,
+                Tscal *__restrict dust_cfl_dt) {
                 const u32 tmp_gid        = (u32) gid;
                 const u32 cell_global_id = tmp_gid / ndust;
                 const u32 ndust_off_loc  = tmp_gid % ndust;
@@ -214,12 +217,6 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
 
                 dust_cfl_dt[ndust * cell_global_id + ndust_off_loc] = dt;
             });
-        });
-
-        dust_cfl_dt_buf.complete_event_state(e);
-        buf_rho_dust.complete_event_state(e);
-        buf_rhov_dust.complete_event_state(e);
-        block_cell_sizes.complete_event_state(e);
     });
 
     Tscal rank_dust_dt = dust_cfl_dt.compute_rank_min();

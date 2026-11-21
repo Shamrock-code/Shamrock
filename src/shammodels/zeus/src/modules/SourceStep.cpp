@@ -306,26 +306,23 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_AV() {
                 Tvec d_cell  = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
                                * coord_conv_fact;
 
-                // clang-format off
-                    Tscal rho_i_j_k   = rho[id_a];
+                Tscal rho_i_j_k = rho[id_a];
 
-                    Tvec vel_i_j_k = vel[id_a];
-                    Tvec vel_ip1_j_k = vel_xp[id_a];
-                    Tvec vel_i_jp1_k = vel_yp[id_a];
-                    Tvec vel_i_j_kp1 = vel_zp[id_a];
+                Tvec vel_i_j_k   = vel[id_a];
+                Tvec vel_ip1_j_k = vel_xp[id_a];
+                Tvec vel_i_jp1_k = vel_yp[id_a];
+                Tvec vel_i_j_kp1 = vel_zp[id_a];
 
-                    Tvec dv = {
-                        vel_ip1_j_k.x() - vel_i_j_k.x(),
-                        vel_i_jp1_k.y() - vel_i_j_k.y(),
-                        vel_i_j_kp1.z() - vel_i_j_k.z()
-                    };
+                Tvec dv
+                    = {vel_ip1_j_k.x() - vel_i_j_k.x(),
+                       vel_i_jp1_k.y() - vel_i_j_k.y(),
+                       vel_i_j_kp1.z() - vel_i_j_k.z()};
 
-                    dv = sham::negative_part(dv);
+                dv = sham::negative_part(dv);
 
-                    constexpr Tscal C2 = 3;
+                constexpr Tscal C2 = 3;
 
-                    q_AV[id_a] = C2*rho_i_j_k*(dv*dv);
-                // clang-format on
+                q_AV[id_a] = C2 * rho_i_j_k * (dv * dv);
             });
     });
 }
@@ -587,20 +584,17 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_div_v() {
                 Tvec d_cell  = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
                                * coord_conv_fact;
 
-                // clang-format off
-                    Tvec vel_i_j_k = vel[id_a];
-                    Tvec vel_ip1_j_k = vel_xp[id_a];
-                    Tvec vel_i_jp1_k = vel_yp[id_a];
-                    Tvec vel_i_j_kp1 = vel_zp[id_a];
+                Tvec vel_i_j_k   = vel[id_a];
+                Tvec vel_ip1_j_k = vel_xp[id_a];
+                Tvec vel_i_jp1_k = vel_yp[id_a];
+                Tvec vel_i_j_kp1 = vel_zp[id_a];
 
-                    Tvec dv = {
-                        vel_ip1_j_k.x() - vel_i_j_k.x(),
-                        vel_i_jp1_k.y() - vel_i_j_k.y(),
-                        vel_i_j_kp1.z() - vel_i_j_k.z()
-                    };
+                Tvec dv
+                    = {vel_ip1_j_k.x() - vel_i_j_k.x(),
+                       vel_i_jp1_k.y() - vel_i_j_k.y(),
+                       vel_i_j_kp1.z() - vel_i_j_k.z()};
 
-                    divv[id_a] += sycl::dot(dv,Tvec{1,1,1}/ d_cell);
-                // clang-format on
+                divv[id_a] += sycl::dot(dv, Tvec{1, 1, 1} / d_cell);
             });
     });
 }

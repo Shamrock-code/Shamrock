@@ -56,13 +56,27 @@ namespace shammodels::basegodunov {
             }
         };
 
-        using Variant = std::variant<None, InstantBarotropic>;
+        /**
+         * @brief Beta-cooling  (Gammie 2001)
+         *
+         * The internal energy of every cell decreases with a time scale tcool = beta / omega,
+         * where omega is the rotation frequency around center
+         */
+        struct BetaCooling {
+            Tscal beta;
+            Tvec center;
+        };
+
+        using Variant = std::variant<None, InstantBarotropic, BetaCooling>;
 
         Variant config = None{};
 
         inline void set_none() { config = None{}; }
         inline void set_instant_barotropic(Tscal rho0, Tscal cs0, Tscal gamma0) {
             config = InstantBarotropic{rho0, cs0, gamma0};
+        }
+        inline void set_beta_cooling(Tscal beta, Tvec center) {
+            config = BetaCooling{beta, center};
         }
 
         inline bool is_cooling_on() const { return !std::holds_alternative<None>(config); }
@@ -78,6 +92,16 @@ namespace shammodels::basegodunov {
                         cfg->cs0));
                 }
             }
+            if (const BetaCooling *cfg = std::get_if<BetaCooling>(&config)) {
+                if (!(cfg->beta > 0.0)) {
+                    shambase::throw_with_loc<std::invalid_argument>(sham::format(
+                        "BetaCooling: beta must be > 0, currently beta = {}", cfg->beta));
+                }
+            }
+        }
+
+        inline bool is_coordinates_needed() const {
+            return std::holds_alternative<BetaCooling>(config);
         }
     };
 
@@ -97,6 +121,9 @@ namespace shammodels::basegodunov {
                            {"cs0", cfg.cs0},
                            {"gamma0", cfg.gamma0}};
                 },
+                [&](const typename Cooling::BetaCooling &cfg) {
+                    j = {{"type", "beta_cooling"}, {"beta", cfg.beta}, {"center", cfg.center}};
+                },
             },
             p.config);
     }
@@ -111,6 +138,8 @@ namespace shammodels::basegodunov {
         } else if (type == "instant_barotropic") {
             p.set_instant_barotropic(
                 j.at("rho0").get<Tscal>(), j.at("cs0").get<Tscal>(), j.at("gamma0").get<Tscal>());
+        } else if (type == "beta_cooling") {
+            p.set_beta_cooling(j.at("beta").get<Tscal>(), j.at("center").get<Tvec>());
         } else {
             shambase::throw_with_loc<std::runtime_error>("Invalid cooling type: " + type);
         }

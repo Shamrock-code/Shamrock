@@ -24,7 +24,16 @@
  * registered at definition time, so the registration order must not change.
  */
 
+// pybind11 type casters must be visible in every TU that binds code, otherwise conversions of
+// std::function, std::optional, numpy arrays, ... silently fail at import time (or worse, differ
+// between TUs). This is the exact set of casters the bindings were compiled with when they all
+// lived in a single pySPHModel.cpp, so keep it identical in every per-class TU.
 #include "shambindings/pybindaliases.hpp"
+#include "shambindings/pytypealias.hpp"
+#include <pybind11/complex.h>
+#include <pybind11/functional.h>
+#include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 #include <string>
 
 namespace shammodels::sph::pybindings {

@@ -1746,15 +1746,18 @@ typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tv
         auto &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
 
         sham::DeviceQueue &q = dev_sched->get_queue();
-        sham::EventList depends_list;
 
-        auto hpart      = buf_hpart.get_read_access(depends_list);
-        auto axyz       = buf_axyz.get_read_access(depends_list);
-        auto cs         = buf_cs.get_read_access(depends_list);
-        auto cfl_dt_acc = cfl_dt_buf.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, cnt, "gsph_compute_cfl_dt", [=](u64 gid) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_hpart, buf_axyz, buf_cs},
+            sham::MultiRef{cfl_dt_buf},
+            cnt,
+            [C_cour, C_force](
+                u32 gid,
+                const Tscal *__restrict hpart,
+                const Tvec *__restrict axyz,
+                const Tscal *__restrict cs,
+                Tscal *__restrict cfl_dt_acc) {
                 u32 i = (u32) gid;
 
                 Tscal h_i   = hpart[i];
@@ -1785,12 +1788,6 @@ typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tv
 
                 cfl_dt_acc[i] = dt_min;
             });
-        });
-
-        buf_hpart.complete_event_state(e);
-        buf_axyz.complete_event_state(e);
-        buf_cs.complete_event_state(e);
-        cfl_dt_buf.complete_event_state(e);
     });
 
     // Compute minimum across all patches on this rank

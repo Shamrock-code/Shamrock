@@ -617,16 +617,19 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::EventList depends_list;
-        auto acc_cfl_dt    = cfl_dt_buf.get_write_access(depends_list);
-        auto acc_block_min = buf_block_min.get_read_access(depends_list);
-        auto acc_block_max = buf_block_max.get_read_access(depends_list);
-        auto acc_rho       = buf_rho.get_read_access(depends_list);
-        auto acc_eint      = buf_eint.get_read_access(depends_list);
-        auto acc_vel       = buf_vel.get_read_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, cell_count, "compute_cfl_zeus", [=](u64 gid) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_block_min, buf_block_max, buf_rho, buf_eint, buf_vel},
+            sham::MultiRef{cfl_dt_buf},
+            cell_count,
+            [dxfact, one_over_Nside, gamma, Csafe](
+                u32 gid,
+                const TgridVec *__restrict acc_block_min,
+                const TgridVec *__restrict acc_block_max,
+                const Tscal *__restrict acc_rho,
+                const Tscal *__restrict acc_eint,
+                const Tvec *__restrict acc_vel,
+                Tscal *__restrict acc_cfl_dt) {
                 const u32 block_id = (u32) gid / AMRBlock::block_size;
 
                 TgridVec lower       = acc_block_min[block_id];
@@ -652,14 +655,6 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
                 acc_cfl_dt[gid] = dt;
             });
-        });
-
-        cfl_dt_buf.complete_event_state(e);
-        buf_block_min.complete_event_state(e);
-        buf_block_max.complete_event_state(e);
-        buf_rho.complete_event_state(e);
-        buf_eint.complete_event_state(e);
-        buf_vel.complete_event_state(e);
     });
 
     Tscal rank_dt = cfl_dt.compute_rank_min();

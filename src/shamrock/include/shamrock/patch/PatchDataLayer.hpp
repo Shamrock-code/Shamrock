@@ -160,8 +160,6 @@ namespace shamrock::patch {
 
         void extract_elements(const sham::DeviceBuffer<u32> &idxs, PatchDataLayer &out_pdat);
 
-        void keep_ids(sycl::buffer<u32> &index_map, u32 len);
-
         void insert_elements(const PatchDataLayer &pdat);
 
         /**
@@ -204,7 +202,7 @@ namespace shamrock::patch {
         /// Same as index_remap_resize with a shamrock device buffer instead
         void index_remap_resize(sham::DeviceBuffer<u32> &index_map, u32 len);
 
-        /// Same as keep_ids with a shamrock device buffer instead
+        /// Keep only the objects whose ids are listed in the first len entries of index_map
         void keep_ids(sham::DeviceBuffer<u32> &index_map, u32 len);
 
         /// remove some particles ids

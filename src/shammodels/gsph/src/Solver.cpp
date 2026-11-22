@@ -1329,29 +1329,28 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
         auto &soundspeed_buf                   = soundspeed_field.get_field(id).get_buf();
 
         sham::DeviceQueue &q = dev_sched->get_queue();
-        sham::EventList depends_list;
 
-        auto density    = buf_density.get_read_access(depends_list);
-        auto pressure   = pressure_buf.get_write_access(depends_list);
-        auto soundspeed = soundspeed_buf.get_write_access(depends_list);
-
-        const Tscal *uint_ptr = nullptr;
         if (has_uint) {
-            uint_ptr = mpdat.get_field_buf_ref<Tscal>(iuint_interf).get_read_access(depends_list);
-        }
+            sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, total_elements, "compute_eos_gsph", [=](u64 gid) {
-                u32 i = (u32) gid;
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_density, buf_uint},
+                sham::MultiRef{pressure_buf, soundspeed_buf},
+                total_elements,
+                [gamma](
+                    u32 i,
+                    const Tscal *__restrict density,
+                    const Tscal *__restrict uint,
+                    Tscal *__restrict pressure,
+                    Tscal *__restrict soundspeed) {
+                    // Use SPH-summation density (from compute_omega, communicated to ghosts)
+                    Tscal rho = density[i];
+                    rho       = sycl::max(rho, Tscal(1e-30));
 
-                // Use SPH-summation density (from compute_omega, communicated to ghosts)
-                Tscal rho = density[i];
-                rho       = sycl::max(rho, Tscal(1e-30));
-
-                if (has_uint && uint_ptr != nullptr) {
                     // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
                     // P = (\gamma - 1) * \rho * u
-                    Tscal u = uint_ptr[i];
+                    Tscal u = uint[i];
                     u       = sycl::max(u, Tscal(1e-30));
                     Tscal P = (gamma - Tscal(1.0)) * rho * u;
 
@@ -1365,24 +1364,29 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
 
                     pressure[i]   = P;
                     soundspeed[i] = cs;
-                } else {
+                });
+        } else {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_density},
+                sham::MultiRef{pressure_buf, soundspeed_buf},
+                total_elements,
+                [](u32 i,
+                   const Tscal *__restrict density,
+                   Tscal *__restrict pressure,
+                   Tscal *__restrict soundspeed) {
+                    // Use SPH-summation density (from compute_omega, communicated to ghosts)
+                    Tscal rho = density[i];
+                    rho       = sycl::max(rho, Tscal(1e-30));
+
                     // Isothermal case
                     Tscal cs = Tscal(1.0);
                     Tscal P  = cs * cs * rho;
 
                     pressure[i]   = P;
                     soundspeed[i] = cs;
-                }
-            });
-        });
-
-        // Complete all buffer event states
-        buf_density.complete_event_state(e);
-        if (has_uint) {
-            mpdat.get_field_buf_ref<Tscal>(iuint_interf).complete_event_state(e);
+                });
         }
-        pressure_buf.complete_event_state(e);
-        soundspeed_buf.complete_event_state(e);
     });
 }
 

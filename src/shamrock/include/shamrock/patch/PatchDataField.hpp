@@ -312,50 +312,6 @@ class PatchDataField {
         return idx_cd;
     }
 
-    /**
-     * @brief Same function as @see PatchDataField#get_ids_set_where but return a optional
-     * sycl::buffer of the found index
-     *
-     * @tparam Lambdacd
-     * @tparam Args
-     * @param cd_true
-     * @param args
-     * @return std::vector<u32>
-     */
-    template<class Lambdacd, class... Args>
-    inline std::tuple<std::optional<sycl::buffer<u32>>, u32> get_ids_buf_where(
-        Lambdacd &&cd_true, Args... args) {
-        StackEntry stack_loc{};
-
-        if (get_obj_cnt() > 0) {
-
-            // buffer of booleans to store result of the condition
-            sycl::buffer<u32> mask(get_obj_cnt());
-
-            sham::EventList depends_list;
-            const T *acc = buf.get_read_access(depends_list);
-
-            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-
-            auto e = q.submit(depends_list, [&, args...](sycl::handler &cgh) {
-                sycl::accessor acc_mask{mask, cgh, sycl::write_only, sycl::no_init};
-                u32 nvar_field = nvar;
-
-                shambase::parallel_for(
-                    cgh, get_obj_cnt(), "PatchdataField::get_ids_buf_where", [=](u32 id) {
-                        acc_mask[id] = cd_true(acc, id * nvar_field, args...);
-                    });
-            });
-
-            buf.complete_event_state(e);
-
-            return shamalgs::numeric::stream_compact(
-                shamsys::instance::get_compute_queue(), mask, get_obj_cnt());
-        } else {
-            return {std::nullopt, 0};
-        }
-    }
-
     template<class Lambdacd, class... Args>
     inline sham::DeviceBuffer<u32> get_ids_where_recycle_buffer(
         sham::DeviceBuffer<u32> &mask, Lambdacd &&cd_true, Args... args) const {
@@ -385,14 +341,14 @@ class PatchDataField {
     }
 
     /**
-     * @brief Same function as @see PatchDataField#get_ids_set_where but return a optional
-     * sycl::buffer of the found index
+     * @brief Same function as @see PatchDataField#get_ids_set_where but return a
+     * sham::DeviceBuffer of the found index
      *
      * @tparam Lambdacd
      * @tparam Args
      * @param cd_true
      * @param args
-     * @return std::vector<u32>
+     * @return sham::DeviceBuffer<u32> of the indexes satisfying the condition (empty if none)
      */
     template<class Lambdacd, class... Args>
     inline sham::DeviceBuffer<u32> get_ids_where(Lambdacd &&cd_true, Args... args) const {

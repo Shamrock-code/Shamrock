@@ -1427,29 +1427,23 @@ void shammodels::gsph::Solver<Tvec, Kern>::copy_eos_to_patchdata() {
         sham::DeviceBuffer<Tscal> &buf_cs_in = soundspeed_field.get_field(cur_p.id_patch).get_buf();
 
         auto &q = shamsys::instance::get_compute_scheduler().get_queue();
-        sham::EventList depends_list;
 
-        auto rho_in = buf_rho_in.get_read_access(depends_list);
-        auto P_in   = buf_P_in.get_read_access(depends_list);
-        auto cs_in  = buf_cs_in.get_read_access(depends_list);
-        auto rho    = buf_rho.get_write_access(depends_list);
-        auto P      = buf_P.get_write_access(depends_list);
-        auto cs     = buf_cs.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            cgh.parallel_for(sycl::range<1>{npart}, [=](sycl::item<1> item) {
-                rho[item] = rho_in[item];
-                P[item]   = P_in[item];
-                cs[item]  = cs_in[item];
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_rho_in, buf_P_in, buf_cs_in},
+            sham::MultiRef{buf_rho, buf_P, buf_cs},
+            npart,
+            [](u32 i,
+               const Tscal *__restrict rho_in,
+               const Tscal *__restrict P_in,
+               const Tscal *__restrict cs_in,
+               Tscal *__restrict rho,
+               Tscal *__restrict P,
+               Tscal *__restrict cs) {
+                rho[i] = rho_in[i];
+                P[i]   = P_in[i];
+                cs[i]  = cs_in[i];
             });
-        });
-
-        buf_rho_in.complete_event_state(e);
-        buf_P_in.complete_event_state(e);
-        buf_cs_in.complete_event_state(e);
-        buf_rho.complete_event_state(e);
-        buf_P.complete_event_state(e);
-        buf_cs.complete_event_state(e);
     });
 }
 

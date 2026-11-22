@@ -1506,6 +1506,84 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
 
     static constexpr Tscal Rkern = Kernel::Rkern;
 
+    // Per-particle gradient body, shared by the with/without uint kernel variants.
+    // `u_of(j)` returns the internal energy of particle j: the uint field when the
+    // EOS is adiabatic, Tscal(0) otherwise (so the arithmetic below is unchanged).
+    auto gradients_body = [pmass, gamma](
+                              u32 id_a,
+                              auto ploop_ptrs,
+                              const Tvec *__restrict xyz_acc,
+                              const Tscal *__restrict h_acc,
+                              const Tvec *__restrict v_acc,
+                              const Tscal *__restrict dens_acc,
+                              auto u_of,
+                              Tvec *__restrict grad_d_acc,
+                              Tvec *__restrict grad_p_acc,
+                              Tvec *__restrict grad_vx_acc,
+                              Tvec *__restrict grad_vy_acc,
+                              Tvec *__restrict grad_vz_acc) {
+        shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+        Tvec xyz_a  = xyz_acc[id_a];
+        Tscal h_a   = h_acc[id_a];
+        Tvec v_a    = v_acc[id_a];
+        Tscal rho_a = sycl::max(dens_acc[id_a], Tscal(1e-30));
+        Tscal dint  = h_a * h_a * Rkern * Rkern;
+
+        // Get internal energy for particle a
+        Tscal u_a = u_of(id_a);
+
+        // Initialize gradient accumulators
+        Tvec grad_d  = {0, 0, 0}; // Density gradient
+        Tvec grad_u  = {0, 0, 0}; // Internal energy difference gradient
+        Tvec grad_vx = {0, 0, 0}; // Velocity component gradients
+        Tvec grad_vy = {0, 0, 0};
+        Tvec grad_vz = {0, 0, 0};
+
+        particle_looper.for_each_object(id_a, [&](u32 id_b) {
+            Tvec dr    = xyz_a - xyz_acc[id_b];
+            Tscal rab2 = sycl::dot(dr, dr);
+
+            if (rab2 > dint || id_a == id_b) {
+                return;
+            }
+
+            Tscal rab = sycl::sqrt(rab2);
+
+            // Kernel gradient: \nabla W = (dW/dr) * (r/|r|)
+            Tscal dWdr = Kernel::dW_3d(rab, h_a);
+            Tvec gradW = dr * (dWdr * sham::inv_sat_positive(rab));
+
+            // Accumulate gradients (reference: g_pre_interaction.cpp lines 130-147)
+            grad_d += gradW * pmass;
+
+            // Internal energy gradient for pressure
+            Tscal u_b = u_of(id_b);
+            grad_u += gradW * (pmass * (u_b - u_a));
+
+            // Velocity gradients
+            Tvec v_b = v_acc[id_b];
+            grad_vx += gradW * (pmass * (v_b[0] - v_a[0]));
+            grad_vy += gradW * (pmass * (v_b[1] - v_a[1]));
+            grad_vz += gradW * (pmass * (v_b[2] - v_a[2]));
+        });
+
+        // Store density gradient
+        grad_d_acc[id_a] = grad_d;
+
+        // Compute pressure gradient: \nabla P = (\nabla \rho * u + du) * (\gamma - 1)
+        // (reference: g_pre_interaction.cpp line 143)
+        Tvec grad_p      = (grad_d * u_a + grad_u) * (gamma - Tscal(1));
+        grad_p_acc[id_a] = grad_p;
+
+        // Normalize velocity gradients by density
+        // (reference: g_pre_interaction.cpp lines 144-147)
+        Tscal rho_inv     = sham::inv_sat_positive(rho_a);
+        grad_vx_acc[id_a] = grad_vx * rho_inv;
+        grad_vy_acc[id_a] = grad_vy * rho_inv;
+        grad_vz_acc[id_a] = grad_vz * rho_inv;
+    };
+
     // Compute gradients following reference implementation (g_pre_interaction.cpp)
     // grad_d = \sigma_j m_j \nabla W_ij
     // grad_p = (grad_d * u_i + du) * (\gamma - 1)  where du = \sigma_j m_j (u_j - u_i) \nabla W_ij
@@ -1534,108 +1612,92 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
         auto &grad_vz_buf  = grad_vz_field.get_field(p.id_patch);
 
         sham::DeviceQueue &q = dev_sched->get_queue();
-        sham::EventList depends_list;
 
-        auto ploop_ptrs  = pcache.get_read_access(depends_list);
-        auto xyz_acc     = buf_xyz.get_read_access(depends_list);
-        auto h_acc       = buf_hpart.get_read_access(depends_list);
-        auto v_acc       = buf_vxyz.get_read_access(depends_list);
-        auto dens_acc    = dens_field.get_buf().get_read_access(depends_list);
-        auto grad_d_acc  = grad_d_field.get_buf().get_write_access(depends_list);
-        auto grad_p_acc  = grad_p_field.get_buf().get_write_access(depends_list);
-        auto grad_vx_acc = grad_vx_buf.get_buf().get_write_access(depends_list);
-        auto grad_vy_acc = grad_vy_buf.get_buf().get_write_access(depends_list);
-        auto grad_vz_acc = grad_vz_buf.get_buf().get_write_access(depends_list);
-
-        // Get internal energy if adiabatic
-        const Tscal *uint_ptr = nullptr;
         if (has_uint) {
-            uint_ptr = pdat.get_field_buf_ref<Tscal>(iuint).get_read_access(depends_list);
-        }
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-
-            shambase::parallel_for(cgh, cnt, "gsph_compute_gradients", [=](u64 gid) {
-                u32 id_a = (u32) gid;
-
-                Tvec xyz_a  = xyz_acc[id_a];
-                Tscal h_a   = h_acc[id_a];
-                Tvec v_a    = v_acc[id_a];
-                Tscal rho_a = sycl::max(dens_acc[id_a], Tscal(1e-30));
-                Tscal dint  = h_a * h_a * Rkern * Rkern;
-
-                // Get internal energy for particle a
-                Tscal u_a = Tscal(0);
-                if (uint_ptr != nullptr) {
-                    u_a = uint_ptr[id_a];
-                }
-
-                // Initialize gradient accumulators
-                Tvec grad_d  = {0, 0, 0}; // Density gradient
-                Tvec grad_u  = {0, 0, 0}; // Internal energy difference gradient
-                Tvec grad_vx = {0, 0, 0}; // Velocity component gradients
-                Tvec grad_vy = {0, 0, 0};
-                Tvec grad_vz = {0, 0, 0};
-
-                particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                    Tvec dr    = xyz_a - xyz_acc[id_b];
-                    Tscal rab2 = sycl::dot(dr, dr);
-
-                    if (rab2 > dint || id_a == id_b) {
-                        return;
-                    }
-
-                    Tscal rab = sycl::sqrt(rab2);
-
-                    // Kernel gradient: \nabla W = (dW/dr) * (r/|r|)
-                    Tscal dWdr = Kernel::dW_3d(rab, h_a);
-                    Tvec gradW = dr * (dWdr * sham::inv_sat_positive(rab));
-
-                    // Accumulate gradients (reference: g_pre_interaction.cpp lines 130-147)
-                    grad_d += gradW * pmass;
-
-                    // Internal energy gradient for pressure
-                    Tscal u_b = (uint_ptr != nullptr) ? uint_ptr[id_b] : Tscal(0);
-                    grad_u += gradW * (pmass * (u_b - u_a));
-
-                    // Velocity gradients
-                    Tvec v_b = v_acc[id_b];
-                    grad_vx += gradW * (pmass * (v_b[0] - v_a[0]));
-                    grad_vy += gradW * (pmass * (v_b[1] - v_a[1]));
-                    grad_vz += gradW * (pmass * (v_b[2] - v_a[2]));
+            sham::kernel_call(
+                q,
+                sham::MultiRef{
+                    pcache,
+                    buf_xyz,
+                    buf_hpart,
+                    buf_vxyz,
+                    dens_field.get_buf(),
+                    pdat.get_field_buf_ref<Tscal>(iuint)},
+                sham::MultiRef{
+                    grad_d_field.get_buf(),
+                    grad_p_field.get_buf(),
+                    grad_vx_buf.get_buf(),
+                    grad_vy_buf.get_buf(),
+                    grad_vz_buf.get_buf()},
+                cnt,
+                [gradients_body](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz_acc,
+                    const Tscal *__restrict h_acc,
+                    const Tvec *__restrict v_acc,
+                    const Tscal *__restrict dens_acc,
+                    const Tscal *__restrict uint_acc,
+                    Tvec *__restrict grad_d_acc,
+                    Tvec *__restrict grad_p_acc,
+                    Tvec *__restrict grad_vx_acc,
+                    Tvec *__restrict grad_vy_acc,
+                    Tvec *__restrict grad_vz_acc) {
+                    gradients_body(
+                        id_a,
+                        ploop_ptrs,
+                        xyz_acc,
+                        h_acc,
+                        v_acc,
+                        dens_acc,
+                        [=](u32 j) -> Tscal {
+                            return uint_acc[j];
+                        },
+                        grad_d_acc,
+                        grad_p_acc,
+                        grad_vx_acc,
+                        grad_vy_acc,
+                        grad_vz_acc);
                 });
-
-                // Store density gradient
-                grad_d_acc[id_a] = grad_d;
-
-                // Compute pressure gradient: \nabla P = (\nabla \rho * u + du) * (\gamma - 1)
-                // (reference: g_pre_interaction.cpp line 143)
-                Tvec grad_p      = (grad_d * u_a + grad_u) * (gamma - Tscal(1));
-                grad_p_acc[id_a] = grad_p;
-
-                // Normalize velocity gradients by density
-                // (reference: g_pre_interaction.cpp lines 144-147)
-                Tscal rho_inv     = sham::inv_sat_positive(rho_a);
-                grad_vx_acc[id_a] = grad_vx * rho_inv;
-                grad_vy_acc[id_a] = grad_vy * rho_inv;
-                grad_vz_acc[id_a] = grad_vz * rho_inv;
-            });
-        });
-
-        // Complete event states
-        pcache.complete_event_state({e});
-        buf_xyz.complete_event_state(e);
-        buf_hpart.complete_event_state(e);
-        buf_vxyz.complete_event_state(e);
-        dens_field.get_buf().complete_event_state(e);
-        grad_d_field.get_buf().complete_event_state(e);
-        grad_p_field.get_buf().complete_event_state(e);
-        grad_vx_buf.get_buf().complete_event_state(e);
-        grad_vy_buf.get_buf().complete_event_state(e);
-        grad_vz_buf.get_buf().complete_event_state(e);
-        if (has_uint) {
-            pdat.get_field_buf_ref<Tscal>(iuint).complete_event_state(e);
+        } else {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{pcache, buf_xyz, buf_hpart, buf_vxyz, dens_field.get_buf()},
+                sham::MultiRef{
+                    grad_d_field.get_buf(),
+                    grad_p_field.get_buf(),
+                    grad_vx_buf.get_buf(),
+                    grad_vy_buf.get_buf(),
+                    grad_vz_buf.get_buf()},
+                cnt,
+                [gradients_body](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz_acc,
+                    const Tscal *__restrict h_acc,
+                    const Tvec *__restrict v_acc,
+                    const Tscal *__restrict dens_acc,
+                    Tvec *__restrict grad_d_acc,
+                    Tvec *__restrict grad_p_acc,
+                    Tvec *__restrict grad_vx_acc,
+                    Tvec *__restrict grad_vy_acc,
+                    Tvec *__restrict grad_vz_acc) {
+                    gradients_body(
+                        id_a,
+                        ploop_ptrs,
+                        xyz_acc,
+                        h_acc,
+                        v_acc,
+                        dens_acc,
+                        [](u32) -> Tscal {
+                            return Tscal(0);
+                        },
+                        grad_d_acc,
+                        grad_p_acc,
+                        grad_vx_acc,
+                        grad_vy_acc,
+                        grad_vz_acc);
+                });
         }
     });
 }

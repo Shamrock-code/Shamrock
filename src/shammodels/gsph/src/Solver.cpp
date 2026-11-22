@@ -678,17 +678,20 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_density() {
         auto &dens_field = density_field.get_field(p.id_patch);
 
         sham::DeviceQueue &q = dev_sched->get_queue();
-        sham::EventList depends_list;
 
-        auto ploop_ptrs  = pcache.get_read_access(depends_list);
-        auto xyz_acc     = buf_xyz.get_read_access(depends_list);
-        auto h_acc       = buf_hpart.get_read_access(depends_list);
-        auto density_acc = dens_field.get_buf().get_write_access(depends_list);
+        sham::kernel_call(
+            q,
+            sham::MultiRef{pcache, buf_xyz, buf_hpart},
+            sham::MultiRef{dens_field.get_buf()},
+            cnt,
+            [pmass](
+                u32 gid,
+                auto ploop_ptrs,
+                const Tvec *__restrict xyz_acc,
+                const Tscal *__restrict h_acc,
+                Tscal *__restrict density_acc) {
+                shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
-        auto e = q.submit(depends_list, [&, pmass](sycl::handler &cgh) {
-            shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-
-            shambase::parallel_for(cgh, cnt, "gsph_compute_density", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 Tvec xyz_a = xyz_acc[id_a];
@@ -717,12 +720,6 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_density() {
 
                 density_acc[id_a] = sycl::max(rho_sum, Tscal(1e-30));
             });
-        });
-
-        pcache.complete_event_state({e});
-        buf_xyz.complete_event_state(e);
-        buf_hpart.complete_event_state(e);
-        dens_field.get_buf().complete_event_state(e);
     });
 }
 

@@ -389,18 +389,19 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-    sham::EventList depends_list;
-    auto val_out  = buf_dest.get_write_access(depends_list);
-    auto src      = buf_src.get_read_access(depends_list);
-    auto cell_min = buf_cell_min.get_read_access(depends_list);
-    auto cell_max = buf_cell_max.get_read_access(depends_list);
+    sham::kernel_call(
+        q,
+        sham::MultiRef{face_ym.neigh_info, buf_src, buf_cell_min, buf_cell_max},
+        sham::MultiRef{buf_dest},
+        nobj * Block::block_size,
+        [](u32 id_a,
+           auto fptr,
+           const T *__restrict src,
+           const TgridVec *__restrict cell_min,
+           const TgridVec *__restrict cell_max,
+           T *__restrict val_out) {
+            tree::ObjectCacheIterator faces_ym(fptr);
 
-    auto fptr = face_ym.neigh_info.get_read_access(depends_list);
-
-    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        tree::ObjectCacheIterator faces_ym(fptr);
-
-        shambase::parallel_for(cgh, nobj * Block::block_size, "compute ym val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 block_id = id_a / Block::block_size;
             const u32 lid      = id_a % Block::block_size;
@@ -424,16 +425,6 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                 });
             }
         });
-    });
-
-    buf_dest.complete_event_state(e);
-    buf_src.complete_event_state(e);
-    buf_cell_min.complete_event_state(e);
-    buf_cell_max.complete_event_state(e);
-
-    sham::EventList resulting_events;
-    resulting_events.add_event(e);
-    face_ym.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>

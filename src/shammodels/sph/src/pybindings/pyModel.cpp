@@ -40,27 +40,6 @@
 namespace shammodels::sph::pybindings {
 
     template<class Tvec, template<class> class SPHKernel>
-    void log_instance_registration(const std::string &name_config, const std::string &name_model) {
-        using T = Model<Tvec, SPHKernel>;
-
-        shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
-        shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
-    }
-
-    template void log_instance_registration<f64_3, shammath::M4>(
-        const std::string &, const std::string &);
-    template void log_instance_registration<f64_3, shammath::M6>(
-        const std::string &, const std::string &);
-    template void log_instance_registration<f64_3, shammath::M8>(
-        const std::string &, const std::string &);
-    template void log_instance_registration<f64_3, shammath::C2>(
-        const std::string &, const std::string &);
-    template void log_instance_registration<f64_3, shammath::C4>(
-        const std::string &, const std::string &);
-    template void log_instance_registration<f64_3, shammath::C6>(
-        const std::string &, const std::string &);
-
-    template<class Tvec, template<class> class SPHKernel>
     void add_model_instance(py::module &m, const std::string &name_model) {
         using namespace shammodels::sph;
 

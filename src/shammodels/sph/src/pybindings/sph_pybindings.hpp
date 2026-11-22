@@ -14,20 +14,20 @@
  * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief Private declarations of the per-class registration functions of the `model_sph`
- * Python bindings.
+ * @brief Private declarations of the `model_sph` bindings split out of `pySPHModel.cpp`.
  *
- * Each function is defined in its own translation unit (`pybindings/py<Class>.cpp`), with
- * explicit instantiations for the SPH kernels bound to Python, so that the pybind11 code of each
- * class is compiled in parallel. They are all called, in a fixed order, from the single
- * `ON_PYTHON_INIT` in `pySPHModel.cpp`: pybind11 builds signature docstrings from the types
- * registered at definition time, so the registration order must not change.
+ * The SolverConfig and Model bindings are by far the heaviest to compile, so they live in their
+ * own translation units (`pybindings/pySolverConfig.cpp` and `pybindings/pyModel.cpp`), with
+ * explicit instantiations for the SPH kernels bound to Python, and build in parallel with
+ * `pySPHModel.cpp`. They are called from `add_instance` in `pySPHModel.cpp`, under its single
+ * `ON_PYTHON_INIT`: pybind11 builds signature docstrings from the types registered at definition
+ * time, so the registration order must not change.
  */
 
 // pybind11 type casters must be visible in every TU that binds code, otherwise conversions of
 // std::function, std::optional, numpy arrays, ... silently fail at import time (or worse, differ
 // between TUs). This is the exact set of casters the bindings were compiled with when they all
-// lived in a single pySPHModel.cpp, so keep it identical in every per-class TU.
+// lived in a single pySPHModel.cpp, so keep it identical in every TU including this header.
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include <pybind11/complex.h>
@@ -38,55 +38,12 @@
 
 namespace shammodels::sph::pybindings {
 
-    // Kernel-templated classes, defined & explicitly instantiated in pybindings/py<Class>.cpp
-
-    template<class Tvec, template<class> class SPHKernel>
-    void log_instance_registration(const std::string &name_config, const std::string &name_model);
-
+    /// Bind `SolverConfig<Tvec, SPHKernel>` (defined in pybindings/pySolverConfig.cpp)
     template<class Tvec, template<class> class SPHKernel>
     void add_solver_config_instance(py::module &m, const std::string &name_config);
 
-    template<class Tvec, template<class> class SPHKernel>
-    void add_analysis_sod_tube_instance(py::module &m, const std::string &name_model);
-
-    template<class Tvec, template<class> class SPHKernel>
-    void add_analysis_disc_instance(py::module &m, const std::string &name_model);
-
-    template<class Tvec, template<class> class SPHKernel>
-    void add_sph_setup_instance(py::module &m, const std::string &name_model);
-
+    /// Bind `Model<Tvec, SPHKernel>` (defined in pybindings/pyModel.cpp)
     template<class Tvec, template<class> class SPHKernel>
     void add_model_instance(py::module &m, const std::string &name_model);
-
-    template<class Tvec, template<class> class SPHKernel>
-    void add_analysisBarycenter_instance(py::module &m, const std::string &name_model);
-
-    template<class Tvec, template<class> class SPHKernel>
-    void add_analysisEnergyKinetic_instance(py::module &m, const std::string &name_model);
-
-    template<class Tvec, template<class> class SPHKernel>
-    void add_analysisEnergyPotential_instance(py::module &m, const std::string &name_model);
-
-    template<class Tvec, template<class> class SPHKernel>
-    void add_analysisTotalMomentum_instance(py::module &m, const std::string &name_model);
-
-    template<class Tvec, template<class> class SPHKernel>
-    void add_analysisAngularMomentum_instance(py::module &m, const std::string &name_model);
-
-    template<class Tvec, template<class> class SPHKernel>
-    void add_analysisDustMass_instance(py::module &m, const std::string &name_model);
-
-    // Analysis factory functions (one overload per kernel), defined in pybindings/pyAnalysis*.cpp
-
-    void register_analysisBarycenter_impl(py::module &msph);
-    void register_analysisEnergyKinetic_impl(py::module &msph);
-    void register_analysisEnergyPotential_impl(py::module &msph);
-    void register_analysisTotalMomentum_impl(py::module &msph);
-    void register_analysisAngularMomentum_impl(py::module &msph);
-    void register_analysisDustMass_impl(py::module &msph);
-
-    // Non-templated functions
-
-    void add_get_model_sph(py::module &m);
 
 } // namespace shammodels::sph::pybindings

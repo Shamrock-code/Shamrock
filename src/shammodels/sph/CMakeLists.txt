@@ -19,17 +19,7 @@ set(Sources
     src/SolverConfig.cpp
     src/pySPHModel.cpp
     src/pybindings/pySolverConfig.cpp
-    src/pybindings/pyAnalysisSodTube.cpp
-    src/pybindings/pyAnalysisDisc.cpp
-    src/pybindings/pySPHSetup.cpp
     src/pybindings/pyModel.cpp
-    src/pybindings/pyGetModelSPH.cpp
-    src/pybindings/pyAnalysisBarycenter.cpp
-    src/pybindings/pyAnalysisEnergyKinetic.cpp
-    src/pybindings/pyAnalysisEnergyPotential.cpp
-    src/pybindings/pyAnalysisTotalMomentum.cpp
-    src/pybindings/pyAnalysisAngularMomentum.cpp
-    src/pybindings/pyAnalysisDustMass.cpp
     src/pyPhantomDump.cpp
     src/modules/AnalysisBarycenter.cpp
     src/modules/SolverStorage.cpp

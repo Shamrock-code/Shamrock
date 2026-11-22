@@ -11,9 +11,9 @@
 
 /**
  * @file sph_pybindings.hpp
- * @author David Fang (david.fang@ikmail.com)
+ * @author David Fang (david.fang@ikmail.com) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Private declarations of the `model_sph` bindings split out of `pySPHModel.cpp`.
  *
  * The SolverConfig and Model bindings are by far the heaviest to compile, so they live in their

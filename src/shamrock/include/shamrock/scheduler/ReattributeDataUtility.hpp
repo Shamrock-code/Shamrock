@@ -17,7 +17,6 @@
 
 #include "shambase/string.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
-#include "shamalgs/memory.hpp"
 #include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -198,7 +197,9 @@ namespace shamrock {
                                     });
                             }
 
-                            sycl::buffer<u32> keep_idx = shamalgs::memory::vec_to_buf(keep_ids);
+                            sham::DeviceBuffer<u32> keep_idx(
+                                keep_ids.size(), shamsys::instance::get_compute_scheduler_ptr());
+                            keep_idx.copy_from_stdvec(keep_ids);
                             pdat.keep_ids(keep_idx, keep_ids.size());
                         }
                     }

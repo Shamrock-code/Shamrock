@@ -1169,7 +1169,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd(IdealMHD cfg) {
-    update_derivs_mhd_impl<shamrock::sph::mhd::MHDType::Ideal>(
+    dispatch_update_derivs_mhd_impl<shamrock::sph::mhd::MHDType::Ideal>(
         cfg.sigma_mhd,
         cfg.alpha_B,
         /*etaO=*/Tscal(0),
@@ -1180,19 +1180,36 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd(
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_nimhd(NonIdealMHD cfg) {
-    update_derivs_mhd_impl<shamrock::sph::mhd::MHDType::NonIdeal>(
+    dispatch_update_derivs_mhd_impl<shamrock::sph::mhd::MHDType::NonIdeal>(
         cfg.sigma_mhd, cfg.alpha_B, cfg.etaO, cfg.etaH, cfg.etaAD, cfg.tensile_corr);
 }
 
 template<class Tvec, template<class> class SPHKernel>
 template<shamrock::sph::mhd::MHDType mhd_mode>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_impl(
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::dispatch_update_derivs_mhd_impl(
     Tscal sigma_mhd,
     Tscal alpha_B,
     Tscal etaO,
     Tscal etaH,
     Tscal etaAD,
-    TensileCorrection tensile_corr_mode) {
+    TensileCorrection tensile_corr) {
+    switch (tensile_corr) {
+    case TensileCorrection::Borve:
+        update_derivs_mhd_impl<mhd_mode, TensileCorrection::Borve>(
+            sigma_mhd, alpha_B, etaO, etaH, etaAD);
+        return;
+    case TensileCorrection::PhantomBetaSwitch:
+        update_derivs_mhd_impl<mhd_mode, TensileCorrection::PhantomBetaSwitch>(
+            sigma_mhd, alpha_B, etaO, etaH, etaAD);
+        return;
+    }
+    shambase::throw_unimplemented();
+}
+
+template<class Tvec, template<class> class SPHKernel>
+template<shamrock::sph::mhd::MHDType mhd_mode, shammodels::TensileCorrection tensile_corr_mode>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_impl(
+    Tscal sigma_mhd, Tscal alpha_B, Tscal etaO, Tscal etaH, Tscal etaAD) {
 
     StackEntry stack_loc{};
 
@@ -1331,8 +1348,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
             const Tscal _etaH    = etaH;
             const Tscal _etaAD   = etaAD;
 
-            const bool use_beta_switch = tensile_corr_mode == TensileCorrection::PhantomBetaSwitch;
-
             shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
             shamlog_debug_sycl_ln("deriv kernel", "sigma_mhd  :", _sigma);
             shamlog_debug_sycl_ln("deriv kernel", "alpha_B    :", _alpha_B);
@@ -1367,10 +1382,14 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
                 Tscal psi_a      = psi_on_ch[id_a] * v_shock_a;
 
                 // prefactor of the tensile instability correction, Bhat_a = factor * B_a
-                Tscal tensile_corr_factor_a
-                    = (use_beta_switch) ? shamrock::sph::mhd::tensile_corr_factor_beta_switch(
-                                              pressure[id_a], B_a, mu_0)
-                                        : shamrock::sph::mhd::tensile_corr_factor_borve<Tscal>();
+                // compile time selection
+                Tscal tensile_corr_factor_a;
+                if constexpr (tensile_corr_mode == TensileCorrection::PhantomBetaSwitch) {
+                    tensile_corr_factor_a = shamrock::sph::mhd::tensile_corr_factor_beta_switch(
+                        pressure[id_a], B_a, mu_0);
+                } else {
+                    tensile_corr_factor_a = shamrock::sph::mhd::tensile_corr_factor_borve<Tscal>();
+                }
 
                 Tvec force_mhd{0, 0, 0};
                 Tscal tmpdU_mhd = 0;

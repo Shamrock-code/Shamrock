@@ -77,15 +77,19 @@ namespace shammodels::sph::modules {
 
         // Adds the pure MHD terms to the derivatives (the hydro ones, i.e. pressure, artificial
         // viscosity & conductivity, must have been computed beforehand).
-        // One templated implementation, specialised per MHDType at the call sites below.
-        template<shamrock::sph::mhd::MHDType mhd_mode>
+        template<shamrock::sph::mhd::MHDType mhd_mode, TensileCorrection tensile_corr_mode>
         void update_derivs_mhd_impl(
+            Tscal sigma_mhd, Tscal alpha_B, Tscal etaO, Tscal etaH, Tscal etaAD);
+
+        // Forward to update_derivs_mhd_impl with the tensile correction as a template argument
+        template<shamrock::sph::mhd::MHDType mhd_mode>
+        void dispatch_update_derivs_mhd_impl(
             Tscal sigma_mhd,
             Tscal alpha_B,
             Tscal etaO,
             Tscal etaH,
             Tscal etaAD,
-            TensileCorrection tensile_corr_mode);
+            TensileCorrection tensile_corr);
 
         // Thin wrappers that unpack the variant and forward to the template above.
         void update_derivs_mhd(IdealMHD cfg);

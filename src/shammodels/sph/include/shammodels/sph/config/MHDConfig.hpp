@@ -19,6 +19,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/common/config/enum_TensileCorrection.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
@@ -27,41 +28,6 @@
 #include <variant>
 
 namespace shammodels::sph {
-
-    /**
-     * @brief Prefactor of the tensile instability correction -Bhat (div B) in the momentum
-     * equation
-     */
-    enum class TensileCorrection {
-        /// Bhat = B/2 regardless of the plasma beta (Borve et al. 2004)
-        Borve,
-        /// Bhat = f(beta) B, with f = 1 for beta < 2, (10 - beta)/8 for 2 < beta < 10, 0 otherwise
-        /// (Price et al. 2018, Phantom paper, eq. 178)
-        PhantomBetaSwitch,
-    };
-
-    /// Convert a TensileCorrection to its string representation (used in JSON & python)
-    inline std::string tensile_correction_to_string(TensileCorrection t) {
-        switch (t) {
-        case TensileCorrection::Borve            : return "borve";
-        case TensileCorrection::PhantomBetaSwitch: return "phantom_beta_switch";
-        }
-        shambase::throw_unimplemented();
-        return "";
-    }
-
-    /// Parse a TensileCorrection from its string representation (used in JSON & python)
-    inline TensileCorrection tensile_correction_from_string(const std::string &s) {
-        if (s == "borve") {
-            return TensileCorrection::Borve;
-        } else if (s == "phantom_beta_switch") {
-            return TensileCorrection::PhantomBetaSwitch;
-        }
-        shambase::throw_with_loc<std::invalid_argument>(
-            "unknown tensile correction '" + s
-            + "', valid values are 'borve' and 'phantom_beta_switch'");
-        return TensileCorrection::Borve;
-    }
 
     template<class Tvec>
     struct MHDConfig;

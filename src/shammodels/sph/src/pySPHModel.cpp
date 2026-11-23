@@ -234,16 +234,32 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("beta_AV"))
         .def(
             "set_IdealMHD",
-            [](TConfig &self, Tscal sigma_mhd, Tscal alpha_B, std::string tensile_corr) {
+            [](TConfig &self,
+               Tscal sigma_mhd,
+               Tscal alpha_B,
+               std::optional<shammodels::TensileCorrection> tensile_corr) {
                 self.set_ideal_mhd(
                     {sigma_mhd,
                      alpha_B,
-                     shammodels::sph::tensile_correction_from_string(tensile_corr)});
+                     tensile_corr.value_or(shammodels::TensileCorrection::Borve)});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
-            py::arg("alpha_B")      = 1.0,
-            py::arg("tensile_corr") = "borve")
+            py::arg("alpha_B") = 1.0,
+            // None rather than the enum value: the enum is registered in another
+            // translation unit, which may run its python init after this one
+            py::arg("tensile_corr") = py::none(),
+            R"==(
+    Enable ideal SPMHD.
+
+    Parameters
+    ----------
+    sigma_mhd : float
+    alpha_B : float, default 1.0
+    tensile_corr : TensileCorrection, optional
+        Tensile instability correction, ``TensileCorrection.Borve`` if None, as obtained from
+        ``from shamrock import TensileCorrection``.
+)==")
         .def(
             "set_NonIdealMHD",
             [](TConfig &self,
@@ -252,14 +268,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal etaH,
                Tscal etaAD,
                Tscal alpha_B,
-               std::string tensile_corr) {
+               std::optional<shammodels::TensileCorrection> tensile_corr) {
                 self.set_non_ideal_mhd(
                     {sigma_mhd,
                      alpha_B,
                      etaO,
                      etaH,
                      etaAD,
-                     shammodels::sph::tensile_correction_from_string(tensile_corr)});
+                     tensile_corr.value_or(shammodels::TensileCorrection::Borve)});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
@@ -267,7 +283,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("etaH"),
             py::arg("etaAD"),
             py::arg("alpha_B")      = 1.0,
-            py::arg("tensile_corr") = "borve")
+            py::arg("tensile_corr") = py::none(),
+            R"==(
+    Enable non-ideal SPMHD.
+
+    Parameters
+    ----------
+    sigma_mhd : float
+    etaO, etaH, etaAD : float
+        Ohmic, Hall and ambipolar diffusion coefficients.
+    alpha_B : float, default 1.0
+    tensile_corr : TensileCorrection, optional
+        Tensile instability correction, ``TensileCorrection.Borve`` if None, as obtained from
+        ``from shamrock import TensileCorrection``.
+)==")
         .def(
             "set_self_gravity_none",
             [](TConfig &self) {

@@ -16,6 +16,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
@@ -67,26 +68,28 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
         {
             NamedStackEntry tmppp{"compute divv"};
 
-            sham::EventList depends_list;
-
-            auto xyz        = buf_xyz.get_read_access(depends_list);
-            auto vxyz       = buf_vxyz.get_read_access(depends_list);
-            auto hpart      = buf_hpart.get_read_access(depends_list);
-            auto omega      = buf_omega.get_read_access(depends_list);
-            auto divv       = buf_divv.get_write_access(depends_list);
-            auto ploop_ptrs = pcache.get_read_access(depends_list);
-
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                const Tscal pmass = gpart_mass;
+            const Tscal pmass = gpart_mass;
 
-                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-
-                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-
-                shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute divv", [=](i32 id_a) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{pcache, buf_xyz, buf_vxyz, buf_hpart, buf_omega},
+                sham::MultiRef{buf_divv},
+                pdat.get_obj_cnt(),
+                [pmass](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz,
+                    const Tvec *__restrict vxyz,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict omega,
+                    Tscal *__restrict divv) {
                     using namespace shamrock::sph;
+
+                    tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+                    constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
                     Tvec sum_axyz  = {0, 0, 0};
                     Tscal sum_du_a = 0;
@@ -129,17 +132,6 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
                     divv[id_a] = -inv_rho_omega_a * sum_nabla_v;
                 });
-            });
-
-            buf_xyz.complete_event_state(e);
-            buf_vxyz.complete_event_state(e);
-            buf_hpart.complete_event_state(e);
-            buf_omega.complete_event_state(e);
-            buf_divv.complete_event_state(e);
-
-            sham::EventList resulting_events;
-            resulting_events.add_event(e);
-            pcache.complete_event_state(resulting_events);
         }
     });
 }
@@ -190,25 +182,28 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
         {
             NamedStackEntry tmppp{"compute curlv"};
 
-            sham::EventList depends_list;
-            auto xyz        = buf_xyz.get_read_access(depends_list);
-            auto vxyz       = buf_vxyz.get_read_access(depends_list);
-            auto hpart      = buf_hpart.get_read_access(depends_list);
-            auto omega      = buf_omega.get_read_access(depends_list);
-            auto curlv      = buf_curlv.get_write_access(depends_list);
-            auto ploop_ptrs = pcache.get_read_access(depends_list);
-
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                const Tscal pmass = gpart_mass;
+            const Tscal pmass = gpart_mass;
 
-                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-
-                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-
-                shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute curlv", [=](i32 id_a) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{pcache, buf_xyz, buf_vxyz, buf_hpart, buf_omega},
+                sham::MultiRef{buf_curlv},
+                pdat.get_obj_cnt(),
+                [pmass](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz,
+                    const Tvec *__restrict vxyz,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict omega,
+                    Tvec *__restrict curlv) {
                     using namespace shamrock::sph;
+
+                    tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+                    constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
                     Tvec sum_axyz  = {0, 0, 0};
                     Tscal sum_du_a = 0;
@@ -251,17 +246,6 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
 
                     curlv[id_a] = -inv_rho_omega_a * sum_nabla_cross_v;
                 });
-            });
-
-            buf_xyz.complete_event_state(e);
-            buf_vxyz.complete_event_state(e);
-            buf_hpart.complete_event_state(e);
-            buf_omega.complete_event_state(e);
-            buf_curlv.complete_event_state(e);
-
-            sham::EventList resulting_events;
-            resulting_events.add_event(e);
-            pcache.complete_event_state(resulting_events);
         }
     });
 }

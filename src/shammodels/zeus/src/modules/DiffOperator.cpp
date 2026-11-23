@@ -59,20 +59,20 @@ void shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>::compute_gradu() {
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::EventList depends_list;
+        sham::kernel_call(
+            q,
+            sham::MultiRef{face_xm.neigh_info, buf_cell_min, buf_cell_max, buf_vel},
+            sham::MultiRef{buf_grad_u},
+            pdat.get_obj_cnt(),
+            [coord_conv_fact](
+                u32 id_a,
+                auto faces_xm_ptr,
+                const TgridVec *__restrict cell_min,
+                const TgridVec *__restrict cell_max,
+                const Tvec *__restrict vel,
+                Tvec *__restrict grad_u) {
+                tree::ObjectCacheIterator faces_xm(faces_xm_ptr);
 
-        auto cell_min = buf_cell_min.get_read_access(depends_list);
-        auto cell_max = buf_cell_max.get_read_access(depends_list);
-
-        auto vel    = buf_vel.get_read_access(depends_list);
-        auto grad_u = buf_grad_u.get_write_access(depends_list);
-
-        auto faces_xm_ptr = face_xm.neigh_info.get_read_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            tree::ObjectCacheIterator faces_xm(faces_xm_ptr);
-
-            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "subsetp1", [=](u64 id_a) {
                 Tvec cell2_a = (cell_min[id_a] + cell_max[id_a]).template convert<Tscal>()
                                * coord_conv_fact * 0.5f;
 
@@ -94,16 +94,6 @@ void shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>::compute_gradu() {
 
                 // grad_p[id_a] = -buf_grad_u;
             });
-        });
-
-        buf_cell_min.complete_event_state(e);
-        buf_cell_max.complete_event_state(e);
-        buf_vel.complete_event_state(e);
-        buf_grad_u.complete_event_state(e);
-
-        sham::EventList resulting_events;
-        resulting_events.add_event(e);
-        face_xm.neigh_info.complete_event_state(resulting_events);
     });
 }
 

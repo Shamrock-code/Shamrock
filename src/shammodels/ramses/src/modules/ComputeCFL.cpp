@@ -16,6 +16,7 @@
 
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "fmt/core.h"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/riemann.hpp"
 #include "shammath/riemann_dust.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -61,24 +62,27 @@ void shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl_g
                   .get()
                   .get_buf();
 
-        sham::EventList depends_list;
-        auto cfl_dt        = cfl_dt_buf.get_write_access(depends_list);
-        auto acc_block_min = buf_block_min.get_read_access(depends_list);
-        auto acc_block_max = buf_block_max.get_read_access(depends_list);
-        auto rho           = buf_rho.get_read_access(depends_list);
-        auto rhov          = buf_rhov.get_read_access(depends_list);
-        auto rhoe          = buf_rhoe.get_read_access(depends_list);
+        Tscal C_safe = solver_config.Csafe;
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            Tscal C_safe = solver_config.Csafe;
+        Tscal one_over_Nside = 1. / AMRBlock::Nside;
 
-            Tscal one_over_Nside = 1. / AMRBlock::Nside;
+        Tscal dxfact = solver_config.grid_coord_to_pos_fact;
 
-            Tscal dxfact = solver_config.grid_coord_to_pos_fact;
+        auto fspec = fluid;
 
-            auto fspec = fluid;
-
-            shambase::parallel_for(cgh, cell_count, "compute_cfl", [=](u64 gid) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_block_min, buf_block_max, buf_rho, buf_rhov, buf_rhoe},
+            sham::MultiRef{cfl_dt_buf},
+            cell_count,
+            [C_safe, one_over_Nside, dxfact, fspec](
+                u32 gid,
+                const TgridVec *__restrict acc_block_min,
+                const TgridVec *__restrict acc_block_max,
+                const Tscal *__restrict rho,
+                const Tvec *__restrict rhov,
+                const Tscal *__restrict rhoe,
+                Tscal *__restrict cfl_dt) {
                 const u32 cell_global_id = (u32) gid;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
@@ -105,14 +109,6 @@ void shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl_g
 
                 cfl_dt[gid] = dt;
             });
-        });
-
-        cfl_dt_buf.complete_event_state(e);
-        buf_block_min.complete_event_state(e);
-        buf_block_max.complete_event_state(e);
-        buf_rho.complete_event_state(e);
-        buf_rhov.complete_event_state(e);
-        buf_rhoe.complete_event_state(e);
     });
 }
 
@@ -186,16 +182,19 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
                   .get()
                   .get_buf();
 
-        sham::EventList depends_list;
-        auto dust_cfl_dt        = dust_cfl_dt_buf.get_write_access(depends_list);
-        auto rho_dust           = buf_rho_dust.get_read_access(depends_list);
-        auto rhov_dust          = buf_rhov_dust.get_read_access(depends_list);
-        auto acc_aabb_cell_size = block_cell_sizes.get_read_access(depends_list);
+        Tscal C_safe = solver_config.Csafe;
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            Tscal C_safe = solver_config.Csafe;
-
-            shambase::parallel_for(cgh, ndust * cell_count, "compute_dust_cfl", [=](u64 gid) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_rho_dust, buf_rhov_dust, block_cell_sizes},
+            sham::MultiRef{dust_cfl_dt_buf},
+            ndust * cell_count,
+            [C_safe, ndust](
+                u32 gid,
+                const Tscal *__restrict rho_dust,
+                const Tvec *__restrict rhov_dust,
+                const Tscal *__restrict acc_aabb_cell_size,
+                Tscal *__restrict dust_cfl_dt) {
                 const u32 tmp_gid        = (u32) gid;
                 const u32 cell_global_id = tmp_gid / ndust;
                 const u32 ndust_off_loc  = tmp_gid % ndust;
@@ -218,12 +217,6 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
 
                 dust_cfl_dt[ndust * cell_global_id + ndust_off_loc] = dt;
             });
-        });
-
-        dust_cfl_dt_buf.complete_event_state(e);
-        buf_rho_dust.complete_event_state(e);
-        buf_rhov_dust.complete_event_state(e);
-        block_cell_sizes.complete_event_state(e);
     });
 
     Tscal rank_dust_dt = dust_cfl_dt.compute_rank_min();

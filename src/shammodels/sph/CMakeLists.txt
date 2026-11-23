@@ -18,6 +18,8 @@ set(Sources
     src/io/PhantomDumpEOSUtils.cpp
     src/SolverConfig.cpp
     src/pySPHModel.cpp
+    src/pybindings/pySolverConfig.cpp
+    src/pybindings/pyModel.cpp
     src/pyPhantomDump.cpp
     src/modules/AnalysisBarycenter.cpp
     src/modules/SolverStorage.cpp

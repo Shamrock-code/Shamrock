@@ -3695,143 +3695,133 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 /////////////////////////////////////////////
 
                 {
-
                     auto &q = shamsys::instance::get_compute_scheduler().get_queue();
-                    sham::EventList depends_list;
-
-                    auto xyz                  = buf_xyz.get_read_access(depends_list);
-                    auto vxyz                 = buf_vxyz.get_read_access(depends_list);
-                    auto hpart                = buf_hpart.get_read_access(depends_list);
-                    auto u                    = buf_uint.get_read_access(depends_list);
-                    auto pressure             = buf_pressure.get_read_access(depends_list);
-                    auto cs                   = cs_buf.get_read_access(depends_list);
-                    auto vsig                 = vsig_buf.get_write_access(depends_list);
-                    auto particle_looper_ptrs = pcache.get_read_access(depends_list);
 
                     NamedStackEntry tmppp{"compute vsig"};
-                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                        const Tscal pmass    = solver_config.gpart_mass;
-                        const Tscal alpha_u  = 1.0;
-                        const Tscal alpha_AV = 1.0;
-                        const Tscal beta_AV  = 2.0;
 
-                        tree::ObjectCacheIterator particle_looper(particle_looper_ptrs);
+                    const Tscal pmass    = solver_config.gpart_mass;
+                    const Tscal alpha_AV = 1.0;
+                    const Tscal beta_AV  = 2.0;
 
-                        constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{
+                            pcache, buf_xyz, buf_vxyz, buf_hpart, buf_uint, buf_pressure, cs_buf},
+                        sham::MultiRef{vsig_buf},
+                        pdat.get_obj_cnt(),
+                        [pmass, alpha_AV, beta_AV](
+                            u32 id_a,
+                            auto ploop_ptrs,
+                            const Tvec *__restrict xyz,
+                            const Tvec *__restrict vxyz,
+                            const Tscal *__restrict hpart,
+                            const Tscal *__restrict u,
+                            const Tscal *__restrict pressure,
+                            const Tscal *__restrict cs,
+                            Tscal *__restrict vsig) {
+                            using namespace shamrock::sph;
 
-                        shambase::parallel_for(
-                            cgh, pdat.get_obj_cnt(), "compute vsig", [=](i32 id_a) {
-                                using namespace shamrock::sph;
-
-                                Tvec sum_axyz  = {0, 0, 0};
-                                Tscal sum_du_a = 0;
-                                Tscal h_a      = hpart[id_a];
-
-                                Tvec xyz_a  = xyz[id_a];
-                                Tvec vxyz_a = vxyz[id_a];
-
-                                Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
-                                Tscal rho_a_sq  = rho_a * rho_a;
-                                Tscal rho_a_inv = 1. / rho_a;
-
-                                Tscal P_a = pressure[id_a];
-
-                                const Tscal u_a = u[id_a];
-
-                                Tscal cs_a = cs[id_a];
-
-                                Tscal vsig_max = 0;
-
-                                particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                                    // compute only omega_a
-                                    Tvec dr    = xyz_a - xyz[id_b];
-                                    Tscal rab2 = sycl::dot(dr, dr);
-                                    Tscal h_b  = hpart[id_b];
-
-                                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
-                                        return;
-                                    }
-
-                                    Tscal rab       = sycl::sqrt(rab2);
-                                    Tvec vxyz_b     = vxyz[id_b];
-                                    Tvec v_ab       = vxyz_a - vxyz_b;
-                                    const Tscal u_b = u[id_b];
-
-                                    Tvec r_ab_unit = dr / rab;
-
-                                    if (rab < 1e-9) {
-                                        r_ab_unit = {0, 0, 0};
-                                    }
-
-                                    Tscal rho_b         = rho_h(pmass, h_b, Kernel::hfactd);
-                                    Tscal P_b           = pressure[id_b];
-                                    Tscal cs_b          = cs[id_b];
-                                    Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
-                                    Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
-
-                                    /////////////////
-                                    // internal energy update
-                                    //  scalar : f32  | vector : f32_3
-                                    const Tscal alpha_a = alpha_AV;
-                                    const Tscal alpha_b = alpha_AV;
-
-                                    Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
-
-                                    vsig_max = sycl::fmax(vsig_max, vsig_a);
-                                });
-
-                                vsig[id_a] = vsig_max;
-                            });
-                    });
-
-                    if (has_psi_field) {
-                        NamedStackEntry tmppp{"compute vclean"};
-                        Tscal const mu_0                      = solver_config.get_constant_mu_0();
-                        sham::DeviceBuffer<Tscal> &vclean_buf = vclean_dt->get_buf(cur_p.id_patch);
-
-                        Tvec *B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf)
-                                             .get_write_access(depends_list);
-
-                        auto vclean = vclean_buf.get_write_access(depends_list);
-
-                        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                            const Tscal pmass = solver_config.gpart_mass;
-
-                            tree::ObjectCacheIterator particle_looper(particle_looper_ptrs);
+                            tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
                             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                            shambase::parallel_for(
-                                cgh, pdat.get_obj_cnt(), "compute vclean", [=](i32 id_a) {
-                                    using namespace shamrock::sph;
+                            Tvec sum_axyz  = {0, 0, 0};
+                            Tscal sum_du_a = 0;
+                            Tscal h_a      = hpart[id_a];
 
-                                    Tscal h_a       = hpart[id_a];
-                                    Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
-                                    const Tscal u_a = u[id_a];
-                                    Tscal cs_a      = cs[id_a];
-                                    Tvec B_a        = B_on_rho[id_a] * rho_a;
+                            Tvec xyz_a  = xyz[id_a];
+                            Tvec vxyz_a = vxyz[id_a];
 
-                                    Tscal vclean_a = shamphys::MHD_physics<Tvec, Tscal>::v_shock(
-                                        cs_a, B_a, rho_a, mu_0);
+                            Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
+                            Tscal rho_a_sq  = rho_a * rho_a;
+                            Tscal rho_a_inv = 1. / rho_a;
 
-                                    vclean[id_a] = vclean_a;
-                                });
+                            Tscal P_a = pressure[id_a];
+
+                            const Tscal u_a = u[id_a];
+
+                            Tscal cs_a = cs[id_a];
+
+                            Tscal vsig_max = 0;
+
+                            particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                                // compute only omega_a
+                                Tvec dr    = xyz_a - xyz[id_b];
+                                Tscal rab2 = sycl::dot(dr, dr);
+                                Tscal h_b  = hpart[id_b];
+
+                                if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                                    return;
+                                }
+
+                                Tscal rab       = sycl::sqrt(rab2);
+                                Tvec vxyz_b     = vxyz[id_b];
+                                Tvec v_ab       = vxyz_a - vxyz_b;
+                                const Tscal u_b = u[id_b];
+
+                                Tvec r_ab_unit = dr / rab;
+
+                                if (rab < 1e-9) {
+                                    r_ab_unit = {0, 0, 0};
+                                }
+
+                                Tscal rho_b         = rho_h(pmass, h_b, Kernel::hfactd);
+                                Tscal P_b           = pressure[id_b];
+                                Tscal cs_b          = cs[id_b];
+                                Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
+                                Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
+
+                                /////////////////
+                                // internal energy update
+                                //  scalar : f32  | vector : f32_3
+                                const Tscal alpha_a = alpha_AV;
+                                const Tscal alpha_b = alpha_AV;
+
+                                Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
+
+                                vsig_max = sycl::fmax(vsig_max, vsig_a);
+                            });
+
+                            vsig[id_a] = vsig_max;
                         });
-                        mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf).complete_event_state(e);
-                        vclean_buf.complete_event_state(e);
-                    };
+                }
 
-                    buf_xyz.complete_event_state(e);
-                    buf_vxyz.complete_event_state(e);
-                    buf_hpart.complete_event_state(e);
-                    buf_uint.complete_event_state(e);
-                    buf_pressure.complete_event_state(e);
-                    cs_buf.complete_event_state(e);
-                    vsig_buf.complete_event_state(e);
+                if (has_psi_field) {
+                    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-                    sham::EventList resulting_events;
-                    resulting_events.add_event(e);
-                    pcache.complete_event_state(resulting_events);
+                    NamedStackEntry tmppp{"compute vclean"};
+                    Tscal const mu_0                      = solver_config.get_constant_mu_0();
+                    sham::DeviceBuffer<Tscal> &vclean_buf = vclean_dt->get_buf(cur_p.id_patch);
+                    sham::DeviceBuffer<Tvec> &buf_B_on_rho
+                        = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
+
+                    const Tscal pmass = solver_config.gpart_mass;
+
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{buf_hpart, buf_uint, cs_buf, buf_B_on_rho},
+                        sham::MultiRef{vclean_buf},
+                        pdat.get_obj_cnt(),
+                        [pmass, mu_0](
+                            u32 id_a,
+                            const Tscal *__restrict hpart,
+                            const Tscal *__restrict u,
+                            const Tscal *__restrict cs,
+                            const Tvec *__restrict B_on_rho,
+                            Tscal *__restrict vclean) {
+                            using namespace shamrock::sph;
+
+                            Tscal h_a       = hpart[id_a];
+                            Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
+                            const Tscal u_a = u[id_a];
+                            Tscal cs_a      = cs[id_a];
+                            Tvec B_a        = B_on_rho[id_a] * rho_a;
+
+                            Tscal vclean_a = shamphys::MHD_physics<Tvec, Tscal>::v_shock(
+                                cs_a, B_a, rho_a, mu_0);
+
+                            vclean[id_a] = vclean_a;
+                        });
                 }
             });
 

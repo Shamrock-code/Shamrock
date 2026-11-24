@@ -16,6 +16,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambackends/math.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
@@ -258,6 +259,118 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
             buf_hpart.complete_event_state(e);
             buf_omega.complete_event_state(e);
             buf_curlv.complete_event_state(e);
+
+            sham::EventList resulting_events;
+            resulting_events.add_event(e);
+            pcache.complete_event_state(resulting_events);
+        }
+    });
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_div_b() {
+
+    StackEntry stack_loc{};
+    shamlog_debug_ln("SPH", "Updating divB");
+
+    Tscal gpart_mass = solver_config.gpart_mass;
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
+
+    shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
+
+    auto &merged_xyzh = storage.merged_xyzh.get();
+
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 ihpart_interf    = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iB_on_rho_interf = ghost_layout.get_field_idx<Tvec>("B/rho");
+    u32 iomega_interf    = ghost_layout.get_field_idx<Tscal>("omega");
+
+    const u32 idivB = pdl.get_field_idx<Tscal>("divB");
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
+
+        sham::DeviceBuffer<Tvec> &buf_xyz
+            = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
+        sham::DeviceBuffer<Tvec> &buf_B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
+        sham::DeviceBuffer<Tscal> &buf_hpart   = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+        sham::DeviceBuffer<Tscal> &buf_omega   = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
+        sham::DeviceBuffer<Tscal> &buf_divB    = pdat.get_field_buf_ref<Tscal>(idivB);
+
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
+
+        {
+            NamedStackEntry tmppp{"compute divB"};
+
+            sham::EventList depends_list;
+
+            auto xyz        = buf_xyz.get_read_access(depends_list);
+            auto B_on_rho   = buf_B_on_rho.get_read_access(depends_list);
+            auto hpart      = buf_hpart.get_read_access(depends_list);
+            auto omega      = buf_omega.get_read_access(depends_list);
+            auto divB       = buf_divB.get_write_access(depends_list);
+            auto ploop_ptrs = pcache.get_read_access(depends_list);
+
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                const Tscal pmass = gpart_mass;
+
+                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
+                shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute divB", [=](i32 id_a) {
+                    using namespace shamrock::sph;
+
+                    Tscal h_a     = hpart[id_a];
+                    Tvec xyz_a    = xyz[id_a];
+                    Tscal omega_a = omega[id_a];
+
+                    Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
+                    Tvec B_a    = B_on_rho[id_a] * rho_a;
+
+                    Tscal sum_nabla_B = 0;
+
+                    particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                        Tvec dr    = xyz_a - xyz[id_b];
+                        Tscal rab2 = sycl::dot(dr, dr);
+                        Tscal h_b  = hpart[id_b];
+
+                        if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                            return;
+                        }
+
+                        Tscal rab = sycl::sqrt(rab2);
+
+                        Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
+                        Tvec B_ab   = B_a - B_on_rho[id_b] * rho_b;
+
+                        Tvec r_ab_unit = dr / rab;
+
+                        if (rab < 1e-9) {
+                            r_ab_unit = {0, 0, 0};
+                        }
+
+                        Tvec dWab_a = Kernel::dW_3d(rab, h_a) * r_ab_unit;
+
+                        sum_nabla_B += pmass * sycl::dot(B_ab, dWab_a);
+                    });
+
+                    divB[id_a] = -sham::inv_sat_zero(omega_a * rho_a) * sum_nabla_B;
+                });
+            });
+
+            buf_xyz.complete_event_state(e);
+            buf_B_on_rho.complete_event_state(e);
+            buf_hpart.complete_event_state(e);
+            buf_omega.complete_event_state(e);
+            buf_divB.complete_event_state(e);
 
             sham::EventList resulting_events;
             resulting_events.add_event(e);

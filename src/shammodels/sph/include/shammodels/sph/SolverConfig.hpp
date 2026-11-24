@@ -1458,6 +1458,7 @@ namespace shammodels::sph {
             {"show_cfl_detail", p.show_cfl_detail},
             // mhd config
             {"mhd_config", p.mhd_config},
+            {"compute_div_b", p.compute_div_b},
             // dust config
             {"dust_config", p.dust_config},
             // self gravity config
@@ -1550,6 +1551,7 @@ namespace shammodels::sph {
         _get_to_if_contains("unit_sys", p.unit_sys);
         _get_to_if_contains("show_cfl_detail", p.show_cfl_detail);
         _get_to_if_contains("mhd_config", p.mhd_config);
+        _get_to_if_contains("compute_div_b", p.compute_div_b);
         _get_to_if_contains("dust_config", p.dust_config);
         _get_to_if_contains("self_grav_config", p.self_grav_config);
         _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);

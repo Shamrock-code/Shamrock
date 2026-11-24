@@ -291,26 +291,28 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_div_b() {
         {
             NamedStackEntry tmppp{"compute divB"};
 
-            sham::EventList depends_list;
-
-            auto xyz        = buf_xyz.get_read_access(depends_list);
-            auto B_on_rho   = buf_B_on_rho.get_read_access(depends_list);
-            auto hpart      = buf_hpart.get_read_access(depends_list);
-            auto omega      = buf_omega.get_read_access(depends_list);
-            auto divB       = buf_divB.get_write_access(depends_list);
-            auto ploop_ptrs = pcache.get_read_access(depends_list);
-
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                const Tscal pmass = gpart_mass;
+            const Tscal pmass = gpart_mass;
 
-                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-
-                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-
-                shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute divB", [=](i32 id_a) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{pcache, buf_xyz, buf_B_on_rho, buf_hpart, buf_omega},
+                sham::MultiRef{buf_divB},
+                pdat.get_obj_cnt(),
+                [pmass](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz,
+                    const Tvec *__restrict B_on_rho,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict omega,
+                    Tscal *__restrict divB) {
                     using namespace shamrock::sph;
+
+                    tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+                    constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
                     Tscal h_a     = hpart[id_a];
                     Tvec xyz_a    = xyz[id_a];
@@ -348,17 +350,6 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_div_b() {
 
                     divB[id_a] = -sham::inv_sat_zero(omega_a * rho_a) * sum_nabla_B;
                 });
-            });
-
-            buf_xyz.complete_event_state(e);
-            buf_B_on_rho.complete_event_state(e);
-            buf_hpart.complete_event_state(e);
-            buf_omega.complete_event_state(e);
-            buf_divB.complete_event_state(e);
-
-            sham::EventList resulting_events;
-            resulting_events.add_event(e);
-            pcache.complete_event_state(resulting_events);
         }
     });
 }

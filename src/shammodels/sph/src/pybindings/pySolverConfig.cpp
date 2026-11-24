@@ -210,7 +210,7 @@ namespace shammodels::sph::pybindings {
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
-            py::arg("alpha_B") = 1.0,
+            py::arg("alpha_B")      = 1.0,
             py::arg("tensile_corr") = py::none(),
             R"==(
     Enable ideal SPMHD.

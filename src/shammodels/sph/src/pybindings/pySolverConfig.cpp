@@ -22,6 +22,7 @@
 #include "sph_pybindings.hpp"
 #include <experimental/mdspan>
 #include <pybind11/numpy.h>
+#include <optional>
 
 namespace shammodels::sph::pybindings {
 
@@ -198,23 +199,65 @@ namespace shammodels::sph::pybindings {
             py::arg("beta_AV"));
         config_cls.def(
             "set_IdealMHD",
-            [](TConfig &self, Tscal sigma_mhd, Tscal alpha_B) {
-                self.set_ideal_mhd({sigma_mhd, alpha_B});
+            [](TConfig &self,
+               Tscal sigma_mhd,
+               Tscal alpha_B,
+               std::optional<shammodels::TensileCorrection> tensile_corr) {
+                self.set_ideal_mhd(
+                    {sigma_mhd,
+                     alpha_B,
+                     tensile_corr.value_or(shammodels::TensileCorrection::Borve)});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
-            py::arg("alpha_B") = 1.0);
+            py::arg("alpha_B") = 1.0,
+            py::arg("tensile_corr") = py::none(),
+            R"==(
+    Enable ideal SPMHD.
+
+    Parameters
+    ----------
+    sigma_mhd : float
+    alpha_B : float, default 1.0
+    tensile_corr : TensileCorrection, optional
+        Tensile instability correction, ``TensileCorrection.Borve`` if None.
+)==");
         config_cls.def(
             "set_NonIdealMHD",
-            [](TConfig &self, Tscal sigma_mhd, Tscal etaO, Tscal etaH, Tscal etaAD, Tscal alpha_B) {
-                self.set_non_ideal_mhd({sigma_mhd, alpha_B, etaO, etaH, etaAD});
+            [](TConfig &self,
+               Tscal sigma_mhd,
+               Tscal etaO,
+               Tscal etaH,
+               Tscal etaAD,
+               Tscal alpha_B,
+               std::optional<shammodels::TensileCorrection> tensile_corr) {
+                self.set_non_ideal_mhd(
+                    {sigma_mhd,
+                     alpha_B,
+                     etaO,
+                     etaH,
+                     etaAD,
+                     tensile_corr.value_or(shammodels::TensileCorrection::Borve)});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
             py::arg("etaO"),
             py::arg("etaH"),
             py::arg("etaAD"),
-            py::arg("alpha_B") = 1.0);
+            py::arg("alpha_B")      = 1.0,
+            py::arg("tensile_corr") = py::none(),
+            R"==(
+    Enable non-ideal SPMHD.
+
+    Parameters
+    ----------
+    sigma_mhd : float
+    etaO, etaH, etaAD : float
+        Ohmic, Hall and ambipolar diffusion coefficients.
+    alpha_B : float, default 1.0
+    tensile_corr : TensileCorrection, optional
+        Tensile instability correction, ``TensileCorrection.Borve`` if None.
+)==");
         config_cls.def("set_self_gravity_none", [](TConfig &self) {
             self.self_grav_config.set_none();
         });

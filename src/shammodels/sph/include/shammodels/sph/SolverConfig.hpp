@@ -1208,7 +1208,7 @@ struct shammodels::sph::SolverConfig {
 
     /// @brief Whether to compute and store divB
     bool compute_div_b = false;
-    inline void use_div_b(bool enable) { compute_div_b = enable; }
+    inline void use_div_b(bool value) { compute_div_b = value; }
 
     /// @brief Whether the solver has a field for divB
     inline bool has_field_div_b() { return compute_div_b && mhd_config.has_div_b_field(); }

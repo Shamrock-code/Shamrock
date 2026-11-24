@@ -1171,7 +1171,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             auto dt_over2    = storage.dt_over2;
             auto block_count = storage.block_counts_with_ghost;
             auto node        = std::make_shared<
-                       shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::Field<Tvec>>>(
+                shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::Field<Tvec>>>(
                 [g_pred, dt_over2, block_count](shamrock::solvergraph::Field<Tvec> &vel) {
                     Tscal half_dt = dt_over2->value;
                     shambase::DistributedData<u32> cell_counts

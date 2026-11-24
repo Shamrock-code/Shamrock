@@ -706,7 +706,7 @@ for j, (label, _) in enumerate(sims):
 
 ax_cbar = fig.add_subplot(gs[0, col_cbar])
 cbar = fig.colorbar(ims[-1], cax=ax_cbar)
-cbar.set_label(r"$rho_{\mathrm{d},j}$ [kg m$^{-3}$]")
+cbar.set_label(r"$\rho_{\mathrm{d},j}$ [kg m$^{-3}$]")
 
 plt.tight_layout()  # vertical margins
 fig.subplots_adjust(left=LEFT_PAD / fig_w, right=1 - RIGHT_PAD / fig_w, wspace=0)

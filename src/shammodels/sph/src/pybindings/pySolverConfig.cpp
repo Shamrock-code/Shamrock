@@ -206,15 +206,25 @@ namespace shammodels::sph::pybindings {
             py::arg("alpha_B") = 1.0);
         config_cls.def(
             "set_NonIdealMHD",
-            [](TConfig &self, Tscal sigma_mhd, Tscal etaO, Tscal etaH, Tscal etaAD, Tscal alpha_B) {
-                self.set_non_ideal_mhd({sigma_mhd, alpha_B, etaO, etaH, etaAD});
+            [](TConfig &self,
+               Tscal sigma_mhd,
+               Tscal etaO,
+               Tscal etaH,
+               Tscal etaAD,
+               Tscal alpha_B,
+               bool eta_fields,
+               bool eta_semi_constant) {
+                self.set_non_ideal_mhd(
+                    {sigma_mhd, alpha_B, etaO, etaH, etaAD, eta_fields, eta_semi_constant});
             },
             py::kw_only(),
             py::arg("sigma_mhd"),
             py::arg("etaO"),
             py::arg("etaH"),
             py::arg("etaAD"),
-            py::arg("alpha_B") = 1.0);
+            py::arg("alpha_B")           = 1.0,
+            py::arg("eta_fields")        = false,
+            py::arg("eta_semi_constant") = false);
         config_cls.def("set_self_gravity_none", [](TConfig &self) {
             self.self_grav_config.set_none();
         });

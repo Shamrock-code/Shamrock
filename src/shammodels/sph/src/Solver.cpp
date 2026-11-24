@@ -3111,10 +3111,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             }
         }
 
-        // if (solver_config.has_field_div_b()) {
-        //     sph::modules::DiffOperatorsB<Tvec, Kern>(context, solver_config, storage)
-        //         .update_divB();
-        // }
+        if (solver_config.has_field_div_b()) {
+            sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage).update_div_b();
+        }
 
         // if (solver_config.has_field_curl_b()) {
         //     sph::modules::DiffOperatorsB<Tvec, Kern>(context, solver_config, storage)

@@ -1206,8 +1206,12 @@ struct shammodels::sph::SolverConfig {
     /// @brief Whether the solver has a field for psi_on_ch
     inline bool has_field_psi_on_ch() { return mhd_config.has_psi_field(); }
 
+    /// @brief Whether to compute and store divB
+    bool compute_div_b = false;
+    inline void use_div_b(bool enable) { compute_div_b = enable; }
+
     /// @brief Whether the solver has a field for divB
-    inline bool has_field_div_b() { return mhd_config.has_div_b_field(); }
+    inline bool has_field_div_b() { return compute_div_b && mhd_config.has_div_b_field(); }
 
     /// @brief Whether the solver has a field for curlB
     inline bool has_field_curl_b() { return mhd_config.has_curl_b_field() && (dim == 3); }

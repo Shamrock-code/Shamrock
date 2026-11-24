@@ -77,10 +77,7 @@ struct shammodels::sph::MHDConfig {
         return is_psi;
     }
 
-    inline bool has_div_b_field() {
-        bool is_divB = bool(std::get_if<IdealMhdConstrainedHyperPara>(&configMHD));
-        return is_divB;
-    }
+    inline bool has_div_b_field() { return has_b_field(); }
 
     inline bool has_curl_b_field() {
         bool is_curlB = bool(std::get_if<NonIdealMHD>(&configMHD));

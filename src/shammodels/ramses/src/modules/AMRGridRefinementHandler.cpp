@@ -1564,6 +1564,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         // self-gravity potentials (warm starts of the Poisson solvers), nullptr without gravity
         f64 *phi     = nullptr;
         f64 *phi_old = nullptr;
+        // g^n of the half time step prediction (gravity_config.predictor), nullptr without it
+        f64_3 *g_pred = nullptr;
 
         AMRInterpMode amr_ref_interp_mode;
 
@@ -1652,6 +1654,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                               .get_buf()
                               .get_write_access(depends_list);
             }
+            if (pdat.pdl().has_field_name("g_pred")) {
+                g_pred = pdat.get_field<f64_3>(pdat.pdl().get_field_idx<f64_3>("g_pred"))
+                             .get_buf()
+                             .get_write_access(depends_list);
+            }
         }
 
         void finalize_new(
@@ -1670,6 +1677,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     .get_buf()
                     .complete_event_state(resulting_events);
                 pdat.get_field<f64>(pdat.pdl().get_field_idx<f64>("phi_old"))
+                    .get_buf()
+                    .complete_event_state(resulting_events);
+            }
+            if (pdat.pdl().has_field_name("g_pred")) {
+                pdat.get_field<f64_3>(pdat.pdl().get_field_idx<f64_3>("g_pred"))
                     .get_buf()
                     .complete_event_state(resulting_events);
             }
@@ -1781,6 +1793,14 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     parent_phi_old[loc_id] = acc.phi_old[cur_idx * AMRBlock::block_size + loc_id];
                 }
             }
+            // the same for g^n of the half time step prediction (the children get the g of their
+            // parent cell, as the potentials)
+            std::array<f64_3, AMRBlock::block_size> parent_g_pred{};
+            if (acc.g_pred != nullptr) {
+                for (u32 loc_id = 0; loc_id < AMRBlock::block_size; loc_id++) {
+                    parent_g_pred[loc_id] = acc.g_pred[cur_idx * AMRBlock::block_size + loc_id];
+                }
+            }
 
             for (u32 loc_id = 0; loc_id < AMRBlock::block_size; loc_id++) {
 
@@ -1870,6 +1890,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                         acc.phi[new_cell_idx]     = parent_phi[loc_id];
                         acc.phi_old[new_cell_idx] = parent_phi_old[loc_id];
                     }
+                    if (acc.g_pred != nullptr) {
+                        acc.g_pred[new_cell_idx] = parent_g_pred[loc_id];
+                    }
                 }
             }
         }
@@ -1889,6 +1912,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             // average of the children potentials (warm starts of the Poisson solvers)
             std::array<f64, AMRBlock::block_size> phi_block{};
             std::array<f64, AMRBlock::block_size> phi_old_block{};
+            std::array<f64_3, AMRBlock::block_size> g_pred_block{};
 
             // for each siblings block, perform restriction from its 8 children cells
             for (u32 pid = 0; pid < 8; pid++) {
@@ -1919,6 +1943,13 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     phi_block[cell_id]     = phi_pid * (1. / 8.);
                     phi_old_block[cell_id] = phi_old_pid * (1. / 8.);
                 }
+                if (acc.g_pred != nullptr) {
+                    f64_3 g_pid = {0, 0, 0};
+                    for (u32 child_id = 0; child_id < AMRBlock::block_size; child_id++) {
+                        g_pid += acc.g_pred[old_blocks[pid] * AMRBlock::block_size + child_id];
+                    }
+                    g_pred_block[cell_id] = g_pid * (1. / 8.);
+                }
             }
 
             for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
@@ -1930,6 +1961,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 if (acc.phi != nullptr) {
                     acc.phi[newcell_idx]     = phi_block[cell_id];
                     acc.phi_old[newcell_idx] = phi_old_block[cell_id];
+                }
+                if (acc.g_pred != nullptr) {
+                    acc.g_pred[newcell_idx] = g_pred_block[cell_id];
                 }
             }
         }

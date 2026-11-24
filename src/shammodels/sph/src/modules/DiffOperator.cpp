@@ -26,13 +26,15 @@
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
     StackEntry stack_loc{};
     shamlog_debug_ln("SPH", "Updating divv");
 
-    Tscal gpart_mass = solver_config.gpart_mass;
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-    using namespace shamrock;
-    using namespace shamrock::patch;
+    Tscal gpart_mass = solver_config.gpart_mass;
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
@@ -48,6 +50,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
     u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 idivv = pdl.get_field_idx<Tscal>("divv");
+
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
@@ -64,89 +67,81 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
-        /////////////////////////////////////////////
+        sham::kernel_call(
+            q,
+            sham::MultiRef{pcache, buf_xyz, buf_vxyz, buf_hpart, buf_omega},
+            sham::MultiRef{buf_divv},
+            pdat.get_obj_cnt(),
+            [pmass = gpart_mass](
+                u32 id_a,
+                auto ploop_ptrs,
+                const Tvec *__restrict xyz,
+                const Tvec *__restrict vxyz,
+                const Tscal *__restrict hpart,
+                const Tscal *__restrict omega,
+                Tscal *__restrict divv) {
+                using namespace shamrock::sph;
 
-        {
-            NamedStackEntry tmppp{"compute divv"};
+                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
-            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            const Tscal pmass = gpart_mass;
+                Tvec sum_axyz  = {0, 0, 0};
+                Tscal sum_du_a = 0;
+                Tscal h_a      = hpart[id_a];
+                Tvec xyz_a     = xyz[id_a];
+                Tvec vxyz_a    = vxyz[id_a];
+                Tscal omega_a  = omega[id_a];
 
-            sham::kernel_call(
-                q,
-                sham::MultiRef{pcache, buf_xyz, buf_vxyz, buf_hpart, buf_omega},
-                sham::MultiRef{buf_divv},
-                pdat.get_obj_cnt(),
-                [pmass](
-                    u32 id_a,
-                    auto ploop_ptrs,
-                    const Tvec *__restrict xyz,
-                    const Tvec *__restrict vxyz,
-                    const Tscal *__restrict hpart,
-                    const Tscal *__restrict omega,
-                    Tscal *__restrict divv) {
-                    using namespace shamrock::sph;
+                Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
+                // Tscal rho_a_sq  = rho_a * rho_a;
+                // Tscal rho_a_inv = 1. / rho_a;
+                Tscal inv_rho_omega_a = 1. / (omega_a * rho_a);
 
-                    tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+                Tscal sum_nabla_v = 0;
 
-                    constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+                particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                    // compute only omega_a
+                    Tvec dr    = xyz_a - xyz[id_b];
+                    Tscal rab2 = sycl::dot(dr, dr);
+                    Tscal h_b  = hpart[id_b];
 
-                    Tvec sum_axyz  = {0, 0, 0};
-                    Tscal sum_du_a = 0;
-                    Tscal h_a      = hpart[id_a];
-                    Tvec xyz_a     = xyz[id_a];
-                    Tvec vxyz_a    = vxyz[id_a];
-                    Tscal omega_a  = omega[id_a];
+                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                        return;
+                    }
 
-                    Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
-                    // Tscal rho_a_sq  = rho_a * rho_a;
-                    // Tscal rho_a_inv = 1. / rho_a;
-                    Tscal inv_rho_omega_a = 1. / (omega_a * rho_a);
+                    Tscal rab   = sycl::sqrt(rab2);
+                    Tvec vxyz_b = vxyz[id_b];
+                    Tvec v_ab   = vxyz_a - vxyz_b;
 
-                    Tscal sum_nabla_v = 0;
+                    Tvec r_ab_unit = dr / rab;
 
-                    particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                        // compute only omega_a
-                        Tvec dr    = xyz_a - xyz[id_b];
-                        Tscal rab2 = sycl::dot(dr, dr);
-                        Tscal h_b  = hpart[id_b];
+                    if (rab < 1e-9) {
+                        r_ab_unit = {0, 0, 0};
+                    }
 
-                        if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
-                            return;
-                        }
+                    Tvec dWab_a = Kernel::dW_3d(rab, h_a) * r_ab_unit;
 
-                        Tscal rab   = sycl::sqrt(rab2);
-                        Tvec vxyz_b = vxyz[id_b];
-                        Tvec v_ab   = vxyz_a - vxyz_b;
-
-                        Tvec r_ab_unit = dr / rab;
-
-                        if (rab < 1e-9) {
-                            r_ab_unit = {0, 0, 0};
-                        }
-
-                        Tvec dWab_a = Kernel::dW_3d(rab, h_a) * r_ab_unit;
-
-                        sum_nabla_v += pmass * sycl::dot(v_ab, dWab_a);
-                    });
-
-                    divv[id_a] = -inv_rho_omega_a * sum_nabla_v;
+                    sum_nabla_v += pmass * sycl::dot(v_ab, dWab_a);
                 });
-        }
+
+                divv[id_a] = -inv_rho_omega_a * sum_nabla_v;
+            });
     });
 }
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
 
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
     StackEntry stack_loc{};
     shamlog_debug_ln("SPH", "Updating curlv");
 
-    Tscal gpart_mass = solver_config.gpart_mass;
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-    using namespace shamrock;
-    using namespace shamrock::patch;
+    Tscal gpart_mass = solver_config.gpart_mass;
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
@@ -162,6 +157,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
     u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
+
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
@@ -178,89 +174,81 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
-        /////////////////////////////////////////////
+        sham::kernel_call(
+            q,
+            sham::MultiRef{pcache, buf_xyz, buf_vxyz, buf_hpart, buf_omega},
+            sham::MultiRef{buf_curlv},
+            pdat.get_obj_cnt(),
+            [pmass = gpart_mass](
+                u32 id_a,
+                auto ploop_ptrs,
+                const Tvec *__restrict xyz,
+                const Tvec *__restrict vxyz,
+                const Tscal *__restrict hpart,
+                const Tscal *__restrict omega,
+                Tvec *__restrict curlv) {
+                using namespace shamrock::sph;
 
-        {
-            NamedStackEntry tmppp{"compute curlv"};
+                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
-            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            const Tscal pmass = gpart_mass;
+                Tvec sum_axyz  = {0, 0, 0};
+                Tscal sum_du_a = 0;
+                Tscal h_a      = hpart[id_a];
+                Tvec xyz_a     = xyz[id_a];
+                Tvec vxyz_a    = vxyz[id_a];
+                Tscal omega_a  = omega[id_a];
 
-            sham::kernel_call(
-                q,
-                sham::MultiRef{pcache, buf_xyz, buf_vxyz, buf_hpart, buf_omega},
-                sham::MultiRef{buf_curlv},
-                pdat.get_obj_cnt(),
-                [pmass](
-                    u32 id_a,
-                    auto ploop_ptrs,
-                    const Tvec *__restrict xyz,
-                    const Tvec *__restrict vxyz,
-                    const Tscal *__restrict hpart,
-                    const Tscal *__restrict omega,
-                    Tvec *__restrict curlv) {
-                    using namespace shamrock::sph;
+                Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
+                // Tscal rho_a_sq  = rho_a * rho_a;
+                // Tscal rho_a_inv = 1. / rho_a;
+                Tscal inv_rho_omega_a = 1. / (omega_a * rho_a);
 
-                    tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+                Tvec sum_nabla_cross_v{};
 
-                    constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+                particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                    // compute only omega_a
+                    Tvec dr    = xyz_a - xyz[id_b];
+                    Tscal rab2 = sycl::dot(dr, dr);
+                    Tscal h_b  = hpart[id_b];
 
-                    Tvec sum_axyz  = {0, 0, 0};
-                    Tscal sum_du_a = 0;
-                    Tscal h_a      = hpart[id_a];
-                    Tvec xyz_a     = xyz[id_a];
-                    Tvec vxyz_a    = vxyz[id_a];
-                    Tscal omega_a  = omega[id_a];
+                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                        return;
+                    }
 
-                    Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
-                    // Tscal rho_a_sq  = rho_a * rho_a;
-                    // Tscal rho_a_inv = 1. / rho_a;
-                    Tscal inv_rho_omega_a = 1. / (omega_a * rho_a);
+                    Tscal rab   = sycl::sqrt(rab2);
+                    Tvec vxyz_b = vxyz[id_b];
+                    Tvec v_ab   = vxyz_a - vxyz_b;
 
-                    Tvec sum_nabla_cross_v{};
+                    Tvec r_ab_unit = dr / rab;
 
-                    particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                        // compute only omega_a
-                        Tvec dr    = xyz_a - xyz[id_b];
-                        Tscal rab2 = sycl::dot(dr, dr);
-                        Tscal h_b  = hpart[id_b];
+                    if (rab < 1e-9) {
+                        r_ab_unit = {0, 0, 0};
+                    }
 
-                        if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
-                            return;
-                        }
+                    Tvec dWab_a = Kernel::dW_3d(rab, h_a) * r_ab_unit;
 
-                        Tscal rab   = sycl::sqrt(rab2);
-                        Tvec vxyz_b = vxyz[id_b];
-                        Tvec v_ab   = vxyz_a - vxyz_b;
-
-                        Tvec r_ab_unit = dr / rab;
-
-                        if (rab < 1e-9) {
-                            r_ab_unit = {0, 0, 0};
-                        }
-
-                        Tvec dWab_a = Kernel::dW_3d(rab, h_a) * r_ab_unit;
-
-                        sum_nabla_cross_v += pmass * sycl::cross(v_ab, dWab_a);
-                    });
-
-                    curlv[id_a] = -inv_rho_omega_a * sum_nabla_cross_v;
+                    sum_nabla_cross_v += pmass * sycl::cross(v_ab, dWab_a);
                 });
-        }
+
+                curlv[id_a] = -inv_rho_omega_a * sum_nabla_cross_v;
+            });
     });
 }
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_div_b() {
 
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
     StackEntry stack_loc{};
     shamlog_debug_ln("SPH", "Updating divB");
 
-    Tscal gpart_mass = solver_config.gpart_mass;
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-    using namespace shamrock;
-    using namespace shamrock::patch;
+    Tscal gpart_mass = solver_config.gpart_mass;
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
@@ -270,11 +258,13 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_div_b() {
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());
+
     u32 ihpart_interf    = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iB_on_rho_interf = ghost_layout.get_field_idx<Tvec>("B/rho");
     u32 iomega_interf    = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 idivB = pdl.get_field_idx<Tscal>("divB");
+
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
@@ -288,69 +278,61 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_div_b() {
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
-        {
-            NamedStackEntry tmppp{"compute divB"};
+        sham::kernel_call(
+            q,
+            sham::MultiRef{pcache, buf_xyz, buf_B_on_rho, buf_hpart, buf_omega},
+            sham::MultiRef{buf_divB},
+            pdat.get_obj_cnt(),
+            [pmass = gpart_mass](
+                u32 id_a,
+                auto ploop_ptrs,
+                const Tvec *__restrict xyz,
+                const Tvec *__restrict B_on_rho,
+                const Tscal *__restrict hpart,
+                const Tscal *__restrict omega,
+                Tscal *__restrict divB) {
+                using namespace shamrock::sph;
 
-            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
-            const Tscal pmass = gpart_mass;
+                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            sham::kernel_call(
-                q,
-                sham::MultiRef{pcache, buf_xyz, buf_B_on_rho, buf_hpart, buf_omega},
-                sham::MultiRef{buf_divB},
-                pdat.get_obj_cnt(),
-                [pmass](
-                    u32 id_a,
-                    auto ploop_ptrs,
-                    const Tvec *__restrict xyz,
-                    const Tvec *__restrict B_on_rho,
-                    const Tscal *__restrict hpart,
-                    const Tscal *__restrict omega,
-                    Tscal *__restrict divB) {
-                    using namespace shamrock::sph;
+                Tscal h_a     = hpart[id_a];
+                Tvec xyz_a    = xyz[id_a];
+                Tscal omega_a = omega[id_a];
 
-                    tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+                Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
+                Tvec B_a    = B_on_rho[id_a] * rho_a;
 
-                    constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+                Tscal sum_nabla_B = 0;
 
-                    Tscal h_a     = hpart[id_a];
-                    Tvec xyz_a    = xyz[id_a];
-                    Tscal omega_a = omega[id_a];
+                particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                    Tvec dr    = xyz_a - xyz[id_b];
+                    Tscal rab2 = sycl::dot(dr, dr);
+                    Tscal h_b  = hpart[id_b];
 
-                    Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
-                    Tvec B_a    = B_on_rho[id_a] * rho_a;
+                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                        return;
+                    }
 
-                    Tscal sum_nabla_B = 0;
+                    Tscal rab = sycl::sqrt(rab2);
 
-                    particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                        Tvec dr    = xyz_a - xyz[id_b];
-                        Tscal rab2 = sycl::dot(dr, dr);
-                        Tscal h_b  = hpart[id_b];
+                    Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
+                    Tvec B_ab   = B_a - B_on_rho[id_b] * rho_b;
 
-                        if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
-                            return;
-                        }
+                    Tvec r_ab_unit = dr / rab;
 
-                        Tscal rab = sycl::sqrt(rab2);
+                    if (rab < 1e-9) {
+                        r_ab_unit = {0, 0, 0};
+                    }
 
-                        Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
-                        Tvec B_ab   = B_a - B_on_rho[id_b] * rho_b;
+                    Tvec dWab_a = Kernel::dW_3d(rab, h_a) * r_ab_unit;
 
-                        Tvec r_ab_unit = dr / rab;
-
-                        if (rab < 1e-9) {
-                            r_ab_unit = {0, 0, 0};
-                        }
-
-                        Tvec dWab_a = Kernel::dW_3d(rab, h_a) * r_ab_unit;
-
-                        sum_nabla_B += pmass * sycl::dot(B_ab, dWab_a);
-                    });
-
-                    divB[id_a] = -sham::inv_sat_zero(omega_a * rho_a) * sum_nabla_B;
+                    sum_nabla_B += pmass * sycl::dot(B_ab, dWab_a);
                 });
-        }
+
+                divB[id_a] = -sham::inv_sat_zero(omega_a * rho_a) * sum_nabla_B;
+            });
     });
 }
 

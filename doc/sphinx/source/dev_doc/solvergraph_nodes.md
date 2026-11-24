@@ -135,9 +135,9 @@ placeholders so slot indices stay stable. `get_ro_edge_optional` returns
 
 ## Composition nodes
 
-`OperationSequence` and `OperationIf` wrap other `INode`s. Nested nodes are
-passed to the constructor (graph structure). Data edges are still wired with
-`set_edges`.
+`OperationSequence`, `OperationIf`, `OperationFor` and `OperationWhile` wrap
+other `INode`s. Nested nodes are passed to the constructor (graph structure).
+Data edges are still wired with `set_edges`.
 
 ```cpp
 auto then_node = std::make_shared<MyNode>(...); // optional
@@ -157,11 +157,55 @@ if_node->evaluate();
 To gate several nodes, wrap them in an `OperationSequence` and pass that as
 `then_node` / `else_node`. Else-only is `OperationIf("name", {}, else_node)`.
 
+`OperationFor` evaluates a body node `n` times, `n` being read from an
+`IDataEdge<u32>` wired with `set_edges`:
+
+```cpp
+auto body  = std::make_shared<MyNode>(...); // required, a null body throws
+auto count = IDataEdge<u32>::make_shared("n_substeps", "m");
+
+auto for_node = std::make_shared<OperationFor>("substeps", body);
+for_node->set_edges(count);
+
+count->data = 3; // evaluate body 3 times (0 evaluates nothing)
+for_node->evaluate();
+```
+
+The count is read once, before the first iteration, so the body cannot change
+the number of iterations. To repeat several nodes, wrap them in an
+`OperationSequence` and pass that as the body.
+
+`OperationWhile` evaluates its (mandatory) body node as long as its
+`IDataEdge<bool>` condition is true. The condition is checked before each
+iteration, so the body may run zero times. The body must eventually set the
+condition to false, typically through its own read-write edge pointing to the
+same `IDataEdge<bool>`, otherwise the loop never ends.
+
+```cpp
+auto cond = IDataEdge<bool>::make_shared("not_converged", "not_converged");
+auto body = std::make_shared<MyIterationNode>(...); // updates cond->data
+
+auto while_node = std::make_shared<OperationWhile>("iterate", body);
+while_node->set_edges(cond);
+
+cond->data = true;
+while_node->evaluate(); // evaluate body until cond->data becomes false
+```
+
+To loop over several nodes, wrap them in an `OperationSequence` and pass that
+as the body.
+
 ## Related files
 
 - [`INode.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/INode.hpp)
 - [`INullOptEdge.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/edge/INullOptEdge.hpp)
 - [`OperationIf.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationIf.hpp)
+- [`OperationFor.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationFor.hpp)
+- [`OperationFor.cpp`](../../../src/shamsolvergraph/src/OperationFor.cpp)
 - [`OperationSequence.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationSequence.hpp)
+- [`OperationWhile.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationWhile.hpp)
+- [`OperationWhile.cpp`](../../../src/shamsolvergraph/src/OperationWhile.cpp)
 - [`OptionalEdges_tests.cpp`](../../../src/tests/shamsolvergraph/node/OptionalEdges_tests.cpp)
 - [`OperationIf_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationIf_tests.cpp)
+- [`OperationFor_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationFor_tests.cpp)
+- [`OperationWhile_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationWhile_tests.cpp)

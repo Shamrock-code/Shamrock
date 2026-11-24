@@ -26,6 +26,7 @@
 #include "shambase/constants.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/overloaded.hpp"
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/collective/exchanges.hpp"
@@ -48,6 +49,7 @@
 #include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
 #include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
+#include "shammodels/sph/modules/SetWhenMask.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
@@ -175,36 +177,16 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_ghost_cache(Tscal time_val) {
 
     using InterfaceBuildInfos = typename GhostHandle::InterfaceBuildInfos;
 
+    using BCConfig           = typename Config::BCConfig;
+    using BCFree             = typename BCConfig::Free;
+    using BCPeriodic         = typename BCConfig::Periodic;
+    using BCShearingPeriodic = typename BCConfig::ShearingPeriodic;
+
+    const auto &bc_config = solver_config.boundary_config.config;
+
     // ----------------------------------------------------------------------------------------
     // Generate the ghost handler
     // ----------------------------------------------------------------------------------------
-
-    using CfgClass           = gsph::GSPHGhostHandlerConfig<Tvec>;
-    using BCConfig           = typename CfgClass::Variant;
-    using BCFree             = typename CfgClass::Free;
-    using BCPeriodic         = typename CfgClass::Periodic;
-    using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
-
-    using SolverConfigBC           = typename Config::BCConfig;
-    using SolverBCFree             = typename SolverConfigBC::Free;
-    using SolverBCPeriodic         = typename SolverConfigBC::Periodic;
-    using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
-
-    // boundary condition selections
-    const auto &solver_bc = solver_config.boundary_config.config;
-
-    BCConfig ghost_config;
-    if (std::holds_alternative<SolverBCFree>(solver_bc)) {
-        ghost_config = BCFree{};
-    } else if (std::holds_alternative<SolverBCPeriodic>(solver_bc)) {
-        ghost_config = BCPeriodic{};
-    } else if (
-        const SolverBCShearingPeriodic *c = std::get_if<SolverBCShearingPeriodic>(&solver_bc)) {
-        ghost_config = BCShearingPeriodic{
-            c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed};
-    } else {
-        shambase::throw_with_loc<std::runtime_error>("GSPH: Unsupported boundary condition type.");
-    }
 
     shambase::get_check_ref(storage.ghost_handler)
         .set(GhostHandle{scheduler(), storage.patch_rank_owner, storage.xyzh_ghost_layout});
@@ -272,42 +254,48 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_ghost_cache(Tscal time_val) {
 
     auto interface_infos = std::make_shared<DDSharedScalar<InterfaceBuildInfos>>("", "");
 
-    if (const BCPeriodic *cfg = std::get_if<BCPeriodic>(&ghost_config)) {
-        sph::modules::FindGhostInterfacesPeriodic<Tvec> node;
-        node.set_edges(
-            sim_box_edge,
-            patch_tree_edge,
-            interact_radius_tree,
-            interact_radius,
-            local_patch_boxes,
-            interface_infos);
-        node.evaluate();
-    } else if (const BCShearingPeriodic *cfg = std::get_if<BCShearingPeriodic>(&ghost_config)) {
-        auto shear_value  = IDataEdge<Tscal>::make_shared("", "");
-        shear_value->data = cfg->shear_value;
+    std::visit(
+        shambase::overloaded{
+            [&](const BCFree &) {
+                sph::modules::FindGhostInterfacesFree<Tvec> node;
+                node.set_edges(
+                    sim_box_edge,
+                    patch_tree_edge,
+                    interact_radius_tree,
+                    interact_radius,
+                    local_patch_boxes,
+                    interface_infos);
+                node.evaluate();
+            },
+            [&](const BCPeriodic &) {
+                sph::modules::FindGhostInterfacesPeriodic<Tvec> node;
+                node.set_edges(
+                    sim_box_edge,
+                    patch_tree_edge,
+                    interact_radius_tree,
+                    interact_radius,
+                    local_patch_boxes,
+                    interface_infos);
+                node.evaluate();
+            },
+            [&](const BCShearingPeriodic &cfg) {
+                auto shear_value  = IDataEdge<Tscal>::make_shared("", "");
+                shear_value->data = cfg.shear_speed * time_val;
 
-        sph::modules::FindGhostInterfacesShearingPeriodic<Tvec> node(
-            cfg->shear_base, cfg->shear_dir, cfg->shear_speed);
-        node.set_edges(
-            sim_box_edge,
-            patch_tree_edge,
-            interact_radius_tree,
-            interact_radius,
-            local_patch_boxes,
-            shear_value,
-            interface_infos);
-        node.evaluate();
-    } else {
-        sph::modules::FindGhostInterfacesFree<Tvec> node;
-        node.set_edges(
-            sim_box_edge,
-            patch_tree_edge,
-            interact_radius_tree,
-            interact_radius,
-            local_patch_boxes,
-            interface_infos);
-        node.evaluate();
-    }
+                sph::modules::FindGhostInterfacesShearingPeriodic<Tvec> node(
+                    cfg.shear_base, cfg.shear_dir, cfg.shear_speed);
+                node.set_edges(
+                    sim_box_edge,
+                    patch_tree_edge,
+                    interact_radius_tree,
+                    interact_radius,
+                    local_patch_boxes,
+                    shear_value,
+                    interface_infos);
+                node.evaluate();
+            },
+        },
+        bc_config);
 
     // ----------------------------------------------------------------------------------------
 
@@ -690,17 +678,20 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_density() {
         auto &dens_field = density_field.get_field(p.id_patch);
 
         sham::DeviceQueue &q = dev_sched->get_queue();
-        sham::EventList depends_list;
 
-        auto ploop_ptrs  = pcache.get_read_access(depends_list);
-        auto xyz_acc     = buf_xyz.get_read_access(depends_list);
-        auto h_acc       = buf_hpart.get_read_access(depends_list);
-        auto density_acc = dens_field.get_buf().get_write_access(depends_list);
+        sham::kernel_call(
+            q,
+            sham::MultiRef{pcache, buf_xyz, buf_hpart},
+            sham::MultiRef{dens_field.get_buf()},
+            cnt,
+            [pmass](
+                u32 gid,
+                auto ploop_ptrs,
+                const Tvec *__restrict xyz_acc,
+                const Tscal *__restrict h_acc,
+                Tscal *__restrict density_acc) {
+                shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
-        auto e = q.submit(depends_list, [&, pmass](sycl::handler &cgh) {
-            shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-
-            shambase::parallel_for(cgh, cnt, "gsph_compute_density", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 Tvec xyz_a = xyz_acc[id_a];
@@ -729,12 +720,6 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_density() {
 
                 density_acc[id_a] = sycl::max(rho_sum, Tscal(1e-30));
             });
-        });
-
-        pcache.complete_event_state({e});
-        buf_xyz.complete_event_state(e);
-        buf_hpart.complete_event_state(e);
-        dens_field.get_buf().complete_event_state(e);
     });
 }
 
@@ -1344,29 +1329,28 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
         auto &soundspeed_buf                   = soundspeed_field.get_field(id).get_buf();
 
         sham::DeviceQueue &q = dev_sched->get_queue();
-        sham::EventList depends_list;
 
-        auto density    = buf_density.get_read_access(depends_list);
-        auto pressure   = pressure_buf.get_write_access(depends_list);
-        auto soundspeed = soundspeed_buf.get_write_access(depends_list);
-
-        const Tscal *uint_ptr = nullptr;
         if (has_uint) {
-            uint_ptr = mpdat.get_field_buf_ref<Tscal>(iuint_interf).get_read_access(depends_list);
-        }
+            sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, total_elements, "compute_eos_gsph", [=](u64 gid) {
-                u32 i = (u32) gid;
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_density, buf_uint},
+                sham::MultiRef{pressure_buf, soundspeed_buf},
+                total_elements,
+                [gamma](
+                    u32 i,
+                    const Tscal *__restrict density,
+                    const Tscal *__restrict uint,
+                    Tscal *__restrict pressure,
+                    Tscal *__restrict soundspeed) {
+                    // Use SPH-summation density (from compute_omega, communicated to ghosts)
+                    Tscal rho = density[i];
+                    rho       = sycl::max(rho, Tscal(1e-30));
 
-                // Use SPH-summation density (from compute_omega, communicated to ghosts)
-                Tscal rho = density[i];
-                rho       = sycl::max(rho, Tscal(1e-30));
-
-                if (has_uint && uint_ptr != nullptr) {
                     // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
                     // P = (\gamma - 1) * \rho * u
-                    Tscal u = uint_ptr[i];
+                    Tscal u = uint[i];
                     u       = sycl::max(u, Tscal(1e-30));
                     Tscal P = (gamma - Tscal(1.0)) * rho * u;
 
@@ -1380,24 +1364,29 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
 
                     pressure[i]   = P;
                     soundspeed[i] = cs;
-                } else {
+                });
+        } else {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_density},
+                sham::MultiRef{pressure_buf, soundspeed_buf},
+                total_elements,
+                [](u32 i,
+                   const Tscal *__restrict density,
+                   Tscal *__restrict pressure,
+                   Tscal *__restrict soundspeed) {
+                    // Use SPH-summation density (from compute_omega, communicated to ghosts)
+                    Tscal rho = density[i];
+                    rho       = sycl::max(rho, Tscal(1e-30));
+
                     // Isothermal case
                     Tscal cs = Tscal(1.0);
                     Tscal P  = cs * cs * rho;
 
                     pressure[i]   = P;
                     soundspeed[i] = cs;
-                }
-            });
-        });
-
-        // Complete all buffer event states
-        buf_density.complete_event_state(e);
-        if (has_uint) {
-            mpdat.get_field_buf_ref<Tscal>(iuint_interf).complete_event_state(e);
+                });
         }
-        pressure_buf.complete_event_state(e);
-        soundspeed_buf.complete_event_state(e);
     });
 }
 
@@ -1442,29 +1431,23 @@ void shammodels::gsph::Solver<Tvec, Kern>::copy_eos_to_patchdata() {
         sham::DeviceBuffer<Tscal> &buf_cs_in = soundspeed_field.get_field(cur_p.id_patch).get_buf();
 
         auto &q = shamsys::instance::get_compute_scheduler().get_queue();
-        sham::EventList depends_list;
 
-        auto rho_in = buf_rho_in.get_read_access(depends_list);
-        auto P_in   = buf_P_in.get_read_access(depends_list);
-        auto cs_in  = buf_cs_in.get_read_access(depends_list);
-        auto rho    = buf_rho.get_write_access(depends_list);
-        auto P      = buf_P.get_write_access(depends_list);
-        auto cs     = buf_cs.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            cgh.parallel_for(sycl::range<1>{npart}, [=](sycl::item<1> item) {
-                rho[item] = rho_in[item];
-                P[item]   = P_in[item];
-                cs[item]  = cs_in[item];
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_rho_in, buf_P_in, buf_cs_in},
+            sham::MultiRef{buf_rho, buf_P, buf_cs},
+            npart,
+            [](u32 i,
+               const Tscal *__restrict rho_in,
+               const Tscal *__restrict P_in,
+               const Tscal *__restrict cs_in,
+               Tscal *__restrict rho,
+               Tscal *__restrict P,
+               Tscal *__restrict cs) {
+                rho[i] = rho_in[i];
+                P[i]   = P_in[i];
+                cs[i]  = cs_in[i];
             });
-        });
-
-        buf_rho_in.complete_event_state(e);
-        buf_P_in.complete_event_state(e);
-        buf_cs_in.complete_event_state(e);
-        buf_rho.complete_event_state(e);
-        buf_P.complete_event_state(e);
-        buf_cs.complete_event_state(e);
     });
 }
 
@@ -1517,6 +1500,84 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
 
     static constexpr Tscal Rkern = Kernel::Rkern;
 
+    // Per-particle gradient body, shared by the with/without uint kernel variants.
+    // `u_of(j)` returns the internal energy of particle j: the uint field when the
+    // EOS is adiabatic, Tscal(0) otherwise (so the arithmetic below is unchanged).
+    auto gradients_body = [pmass, gamma](
+                              u32 id_a,
+                              auto ploop_ptrs,
+                              const Tvec *__restrict xyz_acc,
+                              const Tscal *__restrict h_acc,
+                              const Tvec *__restrict v_acc,
+                              const Tscal *__restrict dens_acc,
+                              auto u_of,
+                              Tvec *__restrict grad_d_acc,
+                              Tvec *__restrict grad_p_acc,
+                              Tvec *__restrict grad_vx_acc,
+                              Tvec *__restrict grad_vy_acc,
+                              Tvec *__restrict grad_vz_acc) {
+        shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+        Tvec xyz_a  = xyz_acc[id_a];
+        Tscal h_a   = h_acc[id_a];
+        Tvec v_a    = v_acc[id_a];
+        Tscal rho_a = sycl::max(dens_acc[id_a], Tscal(1e-30));
+        Tscal dint  = h_a * h_a * Rkern * Rkern;
+
+        // Get internal energy for particle a
+        Tscal u_a = u_of(id_a);
+
+        // Initialize gradient accumulators
+        Tvec grad_d  = {0, 0, 0}; // Density gradient
+        Tvec grad_u  = {0, 0, 0}; // Internal energy difference gradient
+        Tvec grad_vx = {0, 0, 0}; // Velocity component gradients
+        Tvec grad_vy = {0, 0, 0};
+        Tvec grad_vz = {0, 0, 0};
+
+        particle_looper.for_each_object(id_a, [&](u32 id_b) {
+            Tvec dr    = xyz_a - xyz_acc[id_b];
+            Tscal rab2 = sycl::dot(dr, dr);
+
+            if (rab2 > dint || id_a == id_b) {
+                return;
+            }
+
+            Tscal rab = sycl::sqrt(rab2);
+
+            // Kernel gradient: \nabla W = (dW/dr) * (r/|r|)
+            Tscal dWdr = Kernel::dW_3d(rab, h_a);
+            Tvec gradW = dr * (dWdr * sham::inv_sat_positive(rab));
+
+            // Accumulate gradients (reference: g_pre_interaction.cpp lines 130-147)
+            grad_d += gradW * pmass;
+
+            // Internal energy gradient for pressure
+            Tscal u_b = u_of(id_b);
+            grad_u += gradW * (pmass * (u_b - u_a));
+
+            // Velocity gradients
+            Tvec v_b = v_acc[id_b];
+            grad_vx += gradW * (pmass * (v_b[0] - v_a[0]));
+            grad_vy += gradW * (pmass * (v_b[1] - v_a[1]));
+            grad_vz += gradW * (pmass * (v_b[2] - v_a[2]));
+        });
+
+        // Store density gradient
+        grad_d_acc[id_a] = grad_d;
+
+        // Compute pressure gradient: \nabla P = (\nabla \rho * u + du) * (\gamma - 1)
+        // (reference: g_pre_interaction.cpp line 143)
+        Tvec grad_p      = (grad_d * u_a + grad_u) * (gamma - Tscal(1));
+        grad_p_acc[id_a] = grad_p;
+
+        // Normalize velocity gradients by density
+        // (reference: g_pre_interaction.cpp lines 144-147)
+        Tscal rho_inv     = sham::inv_sat_positive(rho_a);
+        grad_vx_acc[id_a] = grad_vx * rho_inv;
+        grad_vy_acc[id_a] = grad_vy * rho_inv;
+        grad_vz_acc[id_a] = grad_vz * rho_inv;
+    };
+
     // Compute gradients following reference implementation (g_pre_interaction.cpp)
     // grad_d = \sigma_j m_j \nabla W_ij
     // grad_p = (grad_d * u_i + du) * (\gamma - 1)  where du = \sigma_j m_j (u_j - u_i) \nabla W_ij
@@ -1545,108 +1606,92 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
         auto &grad_vz_buf  = grad_vz_field.get_field(p.id_patch);
 
         sham::DeviceQueue &q = dev_sched->get_queue();
-        sham::EventList depends_list;
 
-        auto ploop_ptrs  = pcache.get_read_access(depends_list);
-        auto xyz_acc     = buf_xyz.get_read_access(depends_list);
-        auto h_acc       = buf_hpart.get_read_access(depends_list);
-        auto v_acc       = buf_vxyz.get_read_access(depends_list);
-        auto dens_acc    = dens_field.get_buf().get_read_access(depends_list);
-        auto grad_d_acc  = grad_d_field.get_buf().get_write_access(depends_list);
-        auto grad_p_acc  = grad_p_field.get_buf().get_write_access(depends_list);
-        auto grad_vx_acc = grad_vx_buf.get_buf().get_write_access(depends_list);
-        auto grad_vy_acc = grad_vy_buf.get_buf().get_write_access(depends_list);
-        auto grad_vz_acc = grad_vz_buf.get_buf().get_write_access(depends_list);
-
-        // Get internal energy if adiabatic
-        const Tscal *uint_ptr = nullptr;
         if (has_uint) {
-            uint_ptr = pdat.get_field_buf_ref<Tscal>(iuint).get_read_access(depends_list);
-        }
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-
-            shambase::parallel_for(cgh, cnt, "gsph_compute_gradients", [=](u64 gid) {
-                u32 id_a = (u32) gid;
-
-                Tvec xyz_a  = xyz_acc[id_a];
-                Tscal h_a   = h_acc[id_a];
-                Tvec v_a    = v_acc[id_a];
-                Tscal rho_a = sycl::max(dens_acc[id_a], Tscal(1e-30));
-                Tscal dint  = h_a * h_a * Rkern * Rkern;
-
-                // Get internal energy for particle a
-                Tscal u_a = Tscal(0);
-                if (uint_ptr != nullptr) {
-                    u_a = uint_ptr[id_a];
-                }
-
-                // Initialize gradient accumulators
-                Tvec grad_d  = {0, 0, 0}; // Density gradient
-                Tvec grad_u  = {0, 0, 0}; // Internal energy difference gradient
-                Tvec grad_vx = {0, 0, 0}; // Velocity component gradients
-                Tvec grad_vy = {0, 0, 0};
-                Tvec grad_vz = {0, 0, 0};
-
-                particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                    Tvec dr    = xyz_a - xyz_acc[id_b];
-                    Tscal rab2 = sycl::dot(dr, dr);
-
-                    if (rab2 > dint || id_a == id_b) {
-                        return;
-                    }
-
-                    Tscal rab = sycl::sqrt(rab2);
-
-                    // Kernel gradient: \nabla W = (dW/dr) * (r/|r|)
-                    Tscal dWdr = Kernel::dW_3d(rab, h_a);
-                    Tvec gradW = dr * (dWdr * sham::inv_sat_positive(rab));
-
-                    // Accumulate gradients (reference: g_pre_interaction.cpp lines 130-147)
-                    grad_d += gradW * pmass;
-
-                    // Internal energy gradient for pressure
-                    Tscal u_b = (uint_ptr != nullptr) ? uint_ptr[id_b] : Tscal(0);
-                    grad_u += gradW * (pmass * (u_b - u_a));
-
-                    // Velocity gradients
-                    Tvec v_b = v_acc[id_b];
-                    grad_vx += gradW * (pmass * (v_b[0] - v_a[0]));
-                    grad_vy += gradW * (pmass * (v_b[1] - v_a[1]));
-                    grad_vz += gradW * (pmass * (v_b[2] - v_a[2]));
+            sham::kernel_call(
+                q,
+                sham::MultiRef{
+                    pcache,
+                    buf_xyz,
+                    buf_hpart,
+                    buf_vxyz,
+                    dens_field.get_buf(),
+                    pdat.get_field_buf_ref<Tscal>(iuint)},
+                sham::MultiRef{
+                    grad_d_field.get_buf(),
+                    grad_p_field.get_buf(),
+                    grad_vx_buf.get_buf(),
+                    grad_vy_buf.get_buf(),
+                    grad_vz_buf.get_buf()},
+                cnt,
+                [gradients_body](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz_acc,
+                    const Tscal *__restrict h_acc,
+                    const Tvec *__restrict v_acc,
+                    const Tscal *__restrict dens_acc,
+                    const Tscal *__restrict uint_acc,
+                    Tvec *__restrict grad_d_acc,
+                    Tvec *__restrict grad_p_acc,
+                    Tvec *__restrict grad_vx_acc,
+                    Tvec *__restrict grad_vy_acc,
+                    Tvec *__restrict grad_vz_acc) {
+                    gradients_body(
+                        id_a,
+                        ploop_ptrs,
+                        xyz_acc,
+                        h_acc,
+                        v_acc,
+                        dens_acc,
+                        [=](u32 j) -> Tscal {
+                            return uint_acc[j];
+                        },
+                        grad_d_acc,
+                        grad_p_acc,
+                        grad_vx_acc,
+                        grad_vy_acc,
+                        grad_vz_acc);
                 });
-
-                // Store density gradient
-                grad_d_acc[id_a] = grad_d;
-
-                // Compute pressure gradient: \nabla P = (\nabla \rho * u + du) * (\gamma - 1)
-                // (reference: g_pre_interaction.cpp line 143)
-                Tvec grad_p      = (grad_d * u_a + grad_u) * (gamma - Tscal(1));
-                grad_p_acc[id_a] = grad_p;
-
-                // Normalize velocity gradients by density
-                // (reference: g_pre_interaction.cpp lines 144-147)
-                Tscal rho_inv     = sham::inv_sat_positive(rho_a);
-                grad_vx_acc[id_a] = grad_vx * rho_inv;
-                grad_vy_acc[id_a] = grad_vy * rho_inv;
-                grad_vz_acc[id_a] = grad_vz * rho_inv;
-            });
-        });
-
-        // Complete event states
-        pcache.complete_event_state({e});
-        buf_xyz.complete_event_state(e);
-        buf_hpart.complete_event_state(e);
-        buf_vxyz.complete_event_state(e);
-        dens_field.get_buf().complete_event_state(e);
-        grad_d_field.get_buf().complete_event_state(e);
-        grad_p_field.get_buf().complete_event_state(e);
-        grad_vx_buf.get_buf().complete_event_state(e);
-        grad_vy_buf.get_buf().complete_event_state(e);
-        grad_vz_buf.get_buf().complete_event_state(e);
-        if (has_uint) {
-            pdat.get_field_buf_ref<Tscal>(iuint).complete_event_state(e);
+        } else {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{pcache, buf_xyz, buf_hpart, buf_vxyz, dens_field.get_buf()},
+                sham::MultiRef{
+                    grad_d_field.get_buf(),
+                    grad_p_field.get_buf(),
+                    grad_vx_buf.get_buf(),
+                    grad_vy_buf.get_buf(),
+                    grad_vz_buf.get_buf()},
+                cnt,
+                [gradients_body](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz_acc,
+                    const Tscal *__restrict h_acc,
+                    const Tvec *__restrict v_acc,
+                    const Tscal *__restrict dens_acc,
+                    Tvec *__restrict grad_d_acc,
+                    Tvec *__restrict grad_p_acc,
+                    Tvec *__restrict grad_vx_acc,
+                    Tvec *__restrict grad_vy_acc,
+                    Tvec *__restrict grad_vz_acc) {
+                    gradients_body(
+                        id_a,
+                        ploop_ptrs,
+                        xyz_acc,
+                        h_acc,
+                        v_acc,
+                        dens_acc,
+                        [](u32) -> Tscal {
+                            return Tscal(0);
+                        },
+                        grad_d_acc,
+                        grad_p_acc,
+                        grad_vx_acc,
+                        grad_vy_acc,
+                        grad_vz_acc);
+                });
         }
     });
 }
@@ -1758,15 +1803,18 @@ typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tv
         auto &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
 
         sham::DeviceQueue &q = dev_sched->get_queue();
-        sham::EventList depends_list;
 
-        auto hpart      = buf_hpart.get_read_access(depends_list);
-        auto axyz       = buf_axyz.get_read_access(depends_list);
-        auto cs         = buf_cs.get_read_access(depends_list);
-        auto cfl_dt_acc = cfl_dt_buf.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, cnt, "gsph_compute_cfl_dt", [=](u64 gid) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_hpart, buf_axyz, buf_cs},
+            sham::MultiRef{cfl_dt_buf},
+            cnt,
+            [C_cour, C_force](
+                u32 gid,
+                const Tscal *__restrict hpart,
+                const Tvec *__restrict axyz,
+                const Tscal *__restrict cs,
+                Tscal *__restrict cfl_dt_acc) {
                 u32 i = (u32) gid;
 
                 Tscal h_i   = hpart[i];
@@ -1797,12 +1845,6 @@ typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tv
 
                 cfl_dt_acc[i] = dt_min;
             });
-        });
-
-        buf_hpart.complete_event_state(e);
-        buf_axyz.complete_event_state(e);
-        buf_cs.complete_event_state(e);
-        cfl_dt_buf.complete_event_state(e);
     });
 
     // Compute minimum across all patches on this rank

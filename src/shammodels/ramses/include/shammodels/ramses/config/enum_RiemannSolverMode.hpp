@@ -31,8 +31,10 @@ namespace shammodels::basegodunov {
      *   Riemann solver (PVRS) star pressure, following Toro (see shammath::hllc_adiab_toro_flux)
      * - HLLC_Davis : HLLC flux with the Davis (1988) wave speed estimate
      *   (see shammath::hllc_davis_flux)
+     * - HLLC_RAMSES : HLLC flux with the wave speed estimate of the RAMSES code
+     *   (see shammath::hllc_ramses_flux)
      */
-    enum RiemannSolverMode { Rusanov = 0, HLL = 1, HLLC_PVRS = 2, HLLC_Davis = 3 };
+    enum RiemannSolverMode { Rusanov = 0, HLL = 1, HLLC_PVRS = 2, HLLC_Davis = 3, HLLC_RAMSES = 4 };
 
     SHAMROCK_JSON_SERIALIZE_ENUM(
         RiemannSolverMode,
@@ -40,6 +42,7 @@ namespace shammodels::basegodunov {
          {RiemannSolverMode::HLL, "hll"},
          {RiemannSolverMode::HLLC_PVRS, "hllc_pvrs"},
          {RiemannSolverMode::HLLC_Davis, "hllc_davis"},
+         {RiemannSolverMode::HLLC_RAMSES, "hllc_ramses"},
          // legacy name of HLLC_PVRS, only matched when reading (to_json picks the first entry)
          {RiemannSolverMode::HLLC_PVRS, "hllc"}});
 

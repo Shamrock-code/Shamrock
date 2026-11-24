@@ -32,26 +32,8 @@
 #include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <utility>
-#include <variant>
 
 namespace shammodels::gsph {
-
-    template<class vec>
-    struct GSPHGhostHandlerConfig {
-
-        using Tscal = shambase::VecComponent<vec>;
-
-        struct Free {};
-        struct Periodic {};
-        struct ShearingPeriodic {
-            i32_3 shear_base;
-            i32_3 shear_dir;
-            Tscal shear_value;
-            Tscal shear_speed;
-        };
-
-        using Variant = std::variant<Free, Periodic, ShearingPeriodic>;
-    };
 
     template<class vec>
     class GSPHGhostHandler {

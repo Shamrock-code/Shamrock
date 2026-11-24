@@ -16,6 +16,8 @@
  *
  */
 
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shambase/type_name_info.hpp"
 #include "shambackends/type_traits.hpp"
 #include "shambackends/vec.hpp"
@@ -103,6 +105,47 @@ namespace shammodels::sph {
         shamrock::solvergraph::SolverGraphSerializable &sync) {
         return details::get_sync_data<std::vector<shambase::VecComponent<Tvec>>>(
             sync, "sink_accretion_radius");
+    }
+
+    /**
+     * @brief Whether the per species accreted dust mass sink edge is registered.
+     *
+     * Only registered with monofluid TVA dust. Flattened as [i_sink * ndust + j_dust].
+     */
+    inline bool has_sink_accreted_dust_mass(shamrock::solvergraph::SolverGraphSerializable &sync) {
+        return sync.has_edge("sink_accreted_dust_mass");
+    }
+
+    template<class Tvec>
+    inline std::vector<shambase::VecComponent<Tvec>> &get_sink_accreted_dust_mass(
+        shamrock::solvergraph::SolverGraphSerializable &sync) {
+        return details::get_sync_data<std::vector<shambase::VecComponent<Tvec>>>(
+            sync, "sink_accreted_dust_mass");
+    }
+
+    /**
+     * @brief Resize the flattened per species accreted dust mass to sink_count * ndust.
+     *
+     * Only pads with zeros the sinks that have no entry yet (sinks added since the last call, or
+     * loaded from a dump that predates the tracking). Throws if the stored layout does not match
+     * ndust, e.g. if the number of dust species changed after dust has been tracked.
+     */
+    template<class Tscal>
+    inline void resize_sink_accreted_dust_mass(
+        std::vector<Tscal> &accreted_dust_mass, size_t sink_count, u32 ndust) {
+        size_t target_size = sink_count * ndust;
+        if (accreted_dust_mass.size() == target_size) {
+            return;
+        }
+        if (ndust == 0 || accreted_dust_mass.size() > target_size
+            || accreted_dust_mass.size() % ndust != 0) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                "sink accreted dust mass layout mismatch: size={}, sink_count={}, ndust={}",
+                accreted_dust_mass.size(),
+                sink_count,
+                ndust));
+        }
+        accreted_dust_mass.resize(target_size, Tscal{0});
     }
 
     /**

@@ -18,6 +18,8 @@ set(Sources
     src/io/PhantomDumpEOSUtils.cpp
     src/SolverConfig.cpp
     src/pySPHModel.cpp
+    src/pybindings/pySolverConfig.cpp
+    src/pybindings/pyModel.cpp
     src/pyPhantomDump.cpp
     src/modules/AnalysisBarycenter.cpp
     src/modules/SolverStorage.cpp
@@ -37,6 +39,7 @@ set(Sources
     src/modules/UpdateDerivs.cpp
     src/modules/ComputeLoadBalanceValue.cpp
     src/modules/ComputeOmega.cpp
+    src/modules/SetWhenMask.cpp
     src/modules/ComputeJ.cpp
     src/modules/ComputeLuminosity.cpp
     src/modules/NeighbourCache.cpp

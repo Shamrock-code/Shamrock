@@ -23,11 +23,10 @@ def dhW(r, h):
     return shamrock.math.sphkernel.M4_dhW3d(r, h)
 
 
-W = maybe_njit(W)
-dhW = maybe_njit(dhW)
-
 # W and dhW are bound to scalar C++ kernels (shamrock.math.sphkernel.*), so they
 # can't be called directly on arrays: np.vectorize applies them elementwise.
+# For the same reason they (and the helpers below that call them through
+# np.vectorize) can't be compiled with numba, so they are not wrapped in maybe_njit.
 W_vec = np.vectorize(W)
 dhW_vec = np.vectorize(dhW)
 
@@ -42,17 +41,12 @@ def compute_sums(pmass, id_a, h_a, positions: np.ndarray):
     return rho_sum, sumdWdh
 
 
-compute_sums = maybe_njit(compute_sums)
-
-
 def count_neighbors(id_a, h_a, W, positions: np.ndarray):
     dr = positions[id_a, :] - positions
     rab = np.sqrt(np.sum(dr * dr, axis=1))
 
     return int(np.count_nonzero(np.vectorize(W)(rab, h_a) > 0))
 
-
-count_neighbors = maybe_njit(count_neighbors)
 
 Rkern = shamrock.math.sphkernel.M4_Rkern()
 

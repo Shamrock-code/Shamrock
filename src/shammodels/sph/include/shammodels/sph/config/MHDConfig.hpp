@@ -17,6 +17,7 @@
  *
  */
 
+#include "shambase/memory.hpp"
 #include "shambackends/vec.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamrock/experimental_features.hpp"
@@ -100,12 +101,17 @@ struct shammodels::sph::MHDConfig {
 
     inline bool has_field_eta() {
         NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD);
-        return v && (v->eta_fields || v->eta_semi_constant);
+        if (!v)
+            return false;
+        auto &v_ref = shambase::get_check_ref(v);
+        return (v_ref.eta_fields || v_ref.eta_semi_constant);
     }
-
     inline bool has_eta_semi_constant() {
         NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD);
-        return v && v->eta_semi_constant;
+        if (!v)
+            return false;
+        auto &v_ref = shambase::get_check_ref(v);
+        return v_ref.eta_semi_constant;
     }
 
     inline void print_status() {
@@ -152,15 +158,15 @@ struct shammodels::sph::MHDConfig {
                 shambase::throw_with_loc<std::runtime_error>("Non Ideal MHD is experimental");
             }
 
-            NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD);
-            if (v->eta_fields && v->eta_semi_constant) {
+            NonIdealMHD &v = shambase::get_check_ref(std::get_if<NonIdealMHD>(&configMHD));
+            if (v.eta_fields && v.eta_semi_constant) {
                 ON_RANK_0(
                     logger::warn_ln(
                         "SPH::config",
                         "eta_fields and eta_semi_constant are both set: the semi-constant "
                         "prescription recomputes the eta_o/eta_h/eta_ad fields every step and "
                         "overwrites any user-set values"));
-            } else if (v->eta_fields) {
+            } else if (v.eta_fields) {
                 ON_RANK_0(
                     logger::warn_ln(
                         "SPH::config",

@@ -1206,8 +1206,12 @@ struct shammodels::sph::SolverConfig {
     /// @brief Whether the solver has a field for psi_on_ch
     inline bool has_field_psi_on_ch() { return mhd_config.has_psi_field(); }
 
+    /// @brief Whether to compute and store divB
+    bool compute_div_b = false;
+    inline void use_div_b(bool value) { compute_div_b = value; }
+
     /// @brief Whether the solver has a field for divB
-    inline bool has_field_div_b() { return mhd_config.has_div_b_field(); }
+    inline bool has_field_div_b() { return compute_div_b && mhd_config.has_div_b_field(); }
 
     /// @brief Whether the solver has a field for curlB
     inline bool has_field_curl_b() { return mhd_config.has_curl_b_field() && (dim == 3); }
@@ -1516,6 +1520,8 @@ namespace shammodels::sph {
             {"show_cfl_detail", p.show_cfl_detail},
             // mhd config
             {"mhd_config", p.mhd_config},
+            // div_B
+            {"compute_div_b", p.compute_div_b},
             // dust config
             {"dust_config", p.dust_config},
             // self gravity config
@@ -1609,6 +1615,7 @@ namespace shammodels::sph {
         _get_to_if_contains("unit_sys", p.unit_sys);
         _get_to_if_contains("show_cfl_detail", p.show_cfl_detail);
         _get_to_if_contains("mhd_config", p.mhd_config);
+        _get_to_if_contains("compute_div_b", p.compute_div_b);
         _get_to_if_contains("dust_config", p.dust_config);
         _get_to_if_contains("self_grav_config", p.self_grav_config);
         _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);

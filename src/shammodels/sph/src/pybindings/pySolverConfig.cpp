@@ -96,6 +96,7 @@ namespace shammodels::sph::pybindings {
         config_cls.def("set_show_ghost_zone_graph", &TConfig::set_show_ghost_zone_graph);
         config_cls.def("set_show_ghost_stats", &TConfig::set_show_ghost_stats);
         config_cls.def("use_luminosity", &TConfig::use_luminosity);
+        config_cls.def("use_div_b", &TConfig::use_div_b);
         config_cls.def("compute_GW", &TConfig::use_GW);
         config_cls.def("set_save_dt_to_fields", &TConfig::set_save_dt_to_fields);
         config_cls.def("should_save_dt_to_fields", &TConfig::should_save_dt_to_fields);

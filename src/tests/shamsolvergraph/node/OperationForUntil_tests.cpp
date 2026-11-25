@@ -135,6 +135,33 @@ NEW_TEST(Unittest, "shamsolvergraph/node/OperationForUntil", 1) {
         REQUIRE_EQUAL(iter_count->data, u32{0});
     }
 
+    // iter_count is reset to 0 before the loop starts, whatever value the edge held before
+    {
+        auto iter_count = make_iter_count();
+        auto cond       = make_condition(true);
+        auto body       = std::make_shared<CountdownNode>(iter_count, cond, u32{100});
+
+        OperationForUntil node("for", body, 3);
+        node.set_edges(cond, iter_count);
+
+        // stale value set by hand: the first iteration must still see 0
+        iter_count->data = 1000;
+        node.evaluate();
+        REQUIRE_EQUAL(body->seen_iters, (std::vector<u32>{0, 1, 2}));
+        REQUIRE_EQUAL(iter_count->data, u32{3});
+
+        // stale value left by the previous evaluation: the loop restarts from 0
+        body->seen_iters.clear();
+        node.evaluate();
+        REQUIRE_EQUAL(body->seen_iters, (std::vector<u32>{0, 1, 2}));
+        REQUIRE_EQUAL(iter_count->data, u32{3});
+
+        // stale value and no iteration at all: reset to 0 anyway
+        cond->data = false;
+        node.evaluate();
+        REQUIRE_EQUAL(iter_count->data, u32{0});
+    }
+
     // iter_count edge absent: the loop still stops on the condition or on max_iter
     {
         auto cond = make_condition(true);

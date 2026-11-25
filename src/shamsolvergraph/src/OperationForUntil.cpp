@@ -40,8 +40,11 @@ namespace shamrock::solvergraph {
         u32 unused_iter_count = 0;
         u32 &i = edges.iter_count.has_value() ? edges.iter_count->get().data : unused_iter_count;
 
+        // The edge may hold a stale value (e.g. from a previous evaluation): always restart at 0.
+        i = 0;
+
         // The condition is re-read at every iteration since the body is expected to update it.
-        for (i = 0; i < max_iter && edges.condition.data; i++) {
+        for (; i < max_iter && edges.condition.data; i++) {
             body_node->evaluate();
         }
     }

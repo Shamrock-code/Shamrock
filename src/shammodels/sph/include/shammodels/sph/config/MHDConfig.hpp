@@ -17,17 +17,21 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/common/config/enum_TensileCorrection.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
+#include <stdexcept>
+#include <string>
 #include <variant>
 
 namespace shammodels::sph {
 
     template<class Tvec>
     struct MHDConfig;
-}
+} // namespace shammodels::sph
 
 template<class Tvec>
 struct shammodels::sph::MHDConfig {
@@ -38,16 +42,18 @@ struct shammodels::sph::MHDConfig {
     struct None {};
 
     struct IdealMhdConstrainedHyperPara {
-        Tscal sigma_mhd = 0.1;
-        Tscal alpha_B   = 1.;
+        Tscal sigma_mhd                = 0.1;
+        Tscal alpha_B                  = 1.;
+        TensileCorrection tensile_corr = TensileCorrection::Borve;
     };
 
     struct NonIdealMHD {
-        Tscal sigma_mhd = 0.1;
-        Tscal alpha_B   = 1.;
-        Tscal etaO      = 1.;
-        Tscal etaH      = 1.;
-        Tscal etaAD     = 1.;
+        Tscal sigma_mhd                = 0.1;
+        Tscal alpha_B                  = 1.;
+        Tscal etaO                     = 1.;
+        Tscal etaH                     = 1.;
+        Tscal etaAD                    = 1.;
+        TensileCorrection tensile_corr = TensileCorrection::Borve;
     };
 
     // how to set a new state of a variant as a dummy:
@@ -101,15 +107,17 @@ struct shammodels::sph::MHDConfig {
             IdealMhdConstrainedHyperPara *v
             = std::get_if<IdealMhdConstrainedHyperPara>(&configMHD)) {
             logger::raw_ln("  Config MHD  : Ideal MHD, constrained hyperbolic/parabolic treatment");
-            logger::raw_ln("  sigma_mhd  =", v->sigma_mhd);
-            logger::raw_ln("  alpha_B    =", v->alpha_B);
+            logger::raw_ln("  sigma_mhd    =", v->sigma_mhd);
+            logger::raw_ln("  alpha_B      =", v->alpha_B);
+            logger::raw_ln("  tensile_corr =", tensile_correction_to_string(v->tensile_corr));
         } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&configMHD)) {
             logger::raw_ln("  Config MHD Type : Non Ideal MHD");
-            logger::raw_ln("  sigma_mhd   =", v->sigma_mhd);
-            logger::raw_ln("  alpha_B     =", v->alpha_B);
-            logger::raw_ln("  etaO        =", v->etaO);
-            logger::raw_ln("  etaH        =", v->etaH);
-            logger::raw_ln("  etaAD       =", v->etaAD);
+            logger::raw_ln("  sigma_mhd    =", v->sigma_mhd);
+            logger::raw_ln("  alpha_B      =", v->alpha_B);
+            logger::raw_ln("  etaO         =", v->etaO);
+            logger::raw_ln("  etaH         =", v->etaH);
+            logger::raw_ln("  etaAD        =", v->etaAD);
+            logger::raw_ln("  tensile_corr =", tensile_correction_to_string(v->tensile_corr));
         } else {
             shambase::throw_unimplemented();
         }
@@ -156,6 +164,7 @@ namespace shammodels::sph {
                 {"mhd_type", "ideal_mhd_constrained_hyper_para"},
                 {"sigma_mhd", v->sigma_mhd},
                 {"alpha_B", v->alpha_B},
+                {"tensile_corr", tensile_correction_to_string(v->tensile_corr)},
             };
         } else if (const NonIdealMHD *v = std::get_if<NonIdealMHD>(&p.configMHD)) {
             // Write the shear base, direction, and speed into the JSON object
@@ -166,6 +175,7 @@ namespace shammodels::sph {
                 {"etaO", v->etaO},
                 {"etaH", v->etaH},
                 {"etaAD", v->etaAD},
+                {"tensile_corr", tensile_correction_to_string(v->tensile_corr)},
             };
         } else {
             shambase::throw_unimplemented();
@@ -197,6 +207,13 @@ namespace shammodels::sph {
         using IMHD        = typename T::IdealMhdConstrainedHyperPara;
         using NonIdealMHD = typename T::NonIdealMHD;
 
+        // older configs have no tensile_corr field, they used the Borve correction
+        auto get_tensile_corr = [&](TensileCorrection def) {
+            return (j.contains("tensile_corr"))
+                       ? tensile_correction_from_string(j.at("tensile_corr").get<std::string>())
+                       : def;
+        };
+
         // Set the BCConfig based on the configMHD type
         if (mhd_type == "none") {
             p.set(None{});
@@ -208,6 +225,7 @@ namespace shammodels::sph {
                 IMHD{
                     j.at("sigma_mhd").get<Tscal>(),
                     j.value("alpha_B", def.alpha_B),
+                    get_tensile_corr(def.tensile_corr),
                 });
         } else if (mhd_type == "non_ideal_mhd") {
             // alpha_u, alpha_AV & beta_AV are now in the artificial viscosity config, they are
@@ -220,6 +238,7 @@ namespace shammodels::sph {
                     j.value("etaO", def.etaO),
                     j.value("etaH", def.etaH),
                     j.value("etaAD", def.etaAD),
+                    get_tensile_corr(def.tensile_corr),
                 });
         } else {
             shambase::throw_unimplemented("wtf !");

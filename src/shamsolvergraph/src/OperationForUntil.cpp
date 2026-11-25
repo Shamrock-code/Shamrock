@@ -34,19 +34,16 @@ namespace shamrock::solvergraph {
     void OperationForUntil::_impl_evaluate_internal() {
         auto edges = get_edges();
 
-        // Resolve the optional edge once, outside of the loop. When it is absent the counter is
-        // written to a local instead, so the loop needs no per-iteration check.
+        // Resolve the optional edge once, outside of the loop, and use its data as the loop
+        // counter. When it is absent the counter is a local instead, so the loop needs no
+        // per-iteration check.
         u32 unused_iter_count = 0;
-        u32 &iter_count
-            = edges.iter_count.has_value() ? edges.iter_count->get().data : unused_iter_count;
+        u32 &i = edges.iter_count.has_value() ? edges.iter_count->get().data : unused_iter_count;
 
         // The condition is re-read at every iteration since the body is expected to update it.
-        u32 i = 0;
-        for (; i < max_iter && edges.condition.data; i++) {
-            iter_count = i;
+        for (i = 0; i < max_iter && edges.condition.data; i++) {
             body_node->evaluate();
         }
-        iter_count = i;
     }
 
     std::string OperationForUntil::_impl_get_dot_graph_partial() const {

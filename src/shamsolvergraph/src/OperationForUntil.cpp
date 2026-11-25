@@ -15,6 +15,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shamsolvergraph/edge/INullOptEdge.hpp"
 #include "shamsolvergraph/node/OperationForUntil.hpp"
 #include <sstream>
 #include <stdexcept>
@@ -33,13 +34,19 @@ namespace shamrock::solvergraph {
     void OperationForUntil::_impl_evaluate_internal() {
         auto edges = get_edges();
 
+        // Resolve the optional edge once, outside of the loop. When it is absent the counter is
+        // written to a local instead, so the loop needs no per-iteration check.
+        u32 unused_iter_count = 0;
+        u32 &iter_count
+            = edges.iter_count.has_value() ? edges.iter_count->get().data : unused_iter_count;
+
         // The condition is re-read at every iteration since the body is expected to update it.
         u32 i = 0;
         for (; i < max_iter && edges.condition.data; i++) {
-            edges.iter.data = i;
+            iter_count = i;
             body_node->evaluate();
         }
-        edges.iter.data = i;
+        iter_count = i;
     }
 
     std::string OperationForUntil::_impl_get_dot_graph_partial() const {
@@ -71,11 +78,15 @@ namespace shamrock::solvergraph {
         ss << sham::format(
             "e_{} [label=\"{}\",shape=rect, style=filled];\n", cond.get_uuid(), cond.get_label());
 
-        auto &iter = get_rw_edge_base(0);
-        ss << sham::format(
-            "n_{} -> e_{} [style=\"dashed\", color=red];\n", get_uuid(), iter.get_uuid());
-        ss << sham::format(
-            "e_{} [label=\"{}\",shape=rect, style=filled];\n", iter.get_uuid(), iter.get_label());
+        auto &iter_count = get_rw_edge_base(0);
+        if (dynamic_cast<const INullOptEdge *>(&iter_count) == nullptr) {
+            ss << sham::format(
+                "n_{} -> e_{} [style=\"dashed\", color=red];\n", get_uuid(), iter_count.get_uuid());
+            ss << sham::format(
+                "e_{} [label=\"{}\",shape=rect, style=filled];\n",
+                iter_count.get_uuid(),
+                iter_count.get_label());
+        }
 
         return ss.str();
     }

@@ -21,30 +21,31 @@
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 
-#define NODE_EDGES(X_RO, X_RW)                                                                     \
+#define NODE_EDGES(X_RO, X_RW, X_RO_OPTIONAL, X_RW_OPTIONAL)                                       \
     X_RO(shamrock::solvergraph::IDataEdge<bool>, condition)                                        \
-    X_RW(shamrock::solvergraph::IDataEdge<u32>, iter)
+    X_RW_OPTIONAL(shamrock::solvergraph::IDataEdge<u32>, iter_count)
 
 namespace shamrock::solvergraph {
 
     /**
-     * @brief Bounded loop meta node, equivalent to
+     * @brief Variant of OperationFor that also stops as soon as `condition` becomes false,
+     * equivalent to
      *
      * @code{.cpp}
      * u32 i = 0;
      * for (; i < max_iter && condition; i++) {
      *     body_node->evaluate(); // expected to update condition
      * }
-     * iter = i;
+     * iter_count = i; // if the optional iter_count edge is set
      * @endcode
      *
-     * The condition is checked before each iteration, so the body may run zero times. Unlike
-     * OperationWhile, the loop always ends after at most `max_iter` iterations, even if the body
+     * The condition is checked before each iteration, so the body may run zero times. Like
+     * OperationFor, the loop always ends after at most `max_iter` iterations, even if the body
      * never sets `condition` to false.
      *
-     * The `iter` edge holds the index of the current iteration while the body runs (so the body
-     * can read it), and the number of evaluated iterations once the loop ends. The body must not
-     * write it.
+     * The optional `iter_count` edge holds the index of the current iteration while the body
+     * runs (so the body can read it), and the number of evaluated iterations once the loop ends.
+     * The body must not write it.
      *
      * Nested nodes are graph structure and are taken in the constructor (like
      * OperationSequence and OperationIf). The runtime predicate is an `IDataEdge<bool>` wired
@@ -63,7 +64,7 @@ namespace shamrock::solvergraph {
          */
         OperationForUntil(std::string name, std::shared_ptr<INode> body_node, u32 max_iter);
 
-        EXPAND_NODE_EDGES(NODE_EDGES)
+        EXPAND_NODE_EDGES_OPTIONAL(NODE_EDGES)
 
         void _impl_evaluate_internal();
 

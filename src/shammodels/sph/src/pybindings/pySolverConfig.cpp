@@ -11,7 +11,7 @@
  * @file pySolverConfig.cpp
  * @author David Fang (david.fang@ikmail.com) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Python bindings for shammodels::sph::SolverConfig
  */
 

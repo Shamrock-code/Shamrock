@@ -183,6 +183,7 @@ sets the condition to false. It is equivalent to:
 ```cpp
 u32 i = 0;
 for (; i < max_iter && condition; i++) {
+    iter_count = i;   // if the optional iter_count edge is set
     body->evaluate(); // expected to update condition
 }
 iter_count = i; // if the optional iter_count edge is set

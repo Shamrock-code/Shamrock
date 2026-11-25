@@ -135,9 +135,9 @@ placeholders so slot indices stay stable. `get_ro_edge_optional` returns
 
 ## Composition nodes
 
-`OperationSequence`, `OperationIf`, `OperationFor` and `OperationWhile` wrap
-other `INode`s. Nested nodes are passed to the constructor (graph structure).
-Data edges are still wired with `set_edges`.
+`OperationSequence`, `OperationIf`, `OperationFor`, `OperationForUntil` and
+`OperationWhile` wrap other `INode`s. Nested nodes are passed to the
+constructor (graph structure). Data edges are still wired with `set_edges`.
 
 ```cpp
 auto then_node = std::make_shared<MyNode>(...); // optional
@@ -175,6 +175,41 @@ The count is read once, before the first iteration, so the body cannot change
 the number of iterations. To repeat several nodes, wrap them in an
 `OperationSequence` and pass that as the body.
 
+`OperationForUntil` is a variant of `OperationFor` that also stops as soon as
+its `IDataEdge<bool>` condition becomes false. It evaluates its (mandatory)
+body node at most `max_iter` times, so it always ends even if the body never
+sets the condition to false. It is equivalent to:
+
+```cpp
+u32 i = 0;
+for (; i < max_iter && condition; i++) {
+    iter_count = i;   // if the optional iter_count edge is set
+    body->evaluate(); // expected to update condition
+}
+iter_count = i; // if the optional iter_count edge is set
+```
+
+The condition is checked before each iteration, so the body may run zero
+times. The body updates the condition, typically through its own read-write
+edge pointing to the same `IDataEdge<bool>`. The optional `IDataEdge<u32>`
+`iter_count` edge holds the current iteration index while the body runs, and
+the number of evaluated iterations once the loop ends (the body must not write
+it). Check the condition after the loop to know whether it stopped on the
+condition or on `max_iter`.
+
+```cpp
+auto cond = IDataEdge<bool>::make_shared("not_converged", "not_converged");
+auto iter_count = IDataEdge<u32>::make_shared("iter_count", "n_{iter}");
+auto body = std::make_shared<MyIterationNode>(...); // updates cond->data
+
+auto for_node = std::make_shared<OperationForUntil>("iterate", body, max_iter);
+for_node->set_edges(cond, iter_count); // or (cond, std::nullopt)
+
+cond->data = true;
+for_node->evaluate();
+// cond->data == true here means max_iter was reached before convergence
+```
+
 `OperationWhile` evaluates its (mandatory) body node as long as its
 `IDataEdge<bool>` condition is true. The condition is checked before each
 iteration, so the body may run zero times. The body must eventually set the
@@ -202,10 +237,13 @@ as the body.
 - [`OperationIf.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationIf.hpp)
 - [`OperationFor.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationFor.hpp)
 - [`OperationFor.cpp`](../../../src/shamsolvergraph/src/OperationFor.cpp)
+- [`OperationForUntil.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationForUntil.hpp)
+- [`OperationForUntil.cpp`](../../../src/shamsolvergraph/src/OperationForUntil.cpp)
 - [`OperationSequence.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationSequence.hpp)
 - [`OperationWhile.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationWhile.hpp)
 - [`OperationWhile.cpp`](../../../src/shamsolvergraph/src/OperationWhile.cpp)
 - [`OptionalEdges_tests.cpp`](../../../src/tests/shamsolvergraph/node/OptionalEdges_tests.cpp)
 - [`OperationIf_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationIf_tests.cpp)
 - [`OperationFor_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationFor_tests.cpp)
+- [`OperationForUntil_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationForUntil_tests.cpp)
 - [`OperationWhile_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationWhile_tests.cpp)

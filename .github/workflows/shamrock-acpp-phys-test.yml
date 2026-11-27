@@ -85,6 +85,8 @@ jobs:
           - worldsize: 1
             testfile: sod_tube_sph.py
           - worldsize: 1
+            testfile: sph_boundary_particles_wall.py
+          - worldsize: 1
             testfile: gsph_sod_tube_gsph.py
           - worldsize: 2
             testfile: gsph_sod_tube_gsph.py

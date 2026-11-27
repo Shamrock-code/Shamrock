@@ -278,6 +278,18 @@ namespace shammodels::sph::pybindings {
             py::arg("field_name"),
             py::arg("pos_to_val"),
             py::arg("offset") = 0);
+        cls.def(
+            "set_field_value_lambda_u32",
+            [](T &self,
+               std::string field_name,
+               const std::function<u32(Tvec)> pos_to_val,
+               const u32 offset) {
+                return self.template set_field_value_lambda<u32>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0);
         cls.def("overwrite_field_value_f64", &T::template overwrite_field_value<f64>);
         cls.def("overwrite_field_value_f64_3", &T::template overwrite_field_value<f64_3>);
         cls.def("remap_positions", &T::remap_positions);

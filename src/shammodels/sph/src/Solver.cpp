@@ -282,7 +282,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     bool has_epsilon_field                     = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field                      = solver_config.dust_config.has_deltav_field();
     bool has_s_j_field                         = solver_config.dust_config.has_s_j_field();
-    bool has_freeze_flag_field                   = solver_config.has_field_freeze_flag();
+    bool has_freeze_flag_field                 = solver_config.has_field_freeze_flag();
 
     using namespace shamrock::solvergraph;
 

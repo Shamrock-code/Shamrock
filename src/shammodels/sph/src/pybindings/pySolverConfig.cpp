@@ -307,6 +307,8 @@ namespace shammodels::sph::pybindings {
         config_cls.def("set_boundary_free", &TConfig::set_boundary_free);
         config_cls.def("set_boundary_periodic", &TConfig::set_boundary_periodic);
         config_cls.def("set_boundary_shearing_periodic", &TConfig::set_boundary_shearing_periodic);
+        config_cls.def(
+            "set_boundary_particles", &TConfig::set_boundary_particles, py::arg("enable"));
         config_cls.def("set_dust_mode_none", [](TConfig &self) {
             self.dust_config.set_none();
         });

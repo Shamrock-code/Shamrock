@@ -506,35 +506,28 @@ namespace shamrock::amr {
 
             u32 cell_tot_count = cell_count[0] * cell_count[1] * cell_count[2];
 
-            sycl::buffer<Tcoord> cell_coord_min(cell_tot_count);
-            sycl::buffer<Tcoord> cell_coord_max(cell_tot_count);
+            std::vector<Tcoord> cell_coord_min(cell_tot_count);
+            std::vector<Tcoord> cell_coord_max(cell_tot_count);
 
             shamlog_debug_sycl_ln(
                 "AMRGrid", "building bounds ", cell_count[0], cell_count[1], cell_count[2]);
 
-            {
-                sycl::host_accessor acc_min{cell_coord_min, sycl::write_only, sycl::no_init};
-                sycl::host_accessor acc_max{cell_coord_max, sycl::write_only, sycl::no_init};
+            u32 cnt_x = cell_count[0];
+            u32 cnt_y = cell_count[1];
+            u32 cnt_z = cell_count[2];
 
-                sycl::range<3> rnge{cell_count[0], cell_count[1], cell_count[2]};
+            u32 cnt_xy = cnt_x * cnt_y;
 
-                u32 cnt_x = cell_count[0];
-                u32 cnt_y = cell_count[1];
-                u32 cnt_z = cell_count[2];
+            Tcoord sz = cell_size;
 
-                u32 cnt_xy = cnt_x * cnt_y;
+            for (u64 idx = 0; idx < cell_count[0]; idx++) {
+                for (u64 idy = 0; idy < cell_count[1]; idy++) {
+                    for (u64 idz = 0; idz < cell_count[2]; idz++) {
 
-                Tcoord sz = cell_size;
+                        u64 id_a = idx + cnt_x * idy + cnt_xy * idz;
 
-                for (u64 idx = 0; idx < cell_count[0]; idx++) {
-                    for (u64 idy = 0; idy < cell_count[1]; idy++) {
-                        for (u64 idz = 0; idz < cell_count[2]; idz++) {
-
-                            u64 id_a = idx + cnt_x * idy + cnt_xy * idz;
-
-                            acc_min[id_a] = sz * Tcoord{idx, idy, idz};
-                            acc_max[id_a] = sz * Tcoord{idx + 1, idy + 1, idz + 1};
-                        }
+                        cell_coord_min[id_a] = sz * Tcoord{idx, idy, idz};
+                        cell_coord_max[id_a] = sz * Tcoord{idx + 1, idy + 1, idz + 1};
                     }
                 }
             }

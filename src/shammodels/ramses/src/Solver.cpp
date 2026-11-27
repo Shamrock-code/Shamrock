@@ -20,6 +20,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/overloaded.hpp"
 #include "shamalgs/collective/gather_str.hpp"
+#include "shambackends/kernel_call_distrib.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/ramses/Solver.hpp"
@@ -347,6 +348,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         if (solver_config.is_gravity_on()) {
             ghost_layout.add_field<Tscal>("phi", AMRBlock::block_size);
             ghost_layout.add_field<Tscal>("phi_old", AMRBlock::block_size);
+            if (solver_config.gravity_config.predictor) {
+                ghost_layout.add_field<Tvec>("g_pred", AMRBlock::block_size);
+            }
         }
 
         if (solver_config.is_gas_passive_scalar_on()) {
@@ -1141,6 +1145,57 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
     }
 
+    // Self-gravity in the half time step prediction, as RAMSES (ctoprim adds g dt/2 to the velocity
+    // before the slopes and the trace): v += g^n dt/2 on the cells with ghosts, after the
+    // conversion to primitive variables. The slopes, the Euler time derivatives and the face states
+    // then see the half step velocity, which includes the gravitational acceleration (the face
+    // velocities, and the face densities through div v). g^n is the "g_pred" field of the patch
+    // data, the g^{n+1} of the trapezoidal kick of the previous step (computed on the patch cells
+    // from phi^{n+1}, solved from rho^{n+1} = rho^n + dt drho/dt, the density of this step), and
+    // exchanged with the ghost zones as the other fields: a ghost cell has exactly the g of the
+    // cell it copies, so that the two sides of a face (patch boundary, periodic box) predict the
+    // same states and the fluxes stay conservative. No additional Poisson solve or gradient.
+    if (solver_config.is_gravity_on() && solver_config.gravity_config.predictor) {
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> grav_pred_sequence;
+
+        auto g_pred
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("g_pred", "\\mathbf{g}^{n}");
+        {
+            shamrock::solvergraph::GetFieldRefFromLayer<Tvec> attach{
+                storage.ghost_layout, "g_pred"};
+            attach.set_edges(storage.merged_patchdata_ghost, g_pred);
+            grav_pred_sequence.push_back(std::make_shared<decltype(attach)>(std::move(attach)));
+        }
+        {
+            // v += g^n dt/2
+            auto dt_over2    = storage.dt_over2;
+            auto block_count = storage.block_counts_with_ghost;
+            auto node        = std::make_shared<
+                shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::Field<Tvec>>>(
+                [g_pred, dt_over2, block_count](shamrock::solvergraph::Field<Tvec> &vel) {
+                    Tscal half_dt = dt_over2->value;
+                    shambase::DistributedData<u32> cell_counts
+                        = block_count->indexes.template map<u32>([&](u64 id, u32 nblock) {
+                              return nblock * AMRBlock::block_size;
+                          });
+                    sham::distributed_data_kernel_call(
+                        shamsys::instance::get_compute_scheduler_ptr(),
+                        sham::DDMultiRef{g_pred->get_spans()},
+                        sham::DDMultiRef{vel.get_spans()},
+                        cell_counts,
+                        [half_dt](u32 i, const Tvec *__restrict g, Tvec *__restrict v) {
+                            v[i] += half_dt * g[i];
+                        });
+                });
+            node->set_edges(storage.vel);
+            grav_pred_sequence.push_back(node);
+        }
+
+        shamrock::solvergraph::OperationSequence seq(
+            "Self-gravity in the predictor", std::move(grav_pred_sequence));
+        solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+    }
+
     { // Build slope limited gradients
 
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> grad_sequence;
@@ -1892,6 +1947,19 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                     copy_phi_new.set_edges(storage.refs_phi_new, refs_phi_new_source);
                     ext_force_sequence.push_back(
                         std::make_shared<decltype(copy_phi_new)>(std::move(copy_phi_new)));
+                }
+
+                // save g^{n+1} (storage.phi_g of the last time level, on the patch cells) in the
+                // patch data: the g^n of the half time step prediction of the next step
+                if (solver_config.gravity_config.predictor) {
+                    auto refs_g_pred_source
+                        = std::make_shared<FieldRefs<Tvec>>("g_pred_source", "\\mathbf{g}^{n+1}");
+                    attach_source_field(refs_g_pred_source, "g_pred");
+
+                    CopyPatchDataField<Tvec> copy_g{};
+                    copy_g.set_edges(storage.phi_g, refs_g_pred_source);
+                    ext_force_sequence.push_back(
+                        std::make_shared<decltype(copy_g)>(std::move(copy_g)));
                 }
             } else {
                 shambase::throw_unimplemented(

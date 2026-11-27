@@ -175,6 +175,19 @@ namespace shammodels::basegodunov {
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
+            // Dumps of the gravity in the predictor written before the "g_pred" field (g^n then
+            // computed on the ghost cells from phi) do not have it: load them without the gravity
+            // in the predictor, whose nodes need the field
+            if (solver.solver_config.gravity_config.predictor
+                && !sched.pdl_old().has_field_name("g_pred")) {
+                if (shamcomm::world_rank() == 0) {
+                    logger::warn_ln(
+                        "Godunov",
+                        "dump without the g_pred field: the gravity in the predictor is disabled");
+                }
+                solver.solver_config.gravity_config.predictor = false;
+            }
+
             // Migrate old dumps that stored time/dt in solver_config.time_state (before PR #1932).
             // Checking for time is equivalent to dumps written after this migration. It must be
             // checked before init_solver_graph, which creates the time/dt edges if missing.

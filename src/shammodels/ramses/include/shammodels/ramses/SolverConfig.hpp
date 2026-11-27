@@ -94,6 +94,11 @@ namespace shammodels::basegodunov {
         Tscal tol_hp_bk = 1e-6;
         /// Maximum number of iterations of the Poisson solver
         u32 Niter_max = 100;
+        /// Add the self-gravity acceleration g^n = -grad phi^n to the half time step prediction of
+        /// the face velocities (MUSCL-Hancock predictor), as RAMSES (ctoprim adds g dt/2 to the
+        /// velocity). Without it, the mass fluxes miss the acceleration of the first half step and
+        /// the collapse lags by an error of first order in the time step.
+        bool predictor = false;
         inline Tscal get_tolerance() { return tol; }
         inline bool is_gravity_on() { return gravity_mode != NoGravity; }
     };

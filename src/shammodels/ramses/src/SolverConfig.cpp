@@ -45,6 +45,11 @@ namespace shammodels::basegodunov {
         if (is_gravity_on()) {
             pdl.add_field<Tscal>("phi", AMRBlock::block_size);
             pdl.add_field<Tscal>("phi_old", AMRBlock::block_size);
+            if (gravity_config.predictor) {
+                // g^{n+1} of the trapezoidal kick of the step, the g^n of the half time step
+                // prediction of the next step (exchanged with the ghost zones as the other fields)
+                pdl.add_field<Tvec>("g_pred", AMRBlock::block_size);
+            }
         }
 
         if (is_gas_passive_scalar_on()) {
@@ -69,6 +74,7 @@ namespace shammodels::basegodunov {
             {"gravity_tol", p.gravity_config.tol},
             {"gravity_tol_happy_breakdown", p.gravity_config.tol_hp_bk},
             {"gravity_Niter_max", p.gravity_config.Niter_max},
+            {"gravity_in_predictor", p.gravity_config.predictor},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
             {"hydro_riemann_solver", p.riemann_config},
             {"passive_scalar_mode", p.npscal_gas_config.npscal_gas},
@@ -153,6 +159,7 @@ namespace shammodels::basegodunov {
         _get_to_if_contains("gravity_tol", p.gravity_config.tol);
         _get_to_if_contains("gravity_tol_happy_breakdown", p.gravity_config.tol_hp_bk);
         _get_to_if_contains("gravity_Niter_max", p.gravity_config.Niter_max);
+        _get_to_if_contains("gravity_in_predictor", p.gravity_config.predictor);
         _get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
         _get_to_if_contains("hydro_riemann_solver", p.riemann_config);
         _get_to_if_contains("passive_scalar_mode", p.npscal_gas_config.npscal_gas);

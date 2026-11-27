@@ -484,6 +484,22 @@ namespace shammodels::basegodunov {
     one of the right-hand side.
 )==")
             .def(
+                "set_self_gravity_in_predictor",
+                [](TConfig &self, bool enable) {
+                    self.gravity_config.predictor = enable;
+                },
+                py::arg("enable"),
+                R"==(
+    Add the self-gravity acceleration to the half time step prediction of the face states.
+
+    With MUSCL-Hancock (``set_face_time_interpolation(True)``), the face velocities are predicted
+    at the half time step with :math:`\partial_t \mathbf{v} = -(\mathbf{v}\cdot\nabla)\mathbf{v}
+    - \nabla P / \rho`. With ``enable=True``, :math:`\mathbf{g}^n = -\nabla\phi^n` is added, as
+    RAMSES does (``ctoprim``: :math:`\mathbf{v} + \mathbf{g}\,\Delta t/2`), so that the mass fluxes
+    include the acceleration of the first half step. :math:`\phi^n` is the potential solved at
+    the end of the previous step (no additional Poisson solve). Default: False.
+)==")
+            .def(
                 "set_self_gravity_happy_breakdown_tol",
                 [](TConfig &self, Tscal tol) {
                     self.gravity_config.tol_hp_bk = tol;

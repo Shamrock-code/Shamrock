@@ -21,6 +21,7 @@ set(Sources
     src/modules/ResetExtForceAcc.cpp
     src/modules/AddExtForceConstantGravity.cpp
     src/modules/AddExtForcePointMassGravity.cpp
+    src/modules/AddExtForceBurkertProfile.cpp
     src/modules/AddExtForceField.cpp
     src/modules/ComputeNextRho.cpp
     src/modules/ApplyExtForceGas.cpp

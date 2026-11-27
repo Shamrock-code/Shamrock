@@ -1,0 +1,98 @@
+name: Auto-label PRs
+
+on:
+  pull_request:
+    types: [opened, edited, ready_for_review, converted_to_draft]
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    
+    steps:
+      - name: Auto-label draft PRs
+        if: github.event.pull_request.draft == true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            
+            // Remove other state labels if they exist
+            const labelsToRemove = ['in-review', 'ready-to-merge'];
+            for (const label of labelsToRemove) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: number,
+                  name: label
+                });
+                console.log(`Removed ${label} label from PR #${number}`);
+              } catch (error) {
+                // Label might not exist, which is fine
+                console.log(`${label} label not found or already removed`);
+              }
+            }
+            
+            // Add 'draft' label
+            try {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: number,
+                labels: ['draft']
+              });
+              console.log('Added draft label to PR #' + number);
+            } catch (error) {
+              console.log('Draft label might already exist or failed to add:', error.message);
+            }
+      
+      - name: Auto-label ready for review PRs
+        if: github.event.pull_request.draft == false
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            
+            // Get current labels to check if ready-to-merge is already set
+            const currentLabels = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number: number
+            });
+            
+            const hasReadyToMerge = currentLabels.data.some(label => label.name === 'ready-to-merge');
+            
+            // Only auto-transition to in-review if not already ready-to-merge
+            if (!hasReadyToMerge) {
+              // Remove 'draft' label if it exists
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: number,
+                  name: 'draft'
+                });
+                console.log('Removed draft label from PR #' + number);
+              } catch (error) {
+                // Label might not exist, which is fine
+                console.log('draft label not found or already removed');
+              }
+              
+              // Add 'in-review' label
+              try {
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: number,
+                  labels: ['in-review']
+                });
+                console.log('Added in-review label to PR #' + number);
+              } catch (error) {
+                console.log('in-review label might already exist or failed to add:', error.message);
+              }
+            } else {
+              console.log('PR #' + number + ' already has ready-to-merge label, skipping auto-labeling');
+            }

@@ -7,7 +7,7 @@ made of boundary particles (``freeze_flag != 0``) at rest, carrying the left and
 test checks that:
 
 - the boundary particles keep their position, velocity and internal energy bit for bit,
-- the Sod solution between the walls is not perturbed by the walls.
+- the gas next to the walls stays at rest in its initial state, i.e. the walls hold the gas.
 
 The run stops before the waves reach the walls: frozen boundary particles only push back on the
 gas through their summed density, so a strong compression against them (e.g. a reflected shock)
@@ -147,30 +147,43 @@ def check_walls_unchanged(label):
 #################
 ### Sod solution between the walls (waves have not reached the walls yet)
 #################
-t_sod = 0.245
+t_sod = 0.02
 model.evolve_until(t_sod)
 
 check_walls_unchanged(f"t = {t_sod}")
 
-sod = shamrock.phys.SodTube(gamma=gamma, rho_1=1, P_1=1, rho_5=0.125, P_5=0.1)
-sodanalysis = model.make_analysis_sodtube(sod, (1, 0, 0), t_sod, 0.0, -0.5, 0.5)
-rho, v, P = sodanalysis.compute_L2_dist()
-vx, vy, vz = v
+# gas within one kernel radius (the largest one, on the low density side) of the walls
+band = 3 * 1.2 * dr * fact
 
-print("current errors :")
-print(f"err_rho = {rho}")
-print(f"err_vx = {vx}")
-print(f"err_vy = {vy}")
-print(f"err_vz = {vz}")
-print(f"err_P = {P}")
+# the gas next to the walls is at rest to round-off (about 1e-14) when the walls hold it, while
+# it reaches |v| ~ 0.2 and |du/u| ~ 0.6 if the walls carry no pressure
+tol = 1e-10
 
-# loose bounds (twice the errors obtained when the test was written): the walls must not degrade
-# the solution, the exact values are a regression check of the SPH solver itself, already covered
-# by sod_tube_sph.py
-max_err = {"rho": 7e-4, "vx": 6e-3, "P": 7e-4}
-for name, val in [("rho", rho), ("vx", vx), ("P", P)]:
-    if not val < max_err[name]:
-        err_log += f"L2 error on {name} = {val} is above {max_err[name]}\n"
+data = ctx.collect_data()
+is_gas = data["freeze_flag"] == 0
+x_gas = data["xyz"][is_gas][:, 0]
+v_gas = data["vxyz"][is_gas]
+u_gas = data["uint"][is_gas]
+
+for side, near_wall, u_0 in [
+    ("left", x_gas < -x_wall + band, u_g),
+    ("right", x_gas > x_wall - band, u_d),
+]:
+    n_near = int(np.sum(near_wall))
+    if n_near == 0:
+        err_log += f"no gas particle next to the {side} wall\n"
+        continue
+
+    max_v = np.max(np.abs(v_gas[near_wall]))
+    max_du = np.max(np.abs(u_gas[near_wall] / u_0 - 1))
+    print(f"{side} wall: {n_near} gas particles nearby, max |v| = {max_v}, max |du/u| = {max_du}")
+
+    if not max_v < tol:
+        err_log += f"the gas next to the {side} wall moves: max |v| = {max_v}\n"
+    if not max_du < tol:
+        err_log += (
+            f"the gas next to the {side} wall changed its internal energy: max |du/u| = {max_du}\n"
+        )
 
 if err_log != "":
     exit("Test did not pass : \n" + err_log)

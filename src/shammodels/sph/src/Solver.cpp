@@ -305,6 +305,32 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     ensure_sync_edge("dt", "dt", Tscal{0});
     ensure_sync_edge("cfl_multiplier", "C_{\\rm CFL}", Tscal{1e-2});
 
+    // last cfl dt, plus one edge per cfl type if cfl detail is on
+    // (the types must match the ones evaluated in evolve_once)
+    ensure_sync_edge(cfl_dt_edge_name, "\\Delta t_{\\rm cfl}", Tscal{0});
+    if (solver_config.show_cfl_detail) {
+        auto ensure_cfl_detail_edge = [&](const std::string &type, const std::string &tex_type) {
+            ensure_sync_edge(
+                cfl_dt_detail_edge_prefix + type,
+                "\\Delta t_{\\rm cfl, " + tex_type + "}",
+                Tscal{0});
+        };
+        ensure_cfl_detail_edge("courant", "courant");
+        ensure_cfl_detail_edge("force", "force");
+        if (solver_config.do_nimhd()) {
+            ensure_cfl_detail_edge("NIMHD", "NIMHD");
+        }
+        if (has_psi_field) {
+            ensure_cfl_detail_edge("divB_cleaning", "\\nabla \\cdot B\\ cleaning");
+        }
+        if (has_s_j_field) {
+            ensure_cfl_detail_edge("dust1_fluid", "dust\\ 1\\ fluid");
+            ensure_cfl_detail_edge("dust_drift", "dust\\ drift");
+        }
+        // sinks can be added at any time, so this edge is always registered
+        ensure_cfl_detail_edge("sink_sink", "sink-sink");
+    }
+
     ensure_sync_edge("sink_pos", "\\bf{r}_{\\mathrm{sink}}", std::vector<Tvec>{});
     ensure_sync_edge("sink_vel", "\\bf{v}_{\\mathrm{sink}}", std::vector<Tvec>{});
     ensure_sync_edge("sink_acc_sph", "\\bf{a}_{\\mathrm{sink, sph}}", std::vector<Tvec>{});
@@ -312,6 +338,11 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     ensure_sync_edge("sink_mass", "m_{\\mathrm{sink}}", std::vector<Tscal>{});
     ensure_sync_edge("sink_angular_momentum", "\\bf{L}_{\\mathrm{sink}}", std::vector<Tvec>{});
     ensure_sync_edge("sink_accretion_radius", "r_{\\mathrm{accretion}}", std::vector<Tscal>{});
+    // per species accreted dust mass, flattened as [i_sink * ndust + j_dust]
+    if (has_s_j_field) {
+        ensure_sync_edge(
+            "sink_accreted_dust_mass", "m_{\\mathrm{sink, acc}, j}", std::vector<Tscal>{});
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////
     // main solver graph
@@ -925,6 +956,30 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         shambase::get_check_ref(free_axyz).set_edges(
             solver_graph.get_edge_ptr<FieldRefs<Tvec>>("axyz"));
 
+        // dust fields needed to track the accreted dust mass per species (monofluid TVA only)
+        u32 sink_acc_ndust = has_s_j_field ? solver_config.dust_config.get_dust_nvar() : 0;
+
+        std::optional<std::shared_ptr<FieldRefs<Tscal>>> sink_acc_hpart = std::nullopt;
+        std::optional<std::shared_ptr<FieldRefs<Tscal>>> sink_acc_s_j   = std::nullopt;
+
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> attach_sink_dust_fields{};
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> free_sink_dust_fields{};
+
+        auto add_sink_dust_field = [&](const std::string &name) {
+            auto edge = solver_graph.get_edge_ptr<FieldRefs<Tscal>>(name);
+            attach_sink_dust_fields.push_back(solver_graph.get_node_ptr_base("attach_" + name));
+            auto free_node
+                = solver_graph.register_node("free_" + name + "_refs_sink", NodeFreeAlloc{});
+            shambase::get_check_ref(free_node).set_edges(edge);
+            free_sink_dust_fields.push_back(free_node);
+            return edge;
+        };
+
+        if (has_s_j_field) {
+            sink_acc_hpart = add_sink_dust_field("hpart");
+            sink_acc_s_j   = add_sink_dust_field("s_j");
+        }
+
         // sink synchronized edges, kept around as they are used by several nodes below
         auto sink_positions
             = sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_pos");
@@ -938,6 +993,14 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             = sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tscal>>>("sink_mass");
         auto sink_accr_radii = sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tscal>>>(
             "sink_accretion_radius");
+        // only registered with monofluid TVA dust (see synchronized edges above)
+        std::optional<std::shared_ptr<IDataEdgeSerializable<std::vector<Tscal>>>>
+            sink_accreted_dust_mass = std::nullopt;
+        if (sink_acc_ndust > 0) {
+            sink_accreted_dust_mass
+                = sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tscal>>>(
+                    "sink_accreted_dust_mass");
+        }
 
         solver_graph.register_edge(
             "sink_accretion_table", Field<u32>(1, "sink_accretion_table", "\\mathrm{acc}"));
@@ -952,7 +1015,8 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             solver_graph.get_edge_ptr<Field<u32>>("sink_accretion_table"));
 
         auto qty_node = solver_graph.register_node(
-            "accrete_quantities", modules::SinkParticlesAccreteQuantities<Tvec>{});
+            "accrete_quantities",
+            modules::SinkParticlesAccreteQuantities<Tvec>{sink_acc_ndust, Kernel::hfactd});
         shambase::get_check_ref(qty_node).set_edges(
             solver_graph.get_edge_ptr<IDataEdge<Tscal>>("gpart_mass"),
             sync_data.get_edge_ptr<IDataEdge<Tscal>>("dt"),
@@ -960,12 +1024,15 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"),
             solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"),
             solver_graph.get_edge_ptr<FieldRefs<Tvec>>("axyz"),
+            sink_acc_hpart,
+            sink_acc_s_j,
             solver_graph.get_edge_ptr<Field<u32>>("sink_accretion_table"),
             sink_positions,
             sink_velocities,
             sink_accelerations,
             sink_angmom,
-            sink_mass);
+            sink_mass,
+            sink_accreted_dust_mass);
 
         auto evict_node = solver_graph.register_node(
             "evict_accreted_particles", modules::SinkParticlesEvictAccretedParticles<Tvec>{});
@@ -975,28 +1042,42 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                 solver_graph.get_edge_ptr<Field<u32>>("sink_accretion_table"),
                 solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"));
 
+        // the "time_step" sequence (set_gpart_mass, attach fields to scheduler, ...)
+        // has not run yet at this stage of the timestep
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> accretion_sequence{
+            solver_graph.get_node_ptr_base("set_gpart_mass"),
+            solver_graph.get_node_ptr_base("set_scheduler_patchdata"),
+            solver_graph.get_node_ptr_base("attach_part_counts"),
+            solver_graph.get_node_ptr_base("attach_xyz"),
+            solver_graph.get_node_ptr_base("attach_vxyz"),
+            solver_graph.get_node_ptr_base("attach_axyz"),
+        };
+        accretion_sequence.insert(
+            accretion_sequence.end(),
+            attach_sink_dust_fields.begin(),
+            attach_sink_dust_fields.end());
+
+        // Actually perform the accretion
+        accretion_sequence.push_back(flag_node);
+        accretion_sequence.push_back(qty_node);
+        accretion_sequence.push_back(evict_node);
+
+        // free the refs since the particle counts may have changed
+        accretion_sequence.push_back(free_xyz);
+        accretion_sequence.push_back(free_vxyz);
+        accretion_sequence.push_back(free_axyz);
+        accretion_sequence.insert(
+            accretion_sequence.end(), free_sink_dust_fields.begin(), free_sink_dust_fields.end());
+
+        auto accretion_body = solver_graph.register_node(
+            "sink accretion body",
+            OperationSequence("sink accretion body", std::move(accretion_sequence)));
+
+        // skip the accretion entirely when there are no sinks
         auto if_has_sinks = solver_graph.register_node(
-            "if_has_sinks",
-            OperationSequence(
-                "if_has_sinks",
-                {
-                    // the "time_step" sequence (set_gpart_mass, attach fields to scheduler, ...)
-                    // has not run yet at this stage of the timestep
-                    solver_graph.get_node_ptr_base("set_gpart_mass"),
-                    solver_graph.get_node_ptr_base("set_scheduler_patchdata"),
-                    solver_graph.get_node_ptr_base("attach_part_counts"),
-                    solver_graph.get_node_ptr_base("attach_xyz"),
-                    solver_graph.get_node_ptr_base("attach_vxyz"),
-                    solver_graph.get_node_ptr_base("attach_axyz"),
-                    // Actually perform the accretion
-                    flag_node,
-                    qty_node,
-                    evict_node,
-                    // free the refs since the particle counts may have changed
-                    free_xyz,
-                    free_vxyz,
-                    free_axyz,
-                }));
+            "if_has_sinks", OperationIf("if_has_sinks", accretion_body));
+        shambase::get_check_ref(if_has_sinks)
+            .set_edges(solver_graph.get_edge_ptr<IDataEdge<bool>>("has_sinks"));
 
         // register the actual node that will be used
         solver_graph.register_node(
@@ -3103,10 +3184,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             }
         }
 
-        // if (solver_config.has_field_div_b()) {
-        //     sph::modules::DiffOperatorsB<Tvec, Kern>(context, solver_config, storage)
-        //         .update_divB();
-        // }
+        if (solver_config.has_field_div_b()) {
+            sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage).update_div_b();
+        }
 
         // if (solver_config.has_field_curl_b()) {
         //     sph::modules::DiffOperatorsB<Tvec, Kern>(context, solver_config, storage)
@@ -3687,143 +3767,133 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 /////////////////////////////////////////////
 
                 {
-
                     auto &q = shamsys::instance::get_compute_scheduler().get_queue();
-                    sham::EventList depends_list;
-
-                    auto xyz                  = buf_xyz.get_read_access(depends_list);
-                    auto vxyz                 = buf_vxyz.get_read_access(depends_list);
-                    auto hpart                = buf_hpart.get_read_access(depends_list);
-                    auto u                    = buf_uint.get_read_access(depends_list);
-                    auto pressure             = buf_pressure.get_read_access(depends_list);
-                    auto cs                   = cs_buf.get_read_access(depends_list);
-                    auto vsig                 = vsig_buf.get_write_access(depends_list);
-                    auto particle_looper_ptrs = pcache.get_read_access(depends_list);
 
                     NamedStackEntry tmppp{"compute vsig"};
-                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                        const Tscal pmass    = solver_config.gpart_mass;
-                        const Tscal alpha_u  = 1.0;
-                        const Tscal alpha_AV = 1.0;
-                        const Tscal beta_AV  = 2.0;
 
-                        tree::ObjectCacheIterator particle_looper(particle_looper_ptrs);
+                    const Tscal pmass    = solver_config.gpart_mass;
+                    const Tscal alpha_AV = 1.0;
+                    const Tscal beta_AV  = 2.0;
 
-                        constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{
+                            pcache, buf_xyz, buf_vxyz, buf_hpart, buf_uint, buf_pressure, cs_buf},
+                        sham::MultiRef{vsig_buf},
+                        pdat.get_obj_cnt(),
+                        [pmass, alpha_AV, beta_AV](
+                            u32 id_a,
+                            auto ploop_ptrs,
+                            const Tvec *__restrict xyz,
+                            const Tvec *__restrict vxyz,
+                            const Tscal *__restrict hpart,
+                            const Tscal *__restrict u,
+                            const Tscal *__restrict pressure,
+                            const Tscal *__restrict cs,
+                            Tscal *__restrict vsig) {
+                            using namespace shamrock::sph;
 
-                        shambase::parallel_for(
-                            cgh, pdat.get_obj_cnt(), "compute vsig", [=](i32 id_a) {
-                                using namespace shamrock::sph;
-
-                                Tvec sum_axyz  = {0, 0, 0};
-                                Tscal sum_du_a = 0;
-                                Tscal h_a      = hpart[id_a];
-
-                                Tvec xyz_a  = xyz[id_a];
-                                Tvec vxyz_a = vxyz[id_a];
-
-                                Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
-                                Tscal rho_a_sq  = rho_a * rho_a;
-                                Tscal rho_a_inv = 1. / rho_a;
-
-                                Tscal P_a = pressure[id_a];
-
-                                const Tscal u_a = u[id_a];
-
-                                Tscal cs_a = cs[id_a];
-
-                                Tscal vsig_max = 0;
-
-                                particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                                    // compute only omega_a
-                                    Tvec dr    = xyz_a - xyz[id_b];
-                                    Tscal rab2 = sycl::dot(dr, dr);
-                                    Tscal h_b  = hpart[id_b];
-
-                                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
-                                        return;
-                                    }
-
-                                    Tscal rab       = sycl::sqrt(rab2);
-                                    Tvec vxyz_b     = vxyz[id_b];
-                                    Tvec v_ab       = vxyz_a - vxyz_b;
-                                    const Tscal u_b = u[id_b];
-
-                                    Tvec r_ab_unit = dr / rab;
-
-                                    if (rab < 1e-9) {
-                                        r_ab_unit = {0, 0, 0};
-                                    }
-
-                                    Tscal rho_b         = rho_h(pmass, h_b, Kernel::hfactd);
-                                    Tscal P_b           = pressure[id_b];
-                                    Tscal cs_b          = cs[id_b];
-                                    Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
-                                    Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
-
-                                    /////////////////
-                                    // internal energy update
-                                    //  scalar : f32  | vector : f32_3
-                                    const Tscal alpha_a = alpha_AV;
-                                    const Tscal alpha_b = alpha_AV;
-
-                                    Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
-
-                                    vsig_max = sycl::fmax(vsig_max, vsig_a);
-                                });
-
-                                vsig[id_a] = vsig_max;
-                            });
-                    });
-
-                    if (has_psi_field) {
-                        NamedStackEntry tmppp{"compute vclean"};
-                        Tscal const mu_0                      = solver_config.get_constant_mu_0();
-                        sham::DeviceBuffer<Tscal> &vclean_buf = vclean_dt->get_buf(cur_p.id_patch);
-
-                        Tvec *B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf)
-                                             .get_write_access(depends_list);
-
-                        auto vclean = vclean_buf.get_write_access(depends_list);
-
-                        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                            const Tscal pmass = solver_config.gpart_mass;
-
-                            tree::ObjectCacheIterator particle_looper(particle_looper_ptrs);
+                            tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
                             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                            shambase::parallel_for(
-                                cgh, pdat.get_obj_cnt(), "compute vclean", [=](i32 id_a) {
-                                    using namespace shamrock::sph;
+                            Tvec sum_axyz  = {0, 0, 0};
+                            Tscal sum_du_a = 0;
+                            Tscal h_a      = hpart[id_a];
 
-                                    Tscal h_a       = hpart[id_a];
-                                    Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
-                                    const Tscal u_a = u[id_a];
-                                    Tscal cs_a      = cs[id_a];
-                                    Tvec B_a        = B_on_rho[id_a] * rho_a;
+                            Tvec xyz_a  = xyz[id_a];
+                            Tvec vxyz_a = vxyz[id_a];
 
-                                    Tscal vclean_a = shamphys::MHD_physics<Tvec, Tscal>::v_shock(
-                                        cs_a, B_a, rho_a, mu_0);
+                            Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
+                            Tscal rho_a_sq  = rho_a * rho_a;
+                            Tscal rho_a_inv = 1. / rho_a;
 
-                                    vclean[id_a] = vclean_a;
-                                });
+                            Tscal P_a = pressure[id_a];
+
+                            const Tscal u_a = u[id_a];
+
+                            Tscal cs_a = cs[id_a];
+
+                            Tscal vsig_max = 0;
+
+                            particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                                // compute only omega_a
+                                Tvec dr    = xyz_a - xyz[id_b];
+                                Tscal rab2 = sycl::dot(dr, dr);
+                                Tscal h_b  = hpart[id_b];
+
+                                if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                                    return;
+                                }
+
+                                Tscal rab       = sycl::sqrt(rab2);
+                                Tvec vxyz_b     = vxyz[id_b];
+                                Tvec v_ab       = vxyz_a - vxyz_b;
+                                const Tscal u_b = u[id_b];
+
+                                Tvec r_ab_unit = dr / rab;
+
+                                if (rab < 1e-9) {
+                                    r_ab_unit = {0, 0, 0};
+                                }
+
+                                Tscal rho_b         = rho_h(pmass, h_b, Kernel::hfactd);
+                                Tscal P_b           = pressure[id_b];
+                                Tscal cs_b          = cs[id_b];
+                                Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
+                                Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
+
+                                /////////////////
+                                // internal energy update
+                                //  scalar : f32  | vector : f32_3
+                                const Tscal alpha_a = alpha_AV;
+                                const Tscal alpha_b = alpha_AV;
+
+                                Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
+
+                                vsig_max = sycl::fmax(vsig_max, vsig_a);
+                            });
+
+                            vsig[id_a] = vsig_max;
                         });
-                        mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf).complete_event_state(e);
-                        vclean_buf.complete_event_state(e);
-                    };
+                }
 
-                    buf_xyz.complete_event_state(e);
-                    buf_vxyz.complete_event_state(e);
-                    buf_hpart.complete_event_state(e);
-                    buf_uint.complete_event_state(e);
-                    buf_pressure.complete_event_state(e);
-                    cs_buf.complete_event_state(e);
-                    vsig_buf.complete_event_state(e);
+                if (has_psi_field) {
+                    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-                    sham::EventList resulting_events;
-                    resulting_events.add_event(e);
-                    pcache.complete_event_state(resulting_events);
+                    NamedStackEntry tmppp{"compute vclean"};
+                    Tscal const mu_0                      = solver_config.get_constant_mu_0();
+                    sham::DeviceBuffer<Tscal> &vclean_buf = vclean_dt->get_buf(cur_p.id_patch);
+                    sham::DeviceBuffer<Tvec> &buf_B_on_rho
+                        = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
+
+                    const Tscal pmass = solver_config.gpart_mass;
+
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{buf_hpart, buf_uint, cs_buf, buf_B_on_rho},
+                        sham::MultiRef{vclean_buf},
+                        pdat.get_obj_cnt(),
+                        [pmass, mu_0](
+                            u32 id_a,
+                            const Tscal *__restrict hpart,
+                            const Tscal *__restrict u,
+                            const Tscal *__restrict cs,
+                            const Tvec *__restrict B_on_rho,
+                            Tscal *__restrict vclean) {
+                            using namespace shamrock::sph;
+
+                            Tscal h_a       = hpart[id_a];
+                            Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
+                            const Tscal u_a = u[id_a];
+                            Tscal cs_a      = cs[id_a];
+                            Tvec B_a        = B_on_rho[id_a] * rho_a;
+
+                            Tscal vclean_a = shamphys::MHD_physics<Tvec, Tscal>::v_shock(
+                                cs_a, B_a, rho_a, mu_0);
+
+                            vclean[id_a] = vclean_a;
+                        });
                 }
             });
 
@@ -4131,6 +4201,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             }
 
             next_cfl = shamalgs::collective::allreduce_min(rank_dt);
+
+            // store the last cfl dt in synchronized edges (values are reduced over all ranks)
+            set_cfl_dt_edge_value(cfl_dt_edge_name, next_cfl);
+            if (show_cfl_detail) {
+                for (auto &[key, value] : cfl_detail) {
+                    set_cfl_dt_edge_value(cfl_dt_detail_edge_prefix + key, value);
+                }
+            }
 
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(

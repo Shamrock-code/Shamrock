@@ -96,7 +96,7 @@ gamma = 5.0 / 3.0
 
 cs0 = 1.0
 v_iso = run(lambda cfg: cfg.set_eos_isothermal(cs0))
-v_baro_iso = run(lambda cfg: cfg.set_eos_barotropic(cs0=cs0, rho0=1e30, gamma=gamma))
+v_baro_iso = run(lambda cfg: cfg.set_eos_barotropic(cs0=cs0, rho0=1e30, gamma0=gamma))
 compare("isothermal limit", v_iso, v_baro_iso, 1e-10)
 
 # %%
@@ -109,16 +109,16 @@ rho0 = 1e-12 * rho_mean
 cs0_poly = np.sqrt(K * rho0 ** (gamma - 1))
 
 v_poly = run(lambda cfg: cfg.set_eos_polytropic(K, gamma))
-v_baro_poly = run(lambda cfg: cfg.set_eos_barotropic(cs0=cs0_poly, rho0=rho0, gamma=gamma))
+v_baro_poly = run(lambda cfg: cfg.set_eos_barotropic(cs0=cs0_poly, rho0=rho0, gamma0=gamma))
 compare("adiabatic limit", v_poly, v_baro_poly, 1e-6)
 
 # %%
 # Invalid parameters must be rejected when the config is set
 
 for bad in [
-    dict(cs0=-1.0, rho0=1.0, gamma=gamma),
-    dict(cs0=1.0, rho0=0.0, gamma=gamma),
-    dict(cs0=1.0, rho0=1.0, gamma=1.0),
+    dict(cs0=-1.0, rho0=1.0, gamma0=gamma),
+    dict(cs0=1.0, rho0=0.0, gamma0=gamma),
+    dict(cs0=1.0, rho0=1.0, gamma0=1.0),
 ]:
     ctx = shamrock.Context()
     ctx.pdata_layout_new()

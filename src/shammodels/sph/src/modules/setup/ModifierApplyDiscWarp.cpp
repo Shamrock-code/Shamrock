@@ -17,6 +17,7 @@
 
 #include "shambase/constants.hpp"
 #include "shamalgs/collective/indexing.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
@@ -47,51 +48,53 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyDiscWarp<
         = tmp.get_field_buf_ref<Tvec>(pdl.get_field_idx<Tvec>("vxyz"));
 
     auto &q = shamsys::instance::get_compute_scheduler().get_queue();
-    sham::EventList depends_list;
+    // the parent generator may return an empty layer (e.g. once exhausted, or on ranks that
+    // receive no particles), and kernel_call throws on n == 0
+    if (tmp.get_obj_cnt() > 0) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{},
+            sham::MultiRef{buf_xyz, buf_vxyz},
+            tmp.get_obj_cnt(),
+            [Rwarp, Hwarp, inclination, posangle](
+                u32 id_a, Tvec *__restrict acc_xyz, Tvec *__restrict acc_vxyz) {
+                Tvec &xyz_a  = acc_xyz[id_a];
+                Tvec &vxyz_a = acc_vxyz[id_a];
 
-    auto acc_xyz  = buf_xyz.get_write_access(depends_list);
-    auto acc_vxyz = buf_vxyz.get_write_access(depends_list);
+                Tscal r = sycl::sqrt(sycl::dot(xyz_a, xyz_a));
 
-    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        shambase::parallel_for(cgh, tmp.get_obj_cnt(), "Warp", [=](i32 id_a) {
-            Tvec &xyz_a  = acc_xyz[id_a];
-            Tvec &vxyz_a = acc_vxyz[id_a];
+                Tvec k    = Tvec(-sycl::sin(posangle), sycl::cos(posangle), 0.);
+                Tscal psi = 0.;
 
-            Tscal r = sycl::sqrt(sycl::dot(xyz_a, xyz_a));
+                // convert to radians (sycl functions take radians)
+                Tscal incl_rad = inclination * shambase::constants::pi<Tscal> / 180.;
 
-            Tvec k    = Tvec(-sycl::sin(posangle), sycl::cos(posangle), 0.);
-            Tscal psi = 0.;
+                Tscal effective_inc;
+                if (r < Rwarp - Hwarp) {
+                    effective_inc = 0.;
+                } else if (r < Rwarp + Hwarp && r > Rwarp - Hwarp) {
+                    effective_inc = sycl::asin(
+                        0.5
+                        * (1.
+                           + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (r - Rwarp)))
+                        * sycl::sin(incl_rad));
+                    psi          = shambase::constants::pi<Tscal>
+                                   * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad)
+                                   / sycl::sqrt(1. - (0.5 * sycl::pown(sycl::sin(incl_rad), 2)));
+                    Tscal psimax = sycl::max(psimax, psi);
+                } else {
+                    effective_inc = incl_rad;
+                }
 
-            // convert to radians (sycl functions take radians)
-            Tscal incl_rad = inclination * shambase::constants::pi<Tscal> / 180.;
-
-            Tscal effective_inc;
-            if (r < Rwarp - Hwarp) {
-                effective_inc = 0.;
-            } else if (r < Rwarp + Hwarp && r > Rwarp - Hwarp) {
-                effective_inc = sycl::asin(
-                    0.5
-                    * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (r - Rwarp)))
-                    * sycl::sin(incl_rad));
-                psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad)
-                      / sycl::sqrt(1. - (0.5 * sycl::pown(sycl::sin(incl_rad), 2)));
-                Tscal psimax = sycl::max(psimax, psi);
-            } else {
-                effective_inc = incl_rad;
-            }
-
-            Tvec w  = sycl::cross(k, xyz_a);
-            Tvec wv = sycl::cross(k, vxyz_a);
-            // Rodrigues' rotation formula
-            xyz_a  = xyz_a * sycl::cos(effective_inc) + w * sycl::sin(effective_inc)
-                     + k * sycl::dot(k, xyz_a) * (1. - sycl::cos(effective_inc));
-            vxyz_a = vxyz_a * sycl::cos(effective_inc) + wv * sycl::sin(effective_inc)
-                     + k * sycl::dot(k, vxyz_a) * (1. - sycl::cos(effective_inc));
-        });
-    });
-
-    buf_xyz.complete_event_state(e);
-    buf_vxyz.complete_event_state(e);
+                Tvec w  = sycl::cross(k, xyz_a);
+                Tvec wv = sycl::cross(k, vxyz_a);
+                // Rodrigues' rotation formula
+                xyz_a  = xyz_a * sycl::cos(effective_inc) + w * sycl::sin(effective_inc)
+                         + k * sycl::dot(k, xyz_a) * (1. - sycl::cos(effective_inc));
+                vxyz_a = vxyz_a * sycl::cos(effective_inc) + wv * sycl::sin(effective_inc)
+                         + k * sycl::dot(k, vxyz_a) * (1. - sycl::cos(effective_inc));
+            });
+    }
 
     return tmp;
 }

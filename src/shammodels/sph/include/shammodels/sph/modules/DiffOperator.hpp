@@ -12,6 +12,7 @@
 /**
  * @file DiffOperator.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -43,6 +44,8 @@ namespace shammodels::sph::modules {
 
         void update_divv();
         void update_curlv();
+
+        void update_div_b();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

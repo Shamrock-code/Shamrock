@@ -218,10 +218,6 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchDataLayer::keep_ids(sycl::buffer<u32> &index_map, u32 len) {
-        index_remap_resize(index_map, len);
-    }
-
     void PatchDataLayer::keep_ids(sham::DeviceBuffer<u32> &index_map, u32 len) {
         index_remap_resize(index_map, len);
     }

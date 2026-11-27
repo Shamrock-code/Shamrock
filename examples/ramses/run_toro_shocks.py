@@ -29,7 +29,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from shamrock.model_ramses import HLL, HLLC_PVRS, HLLC_Davis, Rusanov
+from shamrock.model_ramses import HLL, HLLC_PVRS, HLLC_RAMSES, HLLC_Davis, Rusanov
 
 import shamrock
 
@@ -145,6 +145,8 @@ def run_test(
         cfg.set_riemann_solver(HLLC_PVRS)
     elif riemann_solver == "hllc_davis":
         cfg.set_riemann_solver(HLLC_Davis)
+    elif riemann_solver == "hllc_ramses":
+        cfg.set_riemann_solver(HLLC_RAMSES)
     else:
         raise ValueError(f"Invalid Riemann solver: {riemann_solver}")
 

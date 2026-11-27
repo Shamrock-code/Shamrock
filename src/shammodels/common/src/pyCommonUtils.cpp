@@ -10,6 +10,7 @@
 /**
  * @file pyCommonUtils.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -24,6 +25,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/config/enum_NeighCacheStrategy.hpp"
+#include "shammodels/common/config/enum_TensileCorrection.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <pybind11/cast.h>
@@ -121,6 +123,32 @@ ON_PYTHON_INIT {
     Same algorithm as TwoStage, but every tree traversal stack (leaf to leaf search
     and particle parent-leaf search) is placed in work-group local memory instead of a
     per-work-item std::array.
+)==");
+
+    py::enum_<shammodels::TensileCorrection>(
+        m,
+        "TensileCorrection",
+        R"==(
+    Prefactor of the tensile instability correction -Bhat (div B) in the SPMHD momentum
+    equation.
+
+    Usage
+    -----
+    >>> from shamrock import TensileCorrection
+    >>> cfg.set_IdealMHD(sigma_mhd=1, tensile_corr=TensileCorrection.PhantomBetaSwitch)
+)==")
+        .value(
+            "Borve",
+            shammodels::TensileCorrection::Borve,
+            R"==(
+    Bhat = B/2 regardless of the plasma beta (Borve et al. 2004). This is the default.
+)==")
+        .value(
+            "PhantomBetaSwitch",
+            shammodels::TensileCorrection::PhantomBetaSwitch,
+            R"==(
+    Bhat = f(beta) B, with f = 1 for beta < 2, (10 - beta)/8 for 2 <= beta < 10 and 0
+    otherwise (Price et al. 2018, Phantom paper, eq. 178).
 )==");
 
     m.def(

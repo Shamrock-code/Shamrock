@@ -657,8 +657,8 @@ struct shammodels::sph::SolverConfig {
     /**
      * @brief Whether the simulation contains frozen boundary particles
      *
-     * When enabled, a `u32` field `freeze_id` is added to the layout. Particles with a non-zero
-     * `freeze_id` are boundary particles: they interact with their neighbours like gas, but all
+     * When enabled, a `u32` field `freeze_flag` is added to the layout. Particles with a non-zero
+     * `freeze_flag` are boundary particles: they interact with their neighbours like gas, but all
      * their time derivatives (acceleration, du/dt, d(B/rho)/dt, ...) are set to zero. They thus
      * keep their velocity, internal energy and magnetic field, and drift at constant velocity.
      *
@@ -669,11 +669,11 @@ struct shammodels::sph::SolverConfig {
      */
     bool use_boundary_particles = false;
 
-    /// Enable or disable the frozen boundary particles (adds the `freeze_id` field)
+    /// Enable or disable the frozen boundary particles (adds the `freeze_flag` field)
     inline void set_boundary_particles(bool enable) { use_boundary_particles = enable; }
 
-    /// Whether the layout holds the `freeze_id` field
-    inline bool has_field_freeze_id() const { return use_boundary_particles; }
+    /// Whether the layout holds the `freeze_flag` field
+    inline bool has_field_freeze_flag() const { return use_boundary_particles; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Boundary particles config (END)

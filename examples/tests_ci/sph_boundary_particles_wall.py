@@ -3,7 +3,7 @@ Testing SPH frozen boundary particles
 =====================================
 
 CI test for the frozen boundary particles of the SPH solver. A Sod tube is closed by two walls
-made of boundary particles (``freeze_id != 0``) at rest, carrying the left and right states. The
+made of boundary particles (``freeze_flag != 0``) at rest, carrying the left and right states. The
 test checks that:
 
 - the boundary particles keep their position, velocity and internal energy bit for bit,
@@ -80,7 +80,7 @@ model.set_value_in_a_box("uint", "f64", u_g, (-xs, -ys / 2, -zs / 2), (0, ys / 2
 model.set_value_in_a_box("uint", "f64", u_d, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 # the walls: frozen boundary particles at rest
-model.set_field_value_lambda_u32("freeze_id", lambda r: 1 if abs(r[0]) > x_wall else 0)
+model.set_field_value_lambda_u32("freeze_flag", lambda r: 1 if abs(r[0]) > x_wall else 0)
 
 vol_b = xs * ys * zs
 totmass = (rho_d * vol_b) + (rho_g * vol_b)
@@ -93,7 +93,7 @@ model.set_cfl_force(0.1)
 
 def get_walls(data):
     """Return the wall particles sorted by particle id, so that two states can be compared"""
-    is_wall = data["freeze_id"] != 0
+    is_wall = data["freeze_flag"] != 0
     order = np.argsort(data["part_id"][is_wall])
     return {
         "part_id": data["part_id"][is_wall][order],
@@ -104,7 +104,7 @@ def get_walls(data):
 
 
 data_init = ctx.collect_data()
-n_walls = int(np.sum(data_init["freeze_id"] != 0))
+n_walls = int(np.sum(data_init["freeze_flag"] != 0))
 n_gas = len(data_init["xyz"]) - n_walls
 print(f"wall particles: {n_walls}, gas particles: {n_gas}")
 assert n_walls > 0 and n_gas > 0

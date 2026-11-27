@@ -36,7 +36,16 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
-    cmake_extra_args = ""
+    # AdaptiveCpp's cuda/hip (multipass) backends rely on compiler-injected builtins
+    # (e.g. __acpp_warp_size, the kernel launch macros) that only exist during acpp's
+    # normal per-TU multipass compilation. Precompiling shambackends/sycl.hpp standalone
+    # (-x c++-header) skips that machinery, so those identifiers end up undeclared.
+    # Only enable the PCH on the CPU-only backends.
+    is_gpu_backend = args.backend is not None and (
+        args.backend.startswith("cuda") or args.backend.startswith("hip")
+    )
+
+    cmake_extra_args = "" if is_gpu_backend else " -DSHAMROCK_USE_PCH=On"
     if lib_mode == "shared":
         cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=On"
     elif lib_mode == "object":

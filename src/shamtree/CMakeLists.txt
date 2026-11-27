@@ -45,6 +45,8 @@ target_link_libraries(shamtree PUBLIC shamalgs)
 target_link_libraries(shamtree PUBLIC shammath)
 target_link_libraries(shamtree PUBLIC shamsys)
 
+sham_pch_reuse(shamtree)
+
 target_include_directories(
     shamtree PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
                     "$<INSTALL_INTERFACE:include>"

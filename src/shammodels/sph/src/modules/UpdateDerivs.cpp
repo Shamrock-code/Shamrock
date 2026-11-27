@@ -1317,19 +1317,14 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        const Tscal pmass    = solver_config.gpart_mass;
-        const Tscal _sigma   = sigma_mhd;
-        const Tscal _alpha_B = alpha_B;
-        const Tscal _etaO    = etaO;
-        const Tscal _etaH    = etaH;
-        const Tscal _etaAD   = etaAD;
+        const Tscal pmass = solver_config.gpart_mass;
 
         shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
-        shamlog_debug_sycl_ln("deriv kernel", "sigma_mhd  :", _sigma);
-        shamlog_debug_sycl_ln("deriv kernel", "alpha_B    :", _alpha_B);
-        shamlog_debug_sycl_ln("deriv kernel", "etaO       :", _etaO);
-        shamlog_debug_sycl_ln("deriv kernel", "etaH       :", _etaH);
-        shamlog_debug_sycl_ln("deriv kernel", "etaAD      :", _etaAD);
+        shamlog_debug_sycl_ln("deriv kernel", "sigma_mhd  :", sigma_mhd);
+        shamlog_debug_sycl_ln("deriv kernel", "alpha_B    :", alpha_B);
+        shamlog_debug_sycl_ln("deriv kernel", "etaO       :", etaO);
+        shamlog_debug_sycl_ln("deriv kernel", "etaH       :", etaH);
+        shamlog_debug_sycl_ln("deriv kernel", "etaAD      :", etaAD);
         shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
 
         // optional buffers: J only with nimhd, the debug fields only with MHD debug
@@ -1379,18 +1374,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
                 opt_debug_scal(ipsi_cons),
                 opt_debug_scal(iu_mhd)},
             pdat.get_obj_cnt(),
-            [pmass,
-             _sigma,
-             _alpha_B,
-             _etaO,
-             _etaH,
-             _etaAD,
-             mu_0,
-             etaO,
-             etaH,
-             etaAD,
-             do_nimhd,
-             do_MHD_debug](
+            [pmass, sigma_mhd, alpha_B, mu_0, etaO, etaH, etaAD, do_nimhd, do_MHD_debug](
                 u32 id_a,
                 auto ploop_ptrs,
                 const Tvec *__restrict xyz,
@@ -1502,7 +1486,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
                         cs_b,
                         h_a,
                         h_b,
-                        _alpha_B,
+                        alpha_B,
                         B_a,
                         B_b,
                         J_a,
@@ -1510,11 +1494,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
                         psi_a,
                         psi_b,
                         mu_0,
-                        _sigma,
+                        sigma_mhd,
                         tensile_corr_factor_a,
-                        _etaO,
-                        _etaH,
-                        _etaAD,
+                        etaO,
+                        etaH,
+                        etaAD,
                         force_mhd,
                         tmpdU_mhd,
                         magnetic_eq,

@@ -1288,249 +1288,509 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mhd_
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        sham::EventList depends_list;
 
-        auto xyz = buf_xyz.get_read_access(depends_list);
+        const Tscal pmass    = solver_config.gpart_mass;
+        const Tscal _sigma   = sigma_mhd;
+        const Tscal _alpha_B = alpha_B;
+        const Tscal _etaO    = etaO;
+        const Tscal _etaH    = etaH;
+        const Tscal _etaAD   = etaAD;
+
+        shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
+        shamlog_debug_sycl_ln("deriv kernel", "sigma_mhd  :", _sigma);
+        shamlog_debug_sycl_ln("deriv kernel", "alpha_B    :", _alpha_B);
+        shamlog_debug_sycl_ln("deriv kernel", "etaO       :", _etaO);
+        shamlog_debug_sycl_ln("deriv kernel", "etaH       :", _etaH);
+        shamlog_debug_sycl_ln("deriv kernel", "etaAD      :", _etaAD);
+        shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
+
+        // Per-particle body, shared by the 4 (nimhd x MHD debug) kernel variants.
+        // The flags are compile-time tags: when a flag is off, the corresponding buffers are not
+        // bound to the kernel and the pointers passed here are nullptr (never dereferenced).
         // axyz & du already contain the hydro terms, the MHD terms are added on top
-        auto axyz       = buf_axyz.get_write_access(depends_list);
-        auto du         = buf_duint.get_write_access(depends_list);
-        auto vxyz       = buf_vxyz.get_read_access(depends_list);
-        auto hpart      = buf_hpart.get_read_access(depends_list);
-        auto omega      = buf_omega.get_read_access(depends_list);
-        auto cs         = buf_cs.get_read_access(depends_list);
-        auto pressure   = buf_pressure.get_read_access(depends_list);
-        auto B_on_rho   = buf_B_on_rho.get_read_access(depends_list);
-        auto psi_on_ch  = buf_psi_on_ch.get_read_access(depends_list);
-        auto dB_on_rho  = buf_dB_on_rho.get_write_access(depends_list);
-        auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
-        auto drho_dt    = buf_drho_dt.get_write_access(depends_list);
-        auto J_field    = (do_nimhd) ? buf_J->get_read_access(depends_list) : nullptr;
+        auto mhd_body = [pmass, _sigma, _alpha_B, _etaO, _etaH, _etaAD, mu_0, etaO, etaH, etaAD](
+                            auto nimhd_c,
+                            auto debug_c,
+                            u32 id_a,
+                            auto ploop_ptrs,
+                            const Tvec *__restrict xyz,
+                            const Tvec *__restrict vxyz,
+                            const Tscal *__restrict hpart,
+                            const Tscal *__restrict omega,
+                            const Tscal *__restrict cs,
+                            const Tscal *__restrict pressure,
+                            const Tvec *__restrict B_on_rho,
+                            const Tscal *__restrict psi_on_ch,
+                            const Tvec *__restrict J_field,
+                            Tvec *__restrict axyz,
+                            Tscal *__restrict du,
+                            Tvec *__restrict dB_on_rho,
+                            Tscal *__restrict dpsi_on_ch,
+                            Tscal *__restrict drho_dt,
+                            Tvec *__restrict mag_pressure,
+                            Tvec *__restrict mag_tension,
+                            Tvec *__restrict gas_pressure,
+                            Tvec *__restrict tensile_corr,
+                            Tscal *__restrict psi_propag,
+                            Tscal *__restrict psi_diff,
+                            Tscal *__restrict psi_cons,
+                            Tscal *__restrict u_mhd) {
+            constexpr bool k_nimhd = decltype(nimhd_c)::value;
+            constexpr bool k_debug = decltype(debug_c)::value;
 
-        Tvec *mag_pressure
-            = (do_MHD_debug)
-                  ? pdat.get_field_buf_ref<Tvec>(imag_pressure).get_write_access(depends_list)
-                  : nullptr;
-        Tvec *mag_tension
-            = (do_MHD_debug)
-                  ? pdat.get_field_buf_ref<Tvec>(imag_tension).get_write_access(depends_list)
-                  : nullptr;
-        Tvec *gas_pressure
-            = (do_MHD_debug)
-                  ? pdat.get_field_buf_ref<Tvec>(igas_pressure).get_write_access(depends_list)
-                  : nullptr;
-        Tvec *tensile_corr
-            = (do_MHD_debug)
-                  ? pdat.get_field_buf_ref<Tvec>(itensile_corr).get_write_access(depends_list)
-                  : nullptr;
-        Tscal *psi_propag
-            = (do_MHD_debug)
-                  ? pdat.get_field_buf_ref<Tscal>(ipsi_propag).get_write_access(depends_list)
-                  : nullptr;
-        Tscal *psi_diff
-            = (do_MHD_debug)
-                  ? pdat.get_field_buf_ref<Tscal>(ipsi_diff).get_write_access(depends_list)
-                  : nullptr;
-        Tscal *psi_cons
-            = (do_MHD_debug)
-                  ? pdat.get_field_buf_ref<Tscal>(ipsi_cons).get_write_access(depends_list)
-                  : nullptr;
-        Tscal *u_mhd = (do_MHD_debug)
-                           ? pdat.get_field_buf_ref<Tscal>(iu_mhd).get_write_access(depends_list)
-                           : nullptr;
-
-        auto ploop_ptrs = pcache.get_read_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            const Tscal pmass    = solver_config.gpart_mass;
-            const Tscal _sigma   = sigma_mhd;
-            const Tscal _alpha_B = alpha_B;
-            const Tscal _etaO    = etaO;
-            const Tscal _etaH    = etaH;
-            const Tscal _etaAD   = etaAD;
-
-            shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
-            shamlog_debug_sycl_ln("deriv kernel", "sigma_mhd  :", _sigma);
-            shamlog_debug_sycl_ln("deriv kernel", "alpha_B    :", _alpha_B);
-            shamlog_debug_sycl_ln("deriv kernel", "etaO       :", _etaO);
-            shamlog_debug_sycl_ln("deriv kernel", "etaH       :", _etaH);
-            shamlog_debug_sycl_ln("deriv kernel", "etaAD      :", _etaAD);
-            shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
+            using namespace shamrock::sph;
 
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute MHD", [=](u64 gid) {
-                u32 id_a = (u32) gid;
-
-                using namespace shamrock::sph;
-
-                Tscal h_a     = hpart[id_a];
-                Tvec xyz_a    = xyz[id_a];
-                Tvec vxyz_a   = vxyz[id_a];
-                Tscal cs_a    = cs[id_a];
-                Tscal omega_a = omega[id_a];
-
-                Tvec J_a = (do_nimhd) ? J_field[id_a] : Tvec{0, 0, 0};
-
-                Tscal rho_a    = rho_h(pmass, h_a, Kernel::hfactd);
-                Tscal rho_a_sq = rho_a * rho_a;
-
-                Tvec B_a         = B_on_rho[id_a] * rho_a;
-                Tscal v_alfven_a = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
-                Tscal v_shock_a  = sycl::sqrt(cs_a * cs_a + v_alfven_a * v_alfven_a);
-                Tscal psi_a      = psi_on_ch[id_a] * v_shock_a;
-
-                // prefactor of the tensile instability correction, Bhat_a = factor * B_a
-                // compile time selection
-                Tscal tensile_corr_factor_a;
-                if constexpr (tensile_corr_mode == TensileCorrection::PhantomBetaSwitch) {
-                    tensile_corr_factor_a = shamrock::sph::mhd::tensile_corr_factor_beta_switch(
-                        pressure[id_a], B_a, mu_0);
+            auto get_J = [&](u32 id) -> Tvec {
+                if constexpr (k_nimhd) {
+                    return J_field[id];
                 } else {
-                    tensile_corr_factor_a = shamrock::sph::mhd::tensile_corr_factor_borve<Tscal>();
+                    return Tvec{0, 0, 0};
+                }
+            };
+
+            Tscal h_a     = hpart[id_a];
+            Tvec xyz_a    = xyz[id_a];
+            Tvec vxyz_a   = vxyz[id_a];
+            Tscal cs_a    = cs[id_a];
+            Tscal omega_a = omega[id_a];
+
+            Tvec J_a = get_J(id_a);
+
+            Tscal rho_a    = rho_h(pmass, h_a, Kernel::hfactd);
+            Tscal rho_a_sq = rho_a * rho_a;
+
+            Tvec B_a         = B_on_rho[id_a] * rho_a;
+            Tscal v_alfven_a = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
+            Tscal v_shock_a  = sycl::sqrt(cs_a * cs_a + v_alfven_a * v_alfven_a);
+            Tscal psi_a      = psi_on_ch[id_a] * v_shock_a;
+
+            // prefactor of the tensile instability correction, Bhat_a = factor * B_a
+            // compile time selection
+            Tscal tensile_corr_factor_a;
+            if constexpr (tensile_corr_mode == TensileCorrection::PhantomBetaSwitch) {
+                tensile_corr_factor_a = shamrock::sph::mhd::tensile_corr_factor_beta_switch(
+                    pressure[id_a], B_a, mu_0);
+            } else {
+                tensile_corr_factor_a = shamrock::sph::mhd::tensile_corr_factor_borve<Tscal>();
+            }
+
+            Tvec force_mhd{0, 0, 0};
+            Tscal tmpdU_mhd = 0;
+            Tvec magnetic_eq{0, 0, 0};
+            Tscal psi_eq  = 0;
+            Tscal drho_eq = 0;
+
+            Tvec mag_pressure_term{0, 0, 0};
+            Tvec mag_tension_term{0, 0, 0};
+            Tvec tensile_corr_term{0, 0, 0};
+            Tscal psi_propag_term = 0;
+            Tscal psi_diff_term   = 0;
+            Tscal psi_cons_term   = 0;
+
+            particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                Tvec dr    = xyz_a - xyz[id_b];
+                Tscal rab2 = sycl::dot(dr, dr);
+                Tscal h_b  = hpart[id_b];
+
+                if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                    return;
                 }
 
-                Tvec force_mhd{0, 0, 0};
-                Tscal tmpdU_mhd = 0;
-                Tvec magnetic_eq{0, 0, 0};
-                Tscal psi_eq  = 0;
-                Tscal drho_eq = 0;
+                Tvec vxyz_b   = vxyz[id_b];
+                Tscal omega_b = omega[id_b];
+                Tscal cs_b    = cs[id_b];
+                Tscal rab     = sycl::sqrt(rab2);
 
-                Tvec mag_pressure_term{0, 0, 0};
-                Tvec mag_tension_term{0, 0, 0};
-                Tvec tensile_corr_term{0, 0, 0};
-                Tscal psi_propag_term = 0;
-                Tscal psi_diff_term   = 0;
-                Tscal psi_cons_term   = 0;
+                Tvec J_b = get_J(id_b);
 
-                particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                    Tvec dr    = xyz_a - xyz[id_b];
-                    Tscal rab2 = sycl::dot(dr, dr);
-                    Tscal h_b  = hpart[id_b];
+                Tscal rho_b      = rho_h(pmass, h_b, Kernel::hfactd);
+                Tvec B_b         = B_on_rho[id_b] * rho_b;
+                Tscal v_alfven_b = sycl::sqrt(sycl::dot(B_b, B_b) / (mu_0 * rho_b));
+                Tscal v_shock_b  = sycl::sqrt(cs_b * cs_b + v_alfven_b * v_alfven_b);
+                Tscal psi_b      = psi_on_ch[id_b] * v_shock_b;
 
-                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
-                        return;
-                    }
+                Tscal Fab_a = Kernel::dW_3d(rab, h_a);
+                Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
-                    Tvec vxyz_b   = vxyz[id_b];
-                    Tscal omega_b = omega[id_b];
-                    Tscal cs_b    = cs[id_b];
-                    Tscal rab     = sycl::sqrt(rab2);
-
-                    Tvec J_b = (do_nimhd) ? J_field[id_b] : Tvec{0, 0, 0};
-
-                    Tscal rho_b      = rho_h(pmass, h_b, Kernel::hfactd);
-                    Tvec B_b         = B_on_rho[id_b] * rho_b;
-                    Tscal v_alfven_b = sycl::sqrt(sycl::dot(B_b, B_b) / (mu_0 * rho_b));
-                    Tscal v_shock_b  = sycl::sqrt(cs_b * cs_b + v_alfven_b * v_alfven_b);
-                    Tscal psi_b      = psi_on_ch[id_b] * v_shock_b;
-
-                    Tscal Fab_a = Kernel::dW_3d(rab, h_a);
-                    Tscal Fab_b = Kernel::dW_3d(rab, h_b);
-
-                    shamrock::sph::mhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, mhd_mode>(
-                        pmass,
-                        dr,
-                        rab,
-                        rho_a,
-                        rho_a_sq,
-                        rho_b,
-                        omega_a,
-                        omega_b,
-                        Fab_a,
-                        Fab_b,
-                        vxyz_a,
-                        vxyz_b,
-                        cs_a,
-                        cs_b,
-                        h_a,
-                        h_b,
-                        _alpha_B,
-                        B_a,
-                        B_b,
-                        J_a,
-                        J_b,
-                        psi_a,
-                        psi_b,
-                        mu_0,
-                        _sigma,
-                        tensile_corr_factor_a,
-                        _etaO,
-                        _etaH,
-                        _etaAD,
-                        force_mhd,
-                        tmpdU_mhd,
-                        magnetic_eq,
-                        psi_eq,
-                        drho_eq,
-                        mag_pressure_term,
-                        mag_tension_term,
-                        tensile_corr_term,
-                        psi_propag_term,
-                        psi_diff_term,
-                        psi_cons_term);
-                });
-
-                if (do_nimhd) {
-                    // only add once per particle
-                    Tscal u_NI = shamrock::sph::mhd::u_ni_heating<Tvec, Tscal, mhd_mode>(
-                        B_a, J_a, rho_a, etaO, etaH, etaAD, mu_0);
-                    tmpdU_mhd += u_NI;
-                }
-
-                if (do_MHD_debug) {
-                    // at this point axyz only contains the hydro terms (gas pressure + AV)
-                    gas_pressure[id_a] = axyz[id_a];
-                    mag_pressure[id_a] = mag_pressure_term;
-                    mag_tension[id_a]  = mag_tension_term;
-                    tensile_corr[id_a] = tensile_corr_term;
-                    psi_propag[id_a]   = psi_propag_term;
-                    psi_diff[id_a]     = psi_diff_term;
-                    psi_cons[id_a]     = -psi_a / h_a;
-                    u_mhd[id_a]        = tmpdU_mhd;
-                }
-
-                axyz[id_a] += force_mhd;
-                du[id_a] += tmpdU_mhd;
-                dB_on_rho[id_a]  = magnetic_eq;
-                dpsi_on_ch[id_a] = psi_eq - psi_a / h_a;
-                drho_dt[id_a]    = drho_eq;
+                shamrock::sph::mhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, mhd_mode>(
+                    pmass,
+                    dr,
+                    rab,
+                    rho_a,
+                    rho_a_sq,
+                    rho_b,
+                    omega_a,
+                    omega_b,
+                    Fab_a,
+                    Fab_b,
+                    vxyz_a,
+                    vxyz_b,
+                    cs_a,
+                    cs_b,
+                    h_a,
+                    h_b,
+                    _alpha_B,
+                    B_a,
+                    B_b,
+                    J_a,
+                    J_b,
+                    psi_a,
+                    psi_b,
+                    mu_0,
+                    _sigma,
+                    tensile_corr_factor_a,
+                    _etaO,
+                    _etaH,
+                    _etaAD,
+                    force_mhd,
+                    tmpdU_mhd,
+                    magnetic_eq,
+                    psi_eq,
+                    drho_eq,
+                    mag_pressure_term,
+                    mag_tension_term,
+                    tensile_corr_term,
+                    psi_propag_term,
+                    psi_diff_term,
+                    psi_cons_term);
             });
-        });
 
-        buf_xyz.complete_event_state(e);
-        buf_axyz.complete_event_state(e);
-        buf_duint.complete_event_state(e);
-        buf_vxyz.complete_event_state(e);
-        buf_hpart.complete_event_state(e);
-        buf_omega.complete_event_state(e);
-        buf_cs.complete_event_state(e);
-        buf_pressure.complete_event_state(e);
-        buf_B_on_rho.complete_event_state(e);
-        buf_psi_on_ch.complete_event_state(e);
-        buf_dB_on_rho.complete_event_state(e);
-        buf_dpsi_on_ch.complete_event_state(e);
-        buf_drho_dt.complete_event_state(e);
+            if constexpr (k_nimhd) {
+                // only add once per particle
+                Tscal u_NI = shamrock::sph::mhd::u_ni_heating<Tvec, Tscal, mhd_mode>(
+                    B_a, J_a, rho_a, etaO, etaH, etaAD, mu_0);
+                tmpdU_mhd += u_NI;
+            }
+
+            if constexpr (k_debug) {
+                // at this point axyz only contains the hydro terms (gas pressure + AV)
+                gas_pressure[id_a] = axyz[id_a];
+                mag_pressure[id_a] = mag_pressure_term;
+                mag_tension[id_a]  = mag_tension_term;
+                tensile_corr[id_a] = tensile_corr_term;
+                psi_propag[id_a]   = psi_propag_term;
+                psi_diff[id_a]     = psi_diff_term;
+                psi_cons[id_a]     = -psi_a / h_a;
+                u_mhd[id_a]        = tmpdU_mhd;
+            }
+
+            axyz[id_a] += force_mhd;
+            du[id_a] += tmpdU_mhd;
+            dB_on_rho[id_a]  = magnetic_eq;
+            dpsi_on_ch[id_a] = psi_eq - psi_a / h_a;
+            drho_dt[id_a]    = drho_eq;
+        };
+
+        // Launch the kernel variant matching the runtime flags: the optional buffers (J for
+        // nimhd, the MHD debug fields) are only bound to the variants that use them.
+        auto launch = [&](auto nimhd_c, auto debug_c) {
+            constexpr bool k_nimhd = decltype(nimhd_c)::value;
+            constexpr bool k_debug = decltype(debug_c)::value;
+
+            if constexpr (k_nimhd && k_debug) {
+                sham::DeviceBuffer<Tvec> &buf_J_ref = shambase::get_check_ref(buf_J);
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{
+                        pcache,
+                        buf_xyz,
+                        buf_vxyz,
+                        buf_hpart,
+                        buf_omega,
+                        buf_cs,
+                        buf_pressure,
+                        buf_B_on_rho,
+                        buf_psi_on_ch,
+                        buf_J_ref},
+                    sham::MultiRef{
+                        buf_axyz,
+                        buf_duint,
+                        buf_dB_on_rho,
+                        buf_dpsi_on_ch,
+                        buf_drho_dt,
+                        pdat.get_field_buf_ref<Tvec>(imag_pressure),
+                        pdat.get_field_buf_ref<Tvec>(imag_tension),
+                        pdat.get_field_buf_ref<Tvec>(igas_pressure),
+                        pdat.get_field_buf_ref<Tvec>(itensile_corr),
+                        pdat.get_field_buf_ref<Tscal>(ipsi_propag),
+                        pdat.get_field_buf_ref<Tscal>(ipsi_diff),
+                        pdat.get_field_buf_ref<Tscal>(ipsi_cons),
+                        pdat.get_field_buf_ref<Tscal>(iu_mhd)},
+                    pdat.get_obj_cnt(),
+                    [mhd_body](
+                        u32 id_a,
+                        auto ploop_ptrs,
+                        const Tvec *__restrict xyz,
+                        const Tvec *__restrict vxyz,
+                        const Tscal *__restrict hpart,
+                        const Tscal *__restrict omega,
+                        const Tscal *__restrict cs,
+                        const Tscal *__restrict pressure,
+                        const Tvec *__restrict B_on_rho,
+                        const Tscal *__restrict psi_on_ch,
+                        const Tvec *__restrict J_field,
+                        Tvec *__restrict axyz,
+                        Tscal *__restrict du,
+                        Tvec *__restrict dB_on_rho,
+                        Tscal *__restrict dpsi_on_ch,
+                        Tscal *__restrict drho_dt,
+                        Tvec *__restrict mag_pressure,
+                        Tvec *__restrict mag_tension,
+                        Tvec *__restrict gas_pressure,
+                        Tvec *__restrict tensile_corr,
+                        Tscal *__restrict psi_propag,
+                        Tscal *__restrict psi_diff,
+                        Tscal *__restrict psi_cons,
+                        Tscal *__restrict u_mhd) {
+                        mhd_body(
+                            std::true_type{},
+                            std::true_type{},
+                            id_a,
+                            ploop_ptrs,
+                            xyz,
+                            vxyz,
+                            hpart,
+                            omega,
+                            cs,
+                            pressure,
+                            B_on_rho,
+                            psi_on_ch,
+                            J_field,
+                            axyz,
+                            du,
+                            dB_on_rho,
+                            dpsi_on_ch,
+                            drho_dt,
+                            mag_pressure,
+                            mag_tension,
+                            gas_pressure,
+                            tensile_corr,
+                            psi_propag,
+                            psi_diff,
+                            psi_cons,
+                            u_mhd);
+                    });
+            } else if constexpr (k_nimhd && !k_debug) {
+                sham::DeviceBuffer<Tvec> &buf_J_ref = shambase::get_check_ref(buf_J);
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{
+                        pcache,
+                        buf_xyz,
+                        buf_vxyz,
+                        buf_hpart,
+                        buf_omega,
+                        buf_cs,
+                        buf_pressure,
+                        buf_B_on_rho,
+                        buf_psi_on_ch,
+                        buf_J_ref},
+                    sham::MultiRef{buf_axyz, buf_duint, buf_dB_on_rho, buf_dpsi_on_ch, buf_drho_dt},
+                    pdat.get_obj_cnt(),
+                    [mhd_body](
+                        u32 id_a,
+                        auto ploop_ptrs,
+                        const Tvec *__restrict xyz,
+                        const Tvec *__restrict vxyz,
+                        const Tscal *__restrict hpart,
+                        const Tscal *__restrict omega,
+                        const Tscal *__restrict cs,
+                        const Tscal *__restrict pressure,
+                        const Tvec *__restrict B_on_rho,
+                        const Tscal *__restrict psi_on_ch,
+                        const Tvec *__restrict J_field,
+                        Tvec *__restrict axyz,
+                        Tscal *__restrict du,
+                        Tvec *__restrict dB_on_rho,
+                        Tscal *__restrict dpsi_on_ch,
+                        Tscal *__restrict drho_dt) {
+                        mhd_body(
+                            std::true_type{},
+                            std::false_type{},
+                            id_a,
+                            ploop_ptrs,
+                            xyz,
+                            vxyz,
+                            hpart,
+                            omega,
+                            cs,
+                            pressure,
+                            B_on_rho,
+                            psi_on_ch,
+                            J_field,
+                            axyz,
+                            du,
+                            dB_on_rho,
+                            dpsi_on_ch,
+                            drho_dt,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr);
+                    });
+            } else if constexpr (!k_nimhd && k_debug) {
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{
+                        pcache,
+                        buf_xyz,
+                        buf_vxyz,
+                        buf_hpart,
+                        buf_omega,
+                        buf_cs,
+                        buf_pressure,
+                        buf_B_on_rho,
+                        buf_psi_on_ch},
+                    sham::MultiRef{
+                        buf_axyz,
+                        buf_duint,
+                        buf_dB_on_rho,
+                        buf_dpsi_on_ch,
+                        buf_drho_dt,
+                        pdat.get_field_buf_ref<Tvec>(imag_pressure),
+                        pdat.get_field_buf_ref<Tvec>(imag_tension),
+                        pdat.get_field_buf_ref<Tvec>(igas_pressure),
+                        pdat.get_field_buf_ref<Tvec>(itensile_corr),
+                        pdat.get_field_buf_ref<Tscal>(ipsi_propag),
+                        pdat.get_field_buf_ref<Tscal>(ipsi_diff),
+                        pdat.get_field_buf_ref<Tscal>(ipsi_cons),
+                        pdat.get_field_buf_ref<Tscal>(iu_mhd)},
+                    pdat.get_obj_cnt(),
+                    [mhd_body](
+                        u32 id_a,
+                        auto ploop_ptrs,
+                        const Tvec *__restrict xyz,
+                        const Tvec *__restrict vxyz,
+                        const Tscal *__restrict hpart,
+                        const Tscal *__restrict omega,
+                        const Tscal *__restrict cs,
+                        const Tscal *__restrict pressure,
+                        const Tvec *__restrict B_on_rho,
+                        const Tscal *__restrict psi_on_ch,
+                        Tvec *__restrict axyz,
+                        Tscal *__restrict du,
+                        Tvec *__restrict dB_on_rho,
+                        Tscal *__restrict dpsi_on_ch,
+                        Tscal *__restrict drho_dt,
+                        Tvec *__restrict mag_pressure,
+                        Tvec *__restrict mag_tension,
+                        Tvec *__restrict gas_pressure,
+                        Tvec *__restrict tensile_corr,
+                        Tscal *__restrict psi_propag,
+                        Tscal *__restrict psi_diff,
+                        Tscal *__restrict psi_cons,
+                        Tscal *__restrict u_mhd) {
+                        mhd_body(
+                            std::false_type{},
+                            std::true_type{},
+                            id_a,
+                            ploop_ptrs,
+                            xyz,
+                            vxyz,
+                            hpart,
+                            omega,
+                            cs,
+                            pressure,
+                            B_on_rho,
+                            psi_on_ch,
+                            nullptr,
+                            axyz,
+                            du,
+                            dB_on_rho,
+                            dpsi_on_ch,
+                            drho_dt,
+                            mag_pressure,
+                            mag_tension,
+                            gas_pressure,
+                            tensile_corr,
+                            psi_propag,
+                            psi_diff,
+                            psi_cons,
+                            u_mhd);
+                    });
+            } else {
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{
+                        pcache,
+                        buf_xyz,
+                        buf_vxyz,
+                        buf_hpart,
+                        buf_omega,
+                        buf_cs,
+                        buf_pressure,
+                        buf_B_on_rho,
+                        buf_psi_on_ch},
+                    sham::MultiRef{buf_axyz, buf_duint, buf_dB_on_rho, buf_dpsi_on_ch, buf_drho_dt},
+                    pdat.get_obj_cnt(),
+                    [mhd_body](
+                        u32 id_a,
+                        auto ploop_ptrs,
+                        const Tvec *__restrict xyz,
+                        const Tvec *__restrict vxyz,
+                        const Tscal *__restrict hpart,
+                        const Tscal *__restrict omega,
+                        const Tscal *__restrict cs,
+                        const Tscal *__restrict pressure,
+                        const Tvec *__restrict B_on_rho,
+                        const Tscal *__restrict psi_on_ch,
+                        Tvec *__restrict axyz,
+                        Tscal *__restrict du,
+                        Tvec *__restrict dB_on_rho,
+                        Tscal *__restrict dpsi_on_ch,
+                        Tscal *__restrict drho_dt) {
+                        mhd_body(
+                            std::false_type{},
+                            std::false_type{},
+                            id_a,
+                            ploop_ptrs,
+                            xyz,
+                            vxyz,
+                            hpart,
+                            omega,
+                            cs,
+                            pressure,
+                            B_on_rho,
+                            psi_on_ch,
+                            nullptr,
+                            axyz,
+                            du,
+                            dB_on_rho,
+                            dpsi_on_ch,
+                            drho_dt,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr,
+                            nullptr);
+                    });
+            }
+        };
 
         if (do_nimhd) {
-            buf_J->complete_event_state(e);
+            if (do_MHD_debug) {
+                launch(std::true_type{}, std::true_type{});
+            } else {
+                launch(std::true_type{}, std::false_type{});
+            }
+        } else {
+            if (do_MHD_debug) {
+                launch(std::false_type{}, std::true_type{});
+            } else {
+                launch(std::false_type{}, std::false_type{});
+            }
         }
-
-        if (do_MHD_debug) {
-            pdat.get_field_buf_ref<Tvec>(imag_pressure).complete_event_state(e);
-            pdat.get_field_buf_ref<Tvec>(imag_tension).complete_event_state(e);
-            pdat.get_field_buf_ref<Tvec>(igas_pressure).complete_event_state(e);
-            pdat.get_field_buf_ref<Tvec>(itensile_corr).complete_event_state(e);
-            pdat.get_field_buf_ref<Tscal>(ipsi_propag).complete_event_state(e);
-            pdat.get_field_buf_ref<Tscal>(ipsi_diff).complete_event_state(e);
-            pdat.get_field_buf_ref<Tscal>(ipsi_cons).complete_event_state(e);
-            pdat.get_field_buf_ref<Tscal>(iu_mhd).complete_event_state(e);
-        }
-
-        sham::EventList resulting_events;
-        resulting_events.add_event(e);
-        pcache.complete_event_state(resulting_events);
     });
 
     // storage.MagCurrentJ.reset();

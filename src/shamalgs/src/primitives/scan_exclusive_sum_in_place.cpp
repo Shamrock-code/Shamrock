@@ -21,6 +21,7 @@
 #include "shamalgs/ImplVariant.hpp"
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/EventList.hpp"
 #include <numeric>
@@ -136,6 +137,10 @@ namespace shamalgs::primitives {
         };
 #endif
 
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view scan_exclusive_sum_in_place_impl_name
+            = "scan_exclusive_sum_in_place";
+
         shamalgs::ImplVariantGlobal<
             StdScan
 #ifdef __ACPP__
@@ -151,50 +156,25 @@ namespace shamalgs::primitives {
             AdaptiveCppAlg
 #endif
             >
-            scan_exclusive_sum_in_place_impl;
-
-        /// Get list of available scan_exclusive_sum_in_place implementations
-        std::vector<std::string> get_default_impl_list_scan_exclusive_sum_in_place() {
-            return scan_exclusive_sum_in_place_impl.get_default_config_list();
-        }
-
-        /// Get the current implementation for scan_exclusive_sum_in_place
-        std::string get_current_impl_scan_exclusive_sum_in_place() {
-            return scan_exclusive_sum_in_place_impl.get_current_config();
-        }
-
-        /// Check if an implementation has been selected for scan_exclusive_sum_in_place
-        bool is_impl_set_scan_exclusive_sum_in_place() {
-            return scan_exclusive_sum_in_place_impl.is_set();
-        }
-
-        /// Set the implementation for scan_exclusive_sum_in_place
-        void set_impl_scan_exclusive_sum_in_place(const std::string &impl) {
-            shamlog_info_ln(
-                "algs", "setting scan_exclusive_sum_in_place implementation to impl :", impl);
-            scan_exclusive_sum_in_place_impl.set(impl);
-        }
-
-        /// Select the default implementation for scan_exclusive_sum_in_place
-        void autoselect_impl_scan_exclusive_sum_in_place() {
+            scan_exclusive_sum_in_place_impl{[](const sham::DeviceScheduler_ptr &, auto &self) {
 #ifdef __MACH__     // decoupled lookback perf on mac os is awful
     #ifdef __ACPP__ // for acpp we gain using enqueue custom operation instead of copying
-            scan_exclusive_sum_in_place_impl.set(StdScanSingleTaskAcpp{});
+                self.set(StdScanSingleTaskAcpp{});
     #else
-            scan_exclusive_sum_in_place_impl.set(StdScan{});
+                self.set(StdScan{});
     #endif
 #else
     #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-            scan_exclusive_sum_in_place_impl.set(DecoupledLookback512{});
+                self.set(DecoupledLookback512{});
     #else
-            scan_exclusive_sum_in_place_impl.set(StdScan{});
+                self.set(StdScan{});
     #endif
 #endif
-            shamlog_info_ln(
-                "algs",
-                "defaulting scan_exclusive_sum_in_place implementation to impl :",
-                get_current_impl_scan_exclusive_sum_in_place());
-        }
+            }};
+
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(
+            scan_exclusive_sum_in_place_impl_name, scan_exclusive_sum_in_place_impl);
 
     } // namespace impl
 
@@ -214,7 +194,8 @@ namespace shamalgs::primitives {
         }
 
         if (!impl::scan_exclusive_sum_in_place_impl.is_set()) {
-            impl::autoselect_impl_scan_exclusive_sum_in_place();
+            shamalgs::impl_registry::autoselect_impl(
+                impl::scan_exclusive_sum_in_place_impl_name, buf1.get_dev_scheduler_ptr());
         }
 
         std::visit(

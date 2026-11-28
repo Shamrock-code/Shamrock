@@ -21,8 +21,12 @@
 #include "shambase/print.hpp"
 #include "shambase/sets.hpp"
 #include "shambase/string.hpp"
+#include <unordered_map>
+#include <unordered_set>
+#include <algorithm>
 #include <functional>
 #include <map>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -42,17 +46,41 @@ namespace shambase {
     template<class T>
     class DistributedData {
 
-        std::map<u64, T> data; ///< The underlying collection.
+        std::unordered_map<u64, T> data; ///< The underlying collection.
 
-        using iterator = typename std::map<u64, T>::iterator; ///< Iterator type.
+        using iterator = typename std::unordered_map<u64, T>::iterator; ///< Iterator type.
+
+        /// Cache of the ids sorted in increasing order, null when it must be rebuilt.
+        /// Held through a shared_ptr so that an iteration in progress keeps its own copy alive
+        /// if the collection is modified (and the cache invalidated) during the iteration.
+        mutable std::shared_ptr<const std::vector<u64>> sorted_ids_cache;
+
+        /// Invalidate the sorted ids cache, to be called on any potential change of the key set.
+        inline void invalidate_sorted_ids() { sorted_ids_cache.reset(); }
+
+        /// Returns the ids sorted in increasing order, rebuilding the cache if needed.
+        inline std::shared_ptr<const std::vector<u64>> get_sorted_ids() const {
+            if (!sorted_ids_cache) {
+                std::vector<u64> ids = get_ids();
+                std::sort(ids.begin(), ids.end());
+                sorted_ids_cache = std::make_shared<const std::vector<u64>>(std::move(ids));
+            }
+            return sorted_ids_cache;
+        }
 
         public:
         /**
          * @brief Returns the underlying collection.
          *
          * @return The underlying collection.
+         *
+         * @remark The sorted ids cache is invalidated by this call, but not by later
+         * modifications made through the returned reference while it is held.
          */
-        inline std::map<u64, T> &get_native() { return data; }
+        inline std::unordered_map<u64, T> &get_native() {
+            invalidate_sorted_ids();
+            return data;
+        }
 
         /**
          * @brief Adds a new object to the collection.
@@ -66,6 +94,7 @@ namespace shambase {
          */
         inline iterator add_obj(u64 id, T &&obj) {
 
+            invalidate_sorted_ids();
             std::pair<iterator, bool> ret = data.emplace(id, std::forward<T>(obj));
 
             if (!ret.second) {
@@ -76,11 +105,26 @@ namespace shambase {
         }
 
         /**
+         * @brief Reserve storage for at least `count` objects.
+         *
+         * Sets the number of buckets of the underlying hash map so that `count` objects can be
+         * inserted without further rehashing. The content of the collection is unchanged, but
+         * the rehash may change the order in which for_each visits the objects (still
+         * deterministic). for_each_ordered is not affected.
+         *
+         * @param count The number of objects the collection is expected to hold.
+         */
+        inline void reserve(u64 count) { data.reserve(count); }
+
+        /**
          * @brief Removes an object from the collection.
          *
          * @param id The id of the patch the object belongs to.
          */
-        inline void erase(u64 id) { data.erase(id); }
+        inline void erase(u64 id) {
+            invalidate_sorted_ids();
+            data.erase(id);
+        }
 
         /**
          * @brief Applies a function to each object in the collection.
@@ -88,7 +132,8 @@ namespace shambase {
          * @param f A function taking two arguments: the id of the patch the object belongs to,
          * and a non-const reference to the object itself.
          *
-         * @remark The function is applied to each object in the order of insertion.
+         * @remark The iteration order is deterministic but unspecified: do not rely on the
+         * objects being visited in ascending id order, nor in insertion order.
          */
         inline void for_each(std::function<void(u64, T &)> &&f) {
             for (auto &[id, obj] : data) {
@@ -100,6 +145,35 @@ namespace shambase {
         inline void for_each(std::function<void(u64, const T &)> &&f) const {
             for (auto &[id, obj] : data) {
                 f(id, obj);
+            }
+        }
+
+        /**
+         * @brief Applies a function to each object in the collection, in increasing id order.
+         *
+         * Unlike for_each, the iteration order does not depend on the insertion history or on the
+         * standard library implementation. Use it when the order matters (e.g. concatenation of
+         * per-patch data or floating-point reductions that must be reproducible).
+         *
+         * The sorted ids are cached and only recomputed after the key set may have changed
+         * (add_obj, erase, reset, get_native). The cache is not thread safe: do not call this
+         * concurrently on the same object, even through a const reference.
+         *
+         * @param f A function taking two arguments: the id of the patch the object belongs to,
+         * and a non-const reference to the object itself.
+         */
+        inline void for_each_ordered(std::function<void(u64, T &)> &&f) {
+            std::shared_ptr<const std::vector<u64>> ids = get_sorted_ids();
+            for (u64 id : *ids) {
+                f(id, data.at(id));
+            }
+        }
+
+        /// Same as for_each_ordered but for const objects
+        inline void for_each_ordered(std::function<void(u64, const T &)> &&f) const {
+            std::shared_ptr<const std::vector<u64>> ids = get_sorted_ids();
+            for (u64 id : *ids) {
+                f(id, data.at(id));
             }
         }
 
@@ -182,21 +256,21 @@ namespace shambase {
          *
          * @return True if the object is found, false otherwise.
          */
-        inline bool has_key(u64 id) { return (data.find(id) != data.end()); }
+        inline bool has_key(u64 id) const { return (data.find(id) != data.end()); }
 
         /**
          * @brief Returns the number of elements in the collection.
          *
          * @return The number of elements in the collection.
          */
-        inline u64 get_element_count() { return data.size(); }
+        inline u64 get_element_count() const { return data.size(); }
 
         /**
          * @brief Returns true if the collection is empty.
          *
          * @return True if the collection is empty, false otherwise.
          */
-        inline bool is_empty() { return data.empty(); }
+        inline bool is_empty() const { return data.empty(); }
 
         /**
          * @brief Prints all the objects in the collection to the logger.
@@ -249,6 +323,7 @@ namespace shambase {
         template<class Tmap>
         inline DistributedData<Tmap> map(std::function<Tmap(u64, T &)> map_func) {
             DistributedData<Tmap> ret;
+            ret.reserve(data.size());
 
             for_each([&](u64 id, T &ref) {
                 ret.add_obj(id, map_func(id, ref));
@@ -261,6 +336,7 @@ namespace shambase {
         template<class Tmap>
         inline DistributedData<Tmap> map(std::function<Tmap(u64, const T &)> map_func) const {
             DistributedData<Tmap> ret;
+            ret.reserve(data.size());
 
             for_each([&](u64 id, const T &ref) {
                 ret.add_obj(id, map_func(id, ref));
@@ -274,7 +350,12 @@ namespace shambase {
          *
          * All objects in the collection are removed.
          */
-        inline void reset() { data.clear(); }
+        inline void reset() {
+            invalidate_sorted_ids();
+            // swap with a fresh map rather than clear() to also release the buckets, so that the
+            // iteration order after a reset does not depend on what the collection held before
+            std::unordered_map<u64, T>{}.swap(data);
+        }
     };
 
     /**
@@ -297,25 +378,39 @@ namespace shambase {
      * @param func_match the callback for matching ids
      * @param func_extra the callback for extra ids
      */
-    template<class T1, class FuncMatch, class FuncMissing, class FuncExtra>
+    template<class T1, class FuncMissing, class FuncMatch, class FuncExtra>
     inline void on_distributeddata_ids_diff(
         const shambase::DistributedData<T1> &dd,
         const std::vector<u64> &ref_ids,
-        FuncMatch &&func_missing,
-        FuncMissing &&func_match,
+        FuncMissing &&func_missing,
+        FuncMatch &&func_match,
         FuncExtra &&func_extra) {
-
-        std::vector<u64> dd_ids;
-
-        dd.for_each([&](u32 id, const T1 &data) {
-            dd_ids.push_back(id);
-        });
 
         std::vector<u64> missing;
         std::vector<u64> matching;
         std::vector<u64> extra;
 
-        shambase::set_diff(dd_ids, ref_ids, missing, matching, extra);
+        // Only used for membership tests, its iteration order is never observed.
+        std::unordered_set<u64> ref_seen;
+        ref_seen.reserve(ref_ids.size());
+
+        // missing and matching follow the order of ref_ids, a repeated reference id is
+        // matched at most once and reported as missing afterwards
+        for (u64 id : ref_ids) {
+            bool first_occurrence = ref_seen.insert(id).second;
+            if (first_occurrence && dd.has_key(id)) {
+                matching.push_back(id);
+            } else {
+                missing.push_back(id);
+            }
+        }
+
+        // extra follows the iteration order of dd
+        dd.for_each([&](u64 id, const T1 &) {
+            if (ref_seen.find(id) == ref_seen.end()) {
+                extra.push_back(id);
+            }
+        });
 
         for (auto id : missing) {
             func_missing(id);
@@ -347,21 +442,45 @@ namespace shambase {
      * @param func_match the callback for matching ids
      * @param func_extra the callback for extra ids
      */
-    template<class T1, class T2, class FuncMatch, class FuncMissing, class FuncExtra>
+    template<class T1, class T2, class FuncMissing, class FuncMatch, class FuncExtra>
     inline void on_distributeddata_diff(
         const shambase::DistributedData<T1> &dd,
         const shambase::DistributedData<T2> &reference,
-        FuncMatch &&func_missing,
-        FuncMissing &&func_match,
+        FuncMissing &&func_missing,
+        FuncMatch &&func_match,
         FuncExtra &&func_extra) {
 
-        std::vector<u64> ref_ids;
+        std::vector<u64> missing;
+        std::vector<u64> matching;
+        std::vector<u64> extra;
 
-        reference.for_each([&](u32 id, const T2 &data) {
-            ref_ids.push_back(id);
+        // missing and matching follow the iteration order of reference
+        reference.for_each([&](u64 id, const T2 &) {
+            if (dd.has_key(id)) {
+                matching.push_back(id);
+            } else {
+                missing.push_back(id);
+            }
         });
 
-        shambase::on_distributeddata_ids_diff(dd, ref_ids, func_missing, func_match, func_extra);
+        // extra follows the iteration order of dd
+        dd.for_each([&](u64 id, const T1 &) {
+            if (!reference.has_key(id)) {
+                extra.push_back(id);
+            }
+        });
+
+        for (auto id : missing) {
+            func_missing(id);
+        }
+
+        for (auto id : matching) {
+            func_match(id);
+        }
+
+        for (auto id : extra) {
+            func_extra(id);
+        }
     }
 
 } // namespace shambase

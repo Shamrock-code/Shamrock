@@ -1,0 +1,128 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+/**
+ * @file ConsToPrimGasBarotropic.cpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief
+ *
+ */
+
+#include "shambase/assert.hpp"
+#include "shambackends/kernel_call_distrib.hpp"
+#include "shammath/riemann.hpp"
+#include "shammodels/ramses/modules/ConsToPrimGasBarotropic.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
+#include "shamsys/NodeInstance.hpp"
+
+namespace {
+
+    template<class Tvec>
+    struct KernelConsToPrimGasBarotropic {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        inline static void kernel(
+            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rho,
+            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_rhov,
+
+            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_vel,
+            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_P,
+            const shambase::DistributedData<u32> &sizes,
+            u32 block_size,
+            Tscal rho_crit,
+            Tscal cs0,
+            Tscal gamma) {
+
+            shambase::DistributedData<u32> cell_counts
+                = sizes.map<u32>([&](u64 id, u32 block_count) {
+                      u32 cell_count = block_count * block_size;
+                      return cell_count;
+                  });
+
+            sham::distributed_data_kernel_call(
+                shamsys::instance::get_compute_scheduler_ptr(),
+                sham::DDMultiRef{spans_rho, spans_rhov},
+                sham::DDMultiRef{spans_vel, spans_P},
+                cell_counts,
+                [rho_crit, cs0, gamma](
+                    u32 i,
+                    const Tscal *__restrict rho,
+                    const Tvec *__restrict rhov,
+                    Tvec *__restrict vel,
+                    Tscal *__restrict P) {
+                    // rhoe is ignored by the barotropic cons_to_prim
+                    auto conststate = shammath::ConsState<Tvec>{rho[i], 0, rhov[i]};
+
+                    shammath::FluidStateBarotropic<Tvec> barotropic_fluid{rho_crit, cs0, gamma};
+                    auto prim_state = barotropic_fluid.cons_to_prim(conststate);
+
+                    SHAM_ASSERT(prim_state.press >= 0.0);
+
+                    vel[i] = prim_state.vel;
+                    P[i]   = prim_state.press;
+                });
+        }
+    };
+
+} // namespace
+
+namespace shammodels::basegodunov::modules {
+
+    template<class Tvec>
+    void NodeConsToPrimGasBarotropic<Tvec>::_impl_evaluate_internal() {
+        __shamrock_stack_entry();
+        auto edges = get_edges();
+
+        edges.spans_rho.check_sizes(edges.sizes.indexes);
+        edges.spans_rhov.check_sizes(edges.sizes.indexes);
+
+        edges.spans_vel.ensure_sizes(edges.sizes.indexes);
+        edges.spans_P.ensure_sizes(edges.sizes.indexes);
+
+        KernelConsToPrimGasBarotropic<Tvec>::kernel(
+            edges.spans_rho.get_spans(),
+            edges.spans_rhov.get_spans(),
+            edges.spans_vel.get_spans(),
+            edges.spans_P.get_spans(),
+            edges.sizes.indexes,
+            block_size,
+            rho_crit,
+            cs0,
+            gamma);
+    }
+
+    template<class Tvec>
+    std::string NodeConsToPrimGasBarotropic<Tvec>::_impl_get_tex() const {
+        std::string tex = R"tex(
+            Conservative to primitive variable (gas, barotropic)
+
+            \begin{align}
+            {spans_vel}_i &= \frac{ {spans_rhov}_i }{ {spans_rho}_i } \\
+            {spans_P}_i &= c_{s,0}^2 {spans_rho}_i \left( 1 + \left( \frac{ {spans_rho}_i }{ \rho_c } \right)^{\gamma - 1} \right) \\
+            i &\in [0,{sizes} * N_{\rm cell/block}) \\
+            \rho_c &= {rho_crit} \\
+            c_{s,0} &= {cs0} \\
+            \gamma &= {gamma} \\
+            N_{\rm cell/block} & = {block_size}
+            \end{align}
+        )tex";
+
+        replace_edges_tex_symbols(tex);
+
+        shambase::replace_all(tex, "{rho_crit}", sham::format("{}", rho_crit));
+        shambase::replace_all(tex, "{cs0}", sham::format("{}", cs0));
+        shambase::replace_all(tex, "{gamma}", sham::format("{}", gamma));
+        shambase::replace_all(tex, "{block_size}", sham::format("{}", block_size));
+
+        return tex;
+    }
+
+} // namespace shammodels::basegodunov::modules
+
+template class shammodels::basegodunov::modules::NodeConsToPrimGasBarotropic<f64_3>;

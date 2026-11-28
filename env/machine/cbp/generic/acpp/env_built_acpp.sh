@@ -5,12 +5,23 @@ WITH_CUDA_BACKEND=Off
 WITH_ROCM_BACKEND=Off
 WITH_SSCP_COMPILER=Off
 
-CBP_CUDA_DIR=/usr/lib/cuda
+# NVIDIA's CUDA packages install to /usr/local/cuda. Debian's nvidia-cuda-toolkit to /usr/lib/cuda
+if [ -d /usr/local/cuda ]; then
+    CBP_CUDA_DIR=/usr/local/cuda
+else
+    CBP_CUDA_DIR=/usr/lib/cuda
+fi
 CBP_ROCM_DIR=/opt/rocm
+
+# LLVM 19 does not know sm_100/sm_120 (Blackwell)
+# LLVM 22 handles both but it is only used for NVIDIA since with ROCm, the SSCP JIT requires an LLVM no newer than the one shipped with ROCm
+LLVM_VERSION=llvmorg-19.1.7
+LLVM_VERSION_NVIDIA=llvmorg-22.1.8
 
 if [ "${ACPP_BACKEND}" = "cuda" ]; then
     GPU_TARGET=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | tr -d "." | sort -n | tail -1)
     ACPP_TARGETS+=";cuda:sm_${GPU_TARGET}"
+    LLVM_VERSION=${LLVM_VERSION_NVIDIA}
     LLVM_TARGET="NVPTX"
     GPU_LIBRARY_FLAG="-DCUDAToolkit_LIBRARY_ROOT=${CBP_CUDA_DIR}"
     WITH_CUDA_BACKEND=On
@@ -27,6 +38,7 @@ elif [ "${ACPP_BACKEND}" = "sscp" ]; then
     WITH_SSCP_COMPILER=On
 
     if nvidia-smi &> /dev/null; then
+        LLVM_VERSION=${LLVM_VERSION_NVIDIA}
         LLVM_TARGET="NVPTX"
         GPU_LIBRARY_FLAG="-DCUDAToolkit_LIBRARY_ROOT=${CBP_CUDA_DIR}"
         WITH_CUDA_BACKEND=On
@@ -47,7 +59,7 @@ export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
 
 export ACPP_DEBUG_LEVEL=0
 
-export LLVM_VERSION=llvmorg-19.1.7
+export LLVM_VERSION
 export LLVM_GIT_DIR=$BUILD_DIR/.env/llvm-git
 export LLVM_BUILD_DIR=$BUILD_DIR/.env/llvm-build
 export LLVM_INSTALL_DIR=$BUILD_DIR/.env/llvm-install

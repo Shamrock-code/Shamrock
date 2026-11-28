@@ -22,6 +22,7 @@
 #include "shambase/type_name_info.hpp"
 #include "shambackends/math.hpp"
 #include "shammath/integrator.hpp"
+#include <array>
 
 namespace shammath::details {
 
@@ -2342,14 +2343,51 @@ namespace shammath {
             return -(BaseKernel::norm_3d) * (3 * f(r / h) + (r / h) * df(r / h)) / (h * h * h * h);
         }
 
+        /**
+         * @brief Riemann sum of \f$ f(\sqrt{x^2 + z^2}) \f$ along z over the kernel support
+         *
+         * Samples the grid `z_k = k * step`, `step = Rkern / np`, for `k = -np, ..., np - 1`.
+         * These are the points visited by `integ_riemann_sum(-Rkern, Rkern, step, ...)` whenever
+         * its accumulated `z += step` is exact (e.g. a power of two `np` with the kernels here).
+         * The grid is symmetric around 0, so \f$ f(\sqrt{x^2 + z^2}) \f$ is evaluated once at
+         * `z = 0` (as `f(|x|)`, equal to `f(sqrt(x * x))` barring over/underflow) and once per
+         * `k = 1, ..., np - 1`, counted twice for its mirror `-z_k`. The `z = -Rkern` sample is
+         * dropped since its argument \f$ \sqrt{x^2 + R_{\rm kern}^2} \ge R_{\rm kern} \f$ is
+         * outside the compact support, where `f` is 0.
+         *
+         * `x * x + z * z` is computed as `fma(z, z, x * x)` and `step` is factored out of the
+         * sum, so the operations are reordered with respect to the plain Riemann sum: both match
+         * up to a few ulp per term, not bitwise. The runtime `np` overload below still computes
+         * the plain Riemann sum.
+         */
+        template<int np>
+        inline static Tscal f3d_integ_z(Tscal x) {
+            constexpr Tscal step = Rkern / np;
+
+            Tscal xx = x * x;
+
+            Tscal acc = f(sycl::fabs(x)); // z = 0
+            for (int k = 1; k < np; k++) {
+                Tscal z = k * step;
+                // slightly faster than z*z + xx
+                acc += 2 * f(sqrt(sycl::fma(z, z, xx)));
+            }
+            return acc * step;
+        }
+
         inline static Tscal f3d_integ_z(Tscal x, int np = 32) {
             return integ_riemann_sum<Tscal>(-Rkern, Rkern, Rkern / np, [&](Tscal z) {
                 return f(sqrt(x * x + z * z));
             });
         }
 
-        inline static Tscal Y_3d(Tscal r, Tscal h, int np = 32) {
+        inline static Tscal Y_3d(Tscal r, Tscal h, int np) {
             return BaseKernel::norm_3d * f3d_integ_z(r / h, np) / (h * h);
+        }
+
+        template<int np>
+        inline static Tscal Y_3d(Tscal r, Tscal h) {
+            return BaseKernel::norm_3d * f3d_integ_z<np>(r / h) / (h * h);
         }
 
         static constexpr bool has_3d_phi_soft

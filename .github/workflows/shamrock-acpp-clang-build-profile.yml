@@ -174,14 +174,14 @@ jobs:
           cat metric__build_profile.json
 
       - name: Upload build profile report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: clang_build_analyzer_report.txt
           path: build/clang_build_analyzer_report.txt
 
       - name: Upload build profile metric
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: metric__build_profile.json
           path: metric__build_profile.json

@@ -44,13 +44,7 @@ namespace shamalgs::numeric::details {
         const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 len);
 
     template<class T>
-    sycl::buffer<T> inclusive_sum_fallback(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
-
-    template<class T>
     void exclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
-
-    template<class T>
-    void inclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
 
     /**
      * @brief Stream compaction algorithm on fallback

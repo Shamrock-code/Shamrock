@@ -1,0 +1,9 @@
+# Author name as it appears in the git log|Name to display
+# start allow utf-8
+David--Cléris Timothée|Timothée David--Cléris
+David -- Cléris Timothée|Timothée David--Cléris
+tdavidcl|Timothée David--Cléris
+Yona LAPEYRE|Yona Lapeyre
+y-lapeyre|Yona Lapeyre
+Yona|Yona Lapeyre
+# end allow utf-8

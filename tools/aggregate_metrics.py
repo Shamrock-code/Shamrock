@@ -3,7 +3,7 @@
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 
 
@@ -40,8 +40,8 @@ def env_metadata():
 
 def aggregate(root, now=None):
     if now is None:
-        now = datetime.now(timezone.utc)
-    now = now.astimezone(timezone.utc).replace(microsecond=0)
+        now = datetime.now(UTC)
+    now = now.astimezone(UTC).replace(microsecond=0)
 
     payload = {"datetime": now.strftime("%Y-%m-%d %H:%M:%SZ")}
     payload.update(env_metadata())

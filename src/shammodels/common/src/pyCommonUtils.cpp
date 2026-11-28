@@ -10,6 +10,7 @@
 /**
  * @file pyCommonUtils.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -23,6 +24,8 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/logs.hpp"
+#include "shammodels/common/config/enum_NeighCacheStrategy.hpp"
+#include "shammodels/common/config/enum_TensileCorrection.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <pybind11/cast.h>
@@ -67,6 +70,86 @@ namespace sham {
 
 ON_PYTHON_INIT {
     auto &m = root_module;
+
+    py::enum_<shammodels::NeighCacheStrategy>(
+        m,
+        "NeighCacheStrategy",
+        R"==(
+    Strategy used to build the neighbours cache out of the tree traversal.
+
+    Usage
+    -----
+    >>> from shamrock import NeighCacheStrategy
+    >>> cfg.set_neigh_cache_strategy(NeighCacheStrategy.SingleStage)
+)==")
+        .value(
+            "SingleStage",
+            shammodels::NeighCacheStrategy::SingleStage,
+            R"==(
+    Single tree traversal per particle.
+
+    Each particle walks the tree itself and writes its neighbours straight to the
+    cache. Prefer this one when the tree ends up with giant leaves, as on a chaotic
+    disc: there the leaf bounding boxes grow so large that the two stage search makes
+    each particle scan far more candidates than it keeps.
+)==")
+        .value(
+            "TwoStage",
+            shammodels::NeighCacheStrategy::TwoStage,
+            R"==(
+    Two stage neighbours search (see the shamrock paper). This is the default.
+
+    A first pass walks the tree once per leaf to build a leaf to leaf neighbour map,
+    then each particle only scans the particles held by its own leaf's neighbour
+    leaves. This is usually the faster of the two, since the tree traversal is paid
+    once per leaf instead of once per particle.
+)==")
+        .value(
+            "SingleStageSharedOffload",
+            shammodels::NeighCacheStrategy::SingleStageSharedOffload,
+            R"==(
+    Single tree traversal per particle, shared memory offload variant.
+
+    Same algorithm as SingleStage, but the tree traversal stack is placed in a
+    work-group local memory allocation (one private slice per work-item) instead of a
+    per-work-item std::array, and the kernel is launched over nd_range work-groups.
+)==")
+        .value(
+            "TwoStageSharedOffload",
+            shammodels::NeighCacheStrategy::TwoStageSharedOffload,
+            R"==(
+    Two stage neighbours search, shared memory offload variant.
+
+    Same algorithm as TwoStage, but every tree traversal stack (leaf to leaf search
+    and particle parent-leaf search) is placed in work-group local memory instead of a
+    per-work-item std::array.
+)==");
+
+    py::enum_<shammodels::TensileCorrection>(
+        m,
+        "TensileCorrection",
+        R"==(
+    Prefactor of the tensile instability correction -Bhat (div B) in the SPMHD momentum
+    equation.
+
+    Usage
+    -----
+    >>> from shamrock import TensileCorrection
+    >>> cfg.set_IdealMHD(sigma_mhd=1, tensile_corr=TensileCorrection.PhantomBetaSwitch)
+)==")
+        .value(
+            "Borve",
+            shammodels::TensileCorrection::Borve,
+            R"==(
+    Bhat = B/2 regardless of the plasma beta (Borve et al. 2004). This is the default.
+)==")
+        .value(
+            "PhantomBetaSwitch",
+            shammodels::TensileCorrection::PhantomBetaSwitch,
+            R"==(
+    Bhat = f(beta) B, with f = 1 for beta < 2, (10 - beta)/8 for 2 <= beta < 10 and 0
+    otherwise (Price et al. 2018, Phantom paper, eq. 178).
+)==");
 
     m.def(
         "compute_histogram",

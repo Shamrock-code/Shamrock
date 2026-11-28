@@ -31,23 +31,6 @@
 namespace shambase {
 
     /**
-     * @brief check that the size of a sycl buffer is below or equal to the value of max range
-     * throw if it is not the case
-     *
-     * @tparam T
-     * @param buf
-     * @param max_range
-     * @param loc
-     */
-    template<class T>
-    void check_buffer_size(
-        sycl::buffer<T> &buf, u64 max_range, const SourceLocation loc = SourceLocation()) {
-        if (buf.size() < max_range) {
-            throw make_except_with_loc<std::invalid_argument>("buffer is too small", loc);
-        }
-    }
-
-    /**
      * @brief Get the Device Type Name
      *
      * @param Device

@@ -12,6 +12,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
+from shamrock.model_ramses import HLLC_PVRS
 
 import shamrock
 
@@ -141,9 +142,9 @@ def run_case(set_bc_func, case_name):
     cfg.set_scale_factor(scale_fact)
     set_bc_func(cfg)
 
-    # cfg.set_riemann_solver_rusanov()
-    # cfg.set_riemann_solver_hll()
-    cfg.set_riemann_solver_hllc()
+    # cfg.set_riemann_solver(Rusanov)
+    # cfg.set_riemann_solver(HLL)
+    cfg.set_riemann_solver(HLLC_PVRS)
 
     # cfg.set_slope_lim_none()
     # cfg.set_slope_lim_vanleer_f()

@@ -50,10 +50,11 @@ void register_field(py::module &m, const char *class_name) {
             })
         .def("collect_data", [](Field<T> &self) -> std::vector<T> {
             std::vector<T> base = {};
-            self.get_refs().for_each([&](u64 id, std::reference_wrapper<PatchDataField<T>> &pdf) {
-                auto copy = pdf.get().get_buf().copy_to_stdvec();
-                base.insert(base.end(), copy.begin(), copy.end());
-            });
+            self.get_refs().for_each_ordered(
+                [&](u64 id, std::reference_wrapper<PatchDataField<T>> &pdf) {
+                    auto copy = pdf.get().get_buf().copy_to_stdvec();
+                    base.insert(base.end(), copy.begin(), copy.end());
+                });
 
             std::vector<T> collected = {};
             shamalgs::collective::vector_allgatherv(base, collected, MPI_COMM_WORLD);

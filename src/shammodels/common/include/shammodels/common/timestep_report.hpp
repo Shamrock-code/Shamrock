@@ -35,6 +35,7 @@ namespace shammodels {
         size_t max_mem_device,
         size_t max_mem_host,
         shamsys::SystemMetrics system_metrics = {},
-        bool report_power_usage               = false);
+        bool report_power_usage               = false,
+        std::optional<u64> nobj_ghost         = std::nullopt);
 
 } // namespace shammodels

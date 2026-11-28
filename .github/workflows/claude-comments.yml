@@ -45,6 +45,14 @@ jobs:
         with:
           show_full_output: true
 
+          # Run on PRs opened from forks (the action skips them by default).
+          # The action still requires the commenter to have write access, and
+          # restricts code-running commands when the PR author lacks it
+          # (restrict_untrusted_prs, left at its default "true").
+          # See "Pull requests from forks" in docs/security.md of
+          # anthropics/claude-code-action.
+          allow_fork_prs: "true"
+
           claude_args: |
             --model qwen3.8 --append-system-prompt "Always post responses as GitHub comments in the context where you were invoked (pull request or issue)."
 

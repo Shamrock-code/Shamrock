@@ -19,6 +19,7 @@
 #include "shamalgs/details/numeric/numeric.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/EventList.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/AABB.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
@@ -48,26 +49,25 @@ namespace shammodels::basegodunov::modules::details {
         // [i] is the number of link for block i in mpdat (last value is 0)
         sham::DeviceBuffer<u32> link_counts(graph_nodes + 1, dev_sched);
 
-        sham::EventList deps;
-        auto ker          = kergen.get_read_access(deps);
-        auto ptr_link_cnt = link_counts.get_write_access(deps);
+        // sham::kernel_call throws on an empty range, whereas the former
+        // shambase::parallel_for was a no-op, hence the guards
+        if (graph_nodes > 0) {
+            // fill buffer with number of link in the block graph
+            sham::kernel_call(
+                q,
+                sham::MultiRef{kergen},
+                sham::MultiRef{link_counts},
+                graph_nodes,
+                [](u32 id_a, const auto ker, u32 *__restrict ptr_link_cnt) {
+                    u32 block_found_count = 0;
 
-        // fill buffer with number of link in the block graph
-        auto e = q.submit(deps, [&](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, graph_nodes, "count block graph link", [=](u64 gid) {
-                u32 id_a              = (u32) gid;
-                u32 block_found_count = 0;
+                    ker.for_each_other_index(id_a, [&](u32 id_b) {
+                        block_found_count++;
+                    });
 
-                ker.for_each_other_index(id_a, [&](u32 id_b) {
-                    block_found_count++;
+                    ptr_link_cnt[id_a] = block_found_count;
                 });
-
-                ptr_link_cnt[id_a] = block_found_count;
-            });
-        });
-
-        link_counts.complete_event_state(e);
-        kergen.complete_event_state(e);
+        }
 
         // set the last val to 0 so that the last slot after exclusive scan is the sum
         link_counts.set_val_at_idx(graph_nodes, 0);
@@ -79,28 +79,25 @@ namespace shammodels::basegodunov::modules::details {
 
         sham::DeviceBuffer<u32> ids_links(link_cnt, dev_sched);
 
-        sham::EventList deps2;
-        auto cnt_offsets = link_cnt_offsets.get_read_access(deps2);
-        auto ker2        = kergen.get_read_access(deps);
-        auto links       = ids_links.get_write_access(deps2);
+        if (graph_nodes > 0) {
+            // find the neigh ids
+            sham::kernel_call(
+                q,
+                sham::MultiRef{link_cnt_offsets, kergen},
+                sham::MultiRef{ids_links},
+                graph_nodes,
+                [](u32 id_a,
+                   const u32 *__restrict cnt_offsets,
+                   const auto ker2,
+                   u32 *__restrict links) {
+                    u32 next_link_idx = cnt_offsets[id_a];
 
-        // find the neigh ids
-        auto e2 = q.submit(deps2, [&](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, graph_nodes, "get ids block graph link", [=](u64 gid) {
-                u32 id_a = (u32) gid;
-
-                u32 next_link_idx = cnt_offsets[id_a];
-
-                ker2.for_each_other_index(id_a, [&](u32 id_b) {
-                    links[next_link_idx] = id_b;
-                    next_link_idx++;
+                    ker2.for_each_other_index(id_a, [&](u32 id_b) {
+                        links[next_link_idx] = id_b;
+                        next_link_idx++;
+                    });
                 });
-            });
-        });
-
-        link_cnt_offsets.complete_event_state(e2);
-        ids_links.complete_event_state(e2);
-        kergen.complete_event_state(e2);
+        }
 
         using Graph = shammodels::basegodunov::modules::NeighGraph;
         return Graph(

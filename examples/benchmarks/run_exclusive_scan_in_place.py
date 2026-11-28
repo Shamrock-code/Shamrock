@@ -82,16 +82,16 @@ def run_performance_sweep():
 
 # %%
 # List current implementation
-if not shamrock.algs.is_impl_set_scan_exclusive_sum_in_place():
-    shamrock.algs.autoselect_impl_scan_exclusive_sum_in_place()
+if not shamrock.algs.is_impl_set("scan_exclusive_sum_in_place"):
+    shamrock.algs.autoselect_impl("scan_exclusive_sum_in_place")
 
-current_impl = shamrock.algs.get_current_impl_scan_exclusive_sum_in_place()
+current_impl = shamrock.algs.get_current_impl("scan_exclusive_sum_in_place")
 
 print(current_impl)
 
 # %%
 # List all implementations available
-all_default_impls = shamrock.algs.get_default_impl_list_scan_exclusive_sum_in_place()
+all_default_impls = shamrock.algs.get_default_impl_list("scan_exclusive_sum_in_place")
 
 print(all_default_impls)
 
@@ -100,7 +100,7 @@ print(all_default_impls)
 
 dic_bench = {}
 for impl in all_default_impls:
-    shamrock.algs.set_impl_scan_exclusive_sum_in_place(impl)
+    shamrock.algs.set_impl("scan_exclusive_sum_in_place", impl)
 
     impl_name = json.loads(impl)["implementation"]
 

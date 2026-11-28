@@ -180,6 +180,5 @@ endif()
 
 ## System
 
- - `SyclHelper`
  - `MpiHelper`
  - `NodeInstance`

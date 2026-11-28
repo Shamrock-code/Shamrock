@@ -36,6 +36,7 @@ namespace shammodels {
         struct PointMass {
             Tscal central_mass;
             Tscal Racc;
+            Tvec central_pos{};
         };
 
         struct PN_PW {
@@ -55,8 +56,8 @@ namespace shammodels {
             Tscal Racc;
             Tscal a_spin;
             Tvec dir_spin;
-            Tvec central_pos;
-            Tvec central_vel;
+            Tvec central_pos{};
+            Tvec central_vel{};
         };
 
         /**
@@ -83,7 +84,7 @@ namespace shammodels {
                 : shear_base(shear_base), shear_dir(shear_dir), Omega_0(Omega_0), eta(eta), q(q) {};
         };
 
-        /// f = -GMy / sqrt(R0^2 + y^2)
+        /// thin disc approx: a_z = -GMz / (R0^2 sqrt(R0^2 + z^2)) ~ -Omega_K^2 z for z << R0
         struct VerticalDiscPotential {
             Tscal central_mass;
             Tscal R0;
@@ -121,8 +122,8 @@ namespace shammodels {
 
         std::vector<ExtForceVariant<Tvec>> ext_forces;
 
-        inline void add_point_mass(Tscal central_mass, Tscal Racc) {
-            ext_forces.push_back(ExtForceVariant<Tvec>{PointMass{central_mass, Racc}});
+        inline void add_point_mass(Tscal central_mass, Tscal Racc, Tvec central_pos = Tvec{}) {
+            ext_forces.push_back(ExtForceVariant<Tvec>{PointMass{central_mass, Racc, central_pos}});
         }
 
         inline void add_paczynski_wiita(Tscal central_mass, Tvec central_pos, Tscal Racc) {
@@ -184,8 +185,11 @@ namespace shammodels {
         using VelocityDissipation   = typename T::VelocityDissipation;
 
         if (const PointMass *v = std::get_if<PointMass>(&p.val)) {
-            j = {
-                {"force_type", "point_mass"}, {"central_mass", v->central_mass}, {"Racc", v->Racc}};
+            j
+                = {{"force_type", "point_mass"},
+                   {"central_mass", v->central_mass},
+                   {"Racc", v->Racc},
+                   {"central_pos", v->central_pos}};
 
         } else if (const PN_PW *v = std::get_if<PN_PW>(&p.val)) {
             j
@@ -254,6 +258,7 @@ namespace shammodels {
             p.val = PointMass{
                 j.at("central_mass").get<Tscal>(),
                 j.at("Racc").get<Tscal>(),
+                j.value("central_pos", Tvec{}),
             };
         } else if (force_type == "paczynski_wiita") {
             p.val = PN_PW{

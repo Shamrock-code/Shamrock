@@ -168,75 +168,10 @@ namespace shamalgs::numeric::details {
         return std::move(get_in_buf_ref(step));
     }
 
-    template<class T>
-    class KernelExclsum_3;
-
-    template<class T>
-    sycl::buffer<T> exclusive_sum_gpugems39_3(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
-
-        u32 rounded_len = sham::roundup_pow2_clz(len);
-
-        sycl::buffer<T> out1(rounded_len);
-        sycl::buffer<T> out2(rounded_len);
-
-        auto get_in_buf_ref = [&](u32 step) -> sycl::buffer<T> & {
-            if (step % 2 == 0) {
-                return out1;
-            } else {
-                return out2;
-            }
-        };
-
-        auto get_out_buf_ref = [&](u32 step) -> sycl::buffer<T> & {
-            if (step % 2 == 1) {
-                return out1;
-            } else {
-                return out2;
-            }
-        };
-
-        u32 step = 0;
-
-        q.submit([&](sycl::handler &cgh) {
-            u32 correct_len = len;
-            sycl::accessor acc_in{buf1, cgh, sycl::read_only};
-            sycl::accessor acc_out{get_in_buf_ref(step), cgh, sycl::write_only, sycl::no_init};
-
-            cgh.parallel_for(sycl::range<1>{rounded_len}, [=](sycl::item<1> id) {
-                u32 thid    = id.get_linear_id();
-                acc_out[id] = (thid > 0 && thid < correct_len) ? acc_in[thid - 1] : 0;
-            });
-        });
-
-        for (int offset = 1; offset < rounded_len; offset *= 2) {
-
-            q.submit([&, offset](sycl::handler &cgh) {
-                sycl::accessor acc_in{get_in_buf_ref(step), cgh, sycl::read_only};
-                sycl::accessor acc_out{get_out_buf_ref(step), cgh, sycl::write_only};
-
-                cgh.parallel_for<KernelExclsum_3<T>>(
-                    sycl::range<1>{rounded_len}, [=](sycl::item<1> id) {
-                        u32 thid = id.get_linear_id();
-
-                        const auto in_val = acc_in[thid];
-
-                        acc_out[thid] = (thid >= offset) ? in_val + acc_in[thid - offset] : in_val;
-                    });
-            });
-
-            step++;
-        }
-
-        return std::move(get_in_buf_ref(step));
-    }
-
     template sycl::buffer<u32> exclusive_sum_gpugems39_1(
         sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
     template sycl::buffer<u32> exclusive_sum_gpugems39_2(
-        sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
-
-    template sycl::buffer<u32> exclusive_sum_gpugems39_3(
         sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
 } // namespace shamalgs::numeric::details

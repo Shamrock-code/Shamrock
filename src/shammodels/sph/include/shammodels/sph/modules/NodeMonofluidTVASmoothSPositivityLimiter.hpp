@@ -44,8 +44,13 @@ namespace shammodels::sph::modules {
 
         u32 ndust;
 
+        /// apply the xi switch (no further decrease of a negative s_j), disabled when the switch is
+        /// already applied pairwise in the TVA derivative (pair gate), only phi is then applied
+        bool apply_xi;
+
         public:
-        NodeMonofluidTVASmoothSPositivityLimiter(u32 ndust) : ndust(ndust) {}
+        NodeMonofluidTVASmoothSPositivityLimiter(u32 ndust, bool apply_xi = true)
+            : ndust(ndust), apply_xi(apply_xi) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
@@ -68,49 +73,44 @@ namespace shammodels::sph::modules {
                 sham::DDMultiRef{edges.s_j.get_spans(), edges.Ttilde_sj.get_spans()},
                 sham::DDMultiRef{edges.ds_j_dt.get_spans()},
                 total_specie_count,
-                [](u32 thread_id,
-                   const Tscal *__restrict s_j,
-                   const Tscal *__restrict Ttilde_sj,
-                   Tscal *__restrict ds_j_dt) {
+                [apply_xi = apply_xi](
+                    u32 thread_id,
+                    const Tscal *__restrict s_j,
+                    const Tscal *__restrict Ttilde_sj,
+                    Tscal *__restrict ds_j_dt) {
                     Tscal s_j_a       = s_j[thread_id];
                     Tscal Ttilde_sj_a = Ttilde_sj[thread_id];
                     Tscal ds_j_dt_a   = ds_j_dt[thread_id];
 
                     // if we dip in the negative range do not dip further
-                    ds_j_dt_a *= (s_j_a < 0 && ds_j_dt_a < 0) ? 0 : 1;
+                    if (apply_xi) {
+                        ds_j_dt_a *= (s_j_a < 0 && ds_j_dt_a < 0) ? 0 : 1;
+                    }
 
                     // restore it slowly to 0
-                    ds_j_dt_a += (s_j_a < 0) ? -s_j_a / (10 * Ttilde_sj_a) : 0;
+                    // (|Ttilde_sj| as Ttilde_sj can become negative, which would push s_j further
+                    // into the negative range)
+                    ds_j_dt_a += (s_j_a < 0) ? -s_j_a / (10 * sycl::fabs(Ttilde_sj_a)) : 0;
 
                     ds_j_dt[thread_id] = ds_j_dt_a;
                 });
         }
 
         inline virtual std::string _impl_get_label() const {
-            return "NodeMonofluidTVASmoothSPositivityLimiter";
+            return apply_xi ? "NodeMonofluidTVASmoothSPositivityLimiter"
+                            : "NodeMonofluidTVASmoothSPositivityLimiter (phi only)";
         };
 
         inline virtual std::string _impl_get_tex() const {
-
-            auto part_counts = get_ro_edge_base(0).get_tex_symbol();
-            auto s_j         = get_ro_edge_base(1).get_tex_symbol();
-            auto Ttilde_sj   = get_ro_edge_base(2).get_tex_symbol();
-            auto ds_j_dt     = get_rw_edge_base(0).get_tex_symbol();
-
             std::string tex = R"tex(
                 NodeMonofluidTVASmoothSPositivityLimiter
 
                 For gas particle $a$ and dust bin $j$:
 
                 \begin{align}
-                {ds_j_dt}_{j,a} &\leftarrow
+                {xi_switch}{ds_j_dt}_{j,a} &\mathrel{+}=
                     \begin{cases}
-                        0 & {s_j}_{j,a} < 0 \land {ds_j_dt}_{j,a} < 0 \\
-                        {ds_j_dt}_{j,a} & \text{otherwise}
-                    \end{cases} \\
-                {ds_j_dt}_{j,a} &\mathrel{+}=
-                    \begin{cases}
-                        -{s_j}_{j,a} / (10\, {Ttilde_sj}_{j,a}) & {s_j}_{j,a} < 0 \\
+                        -{s_j}_{j,a} / (10\, \lvert {Ttilde_sj}_{j,a} \rvert) & {s_j}_{j,a} < 0 \\
                         0 & \text{otherwise}
                     \end{cases}
                 \end{align}
@@ -118,10 +118,17 @@ namespace shammodels::sph::modules {
                 $a \in [0,{part_counts})$, $j \in [0,{ndust})$.
             )tex";
 
-            shambase::replace_all(tex, "{part_counts}", part_counts);
-            shambase::replace_all(tex, "{s_j}", s_j);
-            shambase::replace_all(tex, "{Ttilde_sj}", Ttilde_sj);
-            shambase::replace_all(tex, "{ds_j_dt}", ds_j_dt);
+            const std::string xi_switch = apply_xi ? R"tex({ds_j_dt}_{j,a} &\leftarrow
+                    \begin{cases}
+                        0 & {s_j}_{j,a} < 0 \land {ds_j_dt}_{j,a} < 0 \\
+                        {ds_j_dt}_{j,a} & \text{otherwise}
+                    \end{cases} \\
+                )tex"
+                                                   : "";
+            shambase::replace_all(tex, "{xi_switch}", xi_switch);
+
+            replace_edges_tex_symbols(tex);
+
             shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
 
             return tex;

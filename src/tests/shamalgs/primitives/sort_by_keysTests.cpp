@@ -7,6 +7,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -178,20 +179,71 @@ NEW_TEST(Unittest, "shamalgs/primitives/sort_by_keys", 1) {
             REQUIRE_EQUAL(result_key_sorted, expected_key_sorted);
             REQUIRE_EQUAL(result_val_sorted, expected_val_sorted);
         }
+
+        { // u64 keys over the full range, large non power-of-2 length
+            // large enough for chunked implementations (e.g. the radix sort) to split the input
+            // into several chunks, the last one being shorter than the others
+            u32 len                   = 100003;
+            std::vector<u64> key_data = shamalgs::primitives::mock_vector<u64>(0x789, len);
+            // add duplicated keys
+            for (u32 i = 0; i < len; i += 7) {
+                key_data[i] = key_data[i / 2];
+            }
+
+            std::vector<u32> value_data(len);
+            for (u32 i = 0; i < len; ++i) {
+                value_data[i] = i;
+            }
+
+            std::vector<std::pair<u64, u32>> expected_zip(len);
+            for (u32 i = 0; i < len; ++i) {
+                expected_zip[i] = {key_data[i], value_data[i]};
+            }
+            std::sort(expected_zip.begin(), expected_zip.end());
+
+            sham::DeviceBuffer<u64> keys(len, sched);
+            keys.copy_from_stdvec(key_data);
+            sham::DeviceBuffer<u32> values(len, sched);
+            values.copy_from_stdvec(value_data);
+
+            shamalgs::primitives::sort_by_keys(keys, values, len);
+
+            std::vector<u64> result_key   = keys.copy_to_stdvec();
+            std::vector<u32> result_value = values.copy_to_stdvec();
+
+            REQUIRE(std::is_sorted(result_key.begin(), result_key.end()));
+
+            std::vector<std::pair<u64, u32>> result_zip(len);
+            for (u32 i = 0; i < len; ++i) {
+                result_zip[i] = {result_key[i], result_value[i]};
+            }
+            std::sort(result_zip.begin(), result_zip.end());
+
+            std::vector<u64> expected_key_sorted(len), result_key_sorted(len);
+            std::vector<u32> expected_val_sorted(len), result_val_sorted(len);
+            for (u32 i = 0; i < len; ++i) {
+                expected_key_sorted[i] = expected_zip[i].first;
+                expected_val_sorted[i] = expected_zip[i].second;
+                result_key_sorted[i]   = result_zip[i].first;
+                result_val_sorted[i]   = result_zip[i].second;
+            }
+            REQUIRE_EQUAL(result_key_sorted, expected_key_sorted);
+            REQUIRE_EQUAL(result_val_sorted, expected_val_sorted);
+        }
     };
 
-    if (!shamalgs::primitives::impl::is_impl_set_sort_by_keys()) {
-        shamalgs::primitives::impl::autoselect_impl_sort_by_keys();
+    if (!shamalgs::impl_registry::is_impl_set("sort_by_keys")) {
+        shamalgs::impl_registry::autoselect_impl(
+            "sort_by_keys", shamsys::instance::get_compute_scheduler_ptr());
     }
-    auto current_impl = shamalgs::primitives::impl::get_current_impl_sort_by_keys();
+    auto current_impl = shamalgs::impl_registry::get_current_impl("sort_by_keys");
 
-    for (const std::string &impl :
-         shamalgs::primitives::impl::get_default_impl_list_sort_by_keys()) {
-        shamalgs::primitives::impl::set_impl_sort_by_keys(impl);
+    for (const std::string &impl : shamalgs::impl_registry::get_default_impl_list("sort_by_keys")) {
+        shamalgs::impl_registry::set_impl("sort_by_keys", impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_sort_by_keys(current_impl);
+    shamalgs::impl_registry::set_impl("sort_by_keys", current_impl);
 }

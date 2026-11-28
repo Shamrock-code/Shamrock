@@ -17,8 +17,8 @@
 
 #include "shambackends/math.hpp"
 #include "shammath/matrix.hpp"
-#include "shamunits/Constants.hpp"
 #include "shamunits/UnitSystem.hpp"
+#include "shamunits/constant_table.hpp"
 
 namespace shamphys {
 
@@ -72,7 +72,7 @@ namespace shamphys {
         double nu,
         const shamunits::UnitSystem<double> usys = shamunits::UnitSystem<double>{}) {
 
-        double G = shamunits::Constants{usys}.G();
+        double G = usys.get<shamunits::constants::G>();
 
         return get_binary_pair(m1, m2, a, e, nu, G);
     }
@@ -182,7 +182,7 @@ namespace shamphys {
         double pitch,
         double yaw) {
         return get_binary_rotated(
-            m1, m2, a, e, nu, shamunits::Constants{usys}.G(), roll, pitch, yaw);
+            m1, m2, a, e, nu, usys.get<shamunits::constants::G>(), roll, pitch, yaw);
     }
 
 } // namespace shamphys

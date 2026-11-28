@@ -59,27 +59,6 @@ namespace shamalgs::numeric::details {
     }
 
     template<class T>
-    sycl::buffer<T> inclusive_sum_fallback(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
-
-        sycl::buffer<T> ret_buf(len);
-
-        T accum{0};
-
-        {
-            sycl::host_accessor acc_src{buf1, sycl::read_only};
-            sycl::host_accessor acc_res{ret_buf, sycl::write_only, sycl::no_init};
-
-            for (u32 idx = 0; idx < len; idx++) {
-
-                accum += acc_src[idx];
-                acc_res[idx] = accum;
-            }
-        }
-
-        return std::move(ret_buf);
-    }
-
-    template<class T>
     void exclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
 
         T accum{0};
@@ -98,25 +77,6 @@ namespace shamalgs::numeric::details {
         }
     }
 
-    template<class T>
-    void inclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
-
-        T accum{0};
-
-        {
-            sycl::host_accessor acc_src{buf1, sycl::read_write};
-
-            for (u32 idx = 0; idx < len; idx++) {
-
-                accum += acc_src[idx];
-                acc_src[idx] = accum;
-            }
-        }
-    }
-
-    template sycl::buffer<u32> inclusive_sum_fallback(
-        sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
-
     template sham::DeviceBuffer<u32> exclusive_sum_fallback_usm(
         const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u32> &buf1, u32 len);
 
@@ -124,8 +84,6 @@ namespace shamalgs::numeric::details {
         sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
     template void exclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
-
-    template void inclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
     std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact_fallback(
         sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len) {

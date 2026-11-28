@@ -79,11 +79,6 @@ void shammodels::basegodunov::modules::FindGhostLayerCandidates<
 template<class TgridVec>
 std::string shammodels::basegodunov::modules::FindGhostLayerCandidates<TgridVec>::_impl_get_tex()
     const {
-    auto sim_box                 = get_ro_edge_base(0).get_tex_symbol();
-    auto patch_tree              = get_ro_edge_base(1).get_tex_symbol();
-    auto patch_boxes             = get_ro_edge_base(2).get_tex_symbol();
-    auto ghost_layers_candidates = get_rw_edge_base(0).get_tex_symbol();
-
     std::string tex = R"tex(
         Find Ghost Layer Candidates
 
@@ -120,10 +115,7 @@ std::string shammodels::basegodunov::modules::FindGhostLayerCandidates<TgridVec>
         \textbf{Note:} $f(B, x, y, z)$ is the paving function that maps box $B$ by offset $(x, y, z)$
     )tex";
 
-    shambase::replace_all(tex, "{sim_box}", sim_box);
-    shambase::replace_all(tex, "{patch_tree}", patch_tree);
-    shambase::replace_all(tex, "{patch_boxes}", patch_boxes);
-    shambase::replace_all(tex, "{ghost_layers_candidates}", ghost_layers_candidates);
+    replace_edges_tex_symbols(tex);
 
     return tex;
 }

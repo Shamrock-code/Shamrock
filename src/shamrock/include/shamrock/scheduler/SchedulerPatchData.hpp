@@ -65,6 +65,11 @@ namespace shamrock::scheduler {
             owned_data.for_each(std::forward<std::function<void(u64, PatchData &)>>(f));
         }
 
+        /// Same as for_each_patchdata but iterates in increasing patch id order
+        inline void for_each_patchdata_ordered(std::function<void(u64, PatchData &)> &&f) {
+            owned_data.for_each_ordered(std::forward<std::function<void(u64, PatchData &)>>(f));
+        }
+
         /**
          * @brief simulation box geometry info
          *

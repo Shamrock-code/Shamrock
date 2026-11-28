@@ -150,7 +150,7 @@ void shammodels::sph::modules::SPHAzymuthalInteg<Tvec, T, SPHKernel>::_impl_eval
                         Tscal rho_b = shamrock::sph::rho_h(partmass, h_b, Kernel::hfactd);
 
                         // TODO: account for curvature
-                        acc += partmass * val * Kernel::Y_3d(rab, h_b, 4) / rho_b;
+                        acc += partmass * val * Kernel::template Y_3d<4>(rab, h_b) / rho_b;
                     });
 
                 render_field[gid] += acc;

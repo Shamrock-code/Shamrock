@@ -84,12 +84,6 @@ namespace shammodels::sph::modules {
         inline virtual std::string _impl_get_label() const { return "BallabioTsLimiter"; };
 
         inline virtual std::string _impl_get_tex() const {
-
-            auto part_counts = get_ro_edge_base(0).get_tex_symbol();
-            auto hpart       = get_ro_edge_base(1).get_tex_symbol();
-            auto cs          = get_ro_edge_base(2).get_tex_symbol();
-            auto t_j         = get_rw_edge_base(0).get_tex_symbol();
-
             std::string tex = R"tex(
                 BallabioTsLimiter
 
@@ -100,11 +94,9 @@ namespace shammodels::sph::modules {
                 \end{align}
             )tex";
 
-            shambase::replace_all(tex, "{part_counts}", part_counts);
+            replace_edges_tex_symbols(tex);
+
             shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
-            shambase::replace_all(tex, "{hpart}", hpart);
-            shambase::replace_all(tex, "{cs}", cs);
-            shambase::replace_all(tex, "{t_j}", t_j);
 
             return tex;
         };

@@ -28,9 +28,9 @@
 // Note on the edge lists below: the Euler time derivatives (dt_rho, dt_vel,
 // dt_press and their dust counterparts) used to be recomputed inside these
 // kernels for both sides of every link. They are now precomputed per cell by
-// NodeEulerTimeDerivativeGas / NodeEulerTimeDerivativeDust and merely loaded
-// here, which is why each node only carries the fields its spatial
-// reconstruction still needs.
+// NodeEulerTimeDerivativeGas{Adiabatic,Barotropic} / NodeEulerTimeDerivativeDust
+// and merely loaded here, which is why each node only carries the fields its
+// spatial reconstruction still needs.
 
 #define NODE_EDGES_RHO(X_RO, X_RW)                                                                 \
     /* ------------------- inputs ------------------- */                                           \

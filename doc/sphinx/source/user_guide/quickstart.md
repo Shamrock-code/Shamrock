@@ -172,21 +172,13 @@ If you see any errors at this point it can be hard to list all cases so again dr
 This guide assumes that you have Shamrock compiled from source. I will mention what has to be changed if it is installed globally in notes in the following sections.
 :::
 
-You have 4 main ways of using Shamrock:
+:::{tip}
+The recommended way to use Shamrock is the **Python interpreter mode**: run your Python scripts with the `./shamrock` executable (`./shamrock --rscript <script.py>`). It needs nothing beyond the compilation above and is what the rest of the documentation assumes. Unless you have a specific reason not to, use this one.
 
-- As a Python interpreter
-- As a Python interpreter + Ipython
-- As a Python package
-- In a Jupyter notebook
+Other modes (IPython, Python package, Jupyter) are described at the end of this page in {ref}`quickstart-other-modes`.
+:::
 
-For all of them except the Python interpreter mode you should run the following beforehand:
-
-```bash
-# Configure install paths in the local build folder
-cmake . -DCMAKE_INSTALL_PYTHONDIR=$(pwd)/pysham -DCMAKE_INSTALL_PREFIX=$(pwd)/shaminstall
-# Install it !
-shammake install
-```
+(quickstart-interpreter-mode)=
 
 ### Python interpreter mode
 
@@ -351,7 +343,13 @@ The `--rscript` flag means run-scripts. In Shamrock since everything goes throug
 It is normal for the figures to vary slightly between runs. This is a benchmark of the exclusive scans implemented in Shamrock, which are quite fast and therefore subject to some run-to-run variability. On CPU, this is especially noticeable depending on what else is using the memory bandwidth.
 :::
 
-### Python interpreter + Ipython
+(quickstart-other-modes)=
+
+### Other ways to run Shamrock
+
+The following modes are optional. If you are just getting started, stick with the Python interpreter mode above.
+
+::::::{dropdown} Python interpreter + IPython
 
 :::::{warning}
 IPython does not come by default with python. Ensure that it is installed on your system, or you can install it in a Python venv but then things are a bit different, see [Using Shamrock with Python venv](./python_venv.md).
@@ -474,10 +472,20 @@ If you want to run the same script as above just do (in the IPython prompt):
 ```ipython
 run ../examples/benchmarks/run_exclusive_scan_in_place.py
 ```
+::::::
 
-### Python package
+::::::{dropdown} Python package (requires PYTHONPATH)
+:name: quickstart-python-package
 
-This one is simple. First ensure that you have done:
+:::{warning}
+`shammake install` does **not** install Shamrock into your Python's site-packages. `import shamrock` will fail with `ModuleNotFoundError` unless `PYTHONPATH` contains the `pysham` directory.
+
+`./pysham` is a relative path: it only works when you launch Python from the build directory. Anywhere else, use an absolute path (e.g. `PYTHONPATH=/path/to/Shamrock/build/pysham:$PYTHONPATH`).
+
+If in doubt, use the {ref}`Python interpreter mode <quickstart-interpreter-mode>` (`./shamrock --rscript`) instead.
+:::
+
+First, install Shamrock's Python bindings in the build folder:
 
 ```bash
 # Configure install paths in the local build folder
@@ -529,8 +537,14 @@ As you can see, we have just imported and initialized Shamrock as a python packa
 ```bash
 PYTHONPATH=./pysham:$PYTHONPATH python3 ../examples/benchmarks/run_exclusive_scan_in_place.py
 ```
+::::::
 
-### Jupyter notebook
+::::::{dropdown} Jupyter notebook (requires PYTHONPATH)
+:name: quickstart-jupyter
+
+:::{warning}
+Like the Python package mode, this requires running `shammake install` first and setting `PYTHONPATH` to the `pysham` directory, otherwise `import shamrock` will fail. See {ref}`the Python package mode <quickstart-python-package>` for details.
+:::
 
 Just for your pleasure and enjoyment through this flight... tutorial behold the magic command:
 
@@ -570,6 +584,7 @@ Explanation of the flags:
 - `--ip=0.0.0.0` Otherwise the port is not forwarded correctly out of the container.
 - `--NotebookApp.token=''` Do not use a token to log.
 :::
+::::::
 
 ## Next steps
 

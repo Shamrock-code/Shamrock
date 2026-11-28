@@ -54,7 +54,27 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
 
     config_cls.def("print_status", &TConfig::print_status)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
-        .def("set_two_stage_search", &TConfig::set_two_stage_search)
+        .def(
+            "set_neigh_cache_strategy",
+            &TConfig::set_neigh_cache_strategy,
+            R"==(
+    Set the strategy used to build the neighbours cache.
+
+    Parameters
+    ----------
+    strategy : NeighCacheStrategy
+        Either ``NeighCacheStrategy.SingleStage`` or ``NeighCacheStrategy.TwoStage``
+        (the default), as obtained from ``from shamrock import NeighCacheStrategy``.
+)==")
+        .def(
+            "set_two_stage_search",
+            &TConfig::set_two_stage_search,
+            R"==(
+    Set the neighbours cache strategy from a boolean.
+
+    .. deprecated::
+        Use :py:meth:`set_neigh_cache_strategy` instead.
+)==")
         // Riemann solver config
         .def(
             "set_riemann_iterative",
@@ -183,12 +203,13 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         // External forces
         .def(
             "add_ext_force_point_mass",
-            [](TConfig &self, Tscal central_mass, Tscal Racc) {
-                self.add_ext_force_point_mass(central_mass, Racc);
+            [](TConfig &self, Tscal central_mass, Tscal Racc, Tvec central_pos) {
+                self.add_ext_force_point_mass(central_mass, Racc, central_pos);
             },
-            py::kw_only(),
             py::arg("central_mass"),
-            py::arg("Racc"))
+            py::arg("Racc"),
+            py::kw_only(),
+            py::arg("central_pos") = Tvec{0, 0, 0})
         // Units
         .def("set_units", &TConfig::set_units)
         // CFL

@@ -109,14 +109,6 @@ namespace shammodels::sph::modules {
         };
 
         inline virtual std::string _impl_get_tex() const {
-
-            auto part_counts = get_ro_edge_base(0).get_tex_symbol();
-            auto gpart_mass  = get_ro_edge_base(1).get_tex_symbol();
-            auto hfactd      = get_ro_edge_base(2).get_tex_symbol();
-            auto clamp_frac  = get_ro_edge_base(3).get_tex_symbol();
-            auto hpart       = get_ro_edge_base(4).get_tex_symbol();
-            auto s_j         = get_rw_edge_base(0).get_tex_symbol();
-
             std::string tex = R"tex(
                 NodeMonofluidTVADustDensityClamp
 
@@ -142,12 +134,8 @@ namespace shammodels::sph::modules {
                 $m = {gpart_mass}$, $h_{{\rm fact}} = {hfactd}$.
             )tex";
 
-            shambase::replace_all(tex, "{part_counts}", part_counts);
-            shambase::replace_all(tex, "{gpart_mass}", gpart_mass);
-            shambase::replace_all(tex, "{hfactd}", hfactd);
-            shambase::replace_all(tex, "{clamp_frac}", clamp_frac);
-            shambase::replace_all(tex, "{hpart}", hpart);
-            shambase::replace_all(tex, "{s_j}", s_j);
+            replace_edges_tex_symbols(tex);
+
             shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
 
             return tex;

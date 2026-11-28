@@ -20,11 +20,11 @@
 #include "shambase/overloaded.hpp"
 #include "shambase/string.hpp"
 #include "shamalgs/ImplVariant.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shambackends/Device.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/kernel_call.hpp"
-#include "shamcomm/logs.hpp"
 #include <shambackends/sycl.hpp>
 #include <optional>
 #include <stdexcept>
@@ -53,40 +53,15 @@ namespace shamalgs::primitives {
             static constexpr std::string_view variant_type_name = "gpu_oversubscribe";
         };
 
-        inline shamalgs::ImplVariantGlobal<Reference, NaiveGpu, GpuTeamFetching, GpuOversubscribe>
-            compute_histogram_impl;
+        /// Implementation selector type for compute_histogram
+        using ComputeHistogramImpl
+            = shamalgs::ImplVariantGlobal<Reference, NaiveGpu, GpuTeamFetching, GpuOversubscribe>;
 
-        /// Get list of available compute_histogram implementations
-        inline std::vector<std::string> get_default_impl_list_compute_histogram() {
-            return compute_histogram_impl.get_default_config_list();
-        }
+        /// Implementation selector for compute_histogram (defined in compute_histogram.cpp)
+        extern ComputeHistogramImpl compute_histogram_impl;
 
-        /// Get the current implementation for compute_histogram
-        inline std::string get_current_impl_compute_histogram() {
-            return compute_histogram_impl.get_current_config();
-        }
-
-        /// Check if an implementation has been selected for compute_histogram
-        inline bool is_impl_set_compute_histogram() { return compute_histogram_impl.is_set(); }
-
-        /// Set the implementation for compute_histogram
-        inline void set_impl_compute_histogram(const std::string &impl) {
-            shamlog_info_ln("algs", "setting compute_histogram implementation to impl :", impl);
-            compute_histogram_impl.set(impl);
-        }
-
-        /// Select the default implementation for compute_histogram
-        inline void autoselect_impl_compute_histogram(const sham::DeviceScheduler_ptr &dev_sched) {
-            if (dev_sched->ctx->device->prop.type == sham::DeviceType::GPU) {
-                compute_histogram_impl.set(GpuOversubscribe{});
-            } else {
-                compute_histogram_impl.set(NaiveGpu{}); // it is portable and fast everywhere
-            }
-            shamlog_info_ln(
-                "algs",
-                "defaulting compute_histogram implementation to impl :",
-                get_current_impl_compute_histogram());
-        }
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view compute_histogram_impl_name = "compute_histogram";
 
         template<class T, class Tbins, class... Targs, class Tfunctor>
         inline void compute_histogram_reference(
@@ -369,7 +344,7 @@ namespace shamalgs::primitives {
         sham::DeviceBuffer<T> result(nbins, dev_sched);
 
         if (!impl::compute_histogram_impl.is_set()) {
-            impl::autoselect_impl_compute_histogram(dev_sched);
+            shamalgs::impl_registry::autoselect_impl(impl::compute_histogram_impl_name, dev_sched);
         }
 
         std::visit(

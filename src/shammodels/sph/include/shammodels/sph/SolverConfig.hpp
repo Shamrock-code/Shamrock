@@ -22,6 +22,7 @@
 #include "shambase/overloaded.hpp"
 #include "config/AVConfig.hpp"
 #include "config/BCConfig.hpp"
+#include "sham/format/format.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/type_traits.hpp"
@@ -30,6 +31,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
+#include "shammodels/common/config/enum_NeighCacheStrategy.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/json_print_diff.hpp"
@@ -42,8 +44,8 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/RadixTree.hpp"
-#include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <shamunits/constant_table.hpp>
 #include <stdexcept>
 #include <variant>
 #include <vector>
@@ -70,12 +72,17 @@ namespace shammodels::sph {
         /**
          * @brief The CFL condition for the courant factor
          */
-        Tscal cfl_cour;
+        Tscal cfl_cour = 0.3;
 
         /**
          * @brief The CFL condition for the force
          */
-        Tscal cfl_force;
+        Tscal cfl_force = 0.25;
+
+        /**
+         * @brief The CFL condition for the non-ideal MHD terms
+         */
+        Tscal cfl_NIMHD = 1. / (2 * shambase::constants::pi<Tscal>); // as in phantom
 
         /**
          * @brief The CFL multiplier stiffness
@@ -106,7 +113,16 @@ namespace shammodels::sph {
     template<class Tscal>
     struct DustEvolCoalaCoag {
         Tscal rhodust_eps;
-        Tscal dv_max;
+
+        /// The implicit source term on s_j integrates over at least the time needed to move
+        /// tau_frac * rhodust_eps (dt_eff = max(dt, tau_frac * rhodust_eps / |S|)), must be
+        /// positive. It bounds the rate of an empty bin when dt is null or tiny.
+        Tscal tau_frac;
+
+        /// Fragmentation velocity threshold, must be positive (infinity disables it).
+        /// In coagulation-only mode, a dust pair whose differential velocity exceeds it gets
+        /// dv_ij = 0 ("poor man" fragmentation, not a real fragmentation model).
+        Tscal vfrag_threshold;
         std::vector<Tscal> massgrid;
         std::vector<Tscal> tabflux_coag;
     };
@@ -142,6 +158,12 @@ namespace shammodels::sph {
             inline Tscal get_clamp_dust_frac() const {
                 return clamp_dust_frac.value_or(default_clamp_dust_frac);
             }
+
+            // Symmetrized per-pair (upwind) positivity gate on the TVA flux: the flux of a pair is
+            // switched off when its upwind (donor) particle has s_j < 0.
+            // With smooth_s_positivity_limiter it replaces the per-particle xi switch (which breaks
+            // dust mass conservation when s_j < 0), only the restoring term phi being kept.
+            bool pair_gate_s_positivity_limiter = false;
         };
 
         struct MonofluidComplete {
@@ -163,7 +185,8 @@ namespace shammodels::sph {
             bool ensure_s_j_positivity           = true,
             bool smooth_s_positivity_limiter     = false,
             bool dust_corrected_av               = false,
-            std::optional<Tscal> clamp_dust_frac = std::nullopt) {
+            std::optional<Tscal> clamp_dust_frac = std::nullopt,
+            bool pair_gate_s_positivity_limiter  = false) {
             current_mode = MonofluidTVA{
                 nvar,
                 pure_diffusion_mode,
@@ -173,7 +196,8 @@ namespace shammodels::sph {
                 ensure_s_j_positivity,
                 smooth_s_positivity_limiter,
                 dust_corrected_av,
-                clamp_dust_frac};
+                clamp_dust_frac,
+                pair_gate_s_positivity_limiter};
         }
         inline void set_monofluid_complete(u32 nvar) { current_mode = MonofluidComplete{nvar}; }
 
@@ -201,7 +225,8 @@ namespace shammodels::sph {
                        {"ensure_s_j_positivity", cfg->ensure_s_j_positivity},
                        {"smooth_s_positivity_limiter", cfg->smooth_s_positivity_limiter},
                        {"dust_corrected_av", cfg->dust_corrected_av},
-                       {"clamp_dust_frac", cfg->clamp_dust_frac}};
+                       {"clamp_dust_frac", cfg->clamp_dust_frac},
+                       {"pair_gate_s_positivity_limiter", cfg->pair_gate_s_positivity_limiter}};
             } else if (
                 const MonofluidComplete *cfg = std::get_if<MonofluidComplete>(&current_mode)) {
                 j = {{"type", "monofluid_complete"}, {"ndust", cfg->ndust}};
@@ -224,7 +249,8 @@ namespace shammodels::sph {
                     j.at("ensure_s_j_positivity").get<bool>(),
                     j.value("smooth_s_positivity_limiter", false),
                     j.value("dust_corrected_av", false),
-                    j.value("clamp_dust_frac", std::optional<Tscal>{}));
+                    j.value("clamp_dust_frac", std::optional<Tscal>{}),
+                    j.value("pair_gate_s_positivity_limiter", false));
             } else if (type == "monofluid_complete") {
                 set_monofluid_complete(j.at("ndust").get<u32>());
             } else {
@@ -331,7 +357,8 @@ namespace shammodels::sph {
                         j
                             = {{"type", "coala_coag"},
                                {"rhodust_eps", cfg.rhodust_eps},
-                               {"dv_max", cfg.dv_max},
+                               {"tau_frac", cfg.tau_frac},
+                               {"vfrag_threshold", cfg.vfrag_threshold},
                                {"massgrid", cfg.massgrid},
                                {"tabflux_coag", cfg.tabflux_coag}};
                     },
@@ -344,10 +371,12 @@ namespace shammodels::sph {
                 dust_evol_config = None{};
             } else if (j.at("type").get<std::string>() == "coala_coag") {
                 dust_evol_config = DustEvolCoalaCoag<Tscal>{
-                    .rhodust_eps  = j.at("rhodust_eps").get<Tscal>(),
-                    .dv_max       = j.at("dv_max").get<Tscal>(),
-                    .massgrid     = j.at("massgrid").get<std::vector<Tscal>>(),
-                    .tabflux_coag = j.at("tabflux_coag").get<std::vector<Tscal>>()};
+                    .rhodust_eps = j.at("rhodust_eps").get<Tscal>(),
+                    // older dumps predate tau_frac, use the python default
+                    .tau_frac        = j.value("tau_frac", Tscal(10)),
+                    .vfrag_threshold = j.at("vfrag_threshold").get<Tscal>(),
+                    .massgrid        = j.at("massgrid").get<std::vector<Tscal>>(),
+                    .tabflux_coag    = j.at("tabflux_coag").get<std::vector<Tscal>>()};
             } else {
                 shambase::throw_unimplemented();
             }
@@ -420,9 +449,15 @@ namespace shammodels::sph {
                             + std::to_string(cfg->rhodust_eps));
                     }
 
-                    if (cfg->dv_max <= 0) {
+                    if (!(cfg->tau_frac > 0)) {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
-                            "dv_max must be positive, got " + std::to_string(cfg->dv_max));
+                            "tau_frac must be positive, got " + std::to_string(cfg->tau_frac));
+                    }
+
+                    if (cfg->vfrag_threshold <= 0) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "vfrag_threshold must be positive, got "
+                            + std::to_string(cfg->vfrag_threshold));
                     }
 
                 } else {
@@ -442,8 +477,9 @@ namespace shammodels::sph {
         struct DensityBasedNeighLim {
             u32 max_neigh_count = 500;
         };
+        struct DensityBasedBisectingNR {};
 
-        using mode = std::variant<DensityBased, DensityBasedNeighLim>;
+        using mode = std::variant<DensityBased, DensityBasedNeighLim, DensityBasedBisectingNR>;
 
         mode config = DensityBased{};
 
@@ -451,9 +487,13 @@ namespace shammodels::sph {
         void set_density_based_neigh_lim(u32 max_neigh_count) {
             config = DensityBasedNeighLim{max_neigh_count};
         }
+        void set_density_based_bisecting_nr() { config = DensityBasedBisectingNR{}; }
 
         bool is_density_based_neigh_lim() const {
             return std::holds_alternative<DensityBasedNeighLim>(config);
+        }
+        bool is_density_based_bisecting_nr() const {
+            return std::holds_alternative<DensityBasedBisectingNR>(config);
         }
     };
 
@@ -551,11 +591,17 @@ struct shammodels::sph::SolverConfig {
     /// The radius of the sph kernel
     static constexpr Tscal Rkern = Kernel::Rkern;
 
-    Tscal gpart_mass; ///< The mass of each gas particle
+    Tscal gpart_mass{0}; ///< The mass of each gas particle (must be set before use)
 
     bool track_particles_id = false;
 
     inline void set_particle_tracking(bool state) { track_particles_id = state; }
+
+    /// Skip the ghost interfaces whose sender or receiver patch is empty
+    bool filter_empty_patch_gz = false;
+    inline void set_filter_empty_patch_gz(bool state) { filter_empty_patch_gz = state; }
+
+    inline bool has_filter_empty_patch_gz() { return filter_empty_patch_gz; }
 
     PatchSchedulerConfig scheduler_conf = {};
 
@@ -569,37 +615,25 @@ struct shammodels::sph::SolverConfig {
     /// Set the unit system of the simulation
     inline void set_units(shamunits::UnitSystem<Tscal> new_sys) { unit_sys = new_sys; }
 
-    /// Retrieves the value of the constant G based on the unit system.
-    inline Tscal get_constant_G() {
+    /// The unit system of the config, or the default one (SI) if it is not set
+    inline shamunits::UnitSystem<Tscal> get_unit_sys() {
         if (!unit_sys) {
             ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.G();
+            return shamunits::UnitSystem<Tscal>{};
         } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.G();
+            return *unit_sys;
         }
     }
 
+    /// Retrieves the value of the constant G based on the unit system.
+    inline Tscal get_constant_G() { return get_unit_sys().template get<shamunits::constants::G>(); }
+
     /// Retrieves the value of the constant c based on the unit system.
-    inline Tscal get_constant_c() {
-        if (!unit_sys) {
-            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.c();
-        } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.c();
-        }
-    }
+    inline Tscal get_constant_c() { return get_unit_sys().template get<shamunits::constants::c>(); }
 
     /// Retrieves the value of the constant mu_0 based on the unit system.
     inline Tscal get_constant_mu_0() {
-        if (!unit_sys) {
-            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.mu_0();
-        } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.mu_0();
-        }
+        return get_unit_sys().template get<shamunits::constants::mu_0>();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -650,11 +684,27 @@ struct shammodels::sph::SolverConfig {
     }
 
     /// Enable the ideal MHD hydro solver
-    inline void set_IdealMHD(typename MHDConfig::IdealMHD_constrained_hyper_para v) {
+    inline void set_ideal_mhd(typename MHDConfig::IdealMhdConstrainedHyperPara v) {
         mhd_config.set(v);
     }
 
-    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) { mhd_config.set(v); }
+    inline void set_non_ideal_mhd(typename MHDConfig::NonIdealMHD v) {
+        logger::raw_ln("$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$");
+        logger::raw_ln(" ______   _______  __    _  _______  _______  ______  ");
+        logger::raw_ln("|      | |   _   ||  |  | ||       ||       ||    _ | ");
+        logger::raw_ln("|  _    ||  |_|  ||   |_| ||    ___||    ___||   | ||");
+        logger::raw_ln("| | |   ||       ||       ||   | __ |   |___ |   |_||_");
+        logger::raw_ln("| |_|   ||       ||  _    ||   ||  ||    ___||    __  |");
+        logger::raw_ln("|       ||   _   || | |   ||   |_| ||   |___ |   |  | |");
+        logger::raw_ln("|______| |__| |__||_|  |__||_______||_______||___|  |_|");
+        logger::raw_ln("$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$");
+        logger::raw_ln("The Non-ideal MHD solver is UNDER DEVELOPMENT.");
+        logger::raw_ln("It is. NOT. FULLY. TESTED. YET.");
+        logger::raw_ln("Use at your own risk.");
+        shamrock::experimental_feature_check(
+            "Non-ideal MHD is experimental, please enable experimental features to use it");
+        mhd_config.set(v);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // MHD Config (END)
@@ -685,13 +735,31 @@ struct shammodels::sph::SolverConfig {
     // Tree config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    u32 tree_reduction_level  = 3;    ///< Reduction level to be used in the tree build
-    bool use_two_stage_search = true; ///< Use two stage neighbors search (see shamrock paper)
+    u32 tree_reduction_level = 3; ///< Reduction level to be used in the tree build
+
+    /// Strategy used to build the neighbours cache out of the tree traversal
+    NeighCacheStrategy neigh_cache_strategy = NeighCacheStrategy::TwoStage;
 
     /// Setter for the tree reduction level
     inline void set_tree_reduction_level(u32 level) { tree_reduction_level = level; }
-    /// Setter for the two stage search
-    inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
+
+    /// Setter for the neighbours cache strategy
+    inline void set_neigh_cache_strategy(NeighCacheStrategy strategy) {
+        neigh_cache_strategy = strategy;
+    }
+
+    /**
+     * @brief Setter for the two stage search
+     * @deprecated Use set_neigh_cache_strategy instead
+     */
+    inline void set_two_stage_search(bool enable) {
+        ON_RANK_0(shamlog_warn_ln(
+                      "SPH::SolverConfig",
+                      "set_two_stage_search() is deprecated,\n"
+                      "    -> use set_neigh_cache_strategy(NeighCacheStrategy.TwoStage) or\n"
+                      "       set_neigh_cache_strategy(NeighCacheStrategy.SingleStage) instead"););
+        neigh_cache_strategy = neigh_cache_strategy_from_two_stage_search(enable);
+    }
 
     bool show_neigh_stats = false;
     inline void set_show_neigh_stats(bool enable) { show_neigh_stats = enable; }
@@ -721,6 +789,9 @@ struct shammodels::sph::SolverConfig {
     inline void set_smoothing_length_density_based_neigh_lim(u32 max_neigh_count) {
         smoothing_length_config.set_density_based_neigh_lim(max_neigh_count);
     }
+    inline void set_smoothing_length_density_based_bisecting_nr() {
+        smoothing_length_config.set_density_based_bisecting_nr();
+    }
 
     bool enable_particle_reordering = false;
     inline void set_enable_particle_reordering(bool enable) { enable_particle_reordering = enable; }
@@ -739,6 +810,10 @@ struct shammodels::sph::SolverConfig {
 
     bool show_ghost_zone_graph = false;
     inline void set_show_ghost_zone_graph(bool enable) { show_ghost_zone_graph = enable; }
+
+    /// Show the ghost particle count (and ratio to the particle count) in the timestep perf report
+    bool show_ghost_stats = false;
+    inline void set_show_ghost_stats(bool enable) { show_ghost_stats = enable; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)
@@ -781,6 +856,12 @@ struct shammodels::sph::SolverConfig {
     /// Check if the EOS is a Fermi equation of state
     inline bool is_eos_fermi() {
         using T = typename EOSConfig::Fermi;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
+    /// Check if the EOS is a barotropic equation of state
+    inline bool is_eos_barotropic() {
+        using T = typename EOSConfig::Barotropic;
         return bool(std::get_if<T>(&eos_config.config));
     }
 
@@ -853,6 +934,20 @@ struct shammodels::sph::SolverConfig {
      * @param mu_e The mean molecular weight
      */
     inline void set_eos_fermi(Tscal mu_e) { eos_config.set_fermi(mu_e); }
+
+    /**
+     * @brief Set the EOS configuration to a barotropic equation of state
+     *
+     * \f$ P = c_{s,0}^2 \rho \left[1 + (\rho / \rho_0)^{\gamma_0 - 1}\right] \f$, with the sound
+     * speed \f$ c_s = \sqrt{dP/d\rho} \f$, see shamphys::EOS_Barotropic.
+     *
+     * @param cs0 Isothermal sound speed of the low density regime
+     * @param rho0 Critical density of the isothermal to adiabatic transition
+     * @param gamma0 Adiabatic index of the high density regime
+     */
+    inline void set_eos_barotropic(Tscal cs0, Tscal rho0, Tscal gamma0) {
+        eos_config.set_barotropic(cs0, rho0, gamma0);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // EOS Config (END)
@@ -999,9 +1094,11 @@ struct shammodels::sph::SolverConfig {
      *
      * @param[in] central_mass The mass of the central object
      * @param[in] Racc The accretion radius of the central object
+     * @param[in] central_pos The position of the central object
      */
-    inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
-        ext_force_config.add_point_mass(central_mass, Racc);
+    inline void add_ext_force_point_mass(
+        Tscal central_mass, Tscal Racc, Tvec central_pos = Tvec{}) {
+        ext_force_config.add_point_mass(central_mass, Racc, central_pos);
     }
 
     /**
@@ -1032,6 +1129,7 @@ struct shammodels::sph::SolverConfig {
      * @param[in] Racc The accretion radius of the central object
      * @param[in] a_spin The spin of the central object
      * @param[in] dir_spin The direction of the spin of the central object
+     * @param[in] central_pos The position of the central object
      */
     inline void add_ext_force_lense_thirring(
         Tscal central_mass,
@@ -1090,11 +1188,11 @@ struct shammodels::sph::SolverConfig {
 
     /// @brief Whether the solver has a field for the particle's uint
     ///
-    /// @note for now, this is always true as
-    inline bool has_field_uint() {
-        // no barotropic for now
-        return true;
-    }
+    /// @note this is always true, even for equations of state where the pressure does not depend on
+    /// uint (isothermal, polytropic, barotropic). In those cases uint is still integrated from
+    /// du/dt (computed with the EOS pressure) but never read back by the EOS, keeping the energy
+    /// conservation check meaningful.
+    inline bool has_field_uint() { return true; }
 
     /// @brief Whether the solver has a field for alpha AV
     inline bool has_field_alphaAV() { return artif_viscosity.has_alphaAV_field(); }
@@ -1116,24 +1214,38 @@ struct shammodels::sph::SolverConfig {
         return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();
     }
 
+    /// @brief Whether the solver is set for non ideal MHD
+    inline bool do_nimhd() { return mhd_config.do_nimhd(); }
+
     /// @brief Whether the solver has a field for B_on_rho
-    inline bool has_field_B_on_rho() { return mhd_config.has_B_field() && (dim == 3); }
+    inline bool has_field_b_on_rho() { return mhd_config.has_b_field() && (dim == 3); }
 
     /// @brief Whether the solver has a field for psi_on_ch
     inline bool has_field_psi_on_ch() { return mhd_config.has_psi_field(); }
 
+    /// @brief Whether to compute and store divB
+    bool compute_div_b = false;
+    inline void use_div_b(bool value) { compute_div_b = value; }
+
     /// @brief Whether the solver has a field for divB
-    inline bool has_field_divB() { return mhd_config.has_divB_field(); }
+    inline bool has_field_div_b() { return compute_div_b && mhd_config.has_div_b_field(); }
 
     /// @brief Whether the solver has a field for curlB
-    inline bool has_field_curlB() { return mhd_config.has_curlB_field() && (dim == 3); }
+    inline bool has_field_curl_b() { return mhd_config.has_curl_b_field() && (dim == 3); }
 
     /// @brief Whether the solver has a field for dt divB
-    inline bool has_field_dtdivB() { return mhd_config.has_dtdivB_field(); }
+    inline bool has_field_dtdiv_b() { return mhd_config.has_dtdiv_b_field(); }
 
     /// @brief Whether to store luminosity
     bool compute_luminosity = false;
     inline void use_luminosity(bool enable) { compute_luminosity = enable; }
+
+    /// @brief Whether to compute GW
+    bool compute_gw = false;
+    inline void use_GW(bool enable) {
+        shamrock::experimental_feature_check("GW computation is experimental.");
+        compute_gw = enable;
+    }
 
     /// Print the current status of the solver config
     inline void print_status() {
@@ -1147,6 +1259,7 @@ struct shammodels::sph::SolverConfig {
 
     inline void check_config() {
         dust_config.check_config();
+        mhd_config.check_config();
 
         if (track_particles_id && false /*particle injection when added*/) {
             shamrock::experimental_feature_check(
@@ -1160,6 +1273,23 @@ struct shammodels::sph::SolverConfig {
         if (!self_grav_config.is_none()) {
             shamrock::experimental_feature_check(
                 "Self gravity is experimental, please enable experimental features to use it");
+        }
+
+        if (mhd_config.do_nimhd()) {
+            shamrock::experimental_feature_check(
+                "Non-ideal MHD is experimental, please enable experimental features to use it");
+        }
+
+        using EOSBarotropic = typename EOSConfig::Barotropic;
+        if (const EOSBarotropic *eos = std::get_if<EOSBarotropic>(&eos_config.config)) {
+            if (!(eos->cs0 > 0) || !(eos->rho0 > 0) || !(eos->gamma0 > 1)) {
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
+                    "barotropic EOS requires cs0 > 0, rho0 > 0 and gamma0 > 1, got cs0 = {}, "
+                    "rho0 = {}, gamma0 = {}",
+                    eos->cs0,
+                    eos->rho0,
+                    eos->gamma0));
+            }
         }
     }
 
@@ -1250,6 +1380,12 @@ namespace shammodels::sph {
                 {"type", "density_based_neigh_lim"},
                 {"max_neigh_count", conf->max_neigh_count},
             };
+        } else if (
+            const SmoothingLengthConfig::DensityBasedBisectingNR *conf
+            = std::get_if<SmoothingLengthConfig::DensityBasedBisectingNR>(&p.config)) {
+            j = {
+                {"type", "density_based_bisecting_nr"},
+            };
         } else {
             shambase::throw_unimplemented();
         }
@@ -1261,6 +1397,8 @@ namespace shammodels::sph {
         } else if (j.at("type").get<std::string>() == "density_based_neigh_lim") {
             p.config
                 = SmoothingLengthConfig::DensityBasedNeighLim{j.at("max_neigh_count").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "density_based_bisecting_nr") {
+            p.config = SmoothingLengthConfig::DensityBasedBisectingNR{};
         } else {
             shambase::throw_unimplemented();
         }
@@ -1399,13 +1537,15 @@ namespace shammodels::sph {
             {"show_cfl_detail", p.show_cfl_detail},
             // mhd config
             {"mhd_config", p.mhd_config},
+            // div_B
+            {"compute_div_b", p.compute_div_b},
             // dust config
             {"dust_config", p.dust_config},
             // self gravity config
             {"self_grav_config", p.self_grav_config},
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
-            {"use_two_stage_search", p.use_two_stage_search},
+            {shammodels::neigh_cache_strategy_json_key, p.neigh_cache_strategy},
             {"show_neigh_stats", p.show_neigh_stats},
             // solver behavior config
             {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
@@ -1421,6 +1561,7 @@ namespace shammodels::sph {
 
             {"save_dt_to_fields", p.save_dt_to_fields},
             {"show_ghost_zone_graph", p.show_ghost_zone_graph},
+            {"show_ghost_stats", p.show_ghost_stats},
 
             {"eos_config", p.eos_config},
 
@@ -1491,10 +1632,13 @@ namespace shammodels::sph {
         _get_to_if_contains("unit_sys", p.unit_sys);
         _get_to_if_contains("show_cfl_detail", p.show_cfl_detail);
         _get_to_if_contains("mhd_config", p.mhd_config);
+        _get_to_if_contains("compute_div_b", p.compute_div_b);
         _get_to_if_contains("dust_config", p.dust_config);
         _get_to_if_contains("self_grav_config", p.self_grav_config);
         _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);
-        _get_to_if_contains("use_two_stage_search", p.use_two_stage_search);
+        // Reads the new enum key, falling back on the legacy `use_two_stage_search` boolean
+        shammodels::get_to_neigh_cache_strategy(
+            j, p.neigh_cache_strategy, "SPH::SolverConfig", has_used_defaults, has_updated_config);
         _get_to_if_contains("show_neigh_stats", p.show_neigh_stats);
         _get_to_if_contains("combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute);
 
@@ -1511,6 +1655,7 @@ namespace shammodels::sph {
         _get_to_if_contains("particle_reordering_step_freq", p.particle_reordering_step_freq);
         _get_to_if_contains("save_dt_to_fields", p.save_dt_to_fields);
         _get_to_if_contains("show_ghost_zone_graph", p.show_ghost_zone_graph);
+        _get_to_if_contains("show_ghost_stats", p.show_ghost_stats);
         _get_to_if_contains("eos_config", p.eos_config);
         _get_to_if_contains("artif_viscosity", p.artif_viscosity);
         _get_to_if_contains("boundary_config", p.boundary_config);

@@ -82,6 +82,7 @@ include(ShamConfigureNlohmannJson)
 include(ShamConfigurePlfNanotimer)
 include(ShamConfigureMDSpan)
 include(ShamConfigureCppTrace)
+include(ShamConfigureGUILibs)
 
 ####################################################################################################
 # Shamrock Configuration

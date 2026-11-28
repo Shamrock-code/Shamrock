@@ -104,16 +104,16 @@ def run_performance_sweep():
 
 # %%
 # List current implementation
-if not shamrock.algs.is_impl_set_is_all_true():
-    shamrock.algs.autoselect_impl_is_all_true()
+if not shamrock.algs.is_impl_set("is_all_true"):
+    shamrock.algs.autoselect_impl("is_all_true")
 
-current_impl = shamrock.algs.get_current_impl_is_all_true()
+current_impl = shamrock.algs.get_current_impl("is_all_true")
 
 print(current_impl)
 
 # %%
 # List all implementations available
-all_default_impls = shamrock.algs.get_default_impl_list_is_all_true()
+all_default_impls = shamrock.algs.get_default_impl_list("is_all_true")
 
 print(all_default_impls)
 
@@ -122,7 +122,7 @@ print(all_default_impls)
 
 dic_bench = {}
 for impl in all_default_impls:
-    shamrock.algs.set_impl_is_all_true(impl)
+    shamrock.algs.set_impl("is_all_true", impl)
 
     impl_json = json.loads(impl)
     impl_name = impl_json["implementation"]

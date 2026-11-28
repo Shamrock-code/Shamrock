@@ -1,0 +1,247 @@
+--- a/src/caption.cpp
++++ b/src/caption.cpp
+@@ -24,6 +24,7 @@
+     this->font      = font;
+
+     alpha   = 0.0;
++    alpha_scale = 1.0;
+     elapsed = 0.0;
+     colour  = gGourceSettings.caption_colour;
+ }
+@@ -45,12 +46,14 @@
+ }
+
+ void RCaption::logic(float dt) {
+-    float fade_in = glm::min(2.0f, gGourceSettings.caption_duration / 3.0f);
++    // near-instant fade in, short fade out
+     elapsed += dt;
+-    alpha = glm::min(1.0f, glm::min(elapsed,glm::max(0.0f,gGourceSettings.caption_duration-elapsed)) / fade_in);
++    float fade_in  = glm::min(0.02f, gGourceSettings.caption_duration / 3.0f);
++    float fade_out = glm::min(0.3f,  gGourceSettings.caption_duration / 3.0f);
++    alpha = glm::min(1.0f, glm::min(elapsed / fade_in, glm::max(0.0f, gGourceSettings.caption_duration - elapsed) / fade_out));
+ }
+
+ void RCaption::draw() {
+-    font.setColour(vec4(colour.x, colour.y, colour.z, alpha));
++    font.setColour(vec4(colour.x, colour.y, colour.z, alpha * alpha_scale));
+     font.draw(pos.x, pos.y, caption);
+ }
+--- a/src/caption.h
++++ b/src/caption.h
+@@ -34,6 +34,7 @@
+     std::string caption;
+
+ public:
++    float alpha_scale;
+     time_t timestamp;
+
+     RCaption(const std::string& caption, time_t timestamp, const FXFont& font);
+--- a/src/gource.cpp
++++ b/src/gource.cpp
+@@ -55,7 +55,8 @@
+     fontmedium.dropShadow(true);
+     fontmedium.roundCoordinates(false);
+
+-    fontcaption = fontmanager.grab(gGourceSettings.font_file, gGourceSettings.caption_size);
++    // scale captions like the other fonts so they keep the same relative size at higher resolutions
++    fontcaption = fontmanager.grab(gGourceSettings.font_file, glm::clamp((int)(gGourceSettings.caption_size * gGourceSettings.font_scale), 1, 200));
+     fontcaption.dropShadow(true);
+     fontcaption.roundCoordinates(false);
+     fontcaption.alignTop(false);
+@@ -881,6 +882,7 @@
+     dir_bounds.reset();
+     commitqueue.clear();
+     tagusermap.clear();
++    user_commit_counts.clear();
+     gGourceRemovedFiles.clear();
+
+     if(userTree!=0) delete userTree;
+@@ -1187,6 +1189,27 @@
+
+ void Gource::processCommit(const RCommit& commit, float t) {
+
++    {
++        std::map<std::string, UserCommitCount>::iterator uc = user_commit_counts.find(commit.username);
++
++        if(uc == user_commit_counts.end()) {
++            UserCommitCount entry;
++            entry.count = 0;
++            entry.y     = -1.0f;
++            entry.alpha = 0.0f;
++            entry.icon  = 0;
++
++            std::map<std::string, std::string>::iterator img = gGourceSettings.user_image_map.find(commit.username);
++            if(img != gGourceSettings.user_image_map.end()) {
++                entry.icon = texturemanager.grabFile(img->second, true, GL_CLAMP_TO_EDGE);
++            }
++
++            uc = user_commit_counts.insert(std::make_pair(commit.username, entry)).first;
++        }
++
++        uc->second.count++;
++    }
++
+     //find files of this commit or create it
+     for(std::list<RCommitFile>::const_iterator it = commit.files.begin(); it != commit.files.end(); it++) {
+
+@@ -1813,23 +1836,6 @@
+
+         float y = caption_start_y;
+
+-        while(1) {
+-
+-            bool found = false;
+-
+-            for(RCaption* cap : active_captions) {
+-
+-                if(cap->getPos().y == y) {
+-                    found = true;
+-                    break;
+-                }
+-            }
+-
+-            if(!found) break;
+-
+-            y -= caption_height;
+-        }
+-
+         int caption_offset_x = gGourceSettings.caption_offset;
+
+         // centre
+@@ -1859,6 +1865,25 @@
+          it++;
+     }
+
++    // ordered scrolling log: cap the number of lines (oldest dropped),
++    // then stack newest at the bottom and older captions above it
++    static const int caption_max_lines = getenv("GOURCE_CAPTION_MAX_LINES") ? atoi(getenv("GOURCE_CAPTION_MAX_LINES")) : 0;
++    while(caption_max_lines > 0 && (int)active_captions.size() > caption_max_lines) {
++        delete active_captions.front();
++        active_captions.pop_front();
++    }
++    {
++        float y = caption_start_y;
++        int line = 0;
++        for(std::list<RCaption*>::reverse_iterator it = active_captions.rbegin(); it != active_captions.rend(); it++, line++) {
++            (*it)->setPos(vec2((*it)->getPos().x, y));
++            // fade out the top few lines of a full stack
++            int from_top = caption_max_lines - 1 - line;
++            (*it)->alpha_scale = (caption_max_lines > 0 && from_top < 4) ? 0.25f + 0.25f * from_top : 1.0f;
++            y -= caption_height;
++        }
++    }
++
+     //reset loop counters
+     gGourceUserInnerLoops = 0;
+     gGourceDirNodeInnerLoops = 0;
+@@ -2398,6 +2423,83 @@
+
+ }
+
++void Gource::drawUserCommitCounts(float dt) {
++    static const int max_rows = getenv("GOURCE_USER_COUNTS") ? atoi(getenv("GOURCE_USER_COUNTS")) : 0;
++
++    if(max_rows <= 0 || user_commit_counts.empty()) return;
++
++    std::vector<std::pair<std::string, UserCommitCount*> > ranked;
++    for(std::map<std::string, UserCommitCount>::iterator it = user_commit_counts.begin(); it != user_commit_counts.end(); it++) {
++        ranked.push_back(std::make_pair(it->first, &it->second));
++    }
++    std::sort(ranked.begin(), ranked.end(),
++        [](const std::pair<std::string, UserCommitCount*>& a, const std::pair<std::string, UserCommitCount*>& b) {
++            if(a.second->count != b.second->count) return a.second->count > b.second->count;
++            return a.first < b.first;
++        });
++
++    const float text_h    = fontmedium.getMaxHeight();
++    const float icon_size = glm::floor(text_h * 1.2f);
++    const float fs        = gGourceSettings.font_scale;
++    const float row_h     = glm::max(text_h, icon_size) + 6.0f * fs;
++    const float right_x   = display.width - 20.0f * fs;
++    const float top_y     = 20.0f * fs;
++    const float count_w   = fontmedium.getWidth("00000");
++    const float name_r    = right_x - count_w - 12.0f * fs;
++    const float ease      = glm::min(1.0f, dt * 6.0f);
++
++    fontmedium.setColour(vec4(gGourceSettings.font_colour, 0.7f));
++    std::string header = "Commits";
++    fontmedium.draw(right_x - fontmedium.getWidth(header), top_y, header);
++
++    for(size_t i = 0; i < ranked.size(); i++) {
++        UserCommitCount& e = *ranked[i].second;
++
++        int   row      = (int) glm::min(i, (size_t) max_rows);
++        float target_y = top_y + (row + 1) * row_h;
++        float target_a = ((int) i < max_rows) ? 1.0f : 0.0f;
++
++        if(e.y < 0.0f) e.y = target_y;
++        e.y     += (target_y - e.y) * ease;
++        e.alpha += (target_a - e.alpha) * ease;
++
++        if(e.alpha < 0.01f) continue;
++
++        const std::string& name = ranked[i].first;
++        char count_str[32];
++        snprintf(count_str, sizeof(count_str), "%d", e.count);
++
++        float text_y = glm::floor(e.y + (row_h - text_h) * 0.5f - 3.0f * fs);
++        float name_w = fontmedium.getWidth(name);
++
++        if(e.icon != 0) {
++            float ix = glm::floor(name_r - name_w - 8.0f * fs - icon_size);
++            float iy = glm::floor(e.y);
++
++            glEnable(GL_BLEND);
++            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
++            glEnable(GL_TEXTURE_2D);
++            glBindTexture(GL_TEXTURE_2D, e.icon->textureid);
++            glColor4f(1.0f, 1.0f, 1.0f, e.alpha);
++
++            glBegin(GL_QUADS);
++                glTexCoord2f(0.0f,0.0f); glVertex2f(ix,             iy);
++                glTexCoord2f(1.0f,0.0f); glVertex2f(ix + icon_size, iy);
++                glTexCoord2f(1.0f,1.0f); glVertex2f(ix + icon_size, iy + icon_size);
++                glTexCoord2f(0.0f,1.0f); glVertex2f(ix,             iy + icon_size);
++            glEnd();
++        }
++
++        fontmedium.setColour(vec4(gGourceSettings.highlight_colour, e.alpha));
++        fontmedium.draw(name_r - name_w, text_y, name);
++
++        fontmedium.setColour(vec4(gGourceSettings.font_colour, e.alpha));
++        fontmedium.draw(right_x - fontmedium.getWidth(count_str), text_y, count_str);
++    }
++
++    fontmedium.setColour(vec4(gGourceSettings.font_colour, 1.0f));
++}
++
+ void Gource::draw(float t, float dt) {
+
+     display.mode2D();
+@@ -2661,6 +2763,8 @@
+         caption->draw();
+     }
+
++    drawUserCommitCounts(dt);
++
+     //file key
+     file_key.draw();
+     file_key.setShow(gGourceSettings.show_key);
+--- a/src/gource.h
++++ b/src/gource.h
+@@ -180,6 +180,16 @@
+
+     std::deque<RCommit> commitqueue;
+     std::map<std::string, RUser*> users;
++
++    // per-user commit counter shown in the top right (GOURCE_USER_COUNTS=<max rows>)
++    struct UserCommitCount {
++        int count;
++        float y;
++        float alpha;
++        TextureResource* icon;
++    };
++    std::map<std::string, UserCommitCount> user_commit_counts;
++    void drawUserCommitCounts(float dt);
+     std::map<std::string, RFile*> files;
+     std::map<int, RUser*> tagusermap;

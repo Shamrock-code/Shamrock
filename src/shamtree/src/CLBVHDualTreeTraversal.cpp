@@ -16,6 +16,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/overloaded.hpp"
 #include "shamalgs/ImplVariant.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamtree/details/dtt_parallel_select.hpp"
 #include "shamtree/details/dtt_reference.hpp"
 #include "shamtree/details/dtt_scan_multipass.hpp"
@@ -40,36 +41,17 @@ namespace shamtree {
             static constexpr std::string_view variant_type_name = "scan_multipass";
         };
 
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view dtt_impl_name = "clbvh_dual_tree_traversal";
+
         /// Currently selected dual tree traversal implementation
-        shamalgs::ImplVariantGlobal<Reference, ParallelSelect, ScanMultipass> dtt_impl;
+        shamalgs::ImplVariantGlobal<Reference, ParallelSelect, ScanMultipass> dtt_impl{
+            [](const sham::DeviceScheduler_ptr &, auto &self) {
+                self.set(ScanMultipass{});
+            }};
 
-        /// Get list of available dual tree traversal implementations
-        std::vector<std::string> get_default_impl_list_clbvh_dual_tree_traversal() {
-            return dtt_impl.get_default_config_list();
-        }
-
-        /// Get the current implementation for dual tree traversal
-        std::string get_current_impl_clbvh_dual_tree_traversal_impl() {
-            return dtt_impl.get_current_config();
-        }
-
-        /// Check if an implementation has been selected for dual tree traversal
-        bool is_impl_set_clbvh_dual_tree_traversal() { return dtt_impl.is_set(); }
-
-        /// Set the implementation for dual tree traversal
-        void set_impl_clbvh_dual_tree_traversal(const std::string &impl) {
-            shamlog_info_ln("tree", "setting dtt implementation to impl :", impl);
-            dtt_impl.set(impl);
-        }
-
-        /// Select the default implementation for dual tree traversal
-        void autoselect_impl_clbvh_dual_tree_traversal() {
-            dtt_impl.set(ScanMultipass{});
-            shamlog_info_ln(
-                "tree",
-                "defaulting dtt implementation to impl :",
-                get_current_impl_clbvh_dual_tree_traversal_impl());
-        }
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(dtt_impl_name, dtt_impl);
 
     } // namespace impl
 
@@ -91,7 +73,7 @@ namespace shamtree {
         using ImplSca = details::DTTScanMultipass<Tmorton, Tvec, dim>;
 
         if (!impl::dtt_impl.is_set()) {
-            impl::autoselect_impl_clbvh_dual_tree_traversal();
+            shamalgs::impl_registry::autoselect_impl(impl::dtt_impl_name, dev_sched);
         }
 
         bool ord  = ordered_result;

@@ -56,23 +56,20 @@ void shammodels::zeus::modules::ComputePressure<Tvec, TgridVec>::compute_p() {
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::EventList depends_list;
-        auto rho      = buf_rho.get_read_access(depends_list);
-        auto eint     = buf_eint.get_read_access(depends_list);
-        auto pressure = buf_p.get_write_access(depends_list);
+        Tscal gamma = solver_config.eos_gamma;
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            Tscal gamma = solver_config.eos_gamma;
-
-            shambase::parallel_for(
-                cgh, mpdat.total_elements * Block::block_size, "compute pressure", [=](u64 id_a) {
-                    pressure[id_a] = (gamma - 1) /** rho[id_a]*/ * eint[id_a];
-                });
-        });
-
-        buf_rho.complete_event_state(e);
-        buf_eint.complete_event_state(e);
-        buf_p.complete_event_state(e);
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_rho, buf_eint},
+            sham::MultiRef{buf_p},
+            mpdat.total_elements * Block::block_size,
+            [gamma](
+                u32 id_a,
+                [[maybe_unused]] const Tscal *__restrict rho,
+                const Tscal *__restrict eint,
+                Tscal *__restrict pressure) {
+                pressure[id_a] = (gamma - 1) /** rho[id_a]*/ * eint[id_a];
+            });
     });
 }
 

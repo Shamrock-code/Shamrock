@@ -10,6 +10,7 @@ with the number of processes. Run it only if you have enough memory available.
 from statistics import mean, stdev
 
 import shamrock
+from shamrock import NeighCacheStrategy
 
 result_text = ""
 
@@ -61,8 +62,10 @@ for N_target_base in [32e6]:
     cfg.set_artif_viscosity_VaryingCD10(
         alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
     )
+    cfg.set_neigh_cache_strategy(NeighCacheStrategy.TwoStageSharedOffload)
     cfg.set_boundary_periodic()
     cfg.set_eos_adiabatic(gamma)
+    cfg.set_filter_empty_patch_gz(False)
     cfg.print_status()
     model.set_solver_config(cfg)
     model.init_scheduler(scheduler_split_val, scheduler_merge_val)
@@ -74,7 +77,9 @@ for N_target_base in [32e6]:
     model.resize_simulation_box(bmin, bmax)
 
     setup = model.get_setup()
-    gen = setup.make_generator_lattice_hcp(dr, bmin, bmax, discontinuous=False)
+    gen = setup.make_generator_lattice_hcp(
+        dr, bmin, bmax, discontinuous=False, init_h_factor=2.1402
+    )
 
     # Kind of optimized for Aurora
     setup.apply_setup(

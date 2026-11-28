@@ -18,6 +18,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/overloaded.hpp"
 #include "shamalgs/ImplVariant.hpp"
+#include "shamalgs/impl_registry.hpp"
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/group_op.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -205,33 +206,16 @@ namespace shamalgs::primitives {
     /// namespace to control implementation behavior
     namespace impl {
 
-        shamalgs::ImplVariantGlobal<Host, SumReduction, AtomicEarlyExit> is_all_true_impl;
+        /// Registry name, shared by its registration and the dispatch site(s)
+        constexpr std::string_view is_all_true_impl_name = "is_all_true";
 
-        /// Get list of available is_all_true implementations, as config json strings
-        std::vector<std::string> get_default_impl_list_is_all_true() {
-            return is_all_true_impl.get_default_config_list();
-        }
+        shamalgs::ImplVariantGlobal<Host, SumReduction, AtomicEarlyExit> is_all_true_impl{
+            [](const sham::DeviceScheduler_ptr &, auto &self) {
+                self.set(Host{});
+            }};
 
-        /// Get the current implementation for is_all_true, as a config json string
-        std::string get_current_impl_is_all_true() { return is_all_true_impl.get_current_config(); }
-
-        /// Check if an implementation has been selected for is_all_true
-        bool is_impl_set_is_all_true() { return is_all_true_impl.is_set(); }
-
-        /// Set the implementation for is_all_true, from a config json string
-        void set_impl_is_all_true(const std::string &impl) {
-            shamlog_info_ln("algs", "setting is_all_true implementation to impl :", impl);
-            is_all_true_impl.set(impl);
-        }
-
-        /// Select the default implementation for is_all_true
-        void autoselect_impl_is_all_true() {
-            is_all_true_impl.set(Host{});
-            shamlog_info_ln(
-                "algs",
-                "defaulting is_all_true implementation to impl :",
-                get_current_impl_is_all_true());
-        }
+        // Must come after the global it registers: same TU, so it is initialized after it
+        SHAMALGS_REGISTER_IMPL(is_all_true_impl_name, is_all_true_impl);
 
     } // namespace impl
 
@@ -239,7 +223,8 @@ namespace shamalgs::primitives {
     bool is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt) {
 
         if (!impl::is_all_true_impl.is_set()) {
-            impl::autoselect_impl_is_all_true();
+            shamalgs::impl_registry::autoselect_impl(
+                impl::is_all_true_impl_name, buf.get_dev_scheduler_ptr());
         }
 
         return std::visit(

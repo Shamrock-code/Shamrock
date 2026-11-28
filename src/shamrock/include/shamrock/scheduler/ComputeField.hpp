@@ -160,21 +160,22 @@ namespace shamrock {
                 using namespace shamrock::patch;
 
                 u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-                sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
-                    using namespace shamalgs::memory;
-                    using namespace shambase;
+                sched.for_each_patch_data_ordered(
+                    [&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
+                        using namespace shamalgs::memory;
+                        using namespace shambase;
 
-                    if (pdat.get_obj_cnt() > 0) {
-                        write_with_offset_into(
-                            shamsys::instance::get_compute_scheduler().get_queue(),
-                            get_check_ref(ret),
-                            get_buf(id_patch),
-                            ptr,
-                            pdat.get_obj_cnt() * nvar);
+                        if (pdat.get_obj_cnt() > 0) {
+                            write_with_offset_into(
+                                shamsys::instance::get_compute_scheduler().get_queue(),
+                                get_check_ref(ret),
+                                get_buf(id_patch),
+                                ptr,
+                                pdat.get_obj_cnt() * nvar);
 
-                        ptr += pdat.get_obj_cnt() * nvar;
-                    }
-                });
+                            ptr += pdat.get_obj_cnt() * nvar;
+                        }
+                    });
             }
 
             return ret;

@@ -27,7 +27,7 @@ auto shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>::compute_
     -> field_val {
 
     auto get_gamma = [&]() -> Tscal {
-        return solver_config.eos_gamma;
+        return solver_config.get_eos_gamma();
         return {};
     };
 
@@ -82,9 +82,11 @@ auto shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>::compute_
                     TgridVec upper = acc_block_max[block_id];
 
                     Tvec lower_flt = lower.template convert<Tscal>() * dxfact;
-                    Tvec upper_flt = upper.template convert<Tscal>() * dxfact;
 
-                    Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
+                    // size from the int coords difference, so that it does not depend on the block
+                    // position
+                    Tvec block_cell_size
+                        = (upper - lower).template convert<Tscal>() * (dxfact * one_over_Nside);
 
                     Tvec xyz   = lower_flt + (block_cell_size / 2);
                     Tscal rho  = acc_rho[i];
@@ -92,7 +94,8 @@ auto shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>::compute_
                     Tscal rhoe = acc_rhoe[i];
 
                     auto conststate = shammath::ConsState<Tvec>{rho, rhoe, rhov};
-                    auto prim_state = shammath::cons_to_prim(conststate, gamma);
+                    shammath::FluidStateAdiabatic<Tvec> adiab_fluid{.m_gamma = gamma};
+                    auto prim_state = adiab_fluid.cons_to_prim(conststate);
 
                     Tscal P = prim_state.press;
                     Tvec v  = prim_state.vel;

@@ -26,6 +26,7 @@ The available factories are currently:
 
 - Generators:
     - `make_generator_lattice_hcp`
+    - `make_generator_lattice_fcc`
     - `make_generator_lattice_cubic`
     - `make_generator_disc_mc`
     - `make_generator_from_context`

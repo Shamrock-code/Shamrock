@@ -32,35 +32,13 @@
 #include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <utility>
-#include <variant>
 
 namespace shammodels::sph {
 
     template<class vec>
-    struct BasicSPHGhostHandlerConfig {
-
-        using Tscal = shambase::VecComponent<vec>;
-
-        struct Free {};
-        struct Periodic {};
-        struct ShearingPeriodic {
-            i32_3 shear_base;
-            i32_3 shear_dir;
-            Tscal shear_value;
-            Tscal shear_speed;
-        };
-
-        using Variant = std::variant<Free, Periodic, ShearingPeriodic>;
-    };
-
-    template<class vec>
     class BasicSPHGhostHandler {
 
-        using CfgClass = BasicSPHGhostHandlerConfig<vec>;
-        using Config   = typename CfgClass::Variant;
-
         PatchScheduler &sched;
-        Config ghost_config;
 
         public:
         using flt                = shambase::VecComponent<vec>;
@@ -81,63 +59,20 @@ namespace shammodels::sph {
             f64 part_cnt_ratio;
         };
 
-        using GeneratorMap = shambase::DistributedDataShared<InterfaceBuildInfos>;
-
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &xyzh_ghost_layout;
 
         std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner;
 
         BasicSPHGhostHandler(
             PatchScheduler &sched,
-            Config ghost_config,
             std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner,
             std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &xyzh_ghost_layout)
-            : sched(sched), ghost_config(ghost_config),
-              patch_rank_owner(std::move(patch_rank_owner)), xyzh_ghost_layout(xyzh_ghost_layout) {}
-
-        /**
-         * @brief Find interfaces and their metadata
-         *
-         * @param sptree the serial patch tree
-         * @param int_range_max_tree the smoothing length maximas hierachy
-         * @param int_range_max the smoothing length maximas hierachy
-         * @return GeneratorMap the generator map containing the metadata to build interfaces
-         */
-        GeneratorMap find_interfaces(
-            SerialPatchTree<vec> &sptree,
-            shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
-            shamrock::patch::PatchField<flt> &int_range_max);
-
-        /**
-         * @brief precompute interfaces members and cache result in the return
-         *
-         * @param gen
-         * @return shambase::DistributedDataShared<InterfaceIdTable>
-         */
-        shambase::DistributedDataShared<InterfaceIdTable> gen_id_table_interfaces(
-            GeneratorMap &&gen);
+            : sched(sched), patch_rank_owner(std::move(patch_rank_owner)),
+              xyzh_ghost_layout(xyzh_ghost_layout) {}
 
         void gen_debug_patch_ghost(shambase::DistributedDataShared<InterfaceIdTable> &interf_info);
 
         using CacheMap = shambase::DistributedDataShared<InterfaceIdTable>;
-
-        /**
-         * @brief utility to generate both the metadata and index tables
-         *
-         * @param sptree
-         * @param int_range_max_tree
-         * @param int_range_max
-         * @return shambase::DistributedDataShared<InterfaceIdTable>
-         */
-        CacheMap make_interface_cache(
-            SerialPatchTree<vec> &sptree,
-            shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
-            shamrock::patch::PatchField<flt> &int_range_max) {
-            StackEntry stack_loc{};
-
-            return gen_id_table_interfaces(
-                find_interfaces(sptree, int_range_max_tree, int_range_max));
-        }
 
         /**
          * @brief native handle to generate interfaces

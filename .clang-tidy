@@ -43,14 +43,8 @@ CheckOptions:
   value:           CamelCase
 - key:             readability-identifier-naming.FunctionCase
   value:           lower_case
-- key:             readability-identifier-naming.MemberCase
-  value:           lower_case
-- key:             readability-identifier-naming.ParameterCase
-  value:           lower_case
 - key:             readability-identifier-naming.UnionCase
   value:           CamelCase
-- key:             readability-identifier-naming.VariableCase
-  value:           lower_case
 - key:             readability-identifier-naming.NamespaceCase
   value:           lower_case
 - key:             readability-identifier-naming.MacroDefinitionCase

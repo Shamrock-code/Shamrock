@@ -158,7 +158,7 @@ jobs:
               clang-tidy.html
 
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: inputs.run_full
         with:
           name: clang-tidy.html
@@ -187,7 +187,7 @@ jobs:
         run: |
           python3 buildbot/clang_tidy_diff_report.py -i clang-tidy-output.txt -f diff-clang-tidy -o report_clang_tidy.md
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: >
           inputs.run_diff &&
           (github.event_name == 'pull_request_target' ||

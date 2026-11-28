@@ -47,13 +47,6 @@ namespace shamrock::tree {
             u32 obj_cnt,
             sham::DeviceBuffer<T> &pos_buf);
 
-        template<class T>
-        static std::unique_ptr<sycl::buffer<u_morton>> build_raw(
-            sycl::queue &queue,
-            shammath::CoordRange<T> coord_range,
-            u32 obj_cnt,
-            sycl::buffer<T> &pos_buf);
-
         [[nodiscard]] inline u64 memsize() const {
             u64 sum = 0;
 

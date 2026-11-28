@@ -189,17 +189,6 @@ namespace mpi_sycl_interop {
         }
     }
 
-    template<class T>
-    inline void file_write(MPI_File fh, std::unique_ptr<sycl::buffer<T>> &p, const u32 &size_comm) {
-        MPI_Status st;
-
-        BufferMpiRequest<T> rq(p, current_mode, Send, size_comm);
-
-        shamcomm::mpi::File_write(fh, rq.get_mpi_ptr(), size_comm, get_mpi_type<T>(), &st);
-
-        rq.finalize();
-    }
-
 } // namespace mpi_sycl_interop
 
 namespace impl::copy_to_host {

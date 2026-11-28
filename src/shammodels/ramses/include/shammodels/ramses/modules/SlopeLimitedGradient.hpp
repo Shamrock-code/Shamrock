@@ -25,11 +25,23 @@
 
 namespace shammodels::basegodunov::modules {
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+    X_RO(AMRGraphEdge, cell_neigh_graph)                                                           \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_block_cell_sizes)                         \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, span_field)                                     \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, span_grad_field)
+
     template<class Tvec, class TgridVec>
     class SlopeLimitedScalarGradient : public shamrock::solvergraph::INode {
         using Tscal = shambase::VecComponent<Tvec>;
 
         using SlopeMode = shammodels::basegodunov::SlopeMode;
+        // alias so the template-argument comma does not split the NODE_EDGES macro arguments
+        using AMRGraphEdge = solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>;
 
         u32 block_size;
         u32 var_per_cell;
@@ -39,33 +51,7 @@ namespace shammodels::basegodunov::modules {
         SlopeLimitedScalarGradient(u32 block_size, u32 var_per_cell, SlopeMode mode)
             : block_size(block_size), var_per_cell(var_per_cell), mode(mode) {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            const solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec> &cell_neigh_graph;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_block_cell_sizes;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &span_field;
-            shamrock::solvergraph::IFieldSpan<Tvec> &span_grad_field;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>> cell_neigh_graph,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_block_cell_sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> span_field,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> span_grad_field) {
-            __internal_set_ro_edges({sizes, cell_neigh_graph, spans_block_cell_sizes, span_field});
-            __internal_set_rw_edges({span_grad_field});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -74,11 +60,27 @@ namespace shammodels::basegodunov::modules {
         virtual std::string _impl_get_tex() const;
     };
 
+#undef NODE_EDGES
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+    X_RO(AMRGraphEdge, cell_neigh_graph)                                                           \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_block_cell_sizes)                         \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, span_field)                                      \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, span_dx_field)                                   \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, span_dy_field)                                   \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, span_dz_field)
+
     template<class Tvec, class TgridVec>
     class SlopeLimitedVectorGradient : public shamrock::solvergraph::INode {
         using Tscal = shambase::VecComponent<Tvec>;
 
         using SlopeMode = shammodels::basegodunov::SlopeMode;
+        // alias so the template-argument comma does not split the NODE_EDGES macro arguments
+        using AMRGraphEdge = solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>;
 
         u32 block_size;
         u32 var_per_cell;
@@ -88,39 +90,7 @@ namespace shammodels::basegodunov::modules {
         SlopeLimitedVectorGradient(u32 block_size, u32 var_per_cell, SlopeMode mode)
             : block_size(block_size), var_per_cell(var_per_cell), mode(mode) {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            const solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec> &cell_neigh_graph;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_block_cell_sizes;
-            const shamrock::solvergraph::IFieldSpan<Tvec> &span_field;
-            shamrock::solvergraph::IFieldSpan<Tvec> &span_dx_field;
-            shamrock::solvergraph::IFieldSpan<Tvec> &span_dy_field;
-            shamrock::solvergraph::IFieldSpan<Tvec> &span_dz_field;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>> cell_neigh_graph,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_block_cell_sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> span_field,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> span_dx_field,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> span_dy_field,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> span_dz_field) {
-            __internal_set_ro_edges({sizes, cell_neigh_graph, spans_block_cell_sizes, span_field});
-            __internal_set_rw_edges({span_dx_field, span_dy_field, span_dz_field});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(3),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(1),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -128,4 +98,7 @@ namespace shammodels::basegodunov::modules {
 
         virtual std::string _impl_get_tex() const;
     };
+
+#undef NODE_EDGES
+
 } // namespace shammodels::basegodunov::modules

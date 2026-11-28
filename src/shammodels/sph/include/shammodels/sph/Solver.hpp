@@ -13,7 +13,7 @@
  * @file Solver.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -22,7 +22,6 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/common/SolverLog.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -34,9 +33,11 @@
 #include "shamtree/TreeTraversalCache.hpp"
 #include <functional>
 #include <limits>
+#include <map>
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <variant>
 #include <vector>
 namespace shammodels::sph {
@@ -154,7 +155,12 @@ namespace shammodels::sph {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel             = SPHKernel<Tscal>;
 
-        using Config = SolverConfig<Tvec, SPHKernel>;
+        using Config  = SolverConfig<Tvec, SPHKernel>;
+        using Cfg_MHD = typename Config::MHDConfig;
+
+        using NoneMHD     = typename Cfg_MHD::None;
+        using IdealMHD    = typename Cfg_MHD::IdealMhdConstrainedHyperPara;
+        using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
 
         using u_morton = typename Config::u_morton;
 
@@ -200,31 +206,48 @@ namespace shammodels::sph {
         inline Tscal get_cfl_multipler() { return cfl_multiplier_edge_value(); }
         inline void set_cfl_multipler(Tscal lambda) { cfl_multiplier_edge_value() = lambda; }
 
-        /// Register time/dt/cfl_multiplier synchronized edges if missing (idempotent)
-        inline void ensure_time_state_edges() {
-            auto &sync    = scheduler().synchronized_data;
-            auto names    = sync.get_edge_names();
-            auto has_edge = [&](const std::string &name) {
-                return std::find(names.begin(), names.end(), name) != names.end();
-            };
+        /// Name of the synchronized edge holding the last global CFL dt
+        static constexpr const char *cfl_dt_edge_name = "cfl_dt";
+        /// Prefix of the synchronized edges holding the last CFL dt per CFL type
+        static constexpr const char *cfl_dt_detail_edge_prefix = "cfl_dt_";
 
-            if (!has_edge("time")) {
-                auto edge = sync.register_edge(
-                    "time", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("time", "t"));
-                edge->data = 0;
+        /// Check whether a synchronized edge name is one of the last CFL dt edges
+        static inline bool is_cfl_dt_edge_name(const std::string &name) {
+            return name == cfl_dt_edge_name || name.starts_with(cfl_dt_detail_edge_prefix);
+        }
+
+        /**
+         * @brief Store a CFL dt value in its synchronized edge
+         *
+         * The edge must already exist (registered by init_solver_graph). The value must be
+         * identical on every rank (i.e. already reduced).
+         */
+        inline void set_cfl_dt_edge_value(const std::string &name, Tscal value) {
+            scheduler()
+                .synchronized_data
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>(name)
+                .data = value;
+        }
+
+        /**
+         * @brief Get the last CFL dt values stored in the synchronized edges
+         *
+         * Returns the global CFL dt (edge "cfl_dt") and, if `show_cfl_detail` is enabled, the
+         * CFL dt per CFL type (edges "cfl_dt_<type>"), keyed by edge name. All values are 0
+         * before the first step. An edge whose CFL type was not evaluated in the last step
+         * (e.g. "cfl_dt_sink_sink" with no sinks) keeps its previous value.
+         */
+        inline std::map<std::string, Tscal> get_last_cfl_dts() {
+            using Edge = shamrock::solvergraph::IDataEdgeSerializable<Tscal>;
+            auto &sync = scheduler().synchronized_data;
+
+            std::map<std::string, Tscal> ret;
+            for (const std::string &name : sync.get_edge_names()) {
+                if (is_cfl_dt_edge_name(name)) {
+                    ret[name] = sync.template get_edge_ref<Edge>(name).data;
+                }
             }
-            if (!has_edge("dt")) {
-                auto edge = sync.register_edge(
-                    "dt", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("dt", "dt"));
-                edge->data = 0;
-            }
-            if (!has_edge("cfl_multiplier")) {
-                auto edge = sync.register_edge(
-                    "cfl_multiplier",
-                    shamrock::solvergraph::IDataEdgeSerializable<Tscal>(
-                        "cfl_multiplier", "C_{\\rm CFL}"));
-                edge->data = 1e-2;
-            }
+            return ret;
         }
 
         struct SolverStepCallback {
@@ -243,54 +266,12 @@ namespace shammodels::sph {
         using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
-        inline void gen_ghost_handler(Tscal time_val) {
-
-            using CfgClass = sph::BasicSPHGhostHandlerConfig<Tvec>;
-            using BCConfig = typename CfgClass::Variant;
-
-            using BCFree             = typename CfgClass::Free;
-            using BCPeriodic         = typename CfgClass::Periodic;
-            using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
-
-            using SolverConfigBC           = typename Config::BCConfig;
-            using SolverBCFree             = typename SolverConfigBC::Free;
-            using SolverBCPeriodic         = typename SolverConfigBC::Periodic;
-            using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
-
-            // boundary condition selections
-            if (SolverBCFree *c
-                = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(
-                    GhostHandle{
-                        scheduler(),
-                        BCFree{},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-            } else if (
-                SolverBCPeriodic *c
-                = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(
-                    GhostHandle{
-                        scheduler(),
-                        BCPeriodic{},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-            } else if (
-                SolverBCShearingPeriodic *c
-                = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(
-                    GhostHandle{
-                        scheduler(),
-                        BCShearingPeriodic{
-                            c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
-                        storage.patch_rank_owner,
-                        storage.xyzh_ghost_layout});
-            }
-        }
         inline void reset_ghost_handler() { storage.ghost_handler.reset(); }
 
-        /// @brief Builds ghost particle interface cache for inter-patch communication
-        void build_ghost_cache();
+        /// @brief Generates the ghost handler and builds the ghost particle interface cache for
+        /// inter-patch communication
+        /// @param time_val the time at which the boundary conditions are evaluated
+        void build_ghost_cache(Tscal time_val);
         /// @brief Clears ghost particle cache to free memory
         void clear_ghost_cache();
 
@@ -323,6 +304,9 @@ namespace shammodels::sph {
         /// @brief Updates artificial viscosity coefficients for shock capturing
         void update_artificial_viscosity(Tscal dt);
 
+        /// @brief Updates the magnetic current field (for NIMHD)
+        void update_j();
+
         /// @brief Initializes data layout for ghost particle fields
         void init_ghost_layout();
 
@@ -341,6 +325,7 @@ namespace shammodels::sph {
         void prepare_corrector();
         /// @brief Updates time derivatives and applies external forces
         void update_derivs(Tscal dt_hydro);
+
         /**
          * @brief
          *

@@ -42,7 +42,7 @@ RUN sudo apt install -y \
     ccache \
     graphviz
 
-RUN pip3 install matplotlib numpy scipy h5py graphviz
+RUN pip3 install matplotlib numpy scipy h5py graphviz numba
 
 # ----------------------------
 # ccache configuration

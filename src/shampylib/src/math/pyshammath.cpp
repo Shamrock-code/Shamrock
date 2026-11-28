@@ -12,6 +12,7 @@
  * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yann Bernard (yann.bernard@univ-grenoble-alpes.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -29,6 +30,7 @@
 #include "shammath/symtensor_collections.hpp"
 #include "shammath/symtensors.hpp"
 #include "shampylib/math/pyAABB.hpp"
+#include "shampylib/math/pyCamera3d.hpp"
 #include "shampylib/math/pyRay.hpp"
 #include "shampylib/math/pySPHKernels.hpp"
 #include "shampylib/math/pySfc.hpp"
@@ -45,6 +47,7 @@ ON_PYTHON_INIT {
     shampylib::init_shamrock_math_AABB<f64_3>(math_module, "AABB_f64_3");
     shampylib::init_shamrock_math_Ray<f64_3>(math_module, "Ray_f64_3");
     shampylib::init_shamrock_math_RingRay<f64_3>(math_module, "RingRay_f64_3");
+    shampylib::init_shamrock_math_Camera3d<f64_3>(math_module, "Camera3d_f64_3");
     shampylib::init_shamrock_math_sfc(math_module);
     shampylib::init_shamrock_math_sphkernels(math_module);
 
@@ -918,6 +921,43 @@ ON_PYTHON_INIT {
         R"pbdoc(
         Get the periodic box corresponding to integer lattice coordinates
         this function will throw if the coordinates asked cannot make a periodic lattice
+
+        Args:
+            dr: the particle spacing in the lattice
+            box_min: integer triplet for the minimal coordinates on the lattice
+            box_max: integer triplet for the maximal coordinates on the lattice
+        )pbdoc");
+
+    math_module.def(
+        "get_ideal_fcc_box",
+        [](f64 dr, f64_3 box_min, f64_3 box_max) {
+            return shammath::LatticeFCC<f64_3>::get_ideal_fcc_box(dr, {box_min, box_max});
+        },
+        py::arg("dr"),
+        py::arg("box_min"),
+        py::arg("box_max"),
+        R"pbdoc(
+        Get the smallest periodic box of a true FCC lattice (ABC stacking) containing the given box
+
+        Args:
+            dr: the particle spacing in the lattice (neighbours are 2 dr apart)
+            box_min: lower corner of the box
+            box_max: upper corner of the box
+        )pbdoc");
+
+    math_module.def(
+        "get_periodic_fcc_box",
+        [](f64 dr, std::array<i32, 3> box_min, std::array<i32, 3> box_max) {
+            auto ret = shammath::LatticeFCC<f64_3>::get_periodic_box(dr, box_min, box_max);
+            return std::tuple<f64_3, f64_3>{ret.lower, ret.upper};
+        },
+        py::arg("dr"),
+        py::arg("box_min"),
+        py::arg("box_max"),
+        R"pbdoc(
+        Get the periodic box of a true FCC lattice (ABC stacking) corresponding to integer
+        lattice coordinates. This function will throw if the coordinates asked cannot make a
+        periodic lattice (x count must be >= 2, y count even and z count a multiple of 3)
 
         Args:
             dr: the particle spacing in the lattice

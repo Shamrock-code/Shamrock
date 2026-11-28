@@ -1,0 +1,18 @@
+# Display name (after aliases)|GitHub login|GitHub user id
+# start allow utf-8
+Timothée David--Cléris|tdavidcl|5550916
+Yona Lapeyre|y-lapeyre|118538359
+Léodasce Sewanou|Akos299|113362281
+David Fang|DavidFang03|63859514
+Guo Yansong|Guo-astro|15899028
+AugustinDart|AugustinDart|281566481
+Maxime Lombart|mlombart|72981681
+Anass Serhani|aserhani|177430682
+Noé Brucy|nbrucy|16268243
+Yann Bernard|Yrisch|46387267
+Benoit Commercon|bcommerc|12409305
+Christian Clauss|cclauss|3709715
+Thomas Guillet|thomasguillet|24361110
+Francesco Lovascio|FLovascio|39025943
+pre-commit-ci[bot]|pre-commit-ci[bot]|66853113
+# end allow utf-8

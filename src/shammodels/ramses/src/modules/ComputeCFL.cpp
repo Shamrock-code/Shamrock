@@ -16,21 +16,21 @@
 
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "fmt/core.h"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/riemann.hpp"
 #include "shammath/riemann_dust.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class Tvec, class TgridVec>
-auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl() -> Tscal {
+template<shammath::FluidStateSpec FSpec>
+void shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl_gas(
+    shamrock::ComputeField<Tscal> &cfl_dt, FSpec fluid) {
 
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
     using namespace shamrock;
     using namespace shammath;
-
-    SchedulerUtility utility(scheduler());
-    ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", AMRBlock::block_size);
 
     // load layout info
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
@@ -62,55 +62,73 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
                   .get()
                   .get_buf();
 
-        sham::EventList depends_list;
-        auto cfl_dt        = cfl_dt_buf.get_write_access(depends_list);
-        auto acc_block_min = buf_block_min.get_read_access(depends_list);
-        auto acc_block_max = buf_block_max.get_read_access(depends_list);
-        auto rho           = buf_rho.get_read_access(depends_list);
-        auto rhov          = buf_rhov.get_read_access(depends_list);
-        auto rhoe          = buf_rhoe.get_read_access(depends_list);
+        Tscal C_safe = solver_config.Csafe;
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            Tscal C_safe = solver_config.Csafe;
-            Tscal gamma  = solver_config.eos_gamma;
+        Tscal one_over_Nside = 1. / AMRBlock::Nside;
 
-            Tscal one_over_Nside = 1. / AMRBlock::Nside;
+        Tscal dxfact = solver_config.grid_coord_to_pos_fact;
 
-            Tscal dxfact = solver_config.grid_coord_to_pos_fact;
-            shambase::parallel_for(cgh, cell_count, "compute_cfl", [=](u64 gid) {
+        auto fspec = fluid;
+
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_block_min, buf_block_max, buf_rho, buf_rhov, buf_rhoe},
+            sham::MultiRef{cfl_dt_buf},
+            cell_count,
+            [C_safe, one_over_Nside, dxfact, fspec](
+                u32 gid,
+                const TgridVec *__restrict acc_block_min,
+                const TgridVec *__restrict acc_block_max,
+                const Tscal *__restrict rho,
+                const Tvec *__restrict rhov,
+                const Tscal *__restrict rhoe,
+                Tscal *__restrict cfl_dt) {
                 const u32 cell_global_id = (u32) gid;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
                 const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
-                TgridVec lower       = acc_block_min[block_id];
-                TgridVec upper       = acc_block_max[block_id];
-                Tvec lower_flt       = lower.template convert<Tscal>() * dxfact;
-                Tvec upper_flt       = upper.template convert<Tscal>() * dxfact;
-                Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
-                Tscal dx             = block_cell_size.x();
+                TgridVec lower = acc_block_min[block_id];
+                TgridVec upper = acc_block_max[block_id];
+                // size from the int coords difference, so that it does not depend on the block
+                // position
+                Tvec block_cell_size
+                    = (upper - lower).template convert<Tscal>() * (dxfact * one_over_Nside);
+                Tscal dx = block_cell_size.x();
 
+                // rhoe is ignored by the barotropic cons_to_prim
                 auto conststate = shammath::ConsState<Tvec>{rho[gid], rhoe[gid], rhov[gid]};
 
-                auto prim_state = shammath::cons_to_prim(conststate, gamma);
+                auto prim_state = fspec.cons_to_prim(conststate);
 
                 constexpr Tscal div = 1. / 3.;
 
-                Tscal cs    = sound_speed(prim_state, gamma);
+                Tscal cs    = fspec.sound_speed(prim_state);
                 Tscal vnorm = sycl::length(prim_state.vel);
                 Tscal dt    = C_safe * dx * div / (cs + vnorm);
 
                 cfl_dt[gid] = dt;
             });
-        });
-
-        cfl_dt_buf.complete_event_state(e);
-        buf_block_min.complete_event_state(e);
-        buf_block_max.complete_event_state(e);
-        buf_rho.complete_event_state(e);
-        buf_rhov.complete_event_state(e);
-        buf_rhoe.complete_event_state(e);
     });
+}
+
+template<class Tvec, class TgridVec>
+auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl() -> Tscal {
+
+    StackEntry stack_loc{};
+
+    using namespace shamrock;
+
+    SchedulerUtility utility(scheduler());
+    ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", AMRBlock::block_size);
+
+    // each EOSConfig alternative maps to its shammath fluid spec (FluidStateAdiabatic or
+    // FluidStateBarotropic) through get_spec()
+    std::visit(
+        [&](const auto &eos_cfg) {
+            compute_cfl_gas(cfl_dt, eos_cfg.get_spec());
+        },
+        solver_config.eos_config.config);
 
     Tscal rank_dt = cfl_dt.compute_rank_min();
 
@@ -164,16 +182,19 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
                   .get()
                   .get_buf();
 
-        sham::EventList depends_list;
-        auto dust_cfl_dt        = dust_cfl_dt_buf.get_write_access(depends_list);
-        auto rho_dust           = buf_rho_dust.get_read_access(depends_list);
-        auto rhov_dust          = buf_rhov_dust.get_read_access(depends_list);
-        auto acc_aabb_cell_size = block_cell_sizes.get_read_access(depends_list);
+        Tscal C_safe = solver_config.Csafe;
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            Tscal C_safe = solver_config.Csafe;
-
-            shambase::parallel_for(cgh, ndust * cell_count, "compute_dust_cfl", [=](u64 gid) {
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_rho_dust, buf_rhov_dust, block_cell_sizes},
+            sham::MultiRef{dust_cfl_dt_buf},
+            ndust * cell_count,
+            [C_safe, ndust](
+                u32 gid,
+                const Tscal *__restrict rho_dust,
+                const Tvec *__restrict rhov_dust,
+                const Tscal *__restrict acc_aabb_cell_size,
+                Tscal *__restrict dust_cfl_dt) {
                 const u32 tmp_gid        = (u32) gid;
                 const u32 cell_global_id = tmp_gid / ndust;
                 const u32 ndust_off_loc  = tmp_gid % ndust;
@@ -186,7 +207,8 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
                     rhov_dust[ndust * cell_global_id + ndust_off_loc]};
                 Tscal dx = acc_aabb_cell_size[block_id];
 
-                auto prim_state = shammath::d_cons_to_prim(conststate);
+                shammath::FluidStateDust<Tvec> dust_fluid{};
+                auto prim_state = dust_fluid.cons_to_prim(conststate);
 
                 constexpr Tscal div = 1. / 3.;
 
@@ -195,12 +217,6 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
 
                 dust_cfl_dt[ndust * cell_global_id + ndust_off_loc] = dt;
             });
-        });
-
-        dust_cfl_dt_buf.complete_event_state(e);
-        buf_rho_dust.complete_event_state(e);
-        buf_rhov_dust.complete_event_state(e);
-        block_cell_sizes.complete_event_state(e);
     });
 
     Tscal rank_dust_dt = dust_cfl_dt.compute_rank_min();

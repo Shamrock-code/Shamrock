@@ -44,14 +44,11 @@ namespace shamrock::solvergraph {
 
         /// Get the TeX representation of the node
         inline virtual std::string _impl_get_tex() const {
-
-            auto to_free = get_rw_edge_base(0).get_tex_symbol();
-
             std::string tex = R"tex(
                 Free allocation ${to_free}$
             )tex";
 
-            shambase::replace_all(tex, "{to_free}", to_free);
+            replace_edges_tex_symbols(tex);
 
             return tex;
         }

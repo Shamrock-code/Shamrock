@@ -60,9 +60,6 @@ void shamrock::solvergraph::ExchangeGhostField<T>::_impl_evaluate_internal() {
 
 template<class T>
 std::string shamrock::solvergraph::ExchangeGhostField<T>::_impl_get_tex() const {
-    auto rank_owner  = get_ro_edge_base(0).get_tex_symbol();
-    auto ghost_layer = get_rw_edge_base(0).get_tex_symbol();
-
     std::string tex = R"tex(
         Exchange ghost field data between distributed processes
 
@@ -76,8 +73,7 @@ std::string shamrock::solvergraph::ExchangeGhostField<T>::_impl_get_tex() const 
         underlined indices denotes one that currently owned by the local process.
     )tex";
 
-    shambase::replace_all(tex, "{rank_owner}", rank_owner);
-    shambase::replace_all(tex, "{ghost_layer}", ghost_layer);
+    replace_edges_tex_symbols(tex);
 
     return tex;
 }

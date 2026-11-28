@@ -59,9 +59,11 @@ namespace {
                     TgridVec upper = acc_block_max[i];
 
                     Tvec lower_flt = lower.template convert<Tscal>() * dxfact;
-                    Tvec upper_flt = upper.template convert<Tscal>() * dxfact;
 
-                    Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
+                    // size from the int coords difference, so that it does not depend on the block
+                    // position
+                    Tvec block_cell_size
+                        = (upper - lower).template convert<Tscal>() * (dxfact * one_over_Nside);
 
                     Tscal res = block_cell_size.x();
 

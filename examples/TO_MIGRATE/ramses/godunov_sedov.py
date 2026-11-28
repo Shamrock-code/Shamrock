@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from shamrock.model_ramses import HLLC_PVRS
 
 import shamrock
 
@@ -100,7 +101,7 @@ else:
     cfg = model.gen_default_config()
     cfg.set_scale_factor(scale_fact)
     cfg.set_eos_gamma(gamma)
-    cfg.set_riemann_solver_hllc()
+    cfg.set_riemann_solver(HLLC_PVRS)
     cfg.set_slope_lim_vanleer_sym()
     cfg.set_face_time_interpolation(True)
     cfg.set_Csafe(C_cour)

@@ -61,7 +61,7 @@ namespace shammodels::sph {
             pdl.add_field<Tscal>("soundspeed", 1);
         }
 
-        if (has_field_B_on_rho()) {
+        if (has_field_b_on_rho()) {
 
             pdl.add_field<Tvec>("B/rho", 1);
             pdl.add_field<Tvec>("dB/rho", 1);
@@ -72,12 +72,16 @@ namespace shammodels::sph {
             pdl.add_field<Tscal>("psi/ch", 1);
             pdl.add_field<Tscal>("dpsi/ch", 1);
         }
-        if (has_field_divB()) {
+        if (has_field_div_b()) {
             pdl.add_field<Tscal>("divB", 1);
         }
 
-        if (has_field_curlB()) {
+        if (has_field_curl_b()) {
             pdl.add_field<Tvec>("curlB", 1);
+        }
+
+        if (do_nimhd()) {
+            pdl.add_field<Tvec>("J", 1);
         }
 
         if (dust_config.has_epsilon_field()) {
@@ -139,7 +143,7 @@ namespace shammodels::sph {
             ghost_layout.add_field<Tscal>("soundspeed", 1);
         }
 
-        if (has_field_B_on_rho()) {
+        if (has_field_b_on_rho()) {
             ghost_layout.add_field<Tvec>("B/rho", 1);
         }
 
@@ -147,7 +151,7 @@ namespace shammodels::sph {
             ghost_layout.add_field<Tscal>("psi/ch", 1);
         }
 
-        if (has_field_curlB()) {
+        if (has_field_curl_b()) {
             ghost_layout.add_field<Tvec>("curlB", 1);
         }
 

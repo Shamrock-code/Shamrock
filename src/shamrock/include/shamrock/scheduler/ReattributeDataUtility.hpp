@@ -17,7 +17,6 @@
 
 #include "shambase/string.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
-#include "shamalgs/memory.hpp"
 #include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -66,6 +65,8 @@ namespace shamrock {
 
             shambase::DistributedData<sycl::buffer<u64>> newid_buf_map;
 
+            auto transform = sched.get_patch_transform<T>();
+
             sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
                 if (!pdat.is_empty()) {
 
@@ -75,12 +76,19 @@ namespace shamrock {
                         shambase::throw_unimplemented();
                     }
 
+                    shamrock::patch::Patch &cur_p
+                        = sched.patch_list.global[sched.patch_list.id_patch_to_global_idx.at(id)];
+                    auto cur_box = transform.to_obj_coord(cur_p);
+
                     newid_buf_map.add_obj(
                         id,
                         sptree.compute_patch_owner(
                             shamsys::instance::get_compute_scheduler_ptr(),
                             pos_field.get_buf(),
-                            pos_field.get_obj_cnt()));
+                            pos_field.get_obj_cnt(),
+                            id,
+                            cur_box.lower,
+                            cur_box.upper));
 
                     bool err_id_in_newid = false;
                     {
@@ -189,7 +197,9 @@ namespace shamrock {
                                     });
                             }
 
-                            sycl::buffer<u32> keep_idx = shamalgs::memory::vec_to_buf(keep_ids);
+                            sham::DeviceBuffer<u32> keep_idx(
+                                keep_ids.size(), shamsys::instance::get_compute_scheduler_ptr());
+                            keep_idx.copy_from_stdvec(keep_ids);
                             pdat.keep_ids(keep_idx, keep_ids.size());
                         }
                     }

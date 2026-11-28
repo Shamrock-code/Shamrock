@@ -27,6 +27,7 @@
  */
 
 #include "shammodels/gsph/modules/UpdateDerivs.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shambackends/math.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/gsph/config/FieldNames.hpp"
@@ -116,167 +117,216 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
-        // Set up SYCL queue and event tracking
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        sham::EventList depends_list;
 
         // Get density from merged ghost data (SPH summation density)
         sham::DeviceBuffer<Tscal> &buf_density = mpdat.get_field_buf_ref<Tscal>(idensity_interf);
 
-        // Get buffer accessors
-        auto xyz          = buf_xyz.get_read_access(depends_list);
-        auto axyz         = buf_axyz.get_write_access(depends_list);
-        auto vxyz         = buf_vxyz.get_read_access(depends_list);
-        auto hpart        = buf_hpart.get_read_access(depends_list);
-        auto omega_acc    = buf_omega.get_read_access(depends_list);
-        auto density_acc  = buf_density.get_read_access(depends_list);
-        auto pressure_acc = buf_pressure.get_read_access(depends_list);
-        auto cs_acc       = buf_cs.get_read_access(depends_list);
-        auto ploop_ptrs   = pcache.get_read_access(depends_list);
+        const Tscal pmass          = solver_config.gpart_mass;
+        const Tscal gamma          = solver_config.get_eos_gamma();
+        const Tscal tol            = cfg.tol;
+        const u32 max_iter         = cfg.max_iter;
+        const bool use_inutsuka_v2 = solver_config.is_force_inutsuka_v2();
 
-        // Optional: internal energy
-        sham::DeviceBuffer<Tscal> *buf_duint_ptr = nullptr;
-        Tscal *duint_acc                         = nullptr;
-        if (has_uint) {
-            buf_duint_ptr = &pdat.get_field_buf_ref<Tscal>(iduint);
-            duint_acc     = buf_duint_ptr->get_write_access(depends_list);
-        }
+        // InutsukaV2 evaluates the kernel gradient at sqrt(2)*h, so the local
+        // kernel-support filter below must match the widened cache radius
+        // (see start_neighbors_cache()/compute_presteps_rint() in Solver.cpp),
+        // or valid cached pairs beyond h*Rkern get dropped here regardless.
+        const Tscal Rker2_factor = use_inutsuka_v2 ? Tscal{2} : Tscal{1};
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            const Tscal pmass          = solver_config.gpart_mass;
-            const Tscal gamma          = solver_config.get_eos_gamma();
-            const Tscal tol            = cfg.tol;
-            const u32 max_iter         = cfg.max_iter;
-            const bool do_energy       = has_uint;
-            const bool use_inutsuka_v2 = solver_config.is_force_inutsuka_v2();
+        // Per-particle derivative body, shared by the with/without uint kernel variants.
+        // `write_du(id, value)` stores the internal energy derivative when the EOS is
+        // adiabatic and is a no-op otherwise (sum_du_a is computed identically in both).
+        auto derivs_body = [pmass, gamma, tol, max_iter, use_inutsuka_v2, Rker2_factor](
+                               u32 id_a,
+                               auto ploop_ptrs,
+                               const Tvec *__restrict xyz,
+                               const Tvec *__restrict vxyz,
+                               const Tscal *__restrict hpart,
+                               const Tscal *__restrict omega_acc,
+                               const Tscal *__restrict density_acc,
+                               const Tscal *__restrict pressure_acc,
+                               const Tscal *__restrict cs_acc,
+                               Tvec *__restrict axyz,
+                               auto write_du) {
+            using namespace shamrock::sph;
 
             // Use shamrock's ObjectCacheIterator for neighbor traversal
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            // InutsukaV2 evaluates the kernel gradient at sqrt(2)*h, so the local
-            // kernel-support filter below must match the widened cache radius
-            // (see start_neighbors_cache()/compute_presteps_rint() in Solver.cpp),
-            // or valid cached pairs beyond h*Rkern get dropped here regardless.
-            const Tscal Rker2_factor = use_inutsuka_v2 ? Tscal{2} : Tscal{1};
+            // Initialize accumulators
+            Tvec sum_axyz  = {0, 0, 0};
+            Tscal sum_du_a = 0;
 
-            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "GSPH derivs iterative", [=](u64 gid) {
-                u32 id_a = (u32) gid;
+            // Particle a state
+            const Tscal h_a     = hpart[id_a];
+            const Tvec xyz_a    = xyz[id_a];
+            const Tvec vxyz_a   = vxyz[id_a];
+            const Tscal omega_a = omega_acc[id_a];
 
-                using namespace shamrock::sph;
+            // Use SPH-summation density
+            const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
 
-                // Initialize accumulators
-                Tvec sum_axyz  = {0, 0, 0};
-                Tscal sum_du_a = 0;
+            // Use pressure and soundspeed from storage
+            const Tscal P_a  = sycl::max(pressure_acc[id_a], Tscal(1e-30));
+            const Tscal cs_a = sycl::max(cs_acc[id_a], Tscal(1e-10));
 
-                // Particle a state
-                const Tscal h_a     = hpart[id_a];
-                const Tvec xyz_a    = xyz[id_a];
-                const Tvec vxyz_a   = vxyz[id_a];
-                const Tscal omega_a = omega_acc[id_a];
+            // Loop over neighbors
+            particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                if (id_a == id_b)
+                    return; // Skip self
+
+                // Distance and kernel support check
+                const Tvec dr    = xyz_a - xyz[id_b];
+                const Tscal rab2 = sycl::dot(dr, dr);
+                const Tscal h_b  = hpart[id_b];
+
+                // Skip if outside kernel support
+                if (rab2 > h_a * h_a * Rker2 * Rker2_factor
+                    && rab2 > h_b * h_b * Rker2 * Rker2_factor) {
+                    return;
+                }
+
+                const Tscal rab     = sycl::sqrt(rab2);
+                const Tvec vxyz_b   = vxyz[id_b];
+                const Tscal omega_b = omega_acc[id_b];
 
                 // Use SPH-summation density
-                const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
+                const Tscal rho_b = sycl::max(density_acc[id_b], Tscal(1e-30));
 
                 // Use pressure and soundspeed from storage
-                const Tscal P_a  = sycl::max(pressure_acc[id_a], Tscal(1e-30));
-                const Tscal cs_a = sycl::max(cs_acc[id_a], Tscal(1e-10));
+                const Tscal P_b  = sycl::max(pressure_acc[id_b], Tscal(1e-30));
+                const Tscal cs_b = sycl::max(cs_acc[id_b], Tscal(1e-10));
 
-                // Loop over neighbors
-                particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                    if (id_a == id_b)
-                        return; // Skip self
+                // Unit vector from a to b
+                const Tscal rab_inv  = sham::inv_sat_positive(rab);
+                const Tvec r_ab_unit = dr * rab_inv;
 
-                    // Distance and kernel support check
-                    const Tvec dr    = xyz_a - xyz[id_b];
-                    const Tscal rab2 = sycl::dot(dr, dr);
-                    const Tscal h_b  = hpart[id_b];
+                // Project velocities onto pair axis for 1D Riemann problem
+                const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
+                const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
 
-                    // Skip if outside kernel support
-                    if (rab2 > h_a * h_a * Rker2 * Rker2_factor
-                        && rab2 > h_b * h_b * Rker2 * Rker2_factor) {
-                        return;
-                    }
+                // Solve 1D Riemann problem using iterative solver
+                // Convention: Left state = neighbor b, Right state = current a
+                auto riemann_result = riemann::iterative_solver<Tscal>(
+                    u_b_proj,
+                    rho_b,
+                    P_b, // Left = neighbor
+                    u_a_proj,
+                    rho_a,
+                    P_a, // Right = current
+                    gamma,
+                    tol,
+                    max_iter);
+                const Tscal p_star = riemann_result.p_star;
+                const Tscal v_star = riemann_result.v_star;
 
-                    const Tscal rab     = sycl::sqrt(rab2);
-                    const Tvec vxyz_b   = vxyz[id_b];
-                    const Tscal omega_b = omega_acc[id_b];
-
-                    // Use SPH-summation density
-                    const Tscal rho_b = sycl::max(density_acc[id_b], Tscal(1e-30));
-
-                    // Use pressure and soundspeed from storage
-                    const Tscal P_b  = sycl::max(pressure_acc[id_b], Tscal(1e-30));
-                    const Tscal cs_b = sycl::max(cs_acc[id_b], Tscal(1e-10));
-
-                    // Unit vector from a to b
-                    const Tscal rab_inv  = sham::inv_sat_positive(rab);
-                    const Tvec r_ab_unit = dr * rab_inv;
-
-                    // Project velocities onto pair axis for 1D Riemann problem
-                    const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
-                    const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
-
-                    // Solve 1D Riemann problem using iterative solver
-                    // Convention: Left state = neighbor b, Right state = current a
-                    auto riemann_result = riemann::iterative_solver<Tscal>(
-                        u_b_proj,
-                        rho_b,
-                        P_b, // Left = neighbor
-                        u_a_proj,
-                        rho_a,
-                        P_a, // Right = current
-                        gamma,
-                        tol,
-                        max_iter);
-                    const Tscal p_star = riemann_result.p_star;
-                    const Tscal v_star = riemann_result.v_star;
-
-                    shammodels::gsph::accumulate_gsph_pair_force<Kernel, Tvec, Tscal>(
-                        use_inutsuka_v2,
-                        pmass,
-                        p_star,
-                        v_star,
-                        rho_a,
-                        rho_b,
-                        omega_a,
-                        omega_b,
-                        rab,
-                        rab_inv,
-                        h_a,
-                        h_b,
-                        r_ab_unit,
-                        vxyz_a,
-                        sum_axyz,
-                        sum_du_a);
-                });
-
-                // Write accumulated derivatives
-                axyz[id_a] = sum_axyz;
-                if (duint_acc != nullptr) {
-                    duint_acc[id_a] = sum_du_a;
-                }
+                shammodels::gsph::accumulate_gsph_pair_force<Kernel, Tvec, Tscal>(
+                    use_inutsuka_v2,
+                    pmass,
+                    p_star,
+                    v_star,
+                    rho_a,
+                    rho_b,
+                    omega_a,
+                    omega_b,
+                    rab,
+                    rab_inv,
+                    h_a,
+                    h_b,
+                    r_ab_unit,
+                    vxyz_a,
+                    sum_axyz,
+                    sum_du_a);
             });
-        });
 
-        // Complete event states for all buffers
-        buf_xyz.complete_event_state(e);
-        buf_axyz.complete_event_state(e);
-        buf_vxyz.complete_event_state(e);
-        buf_hpart.complete_event_state(e);
-        buf_omega.complete_event_state(e);
-        buf_density.complete_event_state(e);
-        buf_pressure.complete_event_state(e);
-        buf_cs.complete_event_state(e);
+            // Write accumulated derivatives
+            axyz[id_a] = sum_axyz;
+            write_du(id_a, sum_du_a);
+        };
 
-        if (has_uint && buf_duint_ptr) {
-            buf_duint_ptr->complete_event_state(e);
+        if (has_uint) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{
+                    pcache,
+                    buf_xyz,
+                    buf_vxyz,
+                    buf_hpart,
+                    buf_omega,
+                    buf_density,
+                    buf_pressure,
+                    buf_cs},
+                sham::MultiRef{buf_axyz, pdat.get_field_buf_ref<Tscal>(iduint)},
+                pdat.get_obj_cnt(),
+                [derivs_body](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz,
+                    const Tvec *__restrict vxyz,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict omega_acc,
+                    const Tscal *__restrict density_acc,
+                    const Tscal *__restrict pressure_acc,
+                    const Tscal *__restrict cs_acc,
+                    Tvec *__restrict axyz,
+                    Tscal *__restrict duint_acc) {
+                    derivs_body(
+                        id_a,
+                        ploop_ptrs,
+                        xyz,
+                        vxyz,
+                        hpart,
+                        omega_acc,
+                        density_acc,
+                        pressure_acc,
+                        cs_acc,
+                        axyz,
+                        [=](u32 i, Tscal v) {
+                            duint_acc[i] = v;
+                        });
+                });
+        } else {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{
+                    pcache,
+                    buf_xyz,
+                    buf_vxyz,
+                    buf_hpart,
+                    buf_omega,
+                    buf_density,
+                    buf_pressure,
+                    buf_cs},
+                sham::MultiRef{buf_axyz},
+                pdat.get_obj_cnt(),
+                [derivs_body](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz,
+                    const Tvec *__restrict vxyz,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict omega_acc,
+                    const Tscal *__restrict density_acc,
+                    const Tscal *__restrict pressure_acc,
+                    const Tscal *__restrict cs_acc,
+                    Tvec *__restrict axyz) {
+                    derivs_body(
+                        id_a,
+                        ploop_ptrs,
+                        xyz,
+                        vxyz,
+                        hpart,
+                        omega_acc,
+                        density_acc,
+                        pressure_acc,
+                        cs_acc,
+                        axyz,
+                        [](u32, Tscal) {});
+                });
         }
-
-        sham::EventList resulting_events;
-        resulting_events.add_event(e);
-        pcache.complete_event_state(resulting_events);
     });
 }
 
@@ -340,167 +390,217 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_exa
         tree::ObjectCache &pcache
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
-        // Set up SYCL queue and event tracking
+        // Set up SYCL queue
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        sham::EventList depends_list;
 
         // Get density from merged ghost data (SPH summation density)
         sham::DeviceBuffer<Tscal> &buf_density = mpdat.get_field_buf_ref<Tscal>(idensity_interf);
 
-        // Get buffer accessors
-        auto xyz          = buf_xyz.get_read_access(depends_list);
-        auto axyz         = buf_axyz.get_write_access(depends_list);
-        auto vxyz         = buf_vxyz.get_read_access(depends_list);
-        auto hpart        = buf_hpart.get_read_access(depends_list);
-        auto omega_acc    = buf_omega.get_read_access(depends_list);
-        auto density_acc  = buf_density.get_read_access(depends_list);
-        auto pressure_acc = buf_pressure.get_read_access(depends_list);
-        auto cs_acc       = buf_cs.get_read_access(depends_list);
-        auto ploop_ptrs   = pcache.get_read_access(depends_list);
+        const Tscal pmass          = solver_config.gpart_mass;
+        const Tscal gamma          = solver_config.get_eos_gamma();
+        const Tscal tol            = cfg.tol;
+        const u32 max_iter         = cfg.max_iter;
+        const bool use_inutsuka_v2 = solver_config.is_force_inutsuka_v2();
 
-        // Optional: internal energy
-        sham::DeviceBuffer<Tscal> *buf_duint_ptr = nullptr;
-        Tscal *duint_acc                         = nullptr;
-        if (has_uint) {
-            buf_duint_ptr = &pdat.get_field_buf_ref<Tscal>(iduint);
-            duint_acc     = buf_duint_ptr->get_write_access(depends_list);
-        }
+        // InutsukaV2 evaluates the kernel gradient at sqrt(2)*h, so the local
+        // kernel-support filter below must match the widened cache radius
+        // (see start_neighbors_cache()/compute_presteps_rint() in Solver.cpp),
+        // or valid cached pairs beyond h*Rkern get dropped here regardless.
+        const Tscal Rker2_factor = use_inutsuka_v2 ? Tscal{2} : Tscal{1};
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            const Tscal pmass          = solver_config.gpart_mass;
-            const Tscal gamma          = solver_config.get_eos_gamma();
-            const Tscal tol            = cfg.tol;
-            const u32 max_iter         = cfg.max_iter;
-            const bool do_energy       = has_uint;
-            const bool use_inutsuka_v2 = solver_config.is_force_inutsuka_v2();
-
+        // Per-particle body, shared by the with/without uint kernel variants.
+        // `write_du(i, v)` stores the internal energy derivative of particle i when the
+        // EOS is adiabatic and is a no-op otherwise (sum_du_a is computed identically).
+        auto derivs_body = [pmass, gamma, tol, max_iter, use_inutsuka_v2, Rker2_factor](
+                               u32 id_a,
+                               auto ploop_ptrs,
+                               const Tvec *__restrict xyz,
+                               const Tvec *__restrict vxyz,
+                               const Tscal *__restrict hpart,
+                               const Tscal *__restrict omega_acc,
+                               const Tscal *__restrict density_acc,
+                               const Tscal *__restrict pressure_acc,
+                               const Tscal *__restrict cs_acc,
+                               Tvec *__restrict axyz,
+                               auto write_du) {
             // Use shamrock's ObjectCacheIterator for neighbor traversal
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            // InutsukaV2 evaluates the kernel gradient at sqrt(2)*h, so the local
-            // kernel-support filter below must match the widened cache radius
-            // (see start_neighbors_cache()/compute_presteps_rint() in Solver.cpp),
-            // or valid cached pairs beyond h*Rkern get dropped here regardless.
-            const Tscal Rker2_factor = use_inutsuka_v2 ? Tscal{2} : Tscal{1};
+            using namespace shamrock::sph;
 
-            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "GSPH derivs exact", [=](u64 gid) {
-                u32 id_a = (u32) gid;
+            // Initialize accumulators
+            Tvec sum_axyz  = {0, 0, 0};
+            Tscal sum_du_a = 0;
 
-                using namespace shamrock::sph;
+            // Particle a state
+            const Tscal h_a     = hpart[id_a];
+            const Tvec xyz_a    = xyz[id_a];
+            const Tvec vxyz_a   = vxyz[id_a];
+            const Tscal omega_a = omega_acc[id_a];
 
-                // Initialize accumulators
-                Tvec sum_axyz  = {0, 0, 0};
-                Tscal sum_du_a = 0;
+            // Use SPH-summation density
+            const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
 
-                // Particle a state
-                const Tscal h_a     = hpart[id_a];
-                const Tvec xyz_a    = xyz[id_a];
-                const Tvec vxyz_a   = vxyz[id_a];
-                const Tscal omega_a = omega_acc[id_a];
+            // Use pressure and soundspeed from storage
+            const Tscal P_a  = sycl::max(pressure_acc[id_a], Tscal(1e-30));
+            const Tscal cs_a = sycl::max(cs_acc[id_a], Tscal(1e-10));
+
+            // Loop over neighbors
+            particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                if (id_a == id_b)
+                    return; // Skip self
+
+                // Distance and kernel support check
+                const Tvec dr    = xyz_a - xyz[id_b];
+                const Tscal rab2 = sycl::dot(dr, dr);
+                const Tscal h_b  = hpart[id_b];
+
+                // Skip if outside kernel support
+                if (rab2 > h_a * h_a * Rker2 * Rker2_factor
+                    && rab2 > h_b * h_b * Rker2 * Rker2_factor) {
+                    return;
+                }
+
+                const Tscal rab     = sycl::sqrt(rab2);
+                const Tvec vxyz_b   = vxyz[id_b];
+                const Tscal omega_b = omega_acc[id_b];
 
                 // Use SPH-summation density
-                const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
+                const Tscal rho_b = sycl::max(density_acc[id_b], Tscal(1e-30));
 
                 // Use pressure and soundspeed from storage
-                const Tscal P_a  = sycl::max(pressure_acc[id_a], Tscal(1e-30));
-                const Tscal cs_a = sycl::max(cs_acc[id_a], Tscal(1e-10));
+                const Tscal P_b  = sycl::max(pressure_acc[id_b], Tscal(1e-30));
+                const Tscal cs_b = sycl::max(cs_acc[id_b], Tscal(1e-10));
 
-                // Loop over neighbors
-                particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                    if (id_a == id_b)
-                        return; // Skip self
+                // Unit vector from a to b
+                const Tscal rab_inv  = sham::inv_sat_positive(rab);
+                const Tvec r_ab_unit = dr * rab_inv;
 
-                    // Distance and kernel support check
-                    const Tvec dr    = xyz_a - xyz[id_b];
-                    const Tscal rab2 = sycl::dot(dr, dr);
-                    const Tscal h_b  = hpart[id_b];
+                // Project velocities onto pair axis for 1D Riemann problem
+                const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
+                const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
 
-                    // Skip if outside kernel support
-                    if (rab2 > h_a * h_a * Rker2 * Rker2_factor
-                        && rab2 > h_b * h_b * Rker2 * Rker2_factor) {
-                        return;
-                    }
+                // Solve 1D Riemann problem exactly (Toro)
+                // Convention: Left state = neighbor b, Right state = current a
+                auto riemann_result = riemann::exact_solver<Tscal>(
+                    u_b_proj,
+                    rho_b,
+                    P_b, // Left = neighbor
+                    u_a_proj,
+                    rho_a,
+                    P_a, // Right = current
+                    gamma,
+                    tol,
+                    max_iter);
+                const Tscal p_star = riemann_result.p_star;
+                const Tscal v_star = riemann_result.v_star;
 
-                    const Tscal rab     = sycl::sqrt(rab2);
-                    const Tvec vxyz_b   = vxyz[id_b];
-                    const Tscal omega_b = omega_acc[id_b];
-
-                    // Use SPH-summation density
-                    const Tscal rho_b = sycl::max(density_acc[id_b], Tscal(1e-30));
-
-                    // Use pressure and soundspeed from storage
-                    const Tscal P_b  = sycl::max(pressure_acc[id_b], Tscal(1e-30));
-                    const Tscal cs_b = sycl::max(cs_acc[id_b], Tscal(1e-10));
-
-                    // Unit vector from a to b
-                    const Tscal rab_inv  = sham::inv_sat_positive(rab);
-                    const Tvec r_ab_unit = dr * rab_inv;
-
-                    // Project velocities onto pair axis for 1D Riemann problem
-                    const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
-                    const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
-
-                    // Solve 1D Riemann problem exactly (Toro)
-                    // Convention: Left state = neighbor b, Right state = current a
-                    auto riemann_result = riemann::exact_solver<Tscal>(
-                        u_b_proj,
-                        rho_b,
-                        P_b, // Left = neighbor
-                        u_a_proj,
-                        rho_a,
-                        P_a, // Right = current
-                        gamma,
-                        tol,
-                        max_iter);
-                    const Tscal p_star = riemann_result.p_star;
-                    const Tscal v_star = riemann_result.v_star;
-
-                    shammodels::gsph::accumulate_gsph_pair_force<Kernel, Tvec, Tscal>(
-                        use_inutsuka_v2,
-                        pmass,
-                        p_star,
-                        v_star,
-                        rho_a,
-                        rho_b,
-                        omega_a,
-                        omega_b,
-                        rab,
-                        rab_inv,
-                        h_a,
-                        h_b,
-                        r_ab_unit,
-                        vxyz_a,
-                        sum_axyz,
-                        sum_du_a);
-                });
-
-                // Write accumulated derivatives
-                axyz[id_a] = sum_axyz;
-                if (duint_acc != nullptr) {
-                    duint_acc[id_a] = sum_du_a;
-                }
+                shammodels::gsph::accumulate_gsph_pair_force<Kernel, Tvec, Tscal>(
+                    use_inutsuka_v2,
+                    pmass,
+                    p_star,
+                    v_star,
+                    rho_a,
+                    rho_b,
+                    omega_a,
+                    omega_b,
+                    rab,
+                    rab_inv,
+                    h_a,
+                    h_b,
+                    r_ab_unit,
+                    vxyz_a,
+                    sum_axyz,
+                    sum_du_a);
             });
-        });
 
-        // Complete event states for all buffers
-        buf_xyz.complete_event_state(e);
-        buf_axyz.complete_event_state(e);
-        buf_vxyz.complete_event_state(e);
-        buf_hpart.complete_event_state(e);
-        buf_omega.complete_event_state(e);
-        buf_density.complete_event_state(e);
-        buf_pressure.complete_event_state(e);
-        buf_cs.complete_event_state(e);
+            // Write accumulated derivatives
+            axyz[id_a] = sum_axyz;
+            write_du(id_a, sum_du_a);
+        };
 
-        if (has_uint && buf_duint_ptr) {
-            buf_duint_ptr->complete_event_state(e);
+        if (has_uint) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{
+                    pcache,
+                    buf_xyz,
+                    buf_vxyz,
+                    buf_hpart,
+                    buf_omega,
+                    buf_density,
+                    buf_pressure,
+                    buf_cs},
+                sham::MultiRef{buf_axyz, pdat.get_field_buf_ref<Tscal>(iduint)},
+                pdat.get_obj_cnt(),
+                [derivs_body](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz,
+                    const Tvec *__restrict vxyz,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict omega_acc,
+                    const Tscal *__restrict density_acc,
+                    const Tscal *__restrict pressure_acc,
+                    const Tscal *__restrict cs_acc,
+                    Tvec *__restrict axyz,
+                    Tscal *__restrict duint_acc) {
+                    derivs_body(
+                        id_a,
+                        ploop_ptrs,
+                        xyz,
+                        vxyz,
+                        hpart,
+                        omega_acc,
+                        density_acc,
+                        pressure_acc,
+                        cs_acc,
+                        axyz,
+                        [=](u32 i, Tscal v) {
+                            duint_acc[i] = v;
+                        });
+                });
+        } else {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{
+                    pcache,
+                    buf_xyz,
+                    buf_vxyz,
+                    buf_hpart,
+                    buf_omega,
+                    buf_density,
+                    buf_pressure,
+                    buf_cs},
+                sham::MultiRef{buf_axyz},
+                pdat.get_obj_cnt(),
+                [derivs_body](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz,
+                    const Tvec *__restrict vxyz,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict omega_acc,
+                    const Tscal *__restrict density_acc,
+                    const Tscal *__restrict pressure_acc,
+                    const Tscal *__restrict cs_acc,
+                    Tvec *__restrict axyz) {
+                    derivs_body(
+                        id_a,
+                        ploop_ptrs,
+                        xyz,
+                        vxyz,
+                        hpart,
+                        omega_acc,
+                        density_acc,
+                        pressure_acc,
+                        cs_acc,
+                        axyz,
+                        [](u32, Tscal) {});
+                });
         }
-
-        sham::EventList resulting_events;
-        resulting_events.add_event(e);
-        pcache.complete_event_state(resulting_events);
     });
 }
 
@@ -543,6 +643,112 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
     shamrock::solvergraph::Field<Tscal> &soundspeed_field
         = shambase::get_check_ref(storage.soundspeed);
 
+    const Tscal pmass = solver_config.gpart_mass;
+    const Tscal gamma = solver_config.get_eos_gamma();
+
+    // Per-particle HLLC derivative body, shared by the with/without duint kernel variants.
+    // `write_du(id, value)` stores the internal energy derivative when the uint field exists,
+    // and is a no-op otherwise (sum_du_a is still computed identically in both cases).
+    auto derivs_body = [pmass, gamma](
+                           u32 id_a,
+                           auto ploop_ptrs,
+                           const Tvec *__restrict xyz,
+                           const Tvec *__restrict vxyz,
+                           const Tscal *__restrict hpart,
+                           const Tscal *__restrict omega_acc,
+                           const Tscal *__restrict density_acc,
+                           const Tscal *__restrict pressure_acc,
+                           const Tscal *__restrict cs_acc,
+                           Tvec *__restrict axyz,
+                           auto write_du) {
+        tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+        constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
+        using namespace shamrock::sph;
+
+        Tvec sum_axyz  = {0, 0, 0};
+        Tscal sum_du_a = 0;
+
+        const Tscal h_a     = hpart[id_a];
+        const Tvec xyz_a    = xyz[id_a];
+        const Tvec vxyz_a   = vxyz[id_a];
+        const Tscal omega_a = omega_acc[id_a];
+
+        // Use SPH-summation density
+        const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
+
+        // Use pressure and soundspeed from storage
+        const Tscal P_a  = sycl::max(pressure_acc[id_a], Tscal(1e-30));
+        const Tscal cs_a = sycl::max(cs_acc[id_a], Tscal(1e-10));
+
+        particle_looper.for_each_object(id_a, [&](u32 id_b) {
+            if (id_a == id_b)
+                return;
+
+            const Tvec dr    = xyz_a - xyz[id_b];
+            const Tscal rab2 = sycl::dot(dr, dr);
+            const Tscal h_b  = hpart[id_b];
+
+            if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                return;
+            }
+
+            const Tscal rab     = sycl::sqrt(rab2);
+            const Tvec vxyz_b   = vxyz[id_b];
+            const Tscal omega_b = omega_acc[id_b];
+
+            // Use SPH-summation density
+            const Tscal rho_b = sycl::max(density_acc[id_b], Tscal(1e-30));
+
+            // Use pressure and soundspeed from storage
+            const Tscal P_b  = sycl::max(pressure_acc[id_b], Tscal(1e-30));
+            const Tscal cs_b = sycl::max(cs_acc[id_b], Tscal(1e-10));
+
+            const Tscal rab_inv  = sham::inv_sat_positive(rab);
+            const Tvec r_ab_unit = dr * rab_inv;
+
+            // Project velocities onto pair axis for 1D Riemann problem
+            const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
+            const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
+
+            // Use HLLC approximate Riemann solver
+            // Convention: Left state = neighbor b, Right state = current a
+            auto riemann_result = riemann::hllc_solver<Tscal>(
+                u_b_proj,
+                rho_b,
+                P_b, // Left = neighbor
+                u_a_proj,
+                rho_a,
+                P_a, // Right = current
+                gamma);
+            const Tscal p_star = riemann_result.p_star;
+            const Tscal v_star = riemann_result.v_star;
+
+            const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
+            const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
+
+            // GSPH force contribution
+            shammodels::gsph::add_gsph_force_contribution<Tvec, Tscal>(
+                pmass,
+                p_star,
+                v_star,
+                rho_a,
+                rho_b,
+                omega_a,
+                omega_b,
+                Fab_a,
+                Fab_b,
+                r_ab_unit,
+                vxyz_a,
+                sum_axyz,
+                sum_du_a);
+        });
+
+        axyz[id_a] = sum_axyz;
+        write_du(id_a, sum_du_a);
+    };
+
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
@@ -560,143 +766,90 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
             = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        sham::EventList depends_list;
 
         // Get density from merged ghost data
         sham::DeviceBuffer<Tscal> &buf_density = mpdat.get_field_buf_ref<Tscal>(idensity_interf);
 
-        auto xyz          = buf_xyz.get_read_access(depends_list);
-        auto axyz         = buf_axyz.get_write_access(depends_list);
-        auto vxyz         = buf_vxyz.get_read_access(depends_list);
-        auto hpart        = buf_hpart.get_read_access(depends_list);
-        auto omega_acc    = buf_omega.get_read_access(depends_list);
-        auto density_acc  = buf_density.get_read_access(depends_list);
-        auto pressure_acc = buf_pressure.get_read_access(depends_list);
-        auto cs_acc       = buf_cs.get_read_access(depends_list);
-        auto ploop_ptrs   = pcache.get_read_access(depends_list);
-
-        sham::DeviceBuffer<Tscal> *buf_duint_ptr = nullptr;
-        Tscal *duint_acc                         = nullptr;
         if (has_uint) {
-            buf_duint_ptr = &pdat.get_field_buf_ref<Tscal>(iduint);
-            duint_acc     = buf_duint_ptr->get_write_access(depends_list);
-        }
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            const Tscal pmass    = solver_config.gpart_mass;
-            const Tscal gamma    = solver_config.get_eos_gamma();
-            const bool do_energy = has_uint;
-
-            tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-
-            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-
-            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "GSPH derivs HLLC", [=](u64 gid) {
-                u32 id_a = (u32) gid;
-
-                using namespace shamrock::sph;
-
-                Tvec sum_axyz  = {0, 0, 0};
-                Tscal sum_du_a = 0;
-
-                const Tscal h_a     = hpart[id_a];
-                const Tvec xyz_a    = xyz[id_a];
-                const Tvec vxyz_a   = vxyz[id_a];
-                const Tscal omega_a = omega_acc[id_a];
-
-                // Use SPH-summation density
-                const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
-
-                // Use pressure and soundspeed from storage
-                const Tscal P_a  = sycl::max(pressure_acc[id_a], Tscal(1e-30));
-                const Tscal cs_a = sycl::max(cs_acc[id_a], Tscal(1e-10));
-
-                particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                    if (id_a == id_b)
-                        return;
-
-                    const Tvec dr    = xyz_a - xyz[id_b];
-                    const Tscal rab2 = sycl::dot(dr, dr);
-                    const Tscal h_b  = hpart[id_b];
-
-                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
-                        return;
-                    }
-
-                    const Tscal rab     = sycl::sqrt(rab2);
-                    const Tvec vxyz_b   = vxyz[id_b];
-                    const Tscal omega_b = omega_acc[id_b];
-
-                    // Use SPH-summation density
-                    const Tscal rho_b = sycl::max(density_acc[id_b], Tscal(1e-30));
-
-                    // Use pressure and soundspeed from storage
-                    const Tscal P_b  = sycl::max(pressure_acc[id_b], Tscal(1e-30));
-                    const Tscal cs_b = sycl::max(cs_acc[id_b], Tscal(1e-10));
-
-                    const Tscal rab_inv  = sham::inv_sat_positive(rab);
-                    const Tvec r_ab_unit = dr * rab_inv;
-
-                    // Project velocities onto pair axis for 1D Riemann problem
-                    const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
-                    const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
-
-                    // Use HLLC approximate Riemann solver
-                    // Convention: Left state = neighbor b, Right state = current a
-                    auto riemann_result = riemann::hllc_solver<Tscal>(
-                        u_b_proj,
-                        rho_b,
-                        P_b, // Left = neighbor
-                        u_a_proj,
-                        rho_a,
-                        P_a, // Right = current
-                        gamma);
-                    const Tscal p_star = riemann_result.p_star;
-                    const Tscal v_star = riemann_result.v_star;
-
-                    const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
-                    const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
-
-                    // GSPH force contribution
-                    shammodels::gsph::add_gsph_force_contribution<Tvec, Tscal>(
-                        pmass,
-                        p_star,
-                        v_star,
-                        rho_a,
-                        rho_b,
-                        omega_a,
-                        omega_b,
-                        Fab_a,
-                        Fab_b,
-                        r_ab_unit,
-                        vxyz_a,
-                        sum_axyz,
-                        sum_du_a);
+            sham::kernel_call(
+                q,
+                sham::MultiRef{
+                    pcache,
+                    buf_xyz,
+                    buf_vxyz,
+                    buf_hpart,
+                    buf_omega,
+                    buf_density,
+                    buf_pressure,
+                    buf_cs},
+                sham::MultiRef{buf_axyz, pdat.get_field_buf_ref<Tscal>(iduint)},
+                pdat.get_obj_cnt(),
+                [derivs_body](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz,
+                    const Tvec *__restrict vxyz,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict omega_acc,
+                    const Tscal *__restrict density_acc,
+                    const Tscal *__restrict pressure_acc,
+                    const Tscal *__restrict cs_acc,
+                    Tvec *__restrict axyz,
+                    Tscal *__restrict duint_acc) {
+                    derivs_body(
+                        id_a,
+                        ploop_ptrs,
+                        xyz,
+                        vxyz,
+                        hpart,
+                        omega_acc,
+                        density_acc,
+                        pressure_acc,
+                        cs_acc,
+                        axyz,
+                        [=](u32 i, Tscal du) {
+                            duint_acc[i] = du;
+                        });
                 });
-
-                axyz[id_a] = sum_axyz;
-                if (duint_acc != nullptr) {
-                    duint_acc[id_a] = sum_du_a;
-                }
-            });
-        });
-
-        buf_xyz.complete_event_state(e);
-        buf_axyz.complete_event_state(e);
-        buf_vxyz.complete_event_state(e);
-        buf_hpart.complete_event_state(e);
-        buf_omega.complete_event_state(e);
-        buf_density.complete_event_state(e);
-        buf_pressure.complete_event_state(e);
-        buf_cs.complete_event_state(e);
-
-        if (has_uint && buf_duint_ptr) {
-            buf_duint_ptr->complete_event_state(e);
+        } else {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{
+                    pcache,
+                    buf_xyz,
+                    buf_vxyz,
+                    buf_hpart,
+                    buf_omega,
+                    buf_density,
+                    buf_pressure,
+                    buf_cs},
+                sham::MultiRef{buf_axyz},
+                pdat.get_obj_cnt(),
+                [derivs_body](
+                    u32 id_a,
+                    auto ploop_ptrs,
+                    const Tvec *__restrict xyz,
+                    const Tvec *__restrict vxyz,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict omega_acc,
+                    const Tscal *__restrict density_acc,
+                    const Tscal *__restrict pressure_acc,
+                    const Tscal *__restrict cs_acc,
+                    Tvec *__restrict axyz) {
+                    derivs_body(
+                        id_a,
+                        ploop_ptrs,
+                        xyz,
+                        vxyz,
+                        hpart,
+                        omega_acc,
+                        density_acc,
+                        pressure_acc,
+                        cs_acc,
+                        axyz,
+                        [](u32, Tscal) {});
+                });
         }
-
-        sham::EventList resulting_events;
-        resulting_events.add_event(e);
-        pcache.complete_event_state(resulting_events);
     });
 }
 

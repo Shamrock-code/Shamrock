@@ -21,6 +21,8 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
+#include "shammodels/sph/modules/setup/GeneratorLatticeFCC.hpp"
+#include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <memory>
@@ -61,7 +63,16 @@ namespace shammodels::sph::modules {
             bool speculative_balancing                          = false);
 
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp(
-            Tscal dr, std::pair<Tvec, Tvec> box, bool discontinuous = true);
+            Tscal dr,
+            std::pair<Tvec, Tvec> box,
+            bool discontinuous  = true,
+            Tscal init_h_factor = GeneratorLatticeHCP<Tvec>::default_init_h_factor);
+
+        std::shared_ptr<ISPHSetupNode> make_generator_lattice_fcc(
+            Tscal dr,
+            std::pair<Tvec, Tvec> box,
+            bool discontinuous  = true,
+            Tscal init_h_factor = GeneratorLatticeFCC<Tvec>::default_init_h_factor);
 
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_cubic(
             Tscal dr, std::pair<Tvec, Tvec> box);

@@ -99,6 +99,20 @@ namespace shammodels::sph::phdump {
     void eos3_write(PhantomDump &dump, const f64 &cs0, const f64 &q, const f64 &r0);
 
     /**
+     * @brief Load the EOS6 from the phantom dump
+     *
+     * Same parameters as EOS3, but the radius is taken with respect to the sink particle
+     * `isink` (1-based, Fortran indexing) instead of the origin.
+     *
+     * @param[in] dump Phantom dump file
+     * @param[out] cs0 Sound speed at the reference radius
+     * @param[out] q Power law index
+     * @param[out] r0 Reference radius
+     * @param[out] isink Index of the sink the eos is centred on (1-based, as in phantom)
+     */
+    void eos6_load(const PhantomDump &dump, f64 &cs0, f64 &q, f64 &r0, i32 &isink);
+
+    /**
      * @brief Load the EOS13 from the phantom dump
      *
      * @param[in] dump Phantom dump file

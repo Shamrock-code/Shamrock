@@ -98,7 +98,6 @@ def do_setup(model, cs, delta_v_0):
     print(delta_v_0)
 
     def vel_func(r):
-        global mm, MM
         x, y, z = r
 
         f = 2 * np.pi / (xM - xm)

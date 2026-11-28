@@ -11,7 +11,6 @@ project(Shamsys CXX C)
 
 set(Sources
     src/NodeInstance.cpp
-    src/SyclHelper.cpp
     src/SignalCatch.cpp
     src/MicroBenchmark.cpp
     src/change_log_format.cpp

@@ -12,6 +12,7 @@
 /**
  * @file SolverStorage.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -86,6 +87,12 @@ namespace shammodels::sph {
 
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 
+        // Bisection bracket [lo, hi] on h used by IterateSmoothingLengthDensityBisectingNR.
+        // Lazily created (unlike omega/pressure/soundspeed) since they're only needed when that
+        // smoothing length mode is selected.
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> h_bisect_lo;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> h_bisect_hi;
+
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
 
@@ -103,6 +110,10 @@ namespace shammodels::sph {
 
         Component<shamrock::ComputeField<Tvec>> old_dB_on_rho;
         Component<shamrock::ComputeField<Tscal>> old_dpsi_on_ch;
+
+        Component<shambase::DistributedData<PatchDataField<Tvec>>> MagCurrentJ_ghost;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> MagCurrentJ;
+        std::shared_ptr<shamrock::solvergraph::ExchangeGhostField<Tvec>> exchange_gz_J;
 
         Component<shamrock::ComputeField<Tscal>> old_dtepsilon;
         Component<shamrock::ComputeField<Tvec>> old_dtdeltav;

@@ -143,7 +143,7 @@ void shammodels::sph::modules::SPHColumnInteg<Tvec, T, SPHKernel>::_impl_evaluat
 
                         Tscal rho_b = shamrock::sph::rho_h(partmass, h_b, Kernel::hfactd);
 
-                        acc += partmass * val * Kernel::Y_3d(rab, h_b, 4) / rho_b;
+                        acc += partmass * val * Kernel::template Y_3d<4>(rab, h_b) / rho_b;
                     });
 
                 render_field[gid] += acc;

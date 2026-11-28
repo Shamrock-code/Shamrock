@@ -31,13 +31,13 @@ shamrock.matplotlib.set_shamrock_mpl_style()
 
 
 # %%
-if not shamrock.algs.is_impl_set_compute_histogram():
-    shamrock.algs.autoselect_impl_compute_histogram()
+if not shamrock.algs.is_impl_set("compute_histogram"):
+    shamrock.algs.autoselect_impl("compute_histogram")
 
-default_config = shamrock.algs.get_current_impl_compute_histogram()
-avail_configs = shamrock.algs.get_default_impl_list_compute_histogram()
+default_config = shamrock.algs.get_current_impl("compute_histogram")
+avail_configs = shamrock.algs.get_default_impl_list("compute_histogram")
 
-print(f"Current config: {shamrock.algs.get_current_impl_compute_histogram()}")
+print(f"Current config: {shamrock.algs.get_current_impl('compute_histogram')}")
 print(f"Default config: {default_config}")
 print(f"Available configs: {avail_configs}")
 
@@ -80,7 +80,7 @@ buf_positions_f32.copy_from_stdvec(positions_f32)
 results_f64 = {}
 results_f32 = {}
 for config in avail_configs:
-    shamrock.algs.set_impl_compute_histogram(config)
+    shamrock.algs.set_impl("compute_histogram", config)
     impl_name = json.loads(config)["implementation"]
     time_f64 = shamrock.algs.benchmark_compute_histogram_basic_f64(
         buf_bin_edge_inf, buf_bin_edge_sup, buf_positions

@@ -17,8 +17,9 @@
 
 #include "shambackends/math.hpp"
 #include "shammath/matrix.hpp"
-#include "shamunits/Constants.hpp"
+#include "shamunits/Constants.hpp" // shamunits::pi<T>
 #include "shamunits/UnitSystem.hpp"
+#include "shamunits/constant_table.hpp"
 
 namespace shamphys {
 
@@ -29,7 +30,7 @@ namespace shamphys {
 
     template<class T>
     T free_fall_time(T rho, const shamunits::UnitSystem<T> usys = {}) {
-        return free_fall_time(rho, shamunits::Constants{usys}.G());
+        return free_fall_time(rho, usys.template get<shamunits::constants::G>());
     }
 
 } // namespace shamphys

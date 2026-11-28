@@ -43,6 +43,8 @@ namespace shammodels::sph::modules {
 
         void start_neighbors_cache();
         void start_neighbors_cache_2stages();
+        void start_neighbors_cache_shared_offload();
+        void start_neighbors_cache_2stages_shared_offload();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
